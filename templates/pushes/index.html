@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title_matter %}Pushes{% endblock %}
+{% block head_matter %}
+<script type="application/javascript"
+src="/static/jquery.js"></script>
+<script type="application/javascript"
+src="/static/thickbox-compressed.js"></script>
+<link rel="stylesheet" href="/static/style-gitweb.css" type="text/css" >
+<link rel="stylesheet" href="/static/thickbox.css" type="text/css" >
+<script type="application/javascript">
+var progress = {
+  _c: 0,
+  load: function() {
+    this._c++;
+    document.body.style.cursor = 'progress';
+  },
+  done: function() {
+    this._c--;
+    if (this._c == 0) {
+      document.body.style.cursor = '';
+    }
+  }
+};
+
+function onDisplayDetail(event, push) {
+  console.log("clicked on " + event.originalTarget.nodeName);
+  if (event.originalTarget.nodeName != "A") {
+    $('#pushdetail'+push).slideToggle("fast");
+  }
+}
+
+function onDetailHandler(push) {
+  function done(str, res, xhr) {
+    progress.done();
+    $('#pushdetail'+push).slideToggle("fast");
+    console.log("loaded " + push);
+  };
+  progress.load();
+  var li=$("#pushdetail" + push).load("/pushdetail/" + push,{},done).parent().parent()[0];
+  li.setAttribute("onclick", 'onDisplayDetail(event, '+push+')');
+}
+
+$(document).ready(function(){
+  $('#search').click(function() {
+    tb_show('Search in pushes',
+            '#TB_inline?height=300&amp;width=600&amp;inlineId=searchpane',
+            false);
+    this.blur();
+    return false;
+  });
+});
+
+</script>
+{% endblock %}
+{% block content %}
+<span id="search">Search &hellip;</span>
+<div id="searchpane" style="display:none;">
+  <form action="#" method="get">
+  <table>
+  <tr><td>Limit</td><td><input name="length" type="text" size="3" maxlength="3" value="10"></tr>
+  <tr><td>Path part</td><td><input name="path" type="text" size="10" maxlength="30"></tr>
+  <tr><td></td><td><input type="submit" value="search &hellip;"></td></tr>
+  </table>
+  </form>
+</div>
+{% if pushes %}
+    <table>
+    {% for push in pushes %}
+      <tr class="{{push.class}}" onclick="onDetailHandler({{push.pk}});">
+	<td>{{push.user}}</td>
+	<td><a href="/pushes/{{push.repository__name}}/">{{push.repository__name}}</a></td>
+	<td>{{push.description}}
+	  <ul id="pushdetail{{push.pk}}" style="display: none"></ul>
+	</td>
+      </tr>
+    {% endfor %}
+    </table>
+{% else %}
+    <p>No pushes in repository.</p>
+{% endif %}
+{% endblock %}
