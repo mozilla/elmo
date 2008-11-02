@@ -43,10 +43,22 @@ class Command(BaseCommand):
                 for cs in p.changeset_set.iterator():
                     try:
                         ctx = hgrepo.changectx(cs.revision)
-                        for path in ctx.files():
+                        dbfiles = set(map(str, cs.files.all()))
+                        hgfiles = set(ctx.files())
+                        if dbfiles == hgfiles:
+                            continue
+                        for path in sorted(hgfiles - dbfiles):
                             f, created = File.objects.get_or_create(path = path)
                             cs.files.add(f)
                             if created:
                                 f.save()
+                        if dbfiles - hgfiles:
+                            # unhook files
+                            obsolete = sorted(dbfiles - hgfiles)
+                            if not quiet:
+                                print "removing " + " ".join(obsolete)
+                            fls = cs.files.filter(path__in = obsolete)
+                            cs.files.remove(*list(fls))
+                        cs.save()
                     except Exception, e:
                         print repo.name, e

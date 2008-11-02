@@ -51,6 +51,9 @@ class Command(BaseCommand):
             print len(pushes)
             if not pushes:
                 continue
+            revisions = reduce(lambda r,l: r+l,
+                               [p['changesets'] for p in pushes.values()],
+                               [])
             hgrepo = None
             if noupdate:
                 updates.append(repo.name)
@@ -71,7 +74,7 @@ class Command(BaseCommand):
                 else:
                     ui.readconfig(configpath)
                     hgrepo = repository(ui, repopath)
-                    pull(ui, hgrepo, force=False, update=False, rev=['tip'])
+                    pull(ui, hgrepo, force=False, update=False, rev=revisions)
                     update(ui, hgrepo)
             id = repo.last_known_push
             ids = pushes.keys()
@@ -85,6 +88,16 @@ class Command(BaseCommand):
                 p.save()
                 for revision in data['changesets']:
                     cs = Changeset(push = p, revision = revision)
+                    cs.save()
+                    try:
+                        ctx = hgrepo.changectx(cs.revision)
+                        for path in ctx.files():
+                            f, created = File.objects.get_or_create(path = path)
+                            cs.files.add(f)
+                            if created:
+                                f.save()
+                    except Exception, e:
+                        print repo.name, e
                     cs.save()
             repo.last_known_push = int(id)
             repo.save()

@@ -44,14 +44,9 @@ def default(request, repo_name):
         start = 0
     excludes = request.GET.getlist('exclude')
     paths = filter(None, request.GET.getlist('path'))
-    if repo_name is None:
-        repos = Repository.objects
-    else:
-        repos = Repository.objects.filter(name = repo_name)
-        if not repos:
-            return HttpResponse("Can't find repository %s" % repo_name)
-    repo_ids = repos.values_list('pk', flat=True)
-    q = Push.objects.filter(repository__in=repos.all())
+    q = Push.objects
+    if repo_name is not None:
+        q = q.filter(repository__name = repo_name)
     if excludes:
         q = q.exclude(repository__name__in = excludes)
     for p in paths:
@@ -59,9 +54,10 @@ def default(request, repo_name):
     pushes = q.distinct().order_by('-push_date')[start:(start+limit-1)].values('user', 'pk', 'repository__name')
     repo_cache = {}
     odd = True
+    push_ids = map(lambda p: int(p['pk']), pushes)
+    changerevs = dict(Changeset.objects.filter(push__in=push_ids).order_by('pk').values_list('push','revision'))
     for p in pushes:
-        cs = Changeset.objects.filter(push__pk = int(p['pk'])).order_by('-pk')[0]
-        d = getHgDetails(p['repository__name'], cs.revision, repo_cache)
+        d = getHgDetails(p['repository__name'], changerevs[p['pk']], repo_cache)
         p.update(d)
         p['class'] = 'parity%d' % odd
         odd = not odd

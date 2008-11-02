@@ -1,5 +1,7 @@
 from django.db import models
 
+from django.conf import settings
+
 """Model module for pushes.
 
 These models map the remote pushlog db from hg.mozilla.org onto 
@@ -19,10 +21,15 @@ class Push(models.Model):
     push_date = models.DateTimeField('date of push', db_index=True)
     push_id = models.PositiveIntegerField(default=0)
 
-class File(models.Model):
-    path = models.CharField(max_length=400, db_index=True)
-    def __unicode__(self):
-        return self.path
+if 'mbdb' in settings.INSTALLED_APPS:
+    from mbdb.models import File
+else:
+    class File(models.Model):
+        class Meta:
+            db_table = 'mbdb_file'
+        path = models.CharField(max_length=400, db_index=True)
+        def __unicode__(self):
+            return self.path
 
 class Changeset(models.Model):
     push = models.ForeignKey(Push)
