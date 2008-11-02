@@ -9,11 +9,11 @@ urlpatterns = patterns('',
     # Example:
     # (r'^dashboard/', include('dashboard.foo.urls')),
                        (r'^pushes/(?:(?P<repo_name>.*)/)?$',
-                        'dashboard.pushes.views.default'),
+                        'pushes.views.default'),
                        (r'^pushdetail/(?P<push>\d+)$',
-                        'dashboard.pushes.views.push_details'),
+                        'pushes.views.push_details'),
                        (r'^status/l10n-repos$',
-                        'dashboard.status.views.repostatus'),
+                        'status.views.repostatus'),
 
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs' 
     # to INSTALLED_APPS to enable admin documentation:

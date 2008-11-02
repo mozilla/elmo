@@ -5,7 +5,7 @@ from django.template import Context, loader
 from django.shortcuts import render_to_response, get_object_or_404
 import simplejson as json
 
-from dashboard.pushes.models import *
+from pushes.models import *
 
 def repostatus(request):
     json_template = {'properties': 

@@ -64,7 +64,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
 )
 
-ROOT_URLCONF = 'dashboard.urls'
+ROOT_URLCONF = 'l10n_site.urls'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
@@ -79,8 +79,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.admin',
-    'dashboard.pushes',
-    'dashboard.status',
+    'pushes',
+    'status',
 )
 
 # dashboard's own settings

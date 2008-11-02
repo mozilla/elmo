@@ -2,8 +2,8 @@ from optparse import make_option
 import os.path
 
 from django.core.management.base import BaseCommand, CommandError
-from dashboard.pushes.models import *
-from dashboard import settings
+from pushes.models import *
+from django.conf import settings
 
 from mercurial.hg import repository
 from mercurial.ui import ui as _ui

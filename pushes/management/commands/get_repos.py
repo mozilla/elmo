@@ -3,7 +3,7 @@ from urllib2 import urlopen, URLError
 from urlparse import urljoin
 
 from django.core.management.base import BaseCommand, CommandError
-from dashboard.pushes.models import *
+from pushes.models import *
 
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (

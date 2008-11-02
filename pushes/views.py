@@ -4,8 +4,8 @@ from django.http import HttpResponse
 from django.template import Context, loader
 from django.shortcuts import render_to_response, get_object_or_404
 
-from dashboard.pushes.models import *
-from dashboard import settings
+from pushes.models import *
+from django.conf import settings
 
 from mercurial.hg import repository
 from mercurial.ui import ui as _ui
