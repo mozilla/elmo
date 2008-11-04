@@ -1,6 +1,7 @@
 import pickle
 
 from django.db import models
+import fields
 
 
 class File(models.Model):
@@ -24,19 +25,20 @@ class Change(models.Model):
     number = models.PositiveIntegerField(primary_key = True)
     branch = models.CharField(max_length = 20, null = True, blank = True)
     revision = models.CharField(max_length = 50, null = True, blank = True)
-    who = models.CharField(max_length = 100, null = True, blank = True
+    who = models.CharField(max_length = 100, null = True, blank = True,
                            db_index = True)
-    files = models.ManyToMany(File)
-    comments = models.TextField()
+    files = models.ManyToManyField(File)
+    comments = models.TextField(null = True, blank = True)
     when = models.DateTimeField()
-    tags = models.ManyToMany(Tag)
+    tags = models.ManyToManyField(Tag)
 
     def __unicode__(self):
         rv = u'Change %d' % self.number
         if self.branch:
             rv += ', ' + self.branch
         if self.tags:
-            rv += '(%s)' + ', '.join(map(unicode, self.tags.all()))
+            rv += u' (%s)' % ', '.join(map(unicode, self.tags.all()))
+        return rv
 
 
 class Property(models.Model):
@@ -45,8 +47,10 @@ class Property(models.Model):
     To support complex property values, they are internally pickled.
     """
     name            = models.CharField(max_length = 20, db_index = True)
-    value           = models.TextField()
-    unique_together = (('name', 'value'),)
+    source          = models.CharField(max_length = 20, db_index = True)
+    value           = fields.PickledObjectField(null = True, blank = True,
+                                                db_index = True)
+    unique_together = (('name', 'source', 'value'),)
 
     def __unicode__(self):
         return "%s: %s" % (self.name, self.value)
@@ -74,17 +78,16 @@ class Build(models.Model):
     slavename   = models.CharField(max_length = 50, null=True, blank = True)
     starttime   = models.DateTimeField(null = True, blank = True)
     endtime     = models.DateTimeField(null = True, blank = True)
-    results     = models.IntegerField(null = True)
+    result      = models.SmallIntegerField(null = True, blank = True)
     reason      = models.CharField(max_length = 50, null = True, blank = True)
     changes     = models.ManyToManyField(Change, null = True,
                                          related_name = 'builds')
 
-    def setProperty(self, name, value):
-        value = pickle.dumps(value)
+    def setProperty(self, name, value, source):
         try:
             # First, see if we have the property, or a property of that name,
             # at least.
-            prop = self.properties.get(name=name)
+            prop = self.properties.get(name = name, source = source)
             if prop.value == value:
                 # we already know this, we're done
                 return
@@ -98,29 +101,36 @@ class Build(models.Model):
             raise Property.DoesNotExist(name)
         except Property.DoesNotExist:
             prop, created = Property.objects.get_or_create(name = name,
+                                                           source = source,
                                                            value = value)
         self.properties.add(prop)
         self.save()
 
-      def getProperty(self, name):
-          try:
-              prop = self.properties.get(name = name)
-          except Property.DoesNotExist:
-              raise KeyError(name)
-          return pickle.loads(prop.value)
+    def getProperty(self, name, source = None):
+        try:
+            if source is None:
+                prop = self.properties.get(name = name)
+            else:
+                prop = self.properties.get(name = name, source = source)
+        except Property.DoesNotExist:
+            raise KeyError(name)
+        return pickle.loads(prop.value)
 
-      def __unicode__(self):
-          v = self.builder.name
-          if self.buildnumber is not None:
-              v += ': %d' % self.buildnumber
-          return v
+    def __unicode__(self):
+        v = self.builder.name
+        if self.buildnumber is not None:
+            v += ': %d' % self.buildnumber
+        return v
 
 
 class Step(models.Model):
-    name = models.CharField(max_length=50)
-    text = models.TextField(null = True, blank = True)
-    text2 = models.TextField(null = True, blank = True)
-    build = models.ForeignKey(Build, related_name = 'steps')
+    name      = models.CharField(max_length=50)
+    text      = models.TextField(null = True, blank = True)
+    text2     = models.TextField(null = True, blank = True)
+    result    = models.SmallIntegerField(null = True, blank = True)
+    starttime = models.DateTimeField(null = True, blank = True)
+    endtime   = models.DateTimeField(null = True, blank = True)
+    build     = models.ForeignKey(Build, related_name = 'steps')
 
 
 class URL(models.Model):
@@ -130,10 +140,11 @@ class URL(models.Model):
 
 
 class Log(models.Model):
-    filename = models.CharField(max_length = 200, unique = True)
+    filename = models.CharField(max_length = 200, unique = True,
+                                null = True, blank = True)
     step = models.ForeignKey(Step, related_name = 'logs')
     isFinished = models.BooleanField(default = False)
-    isHTML = models.BooleanField(default = False)
+    html = models.TextField(null = True, blank = True)
 
     def __unicode__(self):
         return self.filename
