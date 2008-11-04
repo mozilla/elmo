@@ -67,7 +67,7 @@ TEMPLATE_DIRS = (
 
 INSTALLED_APPS = (
     'mbdb',
-    'adapter',
+    'bb2mbdb',
 )
 
 BUILDMASTER_BASE = '/home/buildmaster/run/master'
