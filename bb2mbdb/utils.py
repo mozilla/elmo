@@ -3,7 +3,8 @@
 
 from datetime import datetime
 
-from mbdb.models import Change, Tag, File
+from mbdb.models import Change, Tag, File, Log
+from django.conf import settings
 
 
 def timeHelper(t):
@@ -36,3 +37,12 @@ def modelForChange(change):
         dbchange.files.add(*dbfiles)
         dbchange.save()
         return dbchange
+
+def modelForLog(dbstep, logfile, isFinished = False):
+    if not hasattr(logfile, 'getFilename'):
+        dbstep.logs.create(filename = None, html = logfile.html,
+                           isFinished = True)
+    else:
+        relfile = logfile.getFilename()[len(settings.BUILDMASTER_BASE)+1:]
+        dbstep.logs.create(filename = relfile, html = None,
+                           isFinished = isFinished)

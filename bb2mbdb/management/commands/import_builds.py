@@ -33,7 +33,11 @@ class Command(BaseCommand):
             builder.determineNextBuildNumber()
             try:
                 dbbuilder = Builder.objects.get(name = buildername)
-                firstBuild = dbbuilder.builds.order_by('-pk').values_list('buildnumber', flat=True)[0] + 1
+                q = dbbuilder.builds.order_by('-pk').values_list('buildnumber', flat=True)
+                if q.count():
+                    firstBuild = q[0] + 1
+                else:
+                    firstBuild = 1
             except:
                 dbbuilder = Builder.objects.create(name = buildername,
                                                    category = builder.category,
@@ -65,6 +69,7 @@ class Command(BaseCommand):
                 builders.pop(0)
             buildername = localvars['buildername']
             builder = localvars['builder']
+            dbbuilder = localvars['dbbuilder']
             buildnumber = localvars['buildnumber']
             print buildername, buildnumber
             try:
@@ -85,7 +90,6 @@ class Command(BaseCommand):
                 dbbuild.setProperty(key, value, source)
             for change in build.getChanges():
                 dbbuild.changes.add(utils.modelForChange(change))
-            cutoff = len(settings.BUILDMASTER_BASE)+1
             for step in build.getSteps():
                 times = map(utils.timeHelper, step.getTimes())
                 if times[1] is None:
@@ -99,13 +103,5 @@ class Command(BaseCommand):
                                               endtime = times[1],
                                               result = result)
                 for logfile in step.getLogs():
-                    if not hasattr(logfile, 'getFilename'):
-                        dbstep.logs.create(filename = None,
-                                           html = logfile.html,
-                                           isFinished = True)
-                    else:
-                        relfile = logfile.getFilename()[cutoff:]
-                        dbstep.logs.create(filename = relfile,
-                                           html = None,
-                                           isFinished = True)
+                    utils.modelForLog(dbstep, logfile, isFinished = True)
             dbbuild.save()

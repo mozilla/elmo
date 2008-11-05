@@ -147,6 +147,8 @@ class Log(models.Model):
     html = models.TextField(null = True, blank = True)
 
     def __unicode__(self):
-        return self.filename
+        if self.filename:
+            return self.filename
+        return '<HTMLLog>'
 
         
