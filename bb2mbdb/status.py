@@ -118,8 +118,8 @@ def setupBridge(settings, config):
             self.latestStep = step
             self.latestDbStep = self.build.steps.create(name = step.getName(),
                                                         starttime = timeHelper(step.getTimes()[0]),
-                                                        text = ' '.join(step.getText()),
-                                                        text2 = ' '.join(step.text2))
+                                                        text = step.getText(),
+                                                        text2 = step.text2)
             return StepReceiver(self.latestDbStep)
 
         def stepFinished(self, build, step, results):

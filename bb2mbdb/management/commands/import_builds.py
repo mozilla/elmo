@@ -98,7 +98,8 @@ class Command(BaseCommand):
                 else:
                     result = step.getResults()[0]
                 dbstep = dbbuild.steps.create(name = step.getName(),
-                                              text = " ".join(step.getText()),
+                                              text = step.getText(),
+                                              text2 = step.text2,
                                               starttime = times[0],
                                               endtime = times[1],
                                               result = result)

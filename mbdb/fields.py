@@ -45,3 +45,27 @@ class PickledObjectField(models.Field):
             return super(PickledObjectField, self).get_db_prep_lookup(lookup_type, value)
         else:
             raise TypeError('Lookup type %s is not supported.' % lookup_type)
+
+class ListField(models.Field):
+    __metaclass__ = models.SubfieldBase
+    
+    def to_python(self, value):
+        if hasattr(value, 'split'):
+            return value.split('\0')
+        return value
+    
+    def get_db_prep_save(self, value):
+        return '\0'.join(value)
+    
+    def get_internal_type(self): 
+        return 'TextField'
+    
+    def get_db_prep_lookup(self, lookup_type, value):
+        if lookup_type in ['exact', 'isnull']:
+            value = self.get_db_prep_save(value)
+            return super(ListField, self).get_db_prep_lookup(lookup_type, value)
+        elif lookup_type == 'in':
+            value = [self.get_db_prep_save(v) for v in value]
+            return super(ListField, self).get_db_prep_lookup(lookup_type, value)
+        else:
+            raise TypeError('Lookup type %s is not supported.' % lookup_type)

@@ -6,7 +6,8 @@ import fields
 
 class File(models.Model):
     """Model for files throughout"""
-    path = models.CharField(max_length=400, db_index=True, unique = True)
+    # not  unique = True, mysql doesn't like long unique utf-8 strings
+    path = models.CharField(max_length=400, db_index=True)
 
     def __unicode__(self):
         return self.path
@@ -114,7 +115,7 @@ class Build(models.Model):
                 prop = self.properties.get(name = name, source = source)
         except Property.DoesNotExist:
             raise KeyError(name)
-        return pickle.loads(prop.value)
+        return prop.value
 
     def __unicode__(self):
         v = self.builder.name
@@ -125,8 +126,8 @@ class Build(models.Model):
 
 class Step(models.Model):
     name      = models.CharField(max_length=50)
-    text      = models.TextField(null = True, blank = True)
-    text2     = models.TextField(null = True, blank = True)
+    text      = fields.ListField(null = True, blank = True)
+    text2     = fields.ListField(null = True, blank = True)
     result    = models.SmallIntegerField(null = True, blank = True)
     starttime = models.DateTimeField(null = True, blank = True)
     endtime   = models.DateTimeField(null = True, blank = True)
