@@ -40,17 +40,15 @@ class Command(BaseCommand):
                 repo.url,
                 repo.last_known_push,
                 repo.last_known_push + limit)
-            if not quiet:
-                print url
             try:
                 pushes = simplejson.load(urlopen(url))
             except URLError, e:
                 if not quiet:
                     print "%s failed: %s" % (repo.name, e)
                 continue
-            print len(pushes)
             if not pushes:
                 continue
+            print "%s has %d pushes" % (repo.name, len(pushes))
             revisions = reduce(lambda r,l: r+l,
                                [p['changesets'] for p in pushes.values()],
                                [])
@@ -58,24 +56,28 @@ class Command(BaseCommand):
             if noupdate:
                 updates.append(repo.name)
             else:
-                ui = _ui()
-                repopath = os.path.join(settings.REPOSITORY_BASE,
-                                        repo.name, '')
-                configpath = os.path.join(repopath, '.hg', 'hgrc')
-                if not os.path.isfile(configpath):
-                    clone(ui, str(repo.url), str(repopath),
-                          pull=False, uncompressed=False, rev=[],
-                          noupdate=False)
-                    cfg = open(configpath, 'a')
-                    cfg.write('default-push = ssh%s\n' % str(repo.url)[4:])
-                    cfg.close()
-                    ui.readconfig(configpath)
-                    hgrepo = repository(ui, repopath)
-                else:
-                    ui.readconfig(configpath)
-                    hgrepo = repository(ui, repopath)
-                    pull(ui, hgrepo, force=False, update=False, rev=revisions)
-                    update(ui, hgrepo)
+                try:
+                    ui = _ui()
+                    repopath = os.path.join(settings.REPOSITORY_BASE,
+                                            repo.name, '')
+                    configpath = os.path.join(repopath, '.hg', 'hgrc')
+                    if not os.path.isfile(configpath):
+                        clone(ui, str(repo.url), str(repopath),
+                              pull=False, uncompressed=False, rev=[],
+                              noupdate=False)
+                        cfg = open(configpath, 'a')
+                        cfg.write('default-push = ssh%s\n' % str(repo.url)[4:])
+                        cfg.close()
+                        ui.readconfig(configpath)
+                        hgrepo = repository(ui, repopath)
+                    else:
+                        ui.readconfig(configpath)
+                        hgrepo = repository(ui, repopath)
+                        pull(ui, hgrepo, force=False, update=False,
+                             rev=revisions)
+                        update(ui, hgrepo)
+                except Exception, e:
+                    print "failed for %s with %s" % (repo.name, e)
             id = repo.last_known_push
             ids = pushes.keys()
             ids.sort(lambda l,r: cmp(int(l), int(r)))

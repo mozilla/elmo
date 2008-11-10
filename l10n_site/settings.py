@@ -86,4 +86,4 @@ INSTALLED_APPS = (
 
 # dashboard's own settings
 
-REPOSITORY_BASE = '/Users/axel/src/central/'
+REPOSITORY_BASE = '/Users/axelhecht/src/central/'
