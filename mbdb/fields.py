@@ -30,6 +30,9 @@ class PickledObjectField(models.Field):
     
     def get_db_prep_save(self, value):
         if value is not None and not isinstance(value, PickledObject):
+            if isinstance(value, str):
+                # normalize all strings to unicode, like django does
+                value = unicode(value)
             value = PickledObject(pickle.dumps(value))
         return value
     

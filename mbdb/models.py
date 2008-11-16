@@ -70,8 +70,6 @@ class Builder(models.Model):
 
 class Build(models.Model):
     """Model for buildbot..status.builder.Build
-
-    TODO: BuildSteps
     """
     buildnumber = models.IntegerField(null = True, db_index = True)
     properties  = models.ManyToManyField(Property, related_name = 'builds')
@@ -85,16 +83,20 @@ class Build(models.Model):
                                          related_name = 'builds')
 
     def setProperty(self, name, value, source):
+        if name in ('buildername', 'buildnumber'):
+            # we have those in the db, ignore
+            return
         try:
             # First, see if we have the property, or a property of that name,
             # at least.
-            prop = self.properties.get(name = name, source = source)
-            if prop.value == value:
+            prop = self.properties.get(name = name)
+            if prop.value == value and prop.source == source:
                 # we already know this, we're done
                 return
             if prop.builds.count() < 2:
                 # this is our own property, set the new value
                 prop.value = value
+                prop.source = source
                 prop.save()
                 return
             # otherwise, unbind the property, and fake a DoesNotExist
@@ -107,15 +109,27 @@ class Build(models.Model):
         self.properties.add(prop)
         self.save()
 
-    def getProperty(self, name, source = None):
+    def getProperty(self, name, default = None):
+        if name == 'buildername':
+            # hardcode, we know that
+            return self.builder.name
+        if name == 'buildnumber':
+            # hardcode, we know that
+            return self.buildnumber
+        # all others are real properties, query the db
         try:
-            if source is None:
-                prop = self.properties.get(name = name)
-            else:
-                prop = self.properties.get(name = name, source = source)
+            prop = self.properties.get(name = name)
         except Property.DoesNotExist:
-            raise KeyError(name)
+            return default
         return prop.value
+
+    def propertiesAsList(self):
+        l = [(p.name, p.value, p.source) for p in self.properties.iterator()]
+        # hardcode buildername and buildnumber again
+        l += [('buildername', self.builder.name, 'Build'),
+              ('buildnumber', self.buildnumber, 'Build')]
+        l.sort()
+        return l
 
     def __unicode__(self):
         v = self.builder.name
