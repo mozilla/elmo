@@ -31,6 +31,9 @@ class Command(BaseCommand):
             builder = pickle.load(open(builderconf))
             builder.basedir = builderconf[:-8]
             builder.determineNextBuildNumber()
+            if buildername != builder.getName():
+                print '%s is %s in reality' % (buildername, builder.getName())
+                buildername = builder.getName()
             try:
                 dbbuilder = Builder.objects.get(name = buildername)
                 q = dbbuilder.builds.order_by('-pk').values_list('buildnumber', flat=True)

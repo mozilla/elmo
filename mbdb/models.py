@@ -24,7 +24,7 @@ class Tag(models.Model):
 class Change(models.Model):
     """Model for buildbot.changes.changes.Change"""
     number = models.PositiveIntegerField(primary_key = True)
-    branch = models.CharField(max_length = 20, null = True, blank = True)
+    branch = models.CharField(max_length = 100, null = True, blank = True)
     revision = models.CharField(max_length = 50, null = True, blank = True)
     who = models.CharField(max_length = 100, null = True, blank = True,
                            db_index = True)

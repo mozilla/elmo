@@ -1,8 +1,10 @@
+import operator
 import os.path
 
 from django.http import HttpResponse
 from django.template import Context, loader
 from django.shortcuts import render_to_response, get_object_or_404
+from django.db.models import Q
 
 from pushes.models import *
 from django.conf import settings
@@ -44,9 +46,16 @@ def default(request, repo_name):
         start = 0
     excludes = request.GET.getlist('exclude')
     paths = filter(None, request.GET.getlist('path'))
+    repo_parts = filter(None, request.GET.getlist('repo'))
     q = Push.objects
     if repo_name is not None:
         q = q.filter(repository__name = repo_name)
+    elif repo_parts:
+        repo_parts = map(lambda s:Q(repository__name__contains = s), repo_parts)
+        if len(repo_parts) == 1:
+            q = q.filter(repo_parts[0])
+        else:
+            q = q.filter(reduce(operator.or_, repo_parts))
     if excludes:
         q = q.exclude(repository__name__in = excludes)
     for p in paths:

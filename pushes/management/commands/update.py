@@ -73,8 +73,9 @@ class Command(BaseCommand):
                     else:
                         ui.readconfig(configpath)
                         hgrepo = repository(ui, repopath)
-                        pull(ui, hgrepo, force=False, update=False,
-                             rev=revisions)
+                        pull(ui, hgrepo, source = str(repo.url),
+                             force=False, update=False,
+                             rev=[])
                         update(ui, hgrepo)
                 except Exception, e:
                     print "failed for %s with %s" % (repo.name, e)

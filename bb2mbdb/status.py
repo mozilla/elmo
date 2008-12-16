@@ -65,6 +65,7 @@ def setupBridge(settings, config):
     os.environ['DJANGO_SETTINGS_MODULE'] = settings
 
     from bb2mbdb.utils import modelForChange, modelForLog, timeHelper
+    from mbdb.models import Builder, Build
 
     class Scheduler(BaseScheduler):
         def addChange(self, change):
@@ -124,9 +125,11 @@ def setupBridge(settings, config):
 
         def stepFinished(self, build, step, results):
             assert step == self.latestStep, "We lost a step somewhere"
+            log.msg("step finished with %s" % str(results))
             self.latestStep = None
             self.latestDbStep.endtime = timeHelper(step.getTimes()[1])
-            self.latestDbStep.result = results
+            # only the first is the result, the second is text2, ignore that.
+            self.latestDbStep.result = results[0]
             self.latestDbStep.save()
             self.latestDbStep = None
             pass
@@ -141,7 +144,15 @@ def setupBridge(settings, config):
     class StatusReceiver(StatusReceiverMultiService):
         '''StatusReceiver for buildbot to db bridge.
         '''
+        def setServiceParent(self, parent):
+            StatusReceiverMultiService.setServiceParent(self, parent)
+            self.setup()
+        def setup(self):
+            log.msg("mbdb subscribing")
+            status = self.parent.getStatus()
+            status.subscribe(self)
         def builderAdded(self, builderName, builder):
+            log.msg("adding %s to mbdb" % builderName)
             try:
                 dbbuilder = Builder.objects.get(name = builderName)
             except Builder.DoesNotExist:
@@ -150,13 +161,17 @@ def setupBridge(settings, config):
             if builder.category:
                 dbbuilder.category = builder.category
             dbbuilder.save()
+            log.msg("added %s to mbdb" % builderName)
+            return self
 
         def builderChangedState(self, builderName, state):
+            log.msg("%s changed state to %s" % (builderName, state))
             dbbuilder = Builder.objects.get(name = builderName)
             dbbuilder.bigState = state
             dbbuilder.save()
 
         def buildStarted(self, builderName, build):
+            log.msg("build started on  %s" % builderName)
             dbbuilder = Builder.objects.get(name = builderName)
             dbbuild = dbbuilder.builds.create(buildnumber = build.getNumber(),
                                               slavename = build.getSlavename(),
@@ -165,12 +180,13 @@ def setupBridge(settings, config):
             for key, value, source in build.getProperties().asList():
                 dbbuild.setProperty(key, value, source)
             for change in build.getChanges():
-                dbbuild.changes.add(utils.modelForChange(change))
+                dbbuild.changes.add(modelForChange(change))
             dbbuild.save()
 
             return BuildReceiver(dbbuild)
 
         def buildFinished(self, builderName, build, results):
+            log.msg("finished build on %s with %s" % (builderName, str(results)))
             dbbuild = Build.objects.get(builder__name = builderName,
                                         buildnumber = build.getNumber())
             dbbuild.endtime = timeHelper(build.getTimes()[1])
@@ -180,9 +196,11 @@ def setupBridge(settings, config):
             pass
 
         def builderRemoved(self, builderName):
+            log.msg("removing %s to mbdb" % builderName)
             # nothing to do here, afaict.
             pass
 
     if 'status' not in config:
         config['status'] = []
     config['status'].insert(0, StatusReceiver())
+    log.msg("Done setting up Bridge")

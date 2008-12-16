@@ -40,9 +40,10 @@ def modelForChange(change):
 
 def modelForLog(dbstep, logfile, isFinished = False):
     if not hasattr(logfile, 'getFilename'):
-        dbstep.logs.create(filename = None, html = logfile.html,
-                           isFinished = True)
+        log = dbstep.logs.create(filename = None, html = logfile.html,
+                                 isFinished = True)
     else:
         relfile = logfile.getFilename()[len(settings.BUILDMASTER_BASE)+1:]
-        dbstep.logs.create(filename = relfile, html = None,
-                           isFinished = isFinished)
+        log = dbstep.logs.create(filename = relfile, html = None,
+                                 isFinished = isFinished)
+    return log
