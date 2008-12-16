@@ -82,7 +82,6 @@ INSTALLED_APPS = (
     'mbdb',
     'pushes',
     'status',
-    'signoff',
 )
 
 # dashboard's own settings
