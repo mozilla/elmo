@@ -40,12 +40,12 @@ class Command(BaseCommand):
                 if q.count():
                     firstBuild = q[0] + 1
                 else:
-                    firstBuild = 1
+                    firstBuild = 0
             except:
                 dbbuilder = Builder.objects.create(name = buildername,
                                                    category = builder.category,
                                                    bigState = builder.currentBigState)
-                firstBuild = 1
+                firstBuild = 0
                 print "Created %s" % dbbuilder
             try:
                 firstBuild = int(raw_input('First build number (%d): ' % firstBuild))
