@@ -6,6 +6,7 @@ from datetime import datetime
 from mbdb.models import Change, Tag, File, Log
 from django.conf import settings
 
+from twisted.python import log
 
 def timeHelper(t):
     if t is None:
@@ -40,10 +41,10 @@ def modelForChange(change):
 
 def modelForLog(dbstep, logfile, isFinished = False):
     if not hasattr(logfile, 'getFilename'):
-        log = dbstep.logs.create(filename = None, html = logfile.html,
-                                 isFinished = True)
+        logf = dbstep.logs.create(filename = None, html = logfile.html,
+                                  isFinished = True)
     else:
         relfile = logfile.getFilename()[len(settings.BUILDMASTER_BASE)+1:]
-        log = dbstep.logs.create(filename = relfile, html = None,
-                                 isFinished = isFinished)
-    return log
+        logf = dbstep.logs.create(filename = relfile, html = None,
+                                  isFinished = isFinished)
+    return logf

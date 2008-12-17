@@ -172,11 +172,17 @@ def setupBridge(settings, config):
 
         def buildStarted(self, builderName, build):
             log.msg("build started on  %s" % builderName)
-            dbbuilder = Builder.objects.get(name = builderName)
-            dbbuild = dbbuilder.builds.create(buildnumber = build.getNumber(),
-                                              slavename = build.getSlavename(),
-                                              starttime = timeHelper(build.getTimes()[0]),
-                                              reason = build.getReason())
+            builder = Builder.objects.get(name = builderName)
+            dbbuild, created = \
+                builder.builds.get_or_create(buildnumber = build.getNumber(),
+                                             slavename = build.getSlavename(),
+                                             starttime = timeHelper(build.getTimes()[0]),
+                                             reason = build.getReason())
+            if not created:
+                log.msg("%s build %d not created, endtime is %s" %
+                        (builderName, build.getNumber(), dbbuild.endtime))
+                log.msg("not watch this build, to make sure")
+                return
             for key, value, source in build.getProperties().asList():
                 dbbuild.setProperty(key, value, source)
             for change in build.getChanges():
@@ -193,6 +199,7 @@ def setupBridge(settings, config):
             dbbuild.result = results
             for key, value, source in build.getProperties().asList():
                 dbbuild.setProperty(key, value, source)
+            dbbuild.save()
             pass
 
         def builderRemoved(self, builderName):
