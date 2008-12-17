@@ -9,6 +9,10 @@ from django.conf import settings
 
 def iterOverBuilds(builder, dbbuilder, buildername, start):
     for i in xrange(start, builder.nextBuildNumber):
+        build = builder.getBuild(i)
+        if build is None:
+            # we're missing a build of this number
+            continue
         yield {'buildername' : buildername,
                'buildnumber' : i,
                'build'       : builder.getBuild(i),
