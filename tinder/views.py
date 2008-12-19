@@ -112,7 +112,7 @@ def _waterfall(request):
                 pass
         if 'hours' in request.GET:
             try:
-                start_t = end_t - timedelta(1)*12/int(request.GET['hours'])
+                start_t = end_t - timedelta(1)/24*int(request.GET['hours'])
             except Exception:
                 pass
         timeopts = ['endtime', 'starttime', 'hours']
