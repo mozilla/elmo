@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load build_extras %}
+{% block title_matter %}{{ build.builder.name }} build {{ build.buildnumber }}{% endblock %}
+{% block head_matter %}
+{% endblock %}
+{% block content %}
+<h1>{{ build.builder.name }} build {{ build.buildnumber }}</h1>
+<dl>
+{% for step in steps %}
+<dt>{{ step.text|join:" " }}</dt>
+<dd>
+  {% for log in step.logs.all %}
+  {# XXX temporary URL pointing to buildbot log output #}
+  <a href="/buildbot/builders/{{build.builder.name}}/builds/{{build.buildnumber}}/steps/{{step.name}}/logs/{{log.name}}">{{log.name}}</a>
+  {% endfor %}
+  {{ step.starttime|timedelta:step.endtime }}</dd>
+{% endfor %}
+</dl>
+<p>Total build time was
+{{build.starttime|timedelta:build.endtime}}</p>
+Build properties:
+<table>
+{% for p in props %}
+<tr><td>{{ p.0 }}</td><td>{{ p.1 }}</td></tr>
+{% endfor %}
+</table>
+{% endblock %}

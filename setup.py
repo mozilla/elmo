@@ -9,4 +9,9 @@ setup(name='djangosite',
       author_email='l10n@mozilla.com',
       url='https://wiki.mozilla.org/L10n',
       packages=find_packages(),
+      package_data = {
+        'l10n_site': ['*.html'],
+        'pushes': ['*.html'],
+        'tinder': ['*.html'],
+        },
      )

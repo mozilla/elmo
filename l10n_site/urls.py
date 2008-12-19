@@ -8,6 +8,8 @@ admin.autodiscover()
 urlpatterns = patterns('',
     # Example:
     # (r'^dashboard/', include('dashboard.foo.urls')),
+                       (r'^builds/',
+                        include('tinder.urls')),
                        (r'^pushes/(?:(?P<repo_name>.*)/)?$',
                         'pushes.views.default'),
                        (r'^pushdetail/(?P<push>\d+)$',

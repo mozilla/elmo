@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load build_extras %}
+{% block title_matter %}Waterfall{% endblock %}
+{% block head_matter %}
+<script type="application/javascript">
+</script>
+<style type="text/css">
+.success {background-color: rgba(0, 128, 0, 0.5);}
+.warning {background-color: rgba(255, 165, 0, 0.5);}
+.failure {background-color: rgba(255, 0, 0, 0.5);}
+.skip {background-color: yellow;}
+.except {background-color: purple;}
+td.build {min-height: 1em;}
+td.step {min-height: 1em;}
+td.white {vertical-align: bottom;}
+table#water {empty-cells: show; }
+td {padding: 0.25em;}
+th {padding: 0.25em;}
+</style>
+{% endblock %}
+{% block content %}
+<h1>Waterfall</h1>
+<table id="water" border="1" cellspacing="0">
+  <thead>
+    <tr>
+      {% for head in heads %}
+      <th colspan="{{head.span}}">{{head.name}}</th>
+      {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+	{% for cell in row %}
+	<td rowspan="{{cell.rowspan}}" class="{{cell.class}}">
+	  {{ cell.obj|showbuild }}
+	</td>
+	{% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

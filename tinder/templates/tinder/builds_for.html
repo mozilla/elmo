@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load build_extras %}
+{% block title_matter %}Builds for change {{ change.number }}{% endblock %}
+{% block head_matter %}
+<script type="application/javascript">
+</script>
+<style type="text/css">
+.success {background-color: green;}
+.warning {background-color: orange;}
+.failure {background-color: red;}
+.skip {background-color: yellow;}
+.except {background-color: purple;}
+.buildbox {float: left; padding: 0.25em; margin: 0.25em;}
+</style>
+{% endblock %}
+{% block content %}
+<h1>Builds for change {{change.number}}</h1>
+<p>
+{{ change.who }}
+</p>
+<p>
+{{ change.comments }}
+</p>
+{% for build in done_builds %}
+<div class="buildbox {{ build.class }}">
+  {{ build.build|showbuild }}
+</div>
+{% endfor %}
+{% endblock %}
