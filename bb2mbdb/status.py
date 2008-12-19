@@ -130,6 +130,8 @@ def setupBridge(settings, config):
             self.latestDbStep.endtime = timeHelper(step.getTimes()[1])
             # only the first is the result, the second is text2, ignore that.
             self.latestDbStep.result = results[0]
+            self.latestDbStep.text = step.getText()
+            self.latestDbStep.text2 = step.text2
             self.latestDbStep.save()
             self.latestDbStep = None
             pass
