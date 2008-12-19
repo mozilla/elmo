@@ -155,6 +155,7 @@ class URL(models.Model):
 
 
 class Log(models.Model):
+    name = models.CharField(max_length = 100, null = True, blank = True)
     filename = models.CharField(max_length = 200, unique = True,
                                 null = True, blank = True)
     step = models.ForeignKey(Step, related_name = 'logs')
@@ -164,6 +165,6 @@ class Log(models.Model):
     def __unicode__(self):
         if self.filename:
             return self.filename
-        return '<HTMLLog>'
+        return 'HTMLLog %d' % self.id
 
         

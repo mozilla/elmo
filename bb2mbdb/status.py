@@ -64,6 +64,10 @@ def setupBridge(settings, config):
 
     os.environ['DJANGO_SETTINGS_MODULE'] = settings
 
+    import bb2mbdb.utils
+    reload(bb2mbdb.utils)
+    import mbdb.models
+    reload(mbdb.models)
     from bb2mbdb.utils import modelForChange, modelForLog, timeHelper
     from mbdb.models import Builder, Build
 
@@ -126,14 +130,17 @@ def setupBridge(settings, config):
         def stepFinished(self, build, step, results):
             assert step == self.latestStep, "We lost a step somewhere"
             log.msg("step finished with %s" % str(results))
-            self.latestStep = None
-            self.latestDbStep.endtime = timeHelper(step.getTimes()[1])
-            # only the first is the result, the second is text2, ignore that.
-            self.latestDbStep.result = results[0]
-            self.latestDbStep.text = step.getText()
-            self.latestDbStep.text2 = step.text2
-            self.latestDbStep.save()
-            self.latestDbStep = None
+            try:
+                self.latestStep = None
+                self.latestDbStep.endtime = timeHelper(step.getTimes()[1])
+                # only the first is the result, the second is text2, ignore that.
+                self.latestDbStep.result = results[0]
+                self.latestDbStep.text = step.getText()
+                self.latestDbStep.text2 = step.text2
+                self.latestDbStep.save()
+                self.latestDbStep = None
+            except Exception, e:
+                log.msg(str(e))
             pass
 
         def buildETAUpdate(self, build, ETA):
