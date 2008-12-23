@@ -4,22 +4,26 @@
 {% block head_matter %}
 <script type="application/javascript">
 </script>
+<link rel="stylesheet" type="text/css"
+href="{% url static path="waterfall.css" %}">
 <style type="text/css">
-.success {background-color: rgba(0, 128, 0, 0.5);}
-.warning {background-color: rgba(255, 165, 0, 0.5);}
-.failure {background-color: rgba(255, 0, 0, 0.5);}
-.skip {background-color: yellow;}
-.except {background-color: purple;}
-td.build {min-height: 1em;}
-td.step {min-height: 1em;}
-td.white {vertical-align: bottom;}
-table#water {empty-cells: show; }
-td {padding: 0.25em;}
-th {padding: 0.25em;}
+
 </style>
 {% endblock %}
 {% block content %}
 <h1>Waterfall</h1>
+  <div class="timesintro">
+    Showing builds from {{ times.start_t|date:"M j, H:i" }} until
+    {{ times.end_t|date:"M j Y, H:i T" }}.
+  </div>
+  {% if not times.isEnd %}
+  <div class="previous links">
+  Builds for the previous
+    {% for h in times.hourlist %}
+    <a href="?{{ filters }}hours={{ h }}&starttime={{ times.end }}">{{ h }}</a>
+    {% endfor %} hours.
+  </div>
+  {% endif %}
 <table id="water" border="1" cellspacing="0">
   <thead>
     <tr>
@@ -40,4 +44,10 @@ th {padding: 0.25em;}
       {% endfor %}
     </tbody>
   </table>
+  <div class="next links">
+  Builds for the next 
+    {% for h in times.hourlist %}
+    <a href="?{{ filters }}hours={{ h }}&endtime={{ times.start }}">{{ h }}</a>
+    {% endfor %} hours.
+  </div>
 {% endblock %}

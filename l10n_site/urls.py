@@ -25,8 +25,12 @@ urlpatterns = patterns('',
     (r'^admin/(.*)', admin.site.root),
 )
 
-
-if settings.DEBUG:
-    urlpatterns += patterns('',
-        (r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': 'static/'}),
-    )
+# Usually, you would include this only for DEBUG, but let's keep
+# this so that we can reverse resolve static.
+# That way, we can move the site to /stage/foo without messing with
+# the references to /static/.
+urlpatterns += patterns('',
+                        (r'^static/(?P<path>.*)$',
+                         'django.views.static.serve',
+                         {'document_root': 'static/'}, 'static'),
+                        )

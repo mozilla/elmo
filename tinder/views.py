@@ -6,6 +6,7 @@ from django.http import HttpResponse, HttpResponseNotFound
 
 import operator
 from datetime import datetime, timedelta
+import calendar
 from mbdb.models import *
 
 
@@ -99,12 +100,15 @@ def _waterfall(request):
     start_t = end_t - timedelta(1)/2
     buildf = {}
     props = []
+    isEnd = True
+    filters = None
     if request is not None:
         if 'endtime' in request.GET:
             try:
                 end_t = datetime.utcfromtimestamp(int(request.GET['endtime']))
             except Exception:
                 pass
+            isEnd = False
         if 'starttime' in request.GET:
             try:
                 start_t = datetime.utcfromtimestamp(int(request.GET['starttime']))
@@ -112,10 +116,19 @@ def _waterfall(request):
                 pass
         if 'hours' in request.GET:
             try:
-                start_t = end_t - timedelta(1)/24*int(request.GET['hours'])
+                td = timedelta(1)/24*int(request.GET['hours'])
+                if 'starttime' in request.GET and 'endtime' not in request.GET:
+                    end_t = start_t + td
+                    isEnd = False
+                else:
+                    start_t = end_t - td
             except Exception:
                 pass
         timeopts = ['endtime', 'starttime', 'hours']
+        filters = request.GET.copy()
+        for opt in timeopts:
+            if opt in filters:
+                filters.pop(opt)
         builderopts = ['name', 'category']
         buildopts = ['slavename']
         for k, v in request.GET.items():
@@ -127,7 +140,13 @@ def _waterfall(request):
                 buildf[str(k)] = v
             else:
                 props.append(Property.objects.filter(name=k).filter(value=v))
-        
+
+    # get the real hours, for consecutive queries
+    time_d = end_t - start_t
+    hours = int(round(time_d.seconds/3600.0))
+    if time_d.days:
+        hours += time_d.days * 24
+
     q_buildsdone = Build.objects.filter(endtime__gt = start_t,
                                         starttime__lte = end_t)
     if buildf:
@@ -159,7 +178,7 @@ def _waterfall(request):
                                                      flat=True).distinct()))
     cols = dict((builder, BColumn(builder)) for builder in builders)
     blame = BColumn('blame')
-    for time, type_, obj in events:
+    for t, type_, obj in events:
         if type_ == 'change':
             # ignore for now, blame column
             blame.changeCell('open', 'white', obj)
@@ -192,7 +211,26 @@ def _waterfall(request):
     for bcol in cols.values():
         bcol.finish()
 
-    return blame.cols[0], cols
+    if filters:
+        filters = filters.urlencode() + '&'
+    else:
+        filters = ''
+    def timestamp(dto):
+        return "%d" % calendar.timegm(dto.utctimetuple())
+    if blame.cols:
+        bcol = blame.cols[0]
+    else:
+        bcol = []
+    hourlist = [12, 24]
+    if hours in hourlist:
+        hourlist.remove(hours)
+    hourlist.insert(0, hours)
+    return bcol, cols, filters, {'start': timestamp(start_t),
+                                 'end': timestamp(end_t),
+                                 'start_t': start_t,
+                                 'end_t': end_t,
+                                 'hourlist': hourlist,
+                                 'hours': hours, 'isEnd': isEnd}
 
 def waterfall(request):
     '''Waterfall view
@@ -201,7 +239,7 @@ def waterfall(request):
     to the template.
 
     '''
-    blame, buildercolumns = _waterfall(request)
+    blame, buildercolumns, filters, times = _waterfall(request)
     builders = sorted(buildercolumns.keys())
     head = [{'name': 'blame', 'span': 1}]
     head += [{'name': b, 'span': buildercolumns[b].width}
@@ -210,9 +248,12 @@ def waterfall(request):
     spans = []
     bmap = {}
     i = j = -1
-    bl = blame.pop(0)
-    rows[0].append(bl)
-    blspan = bl['rowspan']
+    try:
+        bl = blame.pop(0)
+        rows[0].append(bl)
+        blspan = bl['rowspan']
+    except:
+        blspan = 0
     for b in builders:
         i += 1
         for col in buildercolumns[b].cols:
@@ -246,7 +287,8 @@ def waterfall(request):
                         spans[j] = 0
         rows.append(row)
     return render_to_response('tinder/waterfall.html', 
-                              {'heads': head,
+                              {'times': times, 'filters': filters,
+                               'heads': head,
                                'rows': rows})
 
 def builds_for_change(request):
