@@ -1,0 +1,164 @@
+[
+  {
+    "pk": 1, 
+    "model": "mbdb.file", 
+    "fields": {
+      "path": "l10n/af/browser/file"
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "mbdb.change", 
+    "fields": {
+      "files": [
+        1
+      ], 
+      "tags": [], 
+      "who": "John Doe", 
+      "when": "2008-12-25 14:00:00", 
+      "comments": null, 
+      "branch": "HEAD", 
+      "revision": null
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "mbdb.property", 
+    "fields": {
+      "source": "Scheduler", 
+      "name": "app", 
+      "value": "browser"
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "mbdb.property", 
+    "fields": {
+      "source": "Build", 
+      "name": "branch", 
+      "value": "HEAD"
+    }
+  }, 
+  {
+    "pk": 3, 
+    "model": "mbdb.property", 
+    "fields": {
+      "source": "Scheduler", 
+      "name": "en_branch", 
+      "value": "HEAD"
+    }
+  }, 
+  {
+    "pk": 4, 
+    "model": "mbdb.property", 
+    "fields": {
+      "source": "Scheduler", 
+      "name": "l10n_branch", 
+      "value": "HEAD"
+    }
+  }, 
+  {
+    "pk": 5, 
+    "model": "mbdb.property", 
+    "fields": {
+      "source": "Scheduler", 
+      "name": "locale", 
+      "value": "af"
+    }
+  }, 
+  {
+    "pk": 6, 
+    "model": "mbdb.property", 
+    "fields": {
+      "source": "Scheduler", 
+      "name": "needsCheckout", 
+      "value": true
+    }
+  }, 
+  {
+    "pk": 7, 
+    "model": "mbdb.property", 
+    "fields": {
+      "source": "Build", 
+      "name": "revision", 
+      "value": null
+    }
+  }, 
+  {
+    "pk": 8, 
+    "model": "mbdb.property", 
+    "fields": {
+      "source": "Scheduler", 
+      "name": "scheduler", 
+      "value": "l10n"
+    }
+  }, 
+  {
+    "pk": 9, 
+    "model": "mbdb.property", 
+    "fields": {
+      "source": "BuildSlave", 
+      "name": "slavename", 
+      "value": "bot1"
+    }
+  }, 
+  {
+    "pk": 10, 
+    "model": "mbdb.property", 
+    "fields": {
+      "source": "Scheduler", 
+      "name": "tree", 
+      "value": "fx_tree"
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "mbdb.builder", 
+    "fields": {
+      "category": null, 
+      "bigState": "idle", 
+      "name": "dummy"
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "mbdb.build", 
+    "fields": {
+      "builder": 1, 
+      "buildnumber": 0, 
+      "slavename": "bot1", 
+      "reason": "fx_tree af", 
+      "result": 0, 
+      "starttime": "2008-12-25 14:08:00", 
+      "endtime": "2008-12-25 14:08:01", 
+      "changes": [
+        1
+      ], 
+      "properties": [
+        1, 
+        2, 
+        3, 
+        4, 
+        5, 
+        6, 
+        7, 
+        8, 
+        9, 
+        10
+      ]
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "mbdb.step", 
+    "fields": {
+      "name": "dummy", 
+      "text": ["delay"], 
+      "text2": [""], 
+      "result": 0, 
+      "starttime": "2008-12-25 14:08:00", 
+      "endtime": "2008-12-25 14:08:01", 
+      "build": 1
+    }
+  }
+]

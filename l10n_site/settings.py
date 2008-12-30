@@ -82,6 +82,7 @@ INSTALLED_APPS = (
     'mbdb',
     'pushes',
     'status',
+    'tinder',
 )
 
 # dashboard's own settings
