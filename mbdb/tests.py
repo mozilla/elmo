@@ -3,6 +3,7 @@
 
 from django.test import TestCase
 from django.db import models
+from django.core.management.commands.dumpdata import Command as Dumpdata
 from fields import PickledObjectField
 
 class TestingModel(models.Model):
@@ -42,3 +43,16 @@ class PickledObjectFieldTests(TestCase):
             model_test.save()
             self.assertEquals(value, TestingModel.objects.get(pickle_field__exact=value).pickle_field)
             model_test.delete()
+
+    def testFixture(self):
+        """Tests that values can be serialized to a fixture.
+
+        XXX BROKEN, see django http://code.djangoproject.com/ticket/9522
+
+        """
+        for value in self.testing_data:
+            model_test = TestingModel(pickle_field=value)
+            model_test.save()
+        dumpdata = Dumpdata()
+        json = dumpdata.handle('mbdb')
+        pass
