@@ -1,4 +1,5 @@
 import unittest
+import os
 from django.test import TestCase
 
 from tinder.views import _waterfall, waterfall
@@ -30,7 +31,39 @@ class WaterfallStarted(TestCase):
         self.assertEqual(build_rows[2][0]['obj'], None)
 
     def testHtml(self):
-        rv = waterfall(None)
+        resp = waterfall(None)
+        self.assertTrue(resp.status_code, 200)        
+        self.assertTrue(len(resp.content) > 0, 'Html content should be there')
+
+class WaterfallParallel(TestCase):
+    fixtures = ['parallel_builds.json']
+
+    def testInner(self):
+        '''Testing parallel builds in _waterfall'''
+        blame, buildercolumns, filters, times = _waterfall(None)
+
+    def testHtml(self):
+        '''Testing parallel builds in _waterfall'''
+        resp = waterfall(None)
+        self.assertTrue(resp.status_code, 200)        
+        self.assertTrue(len(resp.content) > 0, 'Html content should be there')
+
+class FullBuilds(TestCase):
+    fixtures = ['full_parallel_ builds.json']
+
+    def testInner(self):
+        '''Testing full build list in _waterfall'''
+        blame, buildercolumns, filters, times = _waterfall(None)
+
+    def testForBuild(self):
+        pass
+
+from windmill.authoring import djangotest
+class WindMillTest(djangotest.WindmillDjangoUnitTest):
+    test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'windmilltests')
+    browser = 'firefox'
+    fixtures = ['full_parallel_builds.json']
+
+    def testTest(self):
         import pdb
         pdb.set_trace()
-        self.assertTrue(len(rv.content) > 0, 'Html content should be there')

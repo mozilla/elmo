@@ -49,17 +49,20 @@ class BColumn(object):
                 self.cols.append([cell])
                 return
             # try to find a free column
+            hasEmptyCol = False
             for i in xrange(len(self.cols)):
                 if self.cols[i][0]['class'] == 'white':
                     # found the right column
+                    hasEmptyCol = True
                     break
-            if i >= len(self.cols):
+            if not hasEmptyCol:
                 # we don't have an free column, add a new one
                 # first, fill it up with an empty cell
                 oldrows = sum(map(lambda c: c['rowspan'], self.cols[0]))
                 self.cols.append([{'class': 'white',
                                'obj': None,
                                'rowspan': oldrows}])
+                i = len(self.cols) - 1
             # add cell, increase rowspan of all others
             for j in xrange(len(self.cols)):
                 if j == i:
@@ -261,6 +264,8 @@ def _waterfall(request):
     blame = BColumn('blame')
     for t, type_, obj in ievents(q_buildsdone, q_changes):
         debug_(type_)
+        if isinstance(obj, Build):
+            debug_(str(obj.buildnumber))
         if type_.endswith('change'):
             if type_.startswith('end'):
                 open_or_close = 'close'
@@ -340,8 +345,7 @@ def builds_for_change(request):
     running = []
     done = []
     for b in builds:
-        if b.endtime is not None:
-            done.append({'build': b, 'class': resultclasses[b.result]})
+        done.append({'build': b, 'class': resultclasses[b.result]})
     
     return render_to_response('tinder/builds_for.html',
                               {'done_builds': done,
