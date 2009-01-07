@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 try:
     import cPickle as pickle
@@ -54,11 +55,16 @@ class ListField(models.Field):
     
     def to_python(self, value):
         if hasattr(value, 'split'):
+            if settings.DATABASE_ENGINE != 'mysql':
+                value = value.decode('unicode-escape')
             return value.split('\0')
         return value
     
     def get_db_prep_save(self, value):
-        return '\0'.join(value)
+        rv = '\0'.join(value)
+        if settings.DATABASE_ENGINE != 'mysql':
+            rv = rv.encode('unicode-escape')
+        return rv
     
     def get_internal_type(self): 
         return 'TextField'

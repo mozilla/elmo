@@ -1,0 +1,23 @@
+[
+ {
+   "pk": 1,
+     "model": "mbdb.list",
+     "fields": {
+     "items": "one string"
+       }
+ },
+ {
+   "pk": 2,
+     "model": "mbdb.list",
+     "fields": {
+     "items": ["Array", "of", "strings"]
+       }
+ },
+ {
+   "pk": 3,
+     "model": "mbdb.list",
+     "fields": {
+     "items": "Joined\u0000list\u0000of\u0000strings"
+       }
+ }
+]

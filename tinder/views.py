@@ -138,9 +138,14 @@ def _waterfall(request):
     of waterfall for testing purposes.
 
     '''
-    end_t = max(Build.objects.order_by('-pk')[0].starttime,
-                Change.objects.order_by('-pk')[0].when)
-    start_t = end_t - timedelta(1)/2
+    try:
+        end_t = max(Build.objects.order_by('-pk')[0].starttime,
+                    Change.objects.order_by('-pk')[0].when)
+        start_t = end_t - timedelta(1)/2
+    except IndexError:
+        # wallpaper against an empty build database
+        end_t = datetime.max
+        start_t = datetime.min
     buildf = {}
     props = []
     isEnd = True

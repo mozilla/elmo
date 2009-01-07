@@ -4,10 +4,13 @@
 from django.test import TestCase
 from django.db import models
 from django.core.management.commands.dumpdata import Command as Dumpdata
-from fields import PickledObjectField
+from fields import PickledObjectField, ListField
 
 class TestingModel(models.Model):
     pickle_field = PickledObjectField()
+
+class List(models.Model):
+    items = ListField()
 
 class TestCustomDataType(str):
     pass
@@ -56,3 +59,29 @@ class PickledObjectFieldTests(TestCase):
         dumpdata = Dumpdata()
         json = dumpdata.handle('mbdb')
         pass
+
+class PickleFixtureLoad(TestCase):
+    fixtures = ['pickle_sample.json']
+
+    def testUnpickle(self):
+        self.failUnlessEqual(TestingModel.objects.count(), 3)
+        v = TestingModel.objects.get(pk=1).pickle_field
+        self.assertEquals(v, u"one string")
+        self.assert_(isinstance(v, unicode))
+        v = TestingModel.objects.get(pk=2).pickle_field
+        self.assert_(isinstance(v, unicode))
+        self.assertEquals(v, u"one pickled string")
+        v = TestingModel.objects.get(pk=3).pickle_field
+        self.assertEquals(v, ['pickled', 'array'])
+
+class ListFixtureLoad(TestCase):
+    fixtures = ['list_field_sample.json']
+
+    def testUnpickle(self):
+        self.failUnlessEqual(List.objects.count(), 3)
+        v = List.objects.get(pk=1).items
+        self.assertEquals(v, [u"one string"])
+        v = List.objects.get(pk=2).items
+        self.assertEquals(v, [u'Array',u'of',u'strings'])
+        v = List.objects.get(pk=3).items
+        self.assertEquals(v, [u'Joined', u'list', u'of', u'strings'])

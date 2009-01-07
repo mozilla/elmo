@@ -49,7 +49,7 @@ class WaterfallParallel(TestCase):
         self.assertTrue(len(resp.content) > 0, 'Html content should be there')
 
 class FullBuilds(TestCase):
-    fixtures = ['full_parallel_ builds.json']
+    fixtures = ['full_parallel_builds.json']
 
     def testInner(self):
         '''Testing full build list in _waterfall'''
@@ -58,12 +58,12 @@ class FullBuilds(TestCase):
     def testForBuild(self):
         pass
 
-from windmill.authoring import djangotest
-class WindMillTest(djangotest.WindmillDjangoUnitTest):
-    test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'windmilltests')
-    browser = 'firefox'
-    fixtures = ['full_parallel_builds.json']
-
-    def testTest(self):
-        import pdb
-        pdb.set_trace()
+#from windmill.authoring import djangotest
+#class WindMillTest(djangotest.WindmillDjangoUnitTest):
+#    test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'windmilltests')
+#    browser = 'firefox'
+#    fixtures = ['full_parallel_builds.json']
+#
+#    def testTest(self):
+#        import pdb
+#        pdb.set_trace()
