@@ -37,7 +37,7 @@
 
 import os
 
-from buildbot.status.base import StatusReceiverMultiService
+from buildbot.status.base import StatusReceiverMultiService, StatusReceiver
 from buildbot.scheduler import BaseScheduler
 from twisted.python import log
 
@@ -85,12 +85,20 @@ def setupBridge(settings, config):
     config['schedulers'].insert(0, Scheduler('bb2mbdb'))
 
 
-    class StepReceiver(object):
+    class StepReceiver(StatusReceiver):
         '''Build- and StatusReceiver helper objects to receive all
         events for a particular step.
         '''
         def __init__(self, dbstep):
             self.step = dbstep
+
+        def stepTextChanged(self, build, step, text):
+            self.step.text = text
+            self.step.save()
+
+        def stepText2Changed(self, build, step, text2):
+            self.step.text2 = text2
+            self.step.save()
 
         def logStarted(self, build, step, log):
             self.log = modelForLog(self.step, log)
@@ -110,7 +118,7 @@ def setupBridge(settings, config):
 
 
 
-    class BuildReceiver(object):
+    class BuildReceiver(StatusReceiver):
         '''StatusReceiver helper object to receive all events
         for a particular build.
         Caches the database model object.
@@ -150,7 +158,7 @@ def setupBridge(settings, config):
 
             
 
-    class StatusReceiver(StatusReceiverMultiService):
+    class MyStatusReceiver(StatusReceiverMultiService):
         '''StatusReceiver for buildbot to db bridge.
         '''
         def setServiceParent(self, parent):
@@ -218,5 +226,5 @@ def setupBridge(settings, config):
 
     if 'status' not in config:
         config['status'] = []
-    config['status'].insert(0, StatusReceiver())
+    config['status'].insert(0, MyStatusReceiver())
     log.msg("Done setting up Bridge")
