@@ -91,9 +91,11 @@ class Command(BaseCommand):
                 p.save()
                 for revision in data['changesets']:
                     cs = Changeset(push = p, revision = revision)
-                    cs.save()
                     try:
                         ctx = hgrepo.changectx(cs.revision)
+                        cs.user = ctx.user()
+                        cs.description = ctx.description()
+                        cs.save()
                         for path in ctx.files():
                             f, created = File.objects.get_or_create(path = path)
                             cs.files.add(f)

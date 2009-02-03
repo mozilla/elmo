@@ -4,7 +4,7 @@
 <script type="application/javascript"
 src="/static/jquery.js"></script>
 <script type="application/javascript"
-src="/static/thickbox-compressed.js"></script>
+src="{% url static path="thickbox-compressed.js" %}"></script>
 <link rel="stylesheet" href="/static/style-gitweb.css" type="text/css" >
 <link rel="stylesheet" href="/static/thickbox.css" type="text/css" >
 <script type="application/javascript">
@@ -28,23 +28,6 @@ var progress = {
   }
 };
 
-function onDisplayDetail(event, push) {
-  log("clicked on " + event.originalTarget.nodeName);
-  if (event.originalTarget.nodeName != "A") {
-    $('#pushdetail'+push).slideToggle("fast");
-  }
-}
-
-function onDetailHandler(push) {
-  function done(str, res, xhr) {
-    progress.done();
-    $('#pushdetail'+push).slideToggle("fast");
-    log("loaded " + push);
-  };
-  progress.load();
-  var li=$("#pushdetail" + push).load("/pushdetail/" + push,{},done).parent().parent()[0];
-  li.setAttribute("onclick", 'onDisplayDetail(event, '+push+')');
-}
 
 $(document).ready(function(){
   $('#search').click(function() {
@@ -101,15 +84,46 @@ function addSearch(select) {
 </div>
 {% if pushes %}
     <table>
-    {% for push in pushes %}
-      <tr class="{{push.class}}" onclick="onDetailHandler({{push.pk}});">
-	<td>{{push.user}}</td>
-	<td><a href="/pushes/{{push.repository__name}}/">{{push.repository__name}}</a></td>
-	<td>{{push.description}}
-	  <ul id="pushdetail{{push.pk}}" style="display: none"></ul>
-	</td>
-      </tr>
-    {% endfor %}
+      <thead>
+	<tr>
+	  <th>User<br />Date</th>
+	  <th>Repository</th>
+	  <th>Changeset</th>
+	  <th>Author &mdash; Description</th>
+	</tr>
+	</thead>
+	<tbody>
+	  {% for push in pushes %}
+	  <tr class="{{push.class}}">
+	    <td rowspan="{{push.span}}"><cite>{{push.push.user}}<br /><span class="date">{{push.push.push_date}}</span></cite></td>
+	    <td rowspan="{{push.span}}"><a href="{% url pushlog %}{{push.push.repository.name}}/">{{push.push.repository.name}}</a></td>
+	    <td class="age">
+	      <a href="{{push.push.repository.url}}rev/{{push.tip.revision}}"
+	      target="_blank">
+	      {{push.tip.revision|slice:":12"}}
+	      </a>
+	    </td>
+	    <td>
+	    <strong>{{push.tip.user}} &mdash;
+	      {{push.tip.description}}</strong>
+	    </td>
+	  </tr>
+	  {% for change in push.changesets %}
+	  <tr class="{{push.class}}">	  
+	    <td class="age">
+	      <a href="{{push.push.repository.url}}rev/{{change.revision}}"
+	      target="_blank">
+	      {{change.revision|slice:":12"}}
+	      </a>
+	    </td>
+	    <td>
+	    <strong>{{change.user}} &mdash;
+	      {{change.description}}</strong>
+	    </td>
+	  </tr>
+	  {% endfor %}
+	  {% endfor %}
+	</tbody>
     </table>
 {% else %}
     <p>No pushes in repository.</p>

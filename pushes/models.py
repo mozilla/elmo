@@ -33,5 +33,7 @@ else:
 
 class Changeset(models.Model):
     push = models.ForeignKey(Push)
-    revision = models.CharField(max_length=40)
+    revision = models.CharField(max_length=40, db_index=True)
+    user = models.CharField(null = True, blank = True, max_length=100, db_index=True)
+    description = models.TextField(null = True, blank = True, db_index=True)
     files = models.ManyToManyField(File)

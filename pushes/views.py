@@ -1,3 +1,4 @@
+from itertools import cycle
 import operator
 import os.path
 
@@ -35,7 +36,7 @@ def getHgDetails(repo_name, node, cache):
     return {'real_user': ctx.user(),
             'description': ctx.description()}
 
-def default(request, repo_name):
+def pushlog(request, repo_name):
     try:
         limit = int(request.GET['length'])
     except (ValueError, KeyError):
@@ -60,31 +61,13 @@ def default(request, repo_name):
         q = q.exclude(repository__name__in = excludes)
     for p in paths:
         q = q.filter(changeset__files__path__contains=p)
-    pushes = q.distinct().order_by('-push_date')[start:(start+limit-1)].values('user', 'pk', 'repository__name')
-    repo_cache = {}
-    odd = True
-    push_ids = map(lambda p: int(p['pk']), pushes)
-    changerevs = dict(Changeset.objects.filter(push__in=push_ids).order_by('pk').values_list('push','revision'))
-    for p in pushes:
-        d = getHgDetails(p['repository__name'], changerevs[p['pk']], repo_cache)
-        p.update(d)
-        p['class'] = 'parity%d' % odd
-        odd = not odd
-    t = loader.get_template('pushes/index.html')
-    c = Context({
-        'pushes': pushes
-    })
-
-    return HttpResponse(t.render(c))
-
-def push_details(request, push):
-    p = get_object_or_404(Push, pk=int(push))
-    changes =  p.changeset_set.order_by('-pk').values_list('revision',
-                                                           flat=True)
-    t = loader.get_template('pushes/push-details.html')
-    c = Context({
-        'changes': changes,
-        'baseurl': p.repository.url
-    })
-
-    return HttpResponse(t.render(c))
+    pushes = q.distinct().order_by('-push_date')[start:(start+limit-1)]
+    pushrows = [{'push': p,
+                 'tip': p.changeset_set.order_by('-pk')[0],
+                 'changesets': p.changeset_set.order_by('-pk')[1:],
+                 'class': 'parity%d' % odd,
+                 'span': p.changeset_set.count(),
+                 }
+                for p, odd in zip(pushes, cycle([1,0]))]
+    return render_to_response('pushes/pushlog.html',
+                              {'pushes': pushrows})
