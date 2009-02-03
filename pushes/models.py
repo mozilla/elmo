@@ -8,10 +8,17 @@ These models map the remote pushlog db from hg.mozilla.org onto
 a local database.
 """
 
+class Forest(models.Model):
+    name = models.CharField(max_length=100)
+    url = models.URLField()
+    def __unicode__(self):
+        return self.name
+
 class Repository(models.Model):
     name = models.CharField(max_length=100)
     url = models.URLField()
     last_known_push = models.PositiveIntegerField(default=0)
+    forest = models.ForeignKey(Forest, null=True, blank=True)
     def __unicode__(self):
         return self.name
 

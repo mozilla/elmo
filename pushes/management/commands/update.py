@@ -2,6 +2,7 @@ from datetime import datetime
 from optparse import make_option
 import os.path
 from urllib2 import urlopen, URLError
+from urlparse import urljoin
 
 import simplejson
 
@@ -34,7 +35,28 @@ class Command(BaseCommand):
         if args:
             repos = Repository.objects.filter(name__in = args)
         else:
-            repos = Repository.objects.all()
+            repos = list(Repository.objects.filter(forest__isnull = True))
+            # get the forests
+            for forest in Forest.objects.all():
+                url = forest.url + '?style=raw'
+                try:
+                    f = urlopen(url)
+                except URLError, e:
+                    print "Couldn't load %s\n  %s" % (forest.url,
+                                                      e.args[0][1])
+                links = filter(None, [link.strip() for link in f])
+                urls = map(lambda link: urljoin(url, link), links)
+                q = Repository.objects.filter(url__in = urls)
+                repos += list(q)
+                known_urls = q.values_list('url', flat=True)
+                for i in xrange(len(urls)):
+                    if urls[i] in known_urls:
+                        continue
+                    name = links[i].strip('/')
+                    if not quiet:
+                        print "adding %s: %s" % (name, urls[i])
+                    r = Repository.objects.create(name = name, url = urls[i])
+                    repos.append(r)
         for repo in repos:
             url = '%sjson-pushes?startID=%d&endID=%d' % (
                 repo.url,
