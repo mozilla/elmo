@@ -2,11 +2,11 @@
 {% block title_matter %}Pushes{% endblock %}
 {% block head_matter %}
 <script type="application/javascript"
-src="/static/jquery.js"></script>
+src="{% url static path="jquery.js" %}"></script>
 <script type="application/javascript"
 src="{% url static path="thickbox-compressed.js" %}"></script>
-<link rel="stylesheet" href="/static/style-gitweb.css" type="text/css" >
-<link rel="stylesheet" href="/static/thickbox.css" type="text/css" >
+<link rel="stylesheet" href="{% url static path="style-gitweb.css" %}" type="text/css" >
+<link rel="stylesheet" href="{% url static path="thickbox.css" %}" type="text/css" >
 <script type="application/javascript">
 function log(msg) {
   if (window.console && console.log) {
