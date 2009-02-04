@@ -25,9 +25,11 @@ def handlePushes(page, repo):
        [])
     ui = _ui()
     repopath = os.path.join(settings.REPOSITORY_BASE,
-                            repo.name, '')
+                            repo.name)
     configpath = os.path.join(repopath, '.hg', 'hgrc')
     if not os.path.isfile(configpath):
+        if not os.path.isdir(repopath):
+            os.makedirs(os.path.dirname(repopath))
         clone(ui, str(repo.url), str(repopath),
               pull=False, uncompressed=False, rev=[],
               noupdate=False)
