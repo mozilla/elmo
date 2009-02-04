@@ -48,8 +48,8 @@ def getPoller(options):
                 for forest in Forest.objects.all():
                     url = str(forest.url + '?style=raw')
                     d = getPage(url, timeout = self.timeout)
-                    d.addCallback(self.gotForest, forest.url)
-                    d.addErrback(self.failedForest, forest.url)
+                    d.addCallback(self.gotForest, forest)
+                    d.addErrback(self.failedForest, forest)
                     self.runnings += 1
                 return
             repo = self.repos.pop()
@@ -64,13 +64,13 @@ def getPoller(options):
             self.runnings += 1
             
 
-        def gotForest(self, page, url):
+        def gotForest(self, page, forest):
             self.runnings -= 1
             if self.runnings == 0:
                 # done with forests, reset our parallels back to max parallels
                 self.parellels = 2
             links = filter(None, re.split(r'\s+', page))
-            urls = map(lambda link: urljoin(url, link), links)
+            urls = map(lambda link: urljoin(forest.url, link), links)
             q = Repository.objects.filter(url__in = urls)
             self.repos += list(q)
             known_urls = q.values_list('url', flat=True)
@@ -80,11 +80,12 @@ def getPoller(options):
                 name = links[i].strip('/')
                 if not False:
                     log.msg("adding %s: %s" % (name, urls[i]))
-                r = Repository.objects.create(name = name, url = urls[i])
+                r = Repository.objects.create(name = name, url = urls[i],
+                                              forest = forest)
                 self.repos.append(r)
 
-        def failedForest(self, failure, url):
-            log.err(failure, "failed to load %s" % url)
+        def failedForest(self, failure, forest):
+            log.err(failure, "failed to load %s" % forest.name)
         def jsonErr(self, failure, repo):
             log.err(failure, "failed to load json for %s" % repo.name)
 
