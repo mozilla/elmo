@@ -57,8 +57,8 @@ def handlePushes(page, repo):
             cs = Changeset(push = p, revision = revision)
             try:
                 ctx = hgrepo.changectx(cs.revision)
-                cs.user = ctx.user()
-                cs.description = ctx.description()
+                cs.user = ctx.user().decode('utf-8', 'replace')
+                cs.description = ctx.description().decode('utf-8', 'replace')
                 cs.save()
                 for path in ctx.files():
                     f, created = File.objects.get_or_create(path = path)
