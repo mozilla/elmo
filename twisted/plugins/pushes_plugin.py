@@ -104,7 +104,8 @@ class MyServiceMaker(object):
         """
         HTTPClientFactory.noisy = False
         poller = getPoller(options)
-        return internet.TimerService(1, poller)
+        timer = float(options['time'])
+        return internet.TimerService(timer, poller)
 
 
 # Now construct an object which *provides* the relevant interfaces
