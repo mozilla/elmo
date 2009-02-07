@@ -63,9 +63,15 @@ def handlePushes(page, repo):
                 cs.description = ctx.description().decode('utf-8', 'replace')
                 cs.save()
                 for path in ctx.files():
-                    f, created = File.objects.get_or_create(path = path)
-                    cs.files.add(f)
-                    if created:
+                    # hack around mysql ignoring trailing ' ', and some
+                    # of our localizers checking in files with trailing ' '.
+                    f = filter(lambda fo: fo.path == path,
+                               File.objects.filter(path = path))
+                    if f:
+                        cs.files.add(f[0])
+                    else:
+                        f = File.objects.create(path = path)
+                        cs.files.add(f)
                         f.save()
             except Exception, e:
                 print repo.name, e
