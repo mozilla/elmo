@@ -25,7 +25,7 @@ def getPoller(options):
 
     class PushPoller(object):
         def __init__(self, opts):
-            self.timeout = 2
+            self.timeout = 2 * float(options['time'])
             self.limit = int(opts.get('limit', 200))
             self.runnings = 0
             self.parallels = 2
@@ -34,7 +34,11 @@ def getPoller(options):
             pass
         def poll(self):
             if self.runnings >= self.parallels:
-                log.msg("skipping a cycle, I'm too busy")
+                repomsg = ''
+                if self.repos:
+                    repomsg = ' for %s' % self.repos[-1].name
+                log.msg("skipping a cycle%s, I'm too busy (%d >= %d)" % 
+                        (repomsg, self.runnings, self.parallels))
                 return
             if not self.repos:
                 n = datetime.now()
@@ -55,7 +59,7 @@ def getPoller(options):
             repo = self.repos.pop()
 
             jsonurl = getURL(repo, self.limit)
-            d = getPage(str(jsonurl))
+            d = getPage(str(jsonurl), timeout = self.timeout)
             d.addCallback(handlePushes, repo)
             d.addErrback(self.jsonErr, repo)
             def decreaseRunning(ignored):
@@ -86,6 +90,7 @@ def getPoller(options):
 
         def failedForest(self, failure, forest):
             log.err(failure, "failed to load %s" % forest.name)
+            self.runnings -= 1
         def jsonErr(self, failure, repo):
             log.err(failure, "failed to load json for %s" % repo.name)
 
