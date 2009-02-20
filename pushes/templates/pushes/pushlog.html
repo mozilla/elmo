@@ -3,10 +3,16 @@
 {% block head_matter %}
 <script type="application/javascript"
 src="{% url static path="jquery.js" %}"></script>
-<script type="application/javascript"
-src="{% url static path="thickbox-compressed.js" %}"></script>
+<script type="application/javascript" src="{% url static path="jquery.ui/ui/ui.core.js" %}"></script>
+<script type="application/javascript" src="{% url static path="jquery.ui/ui/ui.draggable.js" %}"></script>
+<script type="application/javascript" src="{% url static path="jquery.ui/ui/ui.resizable.js" %}"></script>
+<script type="application/javascript" src="{% url static path="jquery.ui/ui/ui.dialog.js" %}"></script>
+<script type="application/javascript" src="{% url static path="widgets.js" %}"></script>
 <link rel="stylesheet" href="{% url static path="style-gitweb.css" %}" type="text/css" >
-<link rel="stylesheet" href="{% url static path="thickbox.css" %}" type="text/css" >
+<link rel="stylesheet" href="{% url static path="jquery.ui/themes/base/ui.all.css" %}" type="text/css" >
+<style type="text/css">
+table.ui-widget {padding: 0px;}
+</style>
 <script type="application/javascript">
 function log(msg) {
   if (window.console && console.log) {
@@ -30,13 +36,70 @@ var progress = {
 
 
 $(document).ready(function(){
-  $('#search').click(function() {
-    tb_show('Search in pushes',
-            '#TB_inline?height=300&amp;width=600&amp;inlineId=searchpane',
-            false);
-    this.blur();
-    return false;
-  });
+  var d = $('#searchpane').dialog({
+    autoOpen: false,
+    modal: true,
+    width: 500,
+    buttons: {
+      Search: function() {$(this).children('form').submit();}
+    }
+  })
+  $('#search').click(function(){d.dialog('open');})
+    .hover(
+	  function() {
+	    $(this).addClass('ui-state-hover');
+	  },
+	  function() {
+            $(this).removeClass('ui-state-hover');
+	  })
+    .focus(function() {
+      $(this).addClass('ui-state-focus');
+    })
+    .blur(function() {
+      $(this).removeClass('ui-state-focus');
+    });
+  function enableField(fieldName) {
+    var targetInput = $('#i_' + fieldName)[0];
+    return function(e) {
+      var cell = $(e.target).parents('tr').children('td:nth-child(2)');
+      if (!cell.hasClass('ui-widget')) {
+	var date = targetInput.value ? Number(targetInput.value * 1000) : undefined;
+	cell.html('').datetime({
+	    date: date
+	  })
+	  .bind('datetimevalue', function(e, v) {
+	    targetInput.value = Number(v) / 1000;
+	  });
+	$('#i_' + fieldName).attr('name', fieldName);
+      }
+      else {
+	cell.datetime('destroy').html('&hellip;');
+	$('#i_' + fieldName).removeAttr('name');
+      }
+      
+    }
+  };
+  $('#b_from').click(enableField('from'));
+  {% if search.from %}
+  $('#b_from').trigger('click');
+  {% endif %}
+  $('#b_until').click(enableField('until'));
+  {% if search.until %}
+  $('#b_until').trigger('click');
+  {% endif %}
+  $('#b_limit').click(
+    function(e) {
+      var cell = $(e.target).parents('tr').children('td:nth-child(2)');
+      if (!cell.hasClass('ui-widget')) {
+	cell.addClass('ui-widget').removeClass('ui-state-disabled');
+	cell.find('input').attr('name', 'length');
+      }
+      else {
+	cell.removeClass('ui-widget').addClass('ui-state-disabled');
+	cell.find('input').removeAttr('name');
+      }
+    }
+  );
 });
 
 function addSearch(select) {
@@ -59,12 +122,25 @@ function addSearch(select) {
 </script>
 {% endblock %}
 {% block content %}
-<span id="search">Search &hellip;</span>
-<div id="searchpane" style="display:none;">
+<button type="button" class="ui-state-default ui-corner-all" id="search">Search &hellip;</button>
+<div id="searchpane" style="display:none;" title="search pushlogs">
   <form action="#" method="get">
+    <input type="hidden" id="i_from" {% if timespan %}value="{{timespan.0}}"{% endif %}>
+    <input type="hidden" id="i_until" {% if timespan %}value="{{timespan.01}}"{% endif %}>
   <table>
     <tbody id="searchrows">
-      <tr><td>Limit</td><td><input name="length" type="text" size="3" maxlength="3" value="10"></tr>
+      <tr>
+	<td><button type="button" id="b_limit">Limit</button></td>
+	<td class="ui-widget"><input name="length" type="text" size="3" maxlength="3" value="{% if limit %}{{limit}}{% else %}50{% endif %}"></td>
+      </tr>
+      <tr>
+	<td><button type="button" id="b_from">From</button></td>
+	<td>&hellip;</td>
+      </tr>
+      <tr>
+	<td><button type="button" id="b_until">Until</button></td>
+	<td>&hellip;</td>
+      </tr>
     </tbody>
     <tfoot>
       <tr>
@@ -77,7 +153,6 @@ function addSearch(select) {
 	  </select>
 	</td>
       </tr>
-      <tr><td></td><td><input type="submit" value="search &hellip;"></td></tr>
     </tfoot>
   </table>
   </form>
