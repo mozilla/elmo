@@ -1,0 +1,9 @@
+{% extends "signoff/base.html" %}
+
+{% block content %}
+<ul>
+  {% for mstone in mstones %}
+    <li><a href="/signoff/{{mstone.code}}">{{mstone}}</a></li>
+  {% endfor %}
+</ul>
+{% endblock %}

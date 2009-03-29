@@ -1,0 +1,9 @@
+{% extends "signoff/base.html" %}
+
+{% block content %}
+<ul>
+  {% for locale in locales %}
+    <li><a href="/signoff/{{locale.code}}">{{locale}}</a></li>
+  {% endfor %}
+</ul>
+{% endblock %}
