@@ -16,7 +16,7 @@ def getURL(repo, limit):
     return '%sjson-pushes?startID=%d&endID=%d' % \
         (repo.url, repo.last_known_push, repo.last_known_push + limit)
 
-def handlePushes(page, repo):
+def handlePushes(page, repo, do_update=True):
     pushes = json.loads(page)
     if not pushes:
         return
@@ -44,7 +44,8 @@ def handlePushes(page, repo):
         pull(ui, hgrepo, source = str(repo.url),
              force=False, update=False,
              rev=[])
-        update(ui, hgrepo)
+        if do_update:
+            update(ui, hgrepo)
     id = repo.last_known_push
     ids = pushes.keys()
     ids.sort(lambda l,r: cmp(int(l), int(r)))

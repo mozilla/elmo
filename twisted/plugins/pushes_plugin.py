@@ -15,6 +15,9 @@ class Options(usage.Options):
     optParameters = [["settings", "s", None, "Django settings module."],
                      ["time", "t", "1", "Poll every n seconds."],
                      ]
+    optFlags = [
+        ["noup", "n", "No updates of repos"],
+        ]
 
 def getPoller(options):
     if options["settings"] is None:
@@ -31,6 +34,7 @@ def getPoller(options):
             self.parallels = 2
             self.repos = []
             self.start_cycle = None
+            self.do_update = not options['noup']
             pass
         def poll(self):
             if self.runnings >= self.parallels:
@@ -60,7 +64,7 @@ def getPoller(options):
 
             jsonurl = getURL(repo, self.limit)
             d = getPage(str(jsonurl), timeout = self.timeout)
-            d.addCallback(handlePushes, repo)
+            d.addCallback(handlePushes, repo, self.do_update)
             d.addErrback(self.jsonErr, repo)
             def decreaseRunning(ignored):
                 self.runnings -= 1

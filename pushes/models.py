@@ -39,7 +39,7 @@ else:
             return self.path
 
 class Changeset(models.Model):
-    push = models.ForeignKey(Push)
+    push = models.ForeignKey(Push, related_name='changesets')
     revision = models.CharField(max_length=40, db_index=True)
     user = models.CharField(null = True, blank = True, max_length=100, db_index=True)
     description = models.TextField(null = True, blank = True, db_index=True)
