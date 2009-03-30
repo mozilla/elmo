@@ -4,6 +4,20 @@ from django.db import models
 import fields
 
 
+class Master(models.Model):
+    """Model for a buildbot master"""
+    name = models.CharField(max_length=100, unique=True)
+
+    def __unicode__(self):
+        return self.name
+
+class Slave(models.Model):
+    """Model for a build slave"""
+    name = models.CharField(max_length=150, unique=True)
+
+    def __unicode__(self):
+        return self.name
+
 class File(models.Model):
     """Model for files throughout"""
     # not  unique = True, mysql doesn't like long unique utf-8 strings
@@ -24,6 +38,7 @@ class Tag(models.Model):
 class Change(models.Model):
     """Model for buildbot.changes.changes.Change"""
     number = models.PositiveIntegerField(primary_key = True)
+    master = models.ForeignKey(Master)
     branch = models.CharField(max_length = 100, null = True, blank = True)
     revision = models.CharField(max_length = 50, null = True, blank = True)
     who = models.CharField(max_length = 100, null = True, blank = True,
@@ -51,7 +66,8 @@ class Property(models.Model):
     source          = models.CharField(max_length = 20, db_index = True)
     value           = fields.PickledObjectField(null = True, blank = True,
                                                 db_index = True)
-    unique_together = (('name', 'source', 'value'),)
+    class Meta:
+        unique_together = (('name', 'source', 'value'),)
 
     def __unicode__(self):
         return "%s: %s" % (self.name, self.value)
@@ -60,6 +76,7 @@ class Property(models.Model):
 class Builder(models.Model):
     """Model for buildbot.status.builder.BuilderStatus"""
     name     = models.CharField(max_length = 50, unique = True, db_index = True)
+    master   = models.ForeignKey(Master, related_name='builders')
     category = models.CharField(max_length = 30, null = True, blank = True,
                                 db_index = True)
     bigState = models.CharField(max_length = 30, null = True, blank = True)
@@ -67,14 +84,13 @@ class Builder(models.Model):
     def __unicode__(self):
         return u'Builder <%s>' % self.name
 
-
 class Build(models.Model):
     """Model for buildbot..status.builder.Build
     """
     buildnumber = models.IntegerField(null = True, db_index = True)
     properties  = models.ManyToManyField(Property, related_name = 'builds')
     builder     = models.ForeignKey(Builder, related_name = 'builds')
-    slavename   = models.CharField(max_length = 50, null=True, blank = True)
+    slave       = models.ForeignKey(Slave, null=True, blank = True)
     starttime   = models.DateTimeField(null = True, blank = True)
     endtime     = models.DateTimeField(null = True, blank = True)
     result      = models.SmallIntegerField(null = True, blank = True)
@@ -94,13 +110,11 @@ class Build(models.Model):
                 # we already know this, we're done
                 return
             if prop.builds.count() < 2:
-                # this is our own property, set the new value
-                prop.value = value
-                prop.source = source
-                prop.save()
-                return
-            # otherwise, unbind the property, and fake a DoesNotExist
-            self.properties.remove(prop)
+                # this is our own property, clean up the table
+                prop.delete()
+            else:
+                # otherwise, unbind the property, and fake a DoesNotExist
+                self.properties.remove(prop)
             raise Property.DoesNotExist(name)
         except Property.DoesNotExist:
             prop, created = Property.objects.get_or_create(name = name,
@@ -167,4 +181,9 @@ class Log(models.Model):
             return self.filename
         return 'HTMLLog %d' % self.id
 
-        
+
+class BuildRequest(models.Model):
+    """Buildrequest status model"""
+    builder = models.ForeignKey(Builder)
+    submitTime = models.DateTimeField()
+    builds = models.ManyToManyField(Build, related_name='requests')

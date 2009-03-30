@@ -14,12 +14,12 @@ def timeHelper(t):
     return datetime.utcfromtimestamp(t)
 
 
-def modelForChange(change):
+def modelForChange(master, change):
     try:
-        dbchange = Change.objects.get(number = change.number)
+        dbchange = Change.objects.get(master=master, number = change.number)
         return dbchange
     except Change.DoesNotExist:
-        dbchange = Change.objects.create(number = change.number,
+        dbchange = Change.objects.create(master=master, number = change.number,
                                          when = timeHelper(change.when))
         for prop in ('branch', 'revision', 'who', 'comments'):
             val = getattr(change, prop)
@@ -39,13 +39,13 @@ def modelForChange(change):
         dbchange.save()
         return dbchange
 
-def modelForLog(dbstep, logfile, isFinished = False):
+def modelForLog(dbstep, logfile, basedir, isFinished = False):
     if not hasattr(logfile, 'getFilename'):
         logf = dbstep.logs.create(filename = None, html = logfile.html,
                                   name = logfile.getName(),
                                   isFinished = True)
     else:
-        relfile = logfile.getFilename()[len(settings.BUILDMASTER_BASE)+1:]
+        relfile = logfile.getFilename()[len(basedir)+1:]
         logf = dbstep.logs.create(filename = relfile, html = None,
                                   name = logfile.getName(),
                                   isFinished = isFinished)

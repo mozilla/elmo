@@ -1,6 +1,7 @@
 from optparse import make_option
 import pickle
 from glob import glob
+import os.path
 
 from django.core.management.base import BaseCommand, CommandError
 from mbdb.models import *
@@ -24,11 +25,14 @@ class Command(BaseCommand):
     help = 'Import existing buildbot builds into the mbdb database'
 
     def handle(self, *args, **options):
-        builderconfs = glob(settings.BUILDMASTER_BASE + '/*/builder')
+        if len(args) != 1:
+            raise CommandError('basedir needed as argument')
+        basedir = os.path.abspath(args[0])
+        builderconfs = glob(basedir + '/*/builder')
         builderconfs.sort()
         builders = []
         for builderconf in builderconfs:
-            buildername = builderconf[len(settings.BUILDMASTER_BASE)+1:-8]
+            buildername = builderconf[len(basedir)+1:-8]
             if raw_input('Import %s? ' % buildername).lower() != 'y':
                 print 'Skipping %s' % buildername
                 continue
@@ -111,5 +115,5 @@ class Command(BaseCommand):
                                               endtime = times[1],
                                               result = result)
                 for logfile in step.getLogs():
-                    utils.modelForLog(dbstep, logfile, isFinished = True)
+                    utils.modelForLog(dbstep, logfile, basedir, isFinished = True)
             dbbuild.save()
