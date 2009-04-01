@@ -77,17 +77,17 @@ def pushlog(request, repo_name):
     if excludes:
         q = q.exclude(repository__name__in = excludes)
     for p in paths:
-        q = q.filter(changeset__files__path__contains=p)
+        q = q.filter(changesets__files__path__contains=p)
     if paths:
         search['path'] = paths
     pushes = q.distinct().order_by('-push_date')[start:]
     if limit is not None:
         pushes = pushes[:(start+limit-1)]
     pushrows = [{'push': p,
-                 'tip': p.changeset_set.order_by('-pk')[0],
-                 'changesets': p.changeset_set.order_by('-pk')[1:],
+                 'tip': p.changesets.order_by('-pk')[0],
+                 'changesets': p.changesets.order_by('-pk')[1:],
                  'class': 'parity%d' % odd,
-                 'span': p.changeset_set.count(),
+                 'span': p.changesets.count(),
                  }
                 for p, odd in zip(pushes, cycle([1,0]))]
     if pushrows:

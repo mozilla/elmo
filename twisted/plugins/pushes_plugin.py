@@ -14,6 +14,7 @@ from urlparse import urljoin
 class Options(usage.Options):
     optParameters = [["settings", "s", None, "Django settings module."],
                      ["time", "t", "1", "Poll every n seconds."],
+                     ["limit", "l", "200", "Limit pushes to n at a time."]
                      ]
     optFlags = [
         ["noup", "n", "No updates of repos"],
@@ -65,12 +66,17 @@ def getPoller(options):
             jsonurl = getURL(repo, self.limit)
             d = getPage(str(jsonurl), timeout = self.timeout)
             d.addCallback(handlePushes, repo, self.do_update)
+            d.addCallback(self.maybeRePoll, repo)
             d.addErrback(self.jsonErr, repo)
             def decreaseRunning(ignored):
                 self.runnings -= 1
             d.addBoth(decreaseRunning)
             self.runnings += 1
-            
+
+        def maybeRePoll(self, cnt, repo):
+            if cnt == self.limit:
+                # we got the limit amount of pushes, repoll the same repo
+                self.repos.append(repo)
 
         def gotForest(self, page, forest):
             self.runnings -= 1

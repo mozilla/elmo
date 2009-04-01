@@ -47,7 +47,6 @@ def handlePushes(page, repo, do_update=True):
              rev=[])
         if do_update:
             update(ui, hgrepo)
-    id = repo.last_known_push
     ids = pushes.keys()
     ids.sort(lambda l,r: cmp(int(l), int(r)))
     for id in ids:
@@ -78,5 +77,5 @@ def handlePushes(page, repo, do_update=True):
             except Exception, e:
                 print repo.name, e
             cs.save()
-    repo.last_known_push = int(id)
     repo.save()
+    return len(ids)
