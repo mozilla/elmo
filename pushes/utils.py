@@ -13,8 +13,9 @@ from pushes.models import Push, Changeset, File
 from django.conf import settings
 
 def getURL(repo, limit):
+    lkp = repo.last_known_push()
     return '%sjson-pushes?startID=%d&endID=%d' % \
-        (repo.url, repo.last_known_push, repo.last_known_push + limit)
+        (repo.url, lkp, lkp + limit)
 
 def handlePushes(page, repo, do_update=True):
     pushes = json.loads(page)
