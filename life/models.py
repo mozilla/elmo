@@ -19,7 +19,7 @@ class Locale(models.Model):
 
 
 class Forest(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     url = models.URLField()
     class Meta:
         db_table = 'pushes_forest'
@@ -28,7 +28,7 @@ class Forest(models.Model):
 
 
 class Repository(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     url = models.URLField()
     forest = models.ForeignKey(Forest, null=True, blank=True)
     class Meta:
@@ -81,7 +81,7 @@ class Tree(models.Model):
     releases/mozilla-1.9.1 = Firefox 3.5
     mobile-browser + releases/mozilla-1.9.1 = Fennec 1.0
     """
-    code = models.CharField(max_length = 50)
+    code = models.CharField(max_length = 50, unique=True)
     repositories = models.ManyToManyField(Repository)
     l10n = models.ForeignKey(Forest)
 
