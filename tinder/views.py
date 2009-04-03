@@ -350,7 +350,9 @@ def builds_for_change(request):
     running = []
     done = []
     for b in builds:
-        done.append({'build': b, 'class': resultclasses[b.result]})
+        done.append({'build': b,
+                     'class': (b.result is not None and resultclasses[b.result])
+                     or ''})
     
     return render_to_response('tinder/builds_for.html',
                               {'done_builds': done,
