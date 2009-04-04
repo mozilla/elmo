@@ -50,6 +50,9 @@ class Push(models.Model):
     push_id = models.PositiveIntegerField(default=0)
     class Meta:
         db_table = 'pushes_push'
+    
+    def __unicode__(self):
+        return 'Push to %s by %s [%s]' % (self.repository.name, self.user, self.push_date)
 
 if 'mbdb' in settings.INSTALLED_APPS:
     from mbdb.models import File
