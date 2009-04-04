@@ -1,1 +1,17 @@
-AA
+{% extends "signoff/base.html" %}
+
+{% block content %}
+<h3>Locales</h3>
+<ul>
+  {% for locale in locales %}
+  <li><a href="/signoff/{{locale.code}}">{{ locale }}</a></li>
+  {% endfor %}
+</ul>
+
+<h3>Milestones</h3>
+<ul>
+  {% for mstone in mstones %}
+  <li><a href="/signoff/{{mstone.code}}">{{ mstone }}</a></li>
+  {% endfor %}
+</ul>
+{% endblock %}

@@ -4,5 +4,5 @@ urlpatterns = patterns('signoff.views',
     (r'^\/?$', 'index'),
     (r'^\/locales$', 'locale_list'),
     (r'^\/milestones$', 'milestone_list'),
-    (r'^\/(?P<arg>[^/]+)?/?$', 'sublist'),
+    (r'^\/(?P<arg>[^/]+)?\/?(?P<arg2>[^/]+)?$', 'sublist'),
 )

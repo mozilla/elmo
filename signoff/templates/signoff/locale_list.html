@@ -1,9 +1,19 @@
 {% extends "signoff/base.html" %}
 
 {% block content %}
+<a href="/signoff/">&lt; All milestones</a>
+<br />
+{% if error %}
+<p class="error">
+  {{ error }}
+</p>
+{% else %}
+<br />
+<p>Locales for {{mstone}}:</p>
 <ul>
   {% for locale in locales %}
-    <li><a href="/signoff/{{locale.code}}">{{locale}}</a></li>
+    <li><a href="/signoff/{{mstone.code}}/{{locale.code}}">{{locale}}</a></li>
   {% endfor %}
 </ul>
+{% endif %}
 {% endblock %}

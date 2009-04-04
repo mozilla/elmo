@@ -1,7 +1,27 @@
 from django.db import models
 
-from pushes.models import Push
-from life.models import Tree, Locale
+from life.models import Tree, Locale, Push
+
+class Application(models.Model):
+    """ stores applications
+    """
+    name = models.CharField(max_length = 50)
+    code = models.CharField(max_length = 30)
+
+    def __unicode__(self):
+        return self.name
+
+class AppVersion(models.Model):
+    """ stores application versions
+    """
+    app = models.ForeignKey(Application)
+    version = models.CharField(max_length = 10)
+    codename = models.CharField(max_length = 30, blank = True, null = True)
+    tree = models.ForeignKey(Tree)
+
+    def __unicode__(self):
+        return '%s %s' % (self.app.name, self.version)
+
 
 class Milestone(models.Model):
     """ stores unique milestones like fx35b4
@@ -9,6 +29,7 @@ class Milestone(models.Model):
     """
     code = models.CharField(max_length = 30)
     name = models.CharField(max_length = 50, blank = True, null = True)
+    appver = models.ForeignKey(AppVersion)
 
     def get_start_event(self):
         return Event.objects.get(type=0, milestone=self)
@@ -20,7 +41,10 @@ class Milestone(models.Model):
     end_event = property(get_end_event)
 
     def __unicode__(self):
-        return self.name or self.code
+        if self.name:
+            return '%s %s %s' % (self.appver.app.name, self.appver.version, self.name)
+        else:
+            return self.code
 
 TYPE_CHOICES = (
     (0, 'signoff start'),
@@ -40,7 +64,6 @@ class Signoff(models.Model):
     revision = models.ForeignKey(Push)
     milestone = models.ForeignKey(Milestone, related_name = 'signoffs')
     author = models.CharField(max_length = 50, blank = True, null = True)
-    tree = models.ForeignKey(Tree)
     locale = models.ForeignKey(Locale)
 
     def __unicode__(self):
