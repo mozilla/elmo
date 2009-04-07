@@ -11,6 +11,19 @@
   <li>P12n</li>
 </ul>
 
-<button>Sign off</button>
+<form action="" method="POST">
+    <div class="fieldWrapper">
+        {{ form.revision.errors }}
+        <label for="id_subject">{{ form.revision.label_tag }}:</label>
+        {{ form.revision }}
+    </div>
+    <div class="fieldWrapper">
+        {{ form.author.errors }}
+        <label for="id_subject">{{ form.author.label_tag }}:</label>
+        {{ form.author }}
+    </div>
+<input type="submit" value="Submit" />
+</form>
+
 
 {% endblock %}

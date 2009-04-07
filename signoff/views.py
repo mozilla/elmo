@@ -1,7 +1,7 @@
 from django.shortcuts import render_to_response
 from django.http import HttpResponseRedirect, HttpResponse 
 from life.models import Locale
-from signoff.models import Milestone
+from signoff.models import Milestone, Signoff, SignoffForm
 
 def index(request):
     locales = Locale.objects.all().order_by('code')
@@ -49,10 +49,19 @@ def signoff(request, loc=None, ms=None):
     locale = Locale.objects.get(code=loc)
     mstone = Milestone.objects.get(code=ms)
     error = ''
+    if request.method == 'POST':
+        instance = Signoff(milestone=mstone, locale=locale)
+        form = SignoffForm(request.POST, instance=instance)
+        if form.is_valid():
+            form.save()
+    else:
+        form = SignoffForm()
+
     return render_to_response('signoff/signoff.html', {
         'mstone': mstone,
         'locale': locale,
         'error': error,
+        'form': form,
     })    
 
 def _code_type(code):

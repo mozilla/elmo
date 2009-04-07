@@ -1,4 +1,5 @@
 from django.db import models
+from django.forms import ModelForm
 
 from life.models import Tree, Locale, Push
 
@@ -68,3 +69,8 @@ class Signoff(models.Model):
 
     def __unicode__(self):
         return 'Signoff for %s %s by %s' % (self.milestone, self.locale.code, self.author)
+
+class SignoffForm(ModelForm):
+    class Meta:
+        model = Signoff
+        fields = ('revision', 'author')
