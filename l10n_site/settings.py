@@ -84,6 +84,7 @@ INSTALLED_APPS = (
     'pushes',
     'status',
     'tinder',
+    'signoff',
 )
 
 # dashboard's own settings

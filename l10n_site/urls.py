@@ -14,6 +14,8 @@ urlpatterns = patterns('',
                         'pushes.views.pushlog', {}, 'pushlog'),
                        (r'^status/l10n-repos$',
                         'status.views.repostatus'),
+                       (r'^signoff',
+                        include('signoff.urls')),
 
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs' 
     # to INSTALLED_APPS to enable admin documentation:
