@@ -1,7 +1,6 @@
 from django.db import models
-from life.models import Locale, Tree
+from life.models import Locale, Tree, Changeset
 from mbdb.models import Build
-from pushes.models import Changeset
 
 class ModuleCount(models.Model):
     """Abstraction of untranslated strings per module.
@@ -66,7 +65,7 @@ class UnchangedInFile(models.Model):
     run = models.ForeignKey(Run)
 
     def __unicode__(self):
-        return "%s/%s: %d" % (self.file, self.count)
+        return "%s/%s: %d" % (self.module, self.file, self.count)
 
 
 class Active(models.Model):
