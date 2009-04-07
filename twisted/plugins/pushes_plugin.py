@@ -29,7 +29,7 @@ def getPoller(options):
 
     class PushPoller(object):
         def __init__(self, opts):
-            self.timeout = 2 * float(options['time'])
+            self.timeout = 3 * float(options['time'])
             self.limit = int(opts.get('limit', 200))
             self.runnings = 0
             self.parallels = 2
@@ -102,7 +102,8 @@ def getPoller(options):
             log.err(failure, "failed to load %s" % forest.name)
             self.runnings -= 1
         def jsonErr(self, failure, repo):
-            log.err(failure, "failed to load json for %s" % repo.name)
+            log.err(failure, "failed to load json for %s, adding back" % repo.name)
+            self.repos.append(repo)
 
     pp = PushPoller(options)
     return pp.poll
