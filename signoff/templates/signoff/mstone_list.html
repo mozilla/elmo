@@ -12,7 +12,7 @@
 <p>Milestones for {{locale}}:</p>
 <ul>
   {% for mstone in mstones %}
-    <li><a href="/signoff/{{locale.code}}/{{mstone.code}}">{{mstone}}</a></li>
+    <li><a href="/signoff/{{locale.code}}/{{mstone.code}}">{{mstone}} [{{mstone.start_event.date}} - {{mstone.end_event.date}}]</a></li>
   {% endfor %}
 </ul>
 {% endif %}

@@ -11,7 +11,16 @@
   <li>P12n</li>
 </ul>
 
-<form action="" method="POST">
+<div>
+  <p>Start date: {{mstone.start_event.date}}</p>
+  <p>End date: {{mstone.end_event.date}}</p>
+</div>
+
+<div>
+  Enabled: {% if enabled %}True{%else%}False{% endif %}
+</div>
+
+<form action="" method="POST" {% if not enabled %}class="disabled"{% endif %}>
     <div class="fieldWrapper">
         {{ form.revision.errors }}
         <label for="id_subject">{{ form.revision.label_tag }}:</label>

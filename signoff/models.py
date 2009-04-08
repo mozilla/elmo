@@ -1,7 +1,9 @@
 from django.db import models
-from django.forms import ModelForm
+from django.forms import ModelForm, Select
 
 from life.models import Tree, Locale, Push
+
+from datetime import datetime
 
 class Application(models.Model):
     """ stores applications
@@ -65,10 +67,11 @@ class Signoff(models.Model):
     revision = models.ForeignKey(Push)
     milestone = models.ForeignKey(Milestone, related_name = 'signoffs')
     author = models.CharField(max_length = 50, blank = True, null = True)
+    when = models.DateTimeField('signoff timestamp', default=datetime.now)
     locale = models.ForeignKey(Locale)
 
     def __unicode__(self):
-        return 'Signoff for %s %s by %s' % (self.milestone, self.locale.code, self.author)
+        return 'Signoff for %s %s by %s [%s]' % (self.milestone, self.locale.code, self.author, self.when)
 
 class SignoffForm(ModelForm):
     class Meta:

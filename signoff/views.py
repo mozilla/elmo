@@ -2,6 +2,7 @@ from django.shortcuts import render_to_response
 from django.http import HttpResponseRedirect, HttpResponse 
 from life.models import Locale
 from signoff.models import Milestone, Signoff, SignoffForm
+from django import forms
 
 def index(request):
     locales = Locale.objects.all().order_by('code')
@@ -55,13 +56,21 @@ def signoff(request, loc=None, ms=None):
         if form.is_valid():
             form.save()
     else:
-        form = SignoffForm()
-
+        current = Signoff.objects.filter(locale=locale, milestone=mstone).order_by('-pk')
+        if current:
+            current = current[0]
+            form = SignoffForm({'revision': current.revision.id})
+        else:
+            form = SignoffForm()
+    
+    enabled = False
+    
     return render_to_response('signoff/signoff.html', {
         'mstone': mstone,
         'locale': locale,
         'error': error,
         'form': form,
+        'enabled': enabled,
     })    
 
 def _code_type(code):
