@@ -71,7 +71,7 @@ class Signoff(models.Model):
     locale = models.ForeignKey(Locale)
 
     def __unicode__(self):
-        return 'Signoff for %s %s by %s [%s]' % (self.milestone, self.locale.code, self.author, self.when)
+        return 'Signoff for %s %s by %s [%s]' % (self.milestone, self.locale.code, self.author, self.when.strftime("%Y-%m-%d %H:%M"))
 
 class SignoffForm(ModelForm):
     class Meta:
