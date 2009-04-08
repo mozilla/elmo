@@ -59,7 +59,7 @@ def signoff(request, loc=None, ms=None):
         current = Signoff.objects.filter(locale=locale, milestone=mstone).order_by('-pk')
         if current:
             current = current[0]
-            form = SignoffForm({'push': current.push.id})
+            form = SignoffForm({'push': current.push.id, 'author': current.author})
         else:
             form = SignoffForm()
     
