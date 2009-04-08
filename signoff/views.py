@@ -67,6 +67,9 @@ def signoff(request, loc=None, ms=None):
     repo_url = forest.url+locale.code
     form.fields['push'].queryset = Push.objects.filter(repository__url=repo_url)
     
+    if request.user.is_authenticated():
+        form.fields['author'].initial = request.user
+    
     enabled = False
     
     return render_to_response('signoff/signoff.html', {
