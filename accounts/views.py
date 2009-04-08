@@ -1,7 +1,13 @@
 from django.shortcuts import render_to_response
+from django.http import HttpResponseRedirect, HttpResponse
+
+def index(request):
+    if not request.user.is_authenticated():
+        return HttpResponseRedirect('login')
+    else:
+        return profile(request)
 
 def profile(request):
-    user = request.user
     return render_to_response('accounts/profile.html', {
-        'user': user,
-    })  
+        'user': request.user,
+    })

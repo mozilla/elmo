@@ -7,4 +7,5 @@ urlpatterns = patterns('',
     (r'^logout', 'django.contrib.auth.views.logout',
      {'template_name': 'accounts/logout.html',
       'next_page': 'login'}),
+    (r'^', 'accounts.views.index'),
 )
