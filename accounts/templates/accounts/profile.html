@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title_matter %}Account{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated %}
+
+  You're logged in as <b>{{user}}</b>.
+  <a href="{% url django.contrib.auth.views.logout %}">Logout?</a>
+
+{% else %}
+
+  You're not logged in.
+  <a href="{% url django.contrib.auth.views.login %}">Login</a>
+
+{% endif %}
+
+{% endblock %}
