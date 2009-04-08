@@ -64,7 +64,7 @@ class Event(models.Model):
         return '%s for %s (%s)' % (self.name, self.milestone, self.date)
 
 class Signoff(models.Model):
-    revision = models.ForeignKey(Push)
+    push = models.ForeignKey(Push)
     milestone = models.ForeignKey(Milestone, related_name = 'signoffs')
     author = models.CharField(max_length = 50, blank = True, null = True)
     when = models.DateTimeField('signoff timestamp', default=datetime.now)
@@ -76,4 +76,4 @@ class Signoff(models.Model):
 class SignoffForm(ModelForm):
     class Meta:
         model = Signoff
-        fields = ('revision', 'author')
+        fields = ('push', 'author')

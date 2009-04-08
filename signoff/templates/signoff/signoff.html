@@ -22,9 +22,9 @@
 
 <form action="" method="POST" {% if not enabled %}class="disabled"{% endif %}>
     <div class="fieldWrapper">
-        {{ form.revision.errors }}
-        <label for="id_subject">{{ form.revision.label_tag }}:</label>
-        {{ form.revision }}
+        {{ form.push.errors }}
+        <label for="id_subject">{{ form.push.label_tag }}:</label>
+        {{ form.push }}
     </div>
     <div class="fieldWrapper">
         {{ form.author.errors }}

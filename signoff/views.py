@@ -1,6 +1,6 @@
 from django.shortcuts import render_to_response
 from django.http import HttpResponseRedirect, HttpResponse 
-from life.models import Locale
+from life.models import Locale, Push
 from signoff.models import Milestone, Signoff, SignoffForm
 from django import forms
 
@@ -59,9 +59,13 @@ def signoff(request, loc=None, ms=None):
         current = Signoff.objects.filter(locale=locale, milestone=mstone).order_by('-pk')
         if current:
             current = current[0]
-            form = SignoffForm({'revision': current.revision.id})
+            form = SignoffForm({'push': current.push.id})
         else:
             form = SignoffForm()
+    
+    forest = mstone.appver.tree.l10n
+    repo_url = forest.url+locale.code
+    form.fields['push'].queryset = Push.objects.filter(repository__url=repo_url)
     
     enabled = False
     
