@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title_matter %}L10n Dashboard{% endblock %}
+{% block head_matter %}
+  <!-- <link href="schema.json" type="application/json" rel="exhibit/data" /> -->
+<!--  -->
+  <link href="l10n_status.json" type="application/json" rel="exhibit/data" />
+
+  <script src="http://static.simile.mit.edu/exhibit/api-2.0/exhibit-api.js?autoCreate=false"
+              type="text/javascript"></script>
+  <script type="text/javascript">
+        SimileAjax.jQuery(document).ready(function() {
+            var fDone = function() {
+               var params = SimileAjax.parseURLParameters();
+               var options = ["tree", "result", "locale", "shipping"];
+                for ( var i in options ) {
+                  var option = options[i];
+                  if (option in params) {
+                    if (params[option]) {
+                      document.getElementById(option +
+                        "-facet").setAttribute("ex:selection", params[option]);
+                     }
+                     else {
+                      document.getElementById(option +
+                        "-facet").setAttribute("ex:selectMissing", "true");
+                     }
+                  }
+                }
+
+                window.exhibit = Exhibit.create();
+                window.exhibit.configureFromDOM();
+            };
+
+            window.database = Exhibit.Database.create();
+            window.database.loadDataLinks(fDone);
+        });
+  </script>
+
+   <style>
+.exhibit-facet-body {height: 5em !important;}
+div.thumbnail {border: solid black 1px; margin: 2px;}
+.success {background-color: green;}
+.warning {background-color: orange;}
+.failure {background-color: red;}
+.tree_cell.success {background-color: rgba(0, 128, 0, 0.5);}
+.tree_cell.warnings {background-color: rgba(255, 165, 0, 0.5);}
+.tree_cell.failure {background-color: rgba(255, 0, 0, 0.5);}
+
+.stats {
+    background-color: white;
+    cell-padding:0px;
+    border-spacing:0px;
+    padding: 3px;
+}
+.status {
+    height: 1ex;
+    margin: 0px;
+    padding: 0px;
+    border: 0px;
+}
+.changed {background-color: green;}
+.unchanged {background-color: grey;}
+.missing {background-color: red;}
+
+.bugs_pane {
+  margin: 1em !important;
+  margin-top: 2em !important;
+}
+.bug_block {margin-top: 1em !important;}
+.blocker_block {
+  margin: .5em !important;
+  padding-left: 2em !important;
+}
+.noblockers {
+  margin: .5em !important;
+  padding-left: 2em !important;
+  font-style: italic;
+}
+.bugfield_status_whiteboard {
+  font-style: italic;
+  padding-left: 2em;
+}
+.bugfield_short_desc {
+  padding-left: 1em;
+}
+   </style>
+{% endblock %}
+{% block content %}
+ <h1>L10n dashboard</h1>
+
+ <div ex:role="collection" ex:itemTypes="Build"></div>
+ <table width="100%">
+   <tr valign="top">
+     <td ex:role="viewPanel" ex:showAll="true">
+       <span ex:role="lens" class="comparison" ex:itemTypes="Comparison"style="display:none">
+         <span  ex:content=".label"></span>
+         <span ex:if-exists=".bug" class="bug"> (<a ex:href-subcontent="https://bugzilla.mozilla.org/show_bug.cgi?id={&#123;.bug}}" target="_blank">buglink</a>)</span>
+
+         <span ex:if-exists=".comment" class="comment"> (<em ex:content=".comment"></em>)</span>
+       </span>
+    <div ex:role="view" ex:viewClass="Tabular"
+      ex:collectionID="buids"
+      ex:columnLabels="Locale, Tree, %, Errors, Missing, Unchanged, Web bugs, Stats, Status"
+      ex:columns=".locale, .tree, .coverage_completion, .coverage_errors, .coverage_missing + .coverage_missingInFiles, .coverage_unchanged, .locale.missing_webbugs, .locale, .coverage_changed"
+      ex:cellSpacing="0">
+      <table>
+    <tr>
+      <td class="locale_cell" ex:content=".locale"></td>
+      <td ex:content=".tree" ex:class-subcontent="tree_cell {&#123;.result}}"></td>
+
+      <td class="completion_cell" ex:content=".coverage_completion"></td>
+      <td class="coverage_cell" ex:content=".coverage_errors"></td>
+      <td class="coverage_cell" ex:content=".coverage_missing + .coverage_missingInFiles"></td>
+      <td class="coverage_cell" ex:content=".coverage_unchanged"></td>
+      <td class="bugs_cell"><a ex:href-subcontent="http://l10n.mozilla.org/webdashboard/?locale={&#123;.locale}}" target="_blank" ex:content=".locale.missing_webbugs"></a> (<span ex:content=".locale.total_webbugs"></span>)</td>
+      <td><a title="History" ex:href-subcontent="http://l10n.mozilla.org/buildbot/statistics?tree={&#123;.tree}}&locale={&#123;.locale}}" target="_blank">H</a>/<a title="Latest comparison" ex:href-subcontent="http://l10n.mozilla.org/buildbot/compare/{&#123;.buildername}}/{&#123;.buildnumber}}" target="_blank">C</a></td>
+
+      <td>
+        <table class="stats">
+               <tr>
+                 <td title="changed" class="status changed" ex:width-subcontent="{&#123;.coverage_completion }}px"></td>
+                 <td title="missing" class="status missing" ex:width-subcontent="{&#123;100 * (.coverage_missing + .coverage_missingInFiles) / .coverage_total}}px"></td>
+                 <td title="unchanged" class="status unchanged" ex:width-subcontent="{&#123;100 * .coverage_unchanged / .coverage_total}}px"></td>
+               </tr>
+             </table>
+       </td>
+
+    </tr>
+      </table>
+    </div>
+     </td>
+     <td width="25%">
+       <div ex:role="facet" ex:expression=".result" ex:facetLabel="Result"
+         id="result-facet"
+         ex:fixedOrder="success;warnings;failure;exception"></div>
+       <div ex:role="facet" ex:expression=".locale.tier" ex:facetLabel="Tier"
+         ex:fixedOrder="1;2"></div>
+       <div ex:role="facet" ex:expression=".tree" ex:facetLabel="Tree"
+         id="tree-facet"
+         ex:fixedOrder="trunk;incubator"></div>
+       <div ex:role="facet" ex:expression=".locale" ex:facetLabel="Locale"
+         id="locale-facet"></div>
+
+       <div ex:role="facet" ex:expression=".locale.missing_webbugs" ex:facetLabel="Web bugs"></div>
+       <div ex:role="facet" ex:expression=".locale.shipped" ex:facetLabel="Shipped in ..." id="shipping-facet"></div>
+     </td>
+   </tr>
+ </table>
+{% endblock %}

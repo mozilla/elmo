@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title_matter %}{{ tree }} l10n stats{% endblock %}
+{% block head_matter %}
+
+<script src="http://www.simile-widgets.org/timeplot/api/timeplot-api.js" 
+             type="text/javascript"></script>
+<script type="text/javascript">
+// json data for events
+data = {
+		dateTimeFormat: "iso8601",
+		events: [
+{% for e in events %}
+{start: "{{e.srctime.isoformat}}Z",
+	title: " ",
+	description: "{{ e.locales }}",
+	durationEvent: false
+},
+{% endfor %}
+]
+}
+</script>
+<script type="text/javascript">
+var timeplot, timeGeometry;
+
+function onLoad() {
+  var eventSource = new Timeplot.DefaultEventSource();
+  var eventSource2 = new Timeplot.DefaultEventSource();
+  timeGeometry = new Timeplot.MagnifyingTimeGeometry({
+    gridColor: new Timeplot.Color("#000000"),
+    axisLabelsPlacement: "top",
+    min: "{{ startTime.isoformat }}Z",
+    max: "{{ endTime.isoformat }}Z"
+  });
+
+  var valueGeometry = new Timeplot.DefaultValueGeometry({
+    gridColor: "#000000",
+    min: 0
+  });
+  var plotInfo = [
+    Timeplot.createPlotInfo({
+      id: "checkins",
+      timeGeometry: timeGeometry,
+      eventSource: eventSource2,
+      lineColor: "blue"
+    }),
+    Timeplot.createPlotInfo({
+      id: "good",
+      dataSource: new Timeplot.ColumnSource(eventSource,2),
+      valueGeometry: valueGeometry,
+      timeGeometry: timeGeometry,      
+      lineColor: "#000000",
+      fillColor: "#808080",
+      showValues: true
+    }),
+    Timeplot.createPlotInfo({
+      id: "bad",
+      dataSource: new Timeplot.ColumnSource(eventSource,1),
+      valueGeometry: valueGeometry,
+      timeGeometry: timeGeometry,      
+      lineColor: "#ff0000",
+      fillColor: "rgba(204, 128, 128, .5)",
+      showValues: true
+    })
+  ];
+            
+  timeplot = Timeplot.create(document.getElementById("my-timeplot"), plotInfo);
+  eventSource.loadText($('#txtData').text(), ',', String(document.location));
+  eventSource2.loadJSON(data, String(document.location));
+  timeplot.repaint();    
+}
+
+var resizeTimerID = null;
+function onResize() {
+    if (resizeTimerID == null) {
+        resizeTimerID = window.setTimeout(function() {
+            resizeTimerID = null;
+            timeplot.repaint();
+        }, 100);
+    }
+}
+
+$(document).ready(onLoad);
+$(window).resize(onResize);
+</script>
+{% endblock %}
+{% block content %}
+<h1>Statistics for {{ tree }}</h1>
+<p>Green locales vs red over time</p>
+<div id="my-timeplot" style="height: 400px;"></div>
+<div class="legend" style="float:right">
+  red area: locales with missing strings<br>
+  black area: good locales
+</div>
+<div id="txtData" style="display:none">{% for item in data %}
+{{ item.srctime.isoformat }}Z,{{ item.bad }},{{ item.good }}{% endfor %}
+</div>
+<div id="events" style="display:none">
+<data date-time-format="iso8601">
+</data>
+</div>
+{% endblock %}
