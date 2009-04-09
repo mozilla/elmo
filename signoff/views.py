@@ -84,9 +84,9 @@ def _getstatus(locale, mstone):
     enabled = True
     deps.append({
         'name': 'Productization',
-        'status': 'open',
-        'completeness': 1.0,
-        'blockers': []
+        'status': 'open', # 'open', 'pending', 'closed'
+        'completeness': 1.0, # float 0.0 to 1.0
+        'blockers': [] # blockers [('Desc', 'url'),('Desc', 'url')]
     })
     deps.append({
         'name': 'Web localization',
