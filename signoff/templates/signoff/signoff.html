@@ -20,6 +20,10 @@ td.orange {
 fieldset.disabled {
   background-color: #cccccc;
 }
+
+fieldset.green {
+  background-color: green;
+}
 {% endblock %}
 
 {% block content %}
@@ -27,7 +31,7 @@ fieldset.disabled {
 <a href="/signoff/{{locale.code}}">&lt;&lt; back to milestones</a>
 <h3>Signoff for {{mstone}} {{locale.code}}</h3>
 
-<fieldset>
+<fieldset class="{% ifequal timeslot 'open' %}green{%else%}disabled{% endifequal %}">
   <legend>Dates</legend>
   <span>Start date: {{mstone.start_event.date}}</span>
   <span>End date: {{mstone.end_event.date}}</span>

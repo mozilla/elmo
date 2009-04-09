@@ -15,6 +15,12 @@ urlpatterns = patterns('',
                        (r'^status/l10n-repos$',
                         'status.views.repostatus'),
                        (r'^dashboard/', include('l10nstats.urls')),
+                       (r'^signoff',
+                        include('signoff.urls')),
+                       (r'^accounts/',
+                        include('accounts.urls')),
+
+
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs' 
     # to INSTALLED_APPS to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),

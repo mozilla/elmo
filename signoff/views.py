@@ -66,7 +66,7 @@ def milestone_list(request, loc=None):
         locale = None
     i=0
     while i < len(mstones):
-        mstones[i].status = 'Open' if _getstatus(locale, mstones[i])[1] else 'Unmatched dependencies'
+        mstones[i].status = 'Dependencies matches' if _getstatus(locale, mstones[i])[1] else 'Dependencies unmatched'
         if mstones[i].start_event.date < datetime.date.today() and \
             mstones[i].end_event.date > datetime.date.today():
             mstones[i].dates = 'Open till '+str(mstones[i].end_event.date)
@@ -81,52 +81,53 @@ def milestone_list(request, loc=None):
 
 def _getstatus(locale, mstone):
     deps = []
+    enabled = True
     deps.append({
         'name': 'Productization',
         'status': 'open',
-        'completeness': 0.8,
-        'blockers': [
-            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
-            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
-            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
-            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
-            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
-        ]
+        'completeness': 1.0,
+        'blockers': []
     })
     deps.append({
         'name': 'Web localization',
-        'status': 'closed',
-        'completeness': 0.2,
-        'blockers': [
-            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
-            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
-            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
-            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
-            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
-        ]
+        'status': 'open',
+        'completeness': 1.0,
+        'blockers': []
     })
+
+    if mstone.start_event.date < datetime.date.today() and \
+        mstone.end_event.date > datetime.date.today():
+        timeslot = 'open'
+    else:
+        timeslot = 'closed'
+    
     i=0
     while i < len(deps):
         dep = deps[i]
         if dep['status'] == 'closed':
             dep['css'] = 'disabled'
+            enabled = False
         elif dep['completeness'] < 0.5:
             dep['css'] = 'red'
+            enabled = False
         elif dep['completeness'] < 0.9:
             dep['css'] = 'orange'
+            enabled = False
         else:
             dep['css'] = 'green'
         dep['completeness'] = int(dep['completeness'] * 100)
         i+=1
+    
+    if enabled and timeslot == 'closed':
+        enabled = False
 
-    enabled = False
-    return (deps, enabled)
+    return (deps, enabled, timeslot)
 
 def signoff(request, loc=None, ms=None):
     locale = Locale.objects.get(code=loc)
     mstone = Milestone.objects.get(code=ms)
     error = ''
-    (deps, enabled) = _getstatus(locale, mstone)
+    (deps, enabled, timeslot) = _getstatus(locale, mstone)
 
     if request.method == 'POST' and enabled:
         instance = Signoff(milestone=mstone, locale=locale)
@@ -159,6 +160,7 @@ def signoff(request, loc=None, ms=None):
         'form': form,
         'enabled': enabled,
         'dependencies': deps,
+        'timeslot': timeslot,
     })    
 
 def _code_type(code):

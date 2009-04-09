@@ -3,9 +3,11 @@ from django.conf import settings
 
 class Locale(models.Model):
     """stores list of locales and their names
-    code - locale code
-    name - english name of the locale
-    native - native name in locale's script
+    
+    Fields:
+    code -- locale code
+    name -- english name of the locale
+    native -- native name in locale's script
     """
     code = models.CharField(max_length = 30, unique = True)
     name = models.CharField(max_length = 100, blank = True, null = True)
@@ -19,6 +21,15 @@ class Locale(models.Model):
 
 
 class Forest(models.Model):
+    """stores set of trees
+    
+    For example all l10n-central trees create single forest
+    
+    Fields:
+    name -- name of the forest
+    url -- url to the tree list which is a base for a tree url pattern
+           (e.g. http://hg.mozilla.org/l10n-central/)
+    """
     name = models.CharField(max_length=100, unique=True)
     url = models.URLField()
     class Meta:
@@ -28,6 +39,14 @@ class Forest(models.Model):
 
 
 class Repository(models.Model):
+    """stores set of repositories
+    
+    Fields:
+    name -- name of the repository
+    url -- url to the repository
+    forest -- forest this repository belongs to. (optional)
+              It's only used for repositories that belongs to a forest (l10n)
+    """
     name = models.CharField(max_length=100, unique=True)
     url = models.URLField()
     forest = models.ForeignKey(Forest, null=True, blank=True)
@@ -44,6 +63,14 @@ class Repository(models.Model):
 
 
 class Push(models.Model):
+    """stores list of revisions pushed to repositories
+    
+    Fields:
+    repository -- repository this revision was pushed to
+    user -- person who did the push
+    push_date -- date and time of the push
+    push_id -- unique id of the push
+    """
     repository = models.ForeignKey(Repository)
     user = models.CharField(max_length=200, db_index=True)
     push_date = models.DateTimeField('date of push', db_index=True)
@@ -66,6 +93,15 @@ else:
 
 
 class Changeset(models.Model):
+    """stores list of changsets
+    
+    Fields:
+    push -- push this changeset is part of
+    revision -- revision that has been created by this changeset
+    user -- author of this changeset
+    description -- description added to this changeset
+    files -- files affected by this changeset
+    """
     push = models.ForeignKey(Push, related_name='changesets')
     revision = models.CharField(max_length=40, db_index=True)
     user = models.CharField(null = True, blank = True, max_length=100, db_index=True)
@@ -79,10 +115,17 @@ class Changeset(models.Model):
 
 
 class Tree(models.Model):
-    """stores unique repositories combination like
+    """stores unique repositories combination
+    
+    Like:
     comm-central + mozilla-central = Thunderbird trunk
     releases/mozilla-1.9.1 = Firefox 3.5
     mobile-browser + releases/mozilla-1.9.1 = Fennec 1.0
+    
+    Fiels:
+    code -- unique code name of the tree (e.g. fx35)
+    repositories -- list of repositories that make this tree
+    l10n -- forest that is assigned to this tree
     """
     code = models.CharField(max_length = 50, unique=True)
     repositories = models.ManyToManyField(Repository)

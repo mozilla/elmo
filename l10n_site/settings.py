@@ -79,11 +79,14 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.admin',
+    'django_extensions',
+    'accounts',
     'life',
     'mbdb',
     'pushes',
     'status',
     'tinder',
+    'signoff',
 )
 
 # dashboard's own settings
