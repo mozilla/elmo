@@ -4,9 +4,21 @@ from life.models import Locale, Push
 from signoff.models import Milestone, Signoff, SignoffForm
 from django import forms
 
+import datetime
+
 def index(request):
     locales = Locale.objects.all().order_by('code')
     mstones = Milestone.objects.all().order_by('code')
+    
+    i=0
+    while i < len(mstones):
+        if mstones[i].start_event.date < datetime.date.today() and \
+            mstones[i].end_event.date > datetime.date.today():
+            mstones[i].dates = 'Open till '+str(mstones[i].end_event.date)
+        else:
+            mstones[i].dates = str(mstones[i].start_event.date) + ' - ' + str(mstones[i].end_event.date)
+        i+=1
+    
     return render_to_response('signoff/index.html', {
         'locales': locales,
         'mstones': mstones,
@@ -23,6 +35,18 @@ def locale_list(request, ms=None):
             error = 'Could not find requested milestone'
     else:
         mstone = None
+    
+    i=0
+    while i < len(locales):
+        locales[i].status = 'Open' if _getstatus(locales[i], mstone)[1] else 'Unmatched dependencies'
+        
+        current = Signoff.objects.filter(locale=locales[i], milestone=mstone).order_by('-pk')
+        if current:
+            locales[i].signoff = '[Signed off at %s by %s]' % (current[0].when.strftime("%Y-%m-%d %H:%M"), current[0].author)
+        else:
+            locales[i].signoff = ''
+        i+=1
+
     return render_to_response('signoff/locale_list.html', {
         'locales': locales,
         'mstone': mstone,
@@ -40,17 +64,71 @@ def milestone_list(request, loc=None):
             error = 'Could not find requested locale'
     else:
         locale = None
+    i=0
+    while i < len(mstones):
+        mstones[i].status = 'Open' if _getstatus(locale, mstones[i])[1] else 'Unmatched dependencies'
+        if mstones[i].start_event.date < datetime.date.today() and \
+            mstones[i].end_event.date > datetime.date.today():
+            mstones[i].dates = 'Open till '+str(mstones[i].end_event.date)
+        else:
+            mstones[i].dates = str(mstones[i].start_event.date) + ' - ' + str(mstones[i].end_event.date)
+        i+=1
     return render_to_response('signoff/mstone_list.html', {
         'mstones': mstones,
         'locale': locale,
         'error': error,
     })
 
+def _getstatus(locale, mstone):
+    deps = []
+    deps.append({
+        'name': 'Productization',
+        'status': 'open',
+        'completeness': 0.8,
+        'blockers': [
+            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
+            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
+            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
+            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
+            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
+        ]
+    })
+    deps.append({
+        'name': 'Web localization',
+        'status': 'closed',
+        'completeness': 0.2,
+        'blockers': [
+            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
+            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
+            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
+            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
+            ('Bug 23242: Add Mibbit', 'http://bugzilla.mozilla.org/show_bug.cgi?id=23242'),
+        ]
+    })
+    i=0
+    while i < len(deps):
+        dep = deps[i]
+        if dep['status'] == 'closed':
+            dep['css'] = 'disabled'
+        elif dep['completeness'] < 0.5:
+            dep['css'] = 'red'
+        elif dep['completeness'] < 0.9:
+            dep['css'] = 'orange'
+        else:
+            dep['css'] = 'green'
+        dep['completeness'] = int(dep['completeness'] * 100)
+        i+=1
+
+    enabled = False
+    return (deps, enabled)
+
 def signoff(request, loc=None, ms=None):
     locale = Locale.objects.get(code=loc)
     mstone = Milestone.objects.get(code=ms)
     error = ''
-    if request.method == 'POST':
+    (deps, enabled) = _getstatus(locale, mstone)
+
+    if request.method == 'POST' and enabled:
         instance = Signoff(milestone=mstone, locale=locale)
         form = SignoffForm(request.POST, instance=instance)
         if form.is_valid():
@@ -69,8 +147,10 @@ def signoff(request, loc=None, ms=None):
     
     if request.user.is_authenticated():
         form.fields['author'].initial = request.user
-    
-    enabled = False
+
+    if not enabled:
+        for i in form.fields:
+            form.fields[i].widget.attrs['disabled'] = 'disabled'
     
     return render_to_response('signoff/signoff.html', {
         'mstone': mstone,
@@ -78,6 +158,7 @@ def signoff(request, loc=None, ms=None):
         'error': error,
         'form': form,
         'enabled': enabled,
+        'dependencies': deps,
     })    
 
 def _code_type(code):

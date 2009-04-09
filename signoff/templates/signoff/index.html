@@ -11,7 +11,7 @@
 <h3>Milestones</h3>
 <ul>
   {% for mstone in mstones %}
-  <li><a href="/signoff/{{mstone.code}}">{{ mstone }}</a></li>
+  <li><a href="/signoff/{{mstone.code}}">{{ mstone }} [{{mstone.dates}}]</a></li>
   {% endfor %}
 </ul>
 

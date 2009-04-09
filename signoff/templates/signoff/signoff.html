@@ -1,27 +1,64 @@
 {% extends "signoff/base.html" %}
 
+{% block style %}
+td.disabled {
+  background-color: gray;
+}
+
+td.green {
+  background-color: green;
+}
+
+td.red {
+  background-color: red;
+}
+
+td.orange {
+  background-color: orange;
+}
+
+fieldset.disabled {
+  background-color: #cccccc;
+}
+{% endblock %}
+
 {% block content %}
 <a href="/signoff/{{mstone.code}}">&lt;&lt; back to locales</a>
 <a href="/signoff/{{locale.code}}">&lt;&lt; back to milestones</a>
 <h3>Signoff for {{mstone}} {{locale.code}}</h3>
 
-<h4>Depends on</h4>
-<ul>
-  <li>Websites</li>
-  <li>SUMO</li>
-  <li>Localization</li>
-  <li>P12n</li>
-</ul>
+<fieldset>
+  <legend>Dates</legend>
+  <span>Start date: {{mstone.start_event.date}}</span>
+  <span>End date: {{mstone.end_event.date}}</span>
+</fieldset>
 
-<div>
-  <p>Start date: {{mstone.start_event.date}}</p>
-  <p>End date: {{mstone.end_event.date}}</p>
-</div>
+<fieldset>
+  <legend>Depends on</legend>
+<table>
+  <thead>
+    {% for dep in dependencies %}
+    <th>{{ dep.name }}</th>
+    {% endfor %}
+  </thead>
+  <tr>
+    {% for dep in dependencies %}
+    <td class="{{ dep.css }}">
+      {{ dep.completeness }}%
+      <ul>
+        {% for blocker in dep.blockers %}
+        <li><a href="{{blocker.1}}">{{blocker.0}}</a></li>
+        {% endfor %}
+      </ul>
+    </td>
+    {% endfor %}
+  </tr>
+</table>
+</fieldset>
+<div class="clear" />
 
-<div>
-  Enabled: {% if enabled %}True{%else%}False{% endif %}
-</div>
-
+<fieldset class="{% if enabled %}enabled{%else%}disabled{% endif %}">
+  <legend>Sign off</legend>
 <form action="" method="POST" {% if not enabled %}class="disabled"{% endif %}>
     <div class="fieldWrapper">
         {{ form.push.errors }}
@@ -33,8 +70,9 @@
         <label for="id_subject">{{ form.author.label_tag }}:</label>
         {{ form.author }}
     </div>
-<input type="submit" value="Submit" />
+<input type="submit" value="Submit" {% if not enabled %}disabled="disabled"{% endif %} />
 </form>
+</fieldset>
 
 <iframe id="account"
         style="position:absolute;bottom:0;right:0;width:300px;height:100px;border:1px solid black"

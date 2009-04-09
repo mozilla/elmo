@@ -12,7 +12,7 @@
 <p>Locales for {{mstone}}:</p>
 <ul>
   {% for locale in locales %}
-    <li><a href="/signoff/{{mstone.code}}/{{locale.code}}">{{locale}}</a></li>
+    <li><a href="/signoff/{{mstone.code}}/{{locale.code}}">{{locale}} [{{locale.status}}]{{locale.signoff}}</a></li>
   {% endfor %}
 </ul>
 {% endif %}
