@@ -4,6 +4,3 @@ from django.contrib import admin
 admin.site.register(Locale)
 admin.site.register(Repository)
 admin.site.register(Tree)
-admin.site.register(Forest)
-admin.site.register(Push)
-admin.site.register(Changeset)
