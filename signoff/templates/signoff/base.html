@@ -1,6 +1,10 @@
 <html>
   <head>
     <title>{% block title %}{% endblock %}</title>
+{% block js_include %}{% endblock %}
+    <script type="text/javascript">
+{% block javascript %}{% endblock %}
+    </script>
     <style type="text/css">
 {% block style %}{% endblock %}
     </style>

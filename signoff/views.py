@@ -3,6 +3,8 @@ from django.http import HttpResponseRedirect, HttpResponse
 from life.models import Locale, Push
 from signoff.models import Milestone, Signoff, SignoffForm
 from django import forms
+from django.core.urlresolvers import reverse
+
 
 import datetime
 
@@ -134,6 +136,8 @@ def signoff(request, loc=None, ms=None):
         form = SignoffForm(request.POST, instance=instance)
         if form.is_valid():
             form.save()
+            request.session['signoff_note'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone, locale, form.cleaned_data['author'])
+            return HttpResponseRedirect(reverse('signoff.views.sublist', kwargs={'arg':loc, 'arg2':ms}))
     else:
         current = Signoff.objects.filter(locale=locale, milestone=mstone).order_by('-pk')
         if current:
@@ -153,6 +157,10 @@ def signoff(request, loc=None, ms=None):
         for i in form.fields:
             form.fields[i].widget.attrs['disabled'] = 'disabled'
     
+    note = request.session.get('signoff_note', None)
+    if note:
+        del request.session['signoff_note']
+    
     return render_to_response('signoff/signoff.html', {
         'mstone': mstone,
         'locale': locale,
@@ -161,6 +169,7 @@ def signoff(request, loc=None, ms=None):
         'enabled': enabled,
         'dependencies': deps,
         'timeslot': timeslot,
+        'note': note,
     })    
 
 def _code_type(code):

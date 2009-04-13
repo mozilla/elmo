@@ -1,5 +1,16 @@
 {% extends "signoff/base.html" %}
 
+{% block js_include %}
+  <script type="text/javascript" src="/static/jquery.js"></script>
+{% endblock %}
+
+{% block javascript %}
+$(document).ready(function(){
+   setTimeout('$(".note").fadeOut("slow")', 1000);
+ });
+
+{% endblock %}
+
 {% block style %}
 td.disabled {
   background-color: gray;
@@ -21,8 +32,35 @@ fieldset.disabled {
   background-color: #cccccc;
 }
 
+fieldset legend {
+  padding: 3px;
+}
+
+fieldset.green legend {
+  background-color: #cccccc;
+}
+
 fieldset.green {
   background-color: green;
+}
+
+fieldset.green legend {
+  background-color: green;
+}
+
+fieldset.note {
+  background-color: #ffff99;
+  border: 1px solid #dddd00;
+  padding: 5px;
+  margin: 10px 0;
+}
+
+fieldset.note legend {
+  background-color: #ffff99;
+  border-top: 1px solid #dddd00;
+  border-left: 1px solid #ffff00;
+  border-right: 1px solid #ffff00;
+  font-weight: bold;
 }
 {% endblock %}
 
@@ -77,6 +115,13 @@ fieldset.green {
 <input type="submit" value="Submit" {% if not enabled %}disabled="disabled"{% endif %} />
 </form>
 </fieldset>
+
+{% if note %}
+  <fieldset class="note">
+    <legend>note!</legend>
+  {{ note|safe }}
+  </fieldset>
+{% endif %}
 
 <iframe id="account"
         style="position:absolute;bottom:0;right:0;width:300px;height:100px;border:1px solid black"
