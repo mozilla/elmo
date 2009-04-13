@@ -8,6 +8,10 @@ from django.core.urlresolvers import reverse
 
 import datetime
 
+def _get_current_signoff(locale, mstone):
+    current = Signoff.objects.filter(locale=locale, milestone=mstone).order_by('-pk')
+    return current[0]
+
 def index(request):
     locales = Locale.objects.all().order_by('code')
     mstones = Milestone.objects.all().order_by('code')
@@ -19,6 +23,7 @@ def index(request):
             mstones[i].dates = 'Open till '+str(mstones[i].end_event.date)
         else:
             mstones[i].dates = str(mstones[i].start_event.date) + ' - ' + str(mstones[i].end_event.date)
+
         i+=1
     
     return render_to_response('signoff/index.html', {
@@ -39,15 +44,15 @@ def locale_list(request, ms=None):
         mstone = None
     
     i=0
-    while i < len(locales):
-        locales[i].status = 'Open' if _getstatus(locales[i], mstone)[1] else 'Unmatched dependencies'
-        
-        current = Signoff.objects.filter(locale=locales[i], milestone=mstone).order_by('-pk')
-        if current:
-            locales[i].signoff = '[Signed off at %s by %s]' % (current[0].when.strftime("%Y-%m-%d %H:%M"), current[0].author)
-        else:
-            locales[i].signoff = ''
-        i+=1
+    if  mstone:
+        while i < len(locales):
+            locales[i].params = []
+            locales[i].params.append('Open' if _getstatus(locales[i], mstone)[1] else 'Unmatched dependencies')
+            
+            current = _get_current_signoff(locales[i], mstone)
+            if current:
+                locales[i].params.append('Signed off at %s by %s' % (current.when.strftime("%Y-%m-%d %H:%M"), current.author))
+            i+=1
 
     return render_to_response('signoff/locale_list.html', {
         'locales': locales,
@@ -68,12 +73,19 @@ def milestone_list(request, loc=None):
         locale = None
     i=0
     while i < len(mstones):
-        mstones[i].status = 'Dependencies matches' if _getstatus(locale, mstones[i])[1] else 'Dependencies unmatched'
+        mstones[i].params = []
         if mstones[i].start_event.date < datetime.date.today() and \
             mstones[i].end_event.date > datetime.date.today():
-            mstones[i].dates = 'Open till '+str(mstones[i].end_event.date)
+            mstones[i].params.append('Open till '+str(mstones[i].end_event.date))
         else:
-            mstones[i].dates = str(mstones[i].start_event.date) + ' - ' + str(mstones[i].end_event.date)
+            mstones[i].params.append(str(mstones[i].start_event.date) + ' - ' + str(mstones[i].end_event.date))
+
+        if locale:
+            mstones[i].params.append('Dependencies matches' if _getstatus(locale, mstones[i])[1] else 'Dependencies unmatched')
+            current = _get_current_signoff(locale, mstones[i])
+            if current:
+                mstones[i].params.append('Signed off at %s by %s' % (current.when.strftime("%Y-%m-%d %H:%M"), current.author))
+
         i+=1
     return render_to_response('signoff/mstone_list.html', {
         'mstones': mstones,

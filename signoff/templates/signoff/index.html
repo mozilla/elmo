@@ -4,19 +4,14 @@
 <h3>Locales</h3>
 <ul>
   {% for locale in locales %}
-  <li><a href="/signoff/{{locale.code}}">{{ locale }}</a></li>
+  <li><a href="{% url signoff.views.milestone_list loc=locale.code %}">{{ locale }}</a></li>
   {% endfor %}
 </ul>
 
 <h3>Milestones</h3>
 <ul>
   {% for mstone in mstones %}
-  <li><a href="/signoff/{{mstone.code}}">{{ mstone }} [{{mstone.dates}}]</a></li>
+  <li><a href="{% url signoff.views.locale_list ms=mstone.code %}">{{ mstone }} [{{mstone.dates}}]</a></li>
   {% endfor %}
 </ul>
-
-<iframe id="account"
-        style="position:absolute;bottom:0;right:0;width:300px;height:100px;border:1px solid black"
-        src="/accounts/">
-</iframe>
 {% endblock %}

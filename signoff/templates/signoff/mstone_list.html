@@ -1,7 +1,7 @@
 {% extends "signoff/base.html" %}
 
 {% block content %}
-<a href="/signoff/">&lt; All locales</a>
+<a href="{% url signoff.views.index %}">&lt; All locales</a>
 <br />
 {% if error %}
 <p class="error">
@@ -9,10 +9,17 @@
 </p>
 {% else %}
 <br />
+{% if locale %}
 <p>Milestones for {{locale}}:</p>
+{% else %}
+<p>Milestones:</p>
+{% endif %}
 <ul>
   {% for mstone in mstones %}
-    <li><a href="/signoff/{{locale.code}}/{{mstone.code}}">{{mstone}} [{{mstone.status}}][{{mstone.dates}}]</a></li>
+    <li><a href="{% url signoff.views.sublist arg=locale.code,arg2=mstone.code %}">{{mstone}}
+    {% for elem in mstone.params %}
+      [{{elem}}]
+    {% endfor %}</a></li>
   {% endfor %}
 </ul>
 {% endif %}
