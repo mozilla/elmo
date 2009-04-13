@@ -4,13 +4,16 @@ from life.models import Locale, Push
 from signoff.models import Milestone, Signoff, SignoffForm
 from django import forms
 from django.core.urlresolvers import reverse
-
+from django.db.models.query import QuerySet
 
 import datetime
 
 def _get_current_signoff(locale, mstone):
     current = Signoff.objects.filter(locale=locale, milestone=mstone).order_by('-pk')
-    return current[0]
+    try:
+        return current[0]
+    except IndexError:
+        return None
 
 def index(request):
     locales = Locale.objects.all().order_by('code')
@@ -50,7 +53,7 @@ def locale_list(request, ms=None):
             locales[i].params.append('Open' if _getstatus(locales[i], mstone)[1] else 'Unmatched dependencies')
             
             current = _get_current_signoff(locales[i], mstone)
-            if current:
+            if current is not None:
                 locales[i].params.append('Signed off at %s by %s' % (current.when.strftime("%Y-%m-%d %H:%M"), current.author))
             i+=1
 
@@ -159,8 +162,10 @@ def signoff(request, loc=None, ms=None):
             form = SignoffForm()
     
     forest = mstone.appver.tree.l10n
-    repo_url = forest.url+locale.code
-    form.fields['push'].queryset = Push.objects.filter(repository__url=repo_url)
+    repo_url = '%s%s/' % (forest.url, locale.code)
+    q = Push.objects.filter(repository__url=repo_url)
+    q = q.order_by('-push_date')
+    form.fields['push'].queryset = q[:10]
     
     if request.user.is_authenticated():
         form.fields['author'].initial = request.user
