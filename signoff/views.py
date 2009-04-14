@@ -206,3 +206,27 @@ def sublist(request, arg=None, arg2=None):
             return milestone_list(request, arg)
         else:
             return locale_list(request, arg)
+
+def l10n_changesets(request, milestone):
+    sos = Signoff.objects.filter(milestone__code=milestone)
+    sos = sos.order_by('locale__code')
+    r = HttpResponse(("%s %s\n" % (so.locale.code, so.push.tip.shortrev)
+                      for so in sos),
+                      content_type='text/plain; charset=utf-8')
+    r['Content-Disposition'] = 'inline; filename=l10n-changesets'
+    return r
+
+def shipped_locales(request, milestone):
+    sos = Signoff.objects.filter(milestone__code=milestone)
+    locales = list(sos.values_list('locale__code', flat=True)) + ['en-US']
+    def withPlatforms(loc):
+        if loc == 'ja':
+            return 'ja linux win32\n'
+        if loc == 'ja-JP-mac':
+            return 'ja-JP-mac osx\n'
+        return loc + '\n'
+    
+    r = HttpResponse(map(withPlatforms, sorted(locales)),
+                      content_type='text/plain; charset=utf-8')
+    r['Content-Disposition'] = 'inline; filename=shipped-locales'
+    return r
