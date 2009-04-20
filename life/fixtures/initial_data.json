@@ -1,0 +1,9 @@
+[
+  {
+    "model": "life.branch",
+    "pk": 1,
+    "fields": {
+      "name": "default"
+    }
+  }
+]

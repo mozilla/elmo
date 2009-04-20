@@ -1,1 +1,2 @@
-from life.models import Forest, Repository, Push, File, Changeset, models
+from life.models import Branch, Forest, Repository, Locale, Push, \
+    File, Changeset, models

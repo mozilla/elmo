@@ -20,6 +20,14 @@ class Locale(models.Model):
             return self.code
 
 
+class Branch(models.Model):
+    """mercurial in-repo branch
+    """
+    name = models.TextField(help_text="name of the branch")
+    def __unicode__(self):
+        return self.name
+
+
 class Forest(models.Model):
     """stores set of trees
     
@@ -49,7 +57,9 @@ class Repository(models.Model):
     """
     name = models.CharField(max_length=100, unique=True)
     url = models.URLField()
-    forest = models.ForeignKey(Forest, null=True, blank=True)
+    forest = models.ForeignKey(Forest, null=True, blank=True,
+                               related_name='repositories')
+    locale = models.ForeignKey(Locale, null=True, blank=True)
     class Meta:
         db_table = 'pushes_repository'
     def last_known_push(self):
@@ -77,9 +87,15 @@ class Push(models.Model):
     push_id = models.PositiveIntegerField(default=0)
     class Meta:
         db_table = 'pushes_push'
-    
+
+    @property
+    def tip(self):
+        return self.changesets.order_by('-pk')[0]
+
     def __unicode__(self):
-        return 'Push to %s by %s [%s]' % (self.repository.name, self.user, self.push_date)
+        tip = self.tip.shortrev
+        return self.repository.url + 'pushloghtml?changeset=' + tip
+        #return 'Push to %s by %s [%s]' % (self.repository.name, self.user, self.push_date)
 
 if 'mbdb' in settings.INSTALLED_APPS:
     from mbdb.models import File
@@ -107,10 +123,16 @@ class Changeset(models.Model):
     user = models.CharField(null = True, blank = True, max_length=100, db_index=True)
     description = models.TextField(null = True, blank = True, db_index=True)
     files = models.ManyToManyField(File)
+    branch = models.ForeignKey(Branch, default=1, related_name='changesets')
     class Meta:
         db_table = 'pushes_changeset'
+
+    @property
+    def shortrev(self):
+        return self.revision[:12]
+
     def url(self):
-        return self.push.repository.url + "rev/" + self.revision[:12]
+        return self.push.repository.url + "rev/" + self.shortrev
     __unicode__ = url
 
 
