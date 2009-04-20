@@ -33,29 +33,7 @@ class Command(BaseCommand):
         else:
             repos = Repository.objects.all()
         for repo in repos:
-            if not repo.push_set.count():
-                if repo.last_known_push != 0:
-                    if not quiet:
-                        print repo.name + " has bad last_known_push"
-                    if fix:
-                        repo.last_known_push = 0
-                        repo.save()
-                        if not quiet:
-                            print "  ... fixed"
-                continue
             ids=repo.push_set.all().values_list('push_id', flat=True)
-            last_good_push = ids[len(ids)-1]
-            if ids[0] != 1:
-                if not quiet:
-                    print repo.name + " has all broken pushes"
-                continue
-            for i in xrange(len(ids) - 1):
-                if ids[i + 1] != ids[i] + 1:
-                    last_good_push = ids[i]
-                    break
-            if last_good_push != repo.last_known_push:
-                if not quiet:
-                    print repo.name + " should get pushes killed"
             if not test_repo:
                 continue
             if not quiet:
@@ -73,8 +51,16 @@ class Command(BaseCommand):
             ui.readconfig(configpath)
             hgrepo = repository(ui, repopath)
             for p in repo.push_set.iterator():
-                for cs in p.changeset_set.iterator():
+                for cs in p.changesets.iterator():
                     try:
                         ctx = hgrepo.changectx(cs.revision)
+                        branch = ctx.branch()
+                        if branch != 'default':
+                            dbb, created = \
+                                Branch.objects.get_or_create(name=branch)
+                            if created and not quiet:
+                                print "Created branch object for %s" % branch
+                            cs.branch = dbb
+                            cs.save()
                     except Exception, e:
                         print repo.name, e
