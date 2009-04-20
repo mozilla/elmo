@@ -24,7 +24,7 @@ def getPoller(options):
     if options["settings"] is None:
             raise usage.UsageError("specify a settings module")
     os.environ["DJANGO_SETTINGS_MODULE"] = options["settings"]
-    from pushes.models import Repository, Forest
+    from pushes.models import Repository, Forest, Locale
     from pushes.utils import getURL, handlePushes
 
     class PushPoller(object):
@@ -94,6 +94,9 @@ def getPoller(options):
                 name = links[i].strip('/')
                 if not False:
                     log.msg("adding %s: %s" % (name, urls[i]))
+                # Forests are holding l10n repos, set locale
+                locale, create = \
+                    Locale.get_or_create(code=name.rsplit('/',1)[1])
                 r = Repository.objects.create(name = name, url = urls[i],
                                               forest = forest)
                 self.repos.append(r)
