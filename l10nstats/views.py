@@ -3,7 +3,9 @@ from datetime import datetime, timedelta
 
 from django.shortcuts import render_to_response
 from django.template import Context, loader
-from django.http import HttpResponse, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseNotFound,\
+    HttpResponseNotModified
+from django.utils import simplejson
 
 from l10nstats.models import *
 
@@ -32,8 +34,21 @@ def index(request):
     Implemented with a Simile Exhibit.
     """
     # verify args?
+    args = []
+    if 'locale' in request.GET:
+        locales = request.GET.getlist('locale')
+        locales = Locale.objects.filter(code__in=locales)
+        locales = locales.values_list('code', flat=True)
+        if locales:
+            args += ['locale=%s' % loc for loc in locales]
+    if 'tree' in request.GET:
+        trees = request.GET.getlist('tree')
+        trees = Tree.objects.filter(code__in=trees)
+        trees = trees.values_list('code', flat=True)
+        if trees:
+            args += ['tree=%s' % t for t in trees]
     return render_to_response('l10nstats/index.html',
-                              {'args': request.GET})
+                              {'args': args})
 
 
 def status_json(request):
@@ -41,8 +56,40 @@ def status_json(request):
     
     Used by the main dashboard page Exhibit.
     """
-    
-    return HttpResponse('{}')
+
+    q = Run.objects.filter(active__isnull=False).order_by('tree__code',
+                                                          'locale__code')
+    if 'tree' in request.GET:
+        q = q.filter(tree__code__in=request.GET.getlist('tree'))
+    if 'locale' in request.GET:
+        q = q.filter(locale__code__in=request.GET.getlist('locale'))
+    leafs = ['tree__code', 'locale__code',
+             'missing', 'missingInFiles',
+             'errors', 'unchanged', 'total', 'obsolete', 'changed',
+             'completion']
+    def toExhibit(d):
+        missing = d['missing'] + d['missingInFiles']
+        result = 'success'
+        tree = d['tree__code']
+        locale = d['locale__code']
+        if missing:
+            result = 'failure'
+        elif d['obsolete']:
+            result = 'warnings'
+        return {'id': '%s/%s' % (tree, locale),
+                'label': locale,
+                'locale': locale,
+                'tree': tree,
+                'type': 'Build',
+                'result': result,
+                'missing': missing,
+                'changed': d['changed'],
+                'unchanged': d['unchanged'],
+                'total': d['total'],
+                'completion': d['completion']
+                }
+    items = map(toExhibit, q.values(*leafs))
+    return HttpResponse(simplejson.dumps({'items': items}, indent=2))
 
 
 def history_plot(request):

@@ -3,7 +3,7 @@
 {% block head_matter %}
   <!-- <link href="schema.json" type="application/json" rel="exhibit/data" /> -->
 <!--  -->
-  <link href="l10n_status.json" type="application/json" rel="exhibit/data" />
+  <link href="{% url l10nstats.views.status_json %}?{{ args|join:"&" }}" type="application/json" rel="exhibit/data" />
 
   <script src="http://static.simile.mit.edu/exhibit/api-2.0/exhibit-api.js?autoCreate=false"
               type="text/javascript"></script>
@@ -100,26 +100,26 @@ div.thumbnail {border: solid black 1px; margin: 2px;}
     <div ex:role="view" ex:viewClass="Tabular"
       ex:collectionID="buids"
       ex:columnLabels="Locale, Tree, %, Errors, Missing, Unchanged, Web bugs, Stats, Status"
-      ex:columns=".locale, .tree, .coverage_completion, .coverage_errors, .coverage_missing + .coverage_missingInFiles, .coverage_unchanged, .locale.missing_webbugs, .locale, .coverage_changed"
+      ex:columns=".locale, .tree, .completion, .errors, .missing, .unchanged, .locale.missing_webbugs, .locale, .changed"
       ex:cellSpacing="0">
       <table>
     <tr>
       <td class="locale_cell" ex:content=".locale"></td>
       <td ex:content=".tree" ex:class-subcontent="tree_cell {&#123;.result}}"></td>
 
-      <td class="completion_cell" ex:content=".coverage_completion"></td>
-      <td class="coverage_cell" ex:content=".coverage_errors"></td>
-      <td class="coverage_cell" ex:content=".coverage_missing + .coverage_missingInFiles"></td>
-      <td class="coverage_cell" ex:content=".coverage_unchanged"></td>
+      <td class="completion_cell" ex:content=".completion"></td>
+      <td class="coverage_cell" ex:content=".errors"></td>
+      <td class="coverage_cell" ex:content=".missing"></td>
+      <td class="coverage_cell" ex:content=".unchanged"></td>
       <td class="bugs_cell"><a ex:href-subcontent="http://l10n.mozilla.org/webdashboard/?locale={&#123;.locale}}" target="_blank" ex:content=".locale.missing_webbugs"></a> (<span ex:content=".locale.total_webbugs"></span>)</td>
-      <td><a title="History" ex:href-subcontent="http://l10n.mozilla.org/buildbot/statistics?tree={&#123;.tree}}&locale={&#123;.locale}}" target="_blank">H</a>/<a title="Latest comparison" ex:href-subcontent="http://l10n.mozilla.org/buildbot/compare/{&#123;.buildername}}/{&#123;.buildnumber}}" target="_blank">C</a></td>
+      <td><a title="History" ex:href-subcontent="{% url l10nstats.views.history_plot %}?tree={&#123;.tree}}&locale={&#123;.locale}}" target="_blank">H</a></td>
 
       <td>
         <table class="stats">
                <tr>
-                 <td title="changed" class="status changed" ex:width-subcontent="{&#123;.coverage_completion }}px"></td>
-                 <td title="missing" class="status missing" ex:width-subcontent="{&#123;100 * (.coverage_missing + .coverage_missingInFiles) / .coverage_total}}px"></td>
-                 <td title="unchanged" class="status unchanged" ex:width-subcontent="{&#123;100 * .coverage_unchanged / .coverage_total}}px"></td>
+                 <td title="changed" class="status changed" ex:width-subcontent="{&#123;.completion }}px"></td>
+                 <td title="missing" class="status missing" ex:width-subcontent="{&#123;100 * .missing / .total}}px"></td>
+                 <td title="unchanged" class="status unchanged" ex:width-subcontent="{&#123;100 * .unchanged / .total}}px"></td>
                </tr>
              </table>
        </td>
