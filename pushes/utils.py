@@ -9,7 +9,7 @@ from mercurial.hg import repository
 from mercurial.ui import ui as _ui
 from mercurial.commands import pull, update, clone
 
-from pushes.models import Push, Changeset, File
+from pushes.models import Push, Changeset, Branch, File
 from django.conf import settings
 
 def getURL(repo, limit):
@@ -62,6 +62,12 @@ def handlePushes(page, repo, do_update=True):
                 ctx = hgrepo.changectx(cs.revision)
                 cs.user = ctx.user().decode('utf-8', 'replace')
                 cs.description = ctx.description().decode('utf-8', 'replace')
+                branch = ctx.branch()
+                if branch != 'default':
+                    # 'default' is already set in the db, only change if needed
+                    dbb, created = \
+                        Branch.get_or_create(name=branch)
+                    cs.branch = dbb
                 cs.save()
                 for path in ctx.files():
                     # hack around mysql ignoring trailing ' ', and some
