@@ -144,59 +144,10 @@ def _getstatus(locale, mstone):
 def signoff(request, loc, ms):
     locale = Locale.objects.get(code=loc)
     mstone = Milestone.objects.get(code=ms)
-    error = ''
-    (deps, enabled, timeslot) = _getstatus(locale, mstone)
-
-    if request.method == 'POST' and enabled:
-        instance = Signoff(milestone=mstone, locale=locale)
-        form = SignoffForm(request.POST, instance=instance)
-        if form.is_valid():
-            form.save()
-            request.session['signoff_note'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone, locale, form.cleaned_data['author'])
-            return HttpResponseRedirect(reverse('signoff.views.sublist', kwargs={'arg':loc, 'arg2':ms}))
-    else:
-        current = Signoff.objects.filter(locale=locale, milestone=mstone).order_by('-pk')
-        if current:
-            current = current[0]
-            form = SignoffForm({'push': current.push.id, 'author': current.author})
-        else:
-            form = SignoffForm()
-    
-    forest = mstone.appver.tree.l10n
-    repo_url = '%s%s/' % (forest.url, locale.code)
-    q = Push.objects.filter(repository__url=repo_url).order_by('-push_date')[:10]
-    print repo_url
-    form.fields['push'].choices = [('','---')]+[(i.id, i) for i in q]
-    
-    if request.user.is_authenticated():
-        form.fields['author'].initial = request.user
-
-    if not enabled:
-        for i in form.fields:
-            form.fields[i].widget.attrs['disabled'] = 'disabled'
-    
-    note = request.session.get('signoff_note', None)
-    if note:
-        del request.session['signoff_note']
-    
-    return render_to_response('signoff/signoff.html', {
-        'mstone': mstone,
-        'locale': locale,
-        'error': error,
-        'form': form,
-        'enabled': enabled,
-        'dependencies': deps,
-        'timeslot': timeslot,
-        'note': note,
-    })    
-
-def signoff2(request, loc, ms):
-    locale = Locale.objects.get(code=loc)
-    mstone = Milestone.objects.get(code=ms)
-    error = ''
     current = None
     (deps, enabled, timeslot) = _getstatus(locale, mstone)
 
+
     if request.method == 'POST' and enabled:
         instance = Signoff(milestone=mstone, locale=locale)
         form = SignoffForm(request.POST, instance=instance)
@@ -210,7 +161,6 @@ def signoff2(request, loc, ms):
             current = current[0]
             form = SignoffForm({'push': current.push.id, 'author': current.author})
         else:
-            current = None
             form = SignoffForm()
     
     forest = mstone.appver.tree.l10n
@@ -249,10 +199,6 @@ def signoff2(request, loc, ms):
     
     if request.user.is_authenticated():
         form.fields['author'].initial = request.user
-
-    if not enabled:
-        for i in form.fields:
-            form.fields[i].widget.attrs['disabled'] = 'disabled'
     
     note = request.session.get('signoff_note', None)
     if note:
@@ -261,10 +207,7 @@ def signoff2(request, loc, ms):
     return render_to_response('signoff/signoff2.html', {
         'mstone': mstone,
         'locale': locale,
-        'error': error,
         'form': form,
-        'enabled': enabled,
-        'dependencies': deps,
         'timeslot': timeslot,
         'note': note,
         'pushes': pushes,
@@ -280,9 +223,9 @@ def _code_type(code):
 def sublist(request, arg=None, arg2=None):
     if arg2:
         if _code_type(arg) == 'locale':
-            return signoff2(request, loc=arg, ms=arg2)
+            return signoff(request, loc=arg, ms=arg2)
         else:
-            return signoff2(request, loc=arg2, ms=arg)
+            return signoff(request, loc=arg2, ms=arg)
     else:
         if _code_type(arg) == 'locale':
             return milestone_list(request, arg)
