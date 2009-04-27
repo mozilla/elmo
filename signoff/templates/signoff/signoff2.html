@@ -1,0 +1,116 @@
+{% extends "signoff/base.html" %}
+
+{% block title %}Signoff for {{mstone}} {{locale.code}}{% endblock %}
+
+{% block js_include %}
+  <script type="text/javascript" src="/static/jquery.js"></script>
+{% endblock %}
+
+{% block javascript %}
+$(document).ready(function(){
+   setTimeout('$(".note").fadeOut("slow")', 2000);
+ });
+
+{% endblock %}
+
+{% block style %}
+
+#pushes {
+  width: 100%;
+  border: 1px solid black;
+}
+
+#pushes tr {
+  margin: 0;
+}
+
+#pushes tr > td {
+  border: 1px solid black;
+  padding: 3px;
+  width: 10%;
+  margin: 0;
+}
+
+#pushes tr.signoff td {
+  text-align: center;
+}
+
+fieldset.note {
+  background-color: #ffff99;
+  border: 1px solid #dddd00;
+  padding: 5px;
+  margin: 10px 0;
+}
+
+fieldset.note legend {
+  background-color: #ffff99;
+  border-top: 1px solid #dddd00;
+  border-left: 1px solid #ffff00;
+  border-right: 1px solid #ffff00;
+  font-weight: bold;
+}
+
+#pushes td.push-{{ current.push.id }} {
+  background-color: #99ff99;
+}
+{% endblock %}
+
+{% block content %}
+<a href="{% url signoff.views.locale_list ms=mstone.code %}">&lt;&lt; back to locales</a>
+<a href="{% url signoff.views.milestone_list loc=locale.code %}">&lt;&lt; back to milestones</a>
+<h3>Signoff for {{mstone}} {{locale.code}}</h3>
+<form id="form" action="" method="post">
+  <input type="hidden" id="id_push" name="push" />
+  <div class="fieldWrapper">
+      {{ form.author.errors }}
+      <label for="id_subject">{{ form.author.label_tag }}:</label>
+      {{ form.author }}
+  </div>
+</form>
+{{ form.errors }}
+<table id="pushes">
+  <tr>
+    {% for push in pushes %}
+      {% if push.date %}
+      <td {% if push.colspan %}colspan="{{ push.colspan }}"{% endif %}>{{ push.date }}</td>
+      {% endif %}
+    {% endfor %}
+  </tr>
+  <tr>
+    {% for push in pushes %}
+      <td class="push-{{ push.object.id }}">{{ push.time }}</td>
+    {% endfor %}
+  </tr>
+  <tr>
+    {% for push in pushes %}
+      <td class="push-{{ push.object.id }}">{{ push.object.user }}</td>
+    {% endfor %}
+  </tr>
+  <tr>
+    {% for push in pushes %}
+      <td class="push-{{ push.object.id }}">{{ push.build }}</td>
+    {% endfor %}
+  </tr>
+  <tr>
+    {% for push in pushes %}
+      <td class="push-{{ push.object.id }}">{{ push.compare }}</td>
+    {% endfor %}
+  </tr>
+  <tr class="signoff">
+    {% for push in pushes %}
+      {% if push.current %}
+      <td class="push-{{ push.object.id }}">{{ current.when }} {{ current.author }}</td>
+      {% else %}
+      <td class="push-{{ push.object.id }}"><input type="button" value="Sign off" onclick="$('#id_push').val({{ push.object.id }});$('#form').submit()"/></td>
+      {% endif %}
+    {% endfor %}
+  </tr>
+</table>
+
+{% if note %}
+  <fieldset class="note">
+    <legend>note!</legend>
+  {{ note|safe }}
+  </fieldset>
+{% endif %}
+{% endblock %}

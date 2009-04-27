@@ -6,6 +6,7 @@ from django import forms
 from django.core.urlresolvers import reverse
 from django.db.models.query import QuerySet
 
+
 import datetime
 
 def _get_current_signoff(locale, mstone):
@@ -140,7 +141,7 @@ def _getstatus(locale, mstone):
 
     return (deps, enabled, timeslot)
 
-def signoff(request, loc=None, ms=None):
+def signoff(request, loc, ms):
     locale = Locale.objects.get(code=loc)
     mstone = Milestone.objects.get(code=ms)
     error = ''
@@ -163,9 +164,9 @@ def signoff(request, loc=None, ms=None):
     
     forest = mstone.appver.tree.l10n
     repo_url = '%s%s/' % (forest.url, locale.code)
-    q = Push.objects.filter(repository__url=repo_url)
-    q = q.order_by('-push_date')
-    form.fields['push'].queryset = q[:10]
+    q = Push.objects.filter(repository__url=repo_url).order_by('-push_date')[:10]
+    print repo_url
+    form.fields['push'].choices = [('','---')]+[(i.id, i) for i in q]
     
     if request.user.is_authenticated():
         form.fields['author'].initial = request.user
@@ -189,6 +190,87 @@ def signoff(request, loc=None, ms=None):
         'note': note,
     })    
 
+def signoff2(request, loc, ms):
+    locale = Locale.objects.get(code=loc)
+    mstone = Milestone.objects.get(code=ms)
+    error = ''
+    current = None
+    (deps, enabled, timeslot) = _getstatus(locale, mstone)
+
+    if request.method == 'POST' and enabled:
+        instance = Signoff(milestone=mstone, locale=locale)
+        form = SignoffForm(request.POST, instance=instance)
+        if form.is_valid():
+            form.save()
+            request.session['signoff_note'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone, locale, form.cleaned_data['author'])
+            return HttpResponseRedirect(reverse('signoff.views.sublist', kwargs={'arg':loc, 'arg2':ms}))
+    else:
+        current = Signoff.objects.filter(locale=locale, milestone=mstone).order_by('-pk')
+        if current:
+            current = current[0]
+            form = SignoffForm({'push': current.push.id, 'author': current.author})
+        else:
+            current = None
+            form = SignoffForm()
+    
+    forest = mstone.appver.tree.l10n
+    repo_url = '%s%s/' % (forest.url, locale.code)
+    pushobjs = Push.objects.filter(repository__url=repo_url).order_by('-push_date')[:10]
+    
+    pushes = []
+    prev_date = None
+    colspan = 0
+    for pushobj in pushobjs:
+        name = '%s on [%s]' % (pushobj.user, pushobj.push_date)
+        date = pushobj.push_date.strftime("%Y-%m-%d")
+        if date == prev_date:
+            date = None
+            colspan += 1
+        else:
+            if colspan > 0:
+                pushes[len(pushes)-1-colspan]['colspan'] = colspan+1
+                colspan = 0
+            prev_date = pushobj.push_date.strftime("%Y-%m-%d")
+        if current and current.push.id is pushobj.id:
+            cur = True
+        else:
+            cur = False
+        pushes.append({'name': name,
+                       'date': date,
+                       'time': pushobj.push_date.strftime("%H:%M:%S"),
+                       'object': pushobj,
+                       'status': 'green',
+                       'build': 'green',
+                       'compare': 'green',
+                       'colspan': 0,
+                       'current': cur})
+    if colspan > 0:
+        pushes[len(pushes)-1-colspan]['colspan'] = colspan+1
+    
+    if request.user.is_authenticated():
+        form.fields['author'].initial = request.user
+
+    if not enabled:
+        for i in form.fields:
+            form.fields[i].widget.attrs['disabled'] = 'disabled'
+    
+    note = request.session.get('signoff_note', None)
+    if note:
+        del request.session['signoff_note']
+    
+    return render_to_response('signoff/signoff2.html', {
+        'mstone': mstone,
+        'locale': locale,
+        'error': error,
+        'form': form,
+        'enabled': enabled,
+        'dependencies': deps,
+        'timeslot': timeslot,
+        'note': note,
+        'pushes': pushes,
+        'current': current,
+    }) 
+
 def _code_type(code):
     if len(code)<4 or code.find('-')!=-1:
         return 'locale'
@@ -198,9 +280,9 @@ def _code_type(code):
 def sublist(request, arg=None, arg2=None):
     if arg2:
         if _code_type(arg) == 'locale':
-            return signoff(request, loc=arg, ms=arg2)
+            return signoff2(request, loc=arg, ms=arg2)
         else:
-            return signoff(request, loc=arg2, ms=arg)
+            return signoff2(request, loc=arg2, ms=arg)
     else:
         if _code_type(arg) == 'locale':
             return milestone_list(request, arg)
