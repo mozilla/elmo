@@ -2,7 +2,7 @@ import pickle
 
 from django.db import models
 import fields
-
+from django.conf import settings
 
 class Master(models.Model):
     """Model for a buildbot master"""
@@ -67,7 +67,11 @@ class Property(models.Model):
     value           = fields.PickledObjectField(null = True, blank = True,
                                                 db_index = True)
     class Meta:
-        unique_together = (('name', 'source', 'value'),)
+        if settings.DATABASE_ENGINE == 'mysql':
+            # hack around mysql, that doesn't do unique of unconstrained texts
+            unique_together = (('name', 'source'),)
+        else:
+            unique_together = (('name', 'source', 'value'),)
 
     def __unicode__(self):
         return "%s: %s" % (self.name, self.value)
