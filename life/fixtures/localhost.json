@@ -1,0 +1,20 @@
+[
+  {
+    "pk": 1, 
+    "model": "life.forest", 
+    "fields": {
+      "url": "http://localhost:8001/l10n/", 
+      "name": "l10n"
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "life.repository", 
+    "fields": {
+      "url": "http://localhost:8001/mozilla/", 
+      "locale": null, 
+      "name": "mozilla", 
+      "forest": null
+    }
+  }
+]

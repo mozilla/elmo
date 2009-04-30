@@ -7,9 +7,10 @@ except ImportError:
 
 from mercurial.hg import repository
 from mercurial.ui import ui as _ui
+from mercurial.repo import RepoError
 from mercurial.commands import pull, update, clone
 
-from pushes.models import Push, Changeset, Branch, File
+from pushes.models import Repository, Push, Changeset, Branch, File
 from django.conf import settings
 
 def getURL(repo, limit):
@@ -17,12 +18,22 @@ def getURL(repo, limit):
     return '%sjson-pushes?startID=%d&endID=%d' % \
         (repo.url, lkp, lkp + limit)
 
-def handlePushes(page, repo, do_update=True):
-    pushes = json.loads(page)
-    if not pushes:
+
+class PushJS(object):
+    def __init__(self, id, jsfrag):
+        self.id = int(id)
+        self.date = jsfrag['date']
+        self.changesets = jsfrag['changesets']
+        self.user = jsfrag['user']
+    def __str__(self):
+        return '<Push: %d>' % self.id
+
+def handlePushes(repo_id, submits, do_update=True):
+    if not submits:
         return
+    repo = Repository.objects.get(id=repo_id)
     revisions = reduce(lambda r,l: r+l,
-                       [p['changesets'] for p in pushes.values()],
+                       [p.changesets for p in submits],
        [])
     ui = _ui()
     repopath = os.path.join(settings.REPOSITORY_BASE,
@@ -42,21 +53,22 @@ def handlePushes(page, repo, do_update=True):
     else:
         ui.readconfig(configpath)
         hgrepo = repository(ui, repopath)
-        pull(ui, hgrepo, source = str(repo.url),
-             force=False, update=False,
-             rev=[])
-        if do_update:
-            update(ui, hgrepo)
-    ids = pushes.keys()
-    ids.sort(lambda l,r: cmp(int(l), int(r)))
-    for id in ids:
-        data = pushes[id]
-        p = Push(push_id = int(id),
-                 user = data['user'],
+        cs = submits[-1].changesets[-1]
+        try:
+            hgrepo.changectx(cs)
+        except RepoError:
+            pull(ui, hgrepo, source = str(repo.url),
+                 force=False, update=False,
+                 rev=[])
+            if do_update:
+                update(ui, hgrepo)
+    for data in submits:
+        p = Push(push_id = data.id,
+                 user = data.user,
                  repository = repo,
-                 push_date = datetime.utcfromtimestamp(data['date']))
+                 push_date = datetime.utcfromtimestamp(data.date))
         p.save()
-        for revision in data['changesets']:
+        for revision in data.changesets:
             cs = Changeset(push = p, revision = revision)
             try:
                 ctx = hgrepo.changectx(cs.revision)
@@ -84,4 +96,4 @@ def handlePushes(page, repo, do_update=True):
                 print repo.name, e
             cs.save()
     repo.save()
-    return len(ids)
+    return len(submits)
