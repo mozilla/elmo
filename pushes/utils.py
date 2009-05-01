@@ -7,7 +7,10 @@ except ImportError:
 
 from mercurial.hg import repository
 from mercurial.ui import ui as _ui
-from mercurial.repo import RepoError
+try:
+    from mercurial.repo import RepoError
+except ImportError:
+    from mercurial.error import RepoError
 from mercurial.commands import pull, update, clone
 
 from pushes.models import Repository, Push, Changeset, Branch, File

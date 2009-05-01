@@ -142,9 +142,9 @@ def getPoller(options):
 
         def loadJSON(self, page, repo):
             pushes = json.loads(page)
-            log.msg("%s got %d pushes" % (repo.name, len(pushes)))
             if not pushes:
                 return
+            log.msg("%s got %d pushes" % (repo.name, len(pushes)))
             # convert pushes to sorted list
             if repo.id not in self.cache:
                 self.cache[repo.id] = []
@@ -242,10 +242,12 @@ def getPoller(options):
 
         def failedForest(self, failure, forest):
             log.err(failure, "failed to load %s" % forest.name)
+            failure.trap(defer.TimeoutError)
             self.forests.pushback(forest)
         def jsonErr(self, failure, repo):
             # catch errors on killing the service
-            failure.trap(task.SchedulerStopped, error.ConnectionLost)
+            failure.trap(task.SchedulerStopped, error.ConnectionLost,
+                         defer.TimeoutError)
             log.err(failure, "failed to load json for %s, adding back" % repo.name)
             self.repos.pushback(repo)
 
