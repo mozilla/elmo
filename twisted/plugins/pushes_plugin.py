@@ -74,7 +74,7 @@ def getPoller(options):
         The actual worker is poll().
         '''
 
-        debug = True
+        debug = False
 
         def __init__(self, opts):
             self.limit = int(opts.get('limit', 200))
@@ -125,13 +125,16 @@ def getPoller(options):
                         pushes = self.cache.pop(repo.id)
                         self.processPushes(pushes, repo)
                         if pushes:
-                            log.msg("Still have %s left for %s" %
-                                    (", ".join(map(str, pushes)), repo.name))
+                            if self.debug:
+                                log.msg("Still have %s left for %s" %
+                                        (", ".join(map(str, pushes)),
+                                         repo.name))
                             self.cache[repo.id] = pushes
                             d = defer.succeed(None)
                     if d is None:
                         jsonurl = getURL(repo, self.limit)
-                        log.msg(jsonurl)
+                        if self.debug:
+                            log.msg(jsonurl)
                         d = getPage(str(jsonurl), timeout = self.timeout)
                         d.addCallback(self.loadJSON, repo)
                         d.addErrback(self.jsonErr, repo)
@@ -162,8 +165,9 @@ def getPoller(options):
             '''
             if len(pushes) == self.limit:
                 self.repos.pushback(repo)
-            log.msg("submitting %s to %s" % (', '.join(map(str, pushes)),
-                                             repo.name))
+            if self.debug:
+                log.msg("submitting %s to %s" % (', '.join(map(str, pushes)),
+                                                 repo.name))
             def get_date(p, op):
                 return op(map(lambda d: d['date'], p.itervalues()))
             maxdate = pushes[-1].date
@@ -227,7 +231,7 @@ def getPoller(options):
                 if urls[i] in known_urls:
                     continue
                 name = links[i].strip('/')
-                if not False:
+                if self.debug:
                     log.msg("adding %s: %s" % (name, urls[i]))
                 # Forests are holding l10n repos, set locale
                 locale, create = \
