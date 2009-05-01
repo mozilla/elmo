@@ -1,0 +1,68 @@
+[
+  {
+    "pk": 1, 
+    "model": "life.forest", 
+    "fields": {
+      "url": "http://hg.mozilla.org/l10n-central/", 
+      "name": "l10n-central"
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "life.forest", 
+    "fields": {
+      "url": "http://hg.mozilla.org/releases/l10n-mozilla-1.9.1/", 
+      "name": "releases/l10n-mozilla-1.9.1"
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "life.repository", 
+    "fields": {
+      "url": "http://hg.mozilla.org/mozilla-central/", 
+      "locale": null, 
+      "name": "mozilla-central", 
+      "forest": null
+    }
+  },
+  {
+    "pk": 2, 
+    "model": "life.repository", 
+    "fields": {
+      "url": "http://hg.mozilla.org/comm-central/", 
+      "locale": null, 
+      "name": "comm-central", 
+      "forest": null
+    }
+  },
+  {
+    "pk": 3, 
+    "model": "life.repository", 
+    "fields": {
+      "url": "http://hg.mozilla.org/releases/mozilla-1.9.1/", 
+      "locale": null, 
+      "name": "releases/mozilla-1.9.1", 
+      "forest": null
+    }
+  },
+  {
+    "pk": 4, 
+    "model": "life.repository", 
+    "fields": {
+      "url": "http://hg.mozilla.org/mobile-browser/", 
+      "locale": null, 
+      "name": "mobile-browser", 
+      "forest": null
+    }
+  },
+  {
+    "pk": 5, 
+    "model": "life.repository", 
+    "fields": {
+      "url": "http://hg.mozilla.org/dom-inspector/", 
+      "locale": null, 
+      "name": "dom-inspector", 
+      "forest": null
+    }
+  }
+]

@@ -40,8 +40,6 @@ class Forest(models.Model):
     """
     name = models.CharField(max_length=100, unique=True)
     url = models.URLField()
-    class Meta:
-        db_table = 'pushes_forest'
     def __unicode__(self):
         return self.name
 
@@ -60,8 +58,6 @@ class Repository(models.Model):
     forest = models.ForeignKey(Forest, null=True, blank=True,
                                related_name='repositories')
     locale = models.ForeignKey(Locale, null=True, blank=True)
-    class Meta:
-        db_table = 'pushes_repository'
     def last_known_push(self):
         try:
             return self.push_set.order_by('-push_id')[0].push_id
@@ -85,8 +81,6 @@ class Push(models.Model):
     user = models.CharField(max_length=200, db_index=True)
     push_date = models.DateTimeField('date of push', db_index=True)
     push_id = models.PositiveIntegerField(default=0)
-    class Meta:
-        db_table = 'pushes_push'
 
     @property
     def tip(self):
@@ -120,12 +114,10 @@ class Changeset(models.Model):
     """
     push = models.ForeignKey(Push, related_name='changesets')
     revision = models.CharField(max_length=40, db_index=True)
-    user = models.CharField(null = True, blank = True, max_length=100, db_index=True)
+    user = models.CharField(null = True, blank = True, max_length=200, db_index=True)
     description = models.TextField(null = True, blank = True, db_index=True)
     files = models.ManyToManyField(File)
     branch = models.ForeignKey(Branch, default=1, related_name='changesets')
-    class Meta:
-        db_table = 'pushes_changeset'
 
     @property
     def shortrev(self):

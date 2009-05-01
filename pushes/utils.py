@@ -78,7 +78,7 @@ def handlePushes(repo_id, submits, do_update=True):
                 if branch != 'default':
                     # 'default' is already set in the db, only change if needed
                     dbb, created = \
-                        Branch.get_or_create(name=branch)
+                        Branch.objects.get_or_create(name=branch)
                     cs.branch = dbb
                 cs.save()
                 for path in ctx.files():
