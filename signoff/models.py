@@ -69,7 +69,7 @@ class Signoff(models.Model):
     author = models.CharField(max_length = 50, blank = True, null = True)
     when = models.DateTimeField('signoff timestamp', default=datetime.now)
     locale = models.ForeignKey(Locale)
-    accepted = models.BooleanField()
+    accepted = models.NullBooleanField()
 
     def __unicode__(self):
         return 'Signoff for %s %s by %s [%s]' % (self.milestone, self.locale.code, self.author, self.when.strftime("%Y-%m-%d %H:%M"))

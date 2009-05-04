@@ -122,7 +122,10 @@ def signoff(request, loc, ms):
             instance = Signoff.objects.get(id=request.POST['signoff'])
             form = SignoffForm(request.POST, instance=instance)
             form.save()
-            request.session['signoff_note'] = '<span style="font-style: italic">Accepted'
+            if request.POST['accepted'] == "False":
+                request.session['signoff_note'] = '<span style="font-style: italic">Declined'
+            else:
+                request.session['signoff_note'] = '<span style="font-style: italic">Accepted'
             return HttpResponseRedirect(reverse('signoff.views.sublist', kwargs={'arg':loc, 'arg2':ms}))
         else:
             instance = Signoff(milestone=mstone, locale=locale)
@@ -161,6 +164,7 @@ def signoff(request, loc, ms):
             cur = True
         else:
             cur = False
+
         pushes.append({'name': name,
                        'date': date,
                        'time': pushobj.push_date.strftime("%H:%M:%S"),
@@ -170,7 +174,7 @@ def signoff(request, loc, ms):
                        'compare': 'green',
                        'colspan': 0,
                        'current': cur,
-                       'accepted': current.accepted if cur else False})
+                       'accepted': current.accepted if cur else None})
     if colspan > 0:
         pushes[len(pushes)-1-colspan]['colspan'] = colspan+1
     
@@ -181,6 +185,17 @@ def signoff(request, loc, ms):
     if note:
         del request.session['signoff_note']
     
+    if not current:
+        curcol = 0
+    elif current.accepted == True:
+        curcol = 1
+    elif current.accepted == False:
+        curcol = -1
+    elif current.accepted == None:
+        curcol = 0
+    
+    accepted = Signoff.objects.filter(locale=locale, milestone=mstone, accepted=True).order_by('-pk')
+    accepted =  accepted[0] if accepted else None
     return render_to_response('signoff/signoff2.html', {
         'mstone': mstone,
         'locale': locale,
@@ -189,6 +204,8 @@ def signoff(request, loc, ms):
         'note': note,
         'pushes': pushes,
         'current': current,
+        'curcol': curcol,
+        'accepted': accepted,
     }) 
 
 def _code_type(code):
