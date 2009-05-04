@@ -51,7 +51,10 @@ fieldset.note legend {
 }
 
 #pushes td.push-{{ current.push.id }} {
+  border: 2px solid #007700;
+{% if current.accepted %}
   background-color: #99ff99;
+{% endif %}
 }
 {% endblock %}
 
@@ -60,7 +63,9 @@ fieldset.note legend {
 <a href="{% url signoff.views.milestone_list loc=locale.code %}">&lt;&lt; back to milestones</a>
 <h3>Signoff for {{mstone}} {{locale.code}}</h3>
 <form id="form" action="" method="post">
-  <input type="hidden" id="id_push" name="push" />
+  <input type="hidden" id="id_push" name="push" value="{{ current.push.id }}" />
+  <input type="hidden" id="id_signoff" name="signoff" value="{{ current.id }}" />
+  <input type="hidden" id="id_accepted" name="accepted" />
   <div class="fieldWrapper">
       {{ form.author.errors }}
       <label for="id_subject">{{ form.author.label_tag }}:</label>
@@ -102,6 +107,19 @@ fieldset.note legend {
       <td class="push-{{ push.object.id }}">{{ current.when }} {{ current.author }}</td>
       {% else %}
       <td class="push-{{ push.object.id }}"><input type="button" value="Sign off" onclick="$('#id_push').val({{ push.object.id }});$('#form').submit()"/></td>
+      {% endif %}
+    {% endfor %}
+  </tr>
+  <tr class="signoff">
+    {% for push in pushes %}
+      {% if  push.accepted %}
+      <td class="push-{{ push.object.id }}">accepted</td>
+      {% else %}
+        {% if push.current %}
+        <td class="push-{{ push.object.id }}"><input type="button" value="Accept" onclick="$('#id_accepted').val('True');$('#form').submit()"/></td>
+        {% else %}
+        <td class="push-{{ push.object.id }}">&nbsp;</td>
+        {% endif %}
       {% endif %}
     {% endfor %}
   </tr>

@@ -35,10 +35,10 @@ class Milestone(models.Model):
     appver = models.ForeignKey(AppVersion)
 
     def get_start_event(self):
-        return Event.objects.get(type=0, milestone=self)
+        return Event.objects.get(type=0, milestone=self) or None
 
     def get_end_event(self):
-        return Event.objects.get(type=1, milestone=self)
+        return Event.objects.get(type=1, milestone=self) or None
 
     start_event = property(get_start_event)
     end_event = property(get_end_event)
@@ -69,6 +69,7 @@ class Signoff(models.Model):
     author = models.CharField(max_length = 50, blank = True, null = True)
     when = models.DateTimeField('signoff timestamp', default=datetime.now)
     locale = models.ForeignKey(Locale)
+    accepted = models.BooleanField()
 
     def __unicode__(self):
         return 'Signoff for %s %s by %s [%s]' % (self.milestone, self.locale.code, self.author, self.when.strftime("%Y-%m-%d %H:%M"))
@@ -76,4 +77,4 @@ class Signoff(models.Model):
 class SignoffForm(ModelForm):
     class Meta:
         model = Signoff
-        fields = ('push', 'author')
+        fields = ('push', 'author', 'accepted')

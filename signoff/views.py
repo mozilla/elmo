@@ -118,19 +118,26 @@ def signoff(request, loc, ms):
     (enabled, timeslot) = _getstatus(locale, mstone)
 
     if request.method == 'POST' and enabled:
-        instance = Signoff(milestone=mstone, locale=locale)
-        form = SignoffForm(request.POST, instance=instance)
-        if form.is_valid():
+        if request.POST['accepted'] and Signoff.objects.get(id=request.POST['signoff']):
+            instance = Signoff.objects.get(id=request.POST['signoff'])
+            form = SignoffForm(request.POST, instance=instance)
             form.save()
-            request.session['signoff_note'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone, locale, form.cleaned_data['author'])
+            request.session['signoff_note'] = '<span style="font-style: italic">Accepted'
             return HttpResponseRedirect(reverse('signoff.views.sublist', kwargs={'arg':loc, 'arg2':ms}))
-    else:
-        current = Signoff.objects.filter(locale=locale, milestone=mstone).order_by('-pk')
-        if current:
-            current = current[0]
-            form = SignoffForm({'push': current.push.id, 'author': current.author})
         else:
-            form = SignoffForm()
+            instance = Signoff(milestone=mstone, locale=locale)
+            form = SignoffForm(request.POST, instance=instance)
+            if form.is_valid():
+                form.save()
+                request.session['signoff_note'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone, locale, form.cleaned_data['author'])
+                return HttpResponseRedirect(reverse('signoff.views.sublist', kwargs={'arg':loc, 'arg2':ms}))
+
+    current = Signoff.objects.filter(locale=locale, milestone=mstone).order_by('-pk')
+    if current:
+        current = current[0]
+        form = SignoffForm({'push': current.push.id, 'author': current.author})
+    else:
+        form = SignoffForm()
     
     forest = mstone.appver.tree.l10n
     repo_url = '%s%s/' % (forest.url, locale.code)
@@ -162,7 +169,8 @@ def signoff(request, loc, ms):
                        'build': 'green',
                        'compare': 'green',
                        'colspan': 0,
-                       'current': cur})
+                       'current': cur,
+                       'accepted': current.accepted if cur else False})
     if colspan > 0:
         pushes[len(pushes)-1-colspan]['colspan'] = colspan+1
     
