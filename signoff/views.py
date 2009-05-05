@@ -51,7 +51,7 @@ def locale_list(request, ms=None):
     if  mstone:
         while i < len(locales):
             locales[i].params = []
-            locales[i].params.append('Open' if _getstatus(locales[i], mstone)[1] else 'Unmatched dependencies')
+            locales[i].params.append('Open' if _getstatus(locales[i], mstone)[0] else 'Unmatched dependencies')
             
             current = _get_current_signoff(locales[i], mstone)
             if current is not None:
@@ -85,7 +85,7 @@ def milestone_list(request, loc=None):
             mstones[i].params.append(str(mstones[i].start_event.date) + ' - ' + str(mstones[i].end_event.date))
 
         if locale:
-            mstones[i].params.append('Dependencies matches' if _getstatus(locale, mstones[i])[1] else 'Dependencies unmatched')
+            mstones[i].params.append('Dependencies matches' if _getstatus(locale, mstones[i])[0] else 'Dependencies unmatched')
             current = _get_current_signoff(locale, mstones[i])
             if current:
                 mstones[i].params.append('Signed off at %s by %s' % (current.when.strftime("%Y-%m-%d %H:%M"), current.author))
@@ -98,55 +98,24 @@ def milestone_list(request, loc=None):
     })
 
 def _getstatus(locale, mstone):
-    deps = []
     enabled = True
-    deps.append({
-        'name': 'Productization',
-        'status': 'open', # 'open', 'pending', 'closed'
-        'completeness': 1.0, # float 0.0 to 1.0
-        'blockers': [] # blockers [('Desc', 'url'),('Desc', 'url')]
-    })
-    deps.append({
-        'name': 'Web localization',
-        'status': 'open',
-        'completeness': 1.0,
-        'blockers': []
-    })
 
     if mstone.start_event.date < datetime.date.today() and \
         mstone.end_event.date > datetime.date.today():
         timeslot = 'open'
     else:
         timeslot = 'closed'
-    
-    i=0
-    while i < len(deps):
-        dep = deps[i]
-        if dep['status'] == 'closed':
-            dep['css'] = 'disabled'
-            enabled = False
-        elif dep['completeness'] < 0.5:
-            dep['css'] = 'red'
-            enabled = False
-        elif dep['completeness'] < 0.9:
-            dep['css'] = 'orange'
-            enabled = False
-        else:
-            dep['css'] = 'green'
-        dep['completeness'] = int(dep['completeness'] * 100)
-        i+=1
-    
+
     if enabled and timeslot == 'closed':
         enabled = False
 
-    return (deps, enabled, timeslot)
+    return (enabled, timeslot)
 
 def signoff(request, loc, ms):
     locale = Locale.objects.get(code=loc)
     mstone = Milestone.objects.get(code=ms)
     current = None
-    (deps, enabled, timeslot) = _getstatus(locale, mstone)
-
+    (enabled, timeslot) = _getstatus(locale, mstone)
 
     if request.method == 'POST' and enabled:
         instance = Signoff(milestone=mstone, locale=locale)
@@ -255,3 +224,13 @@ def shipped_locales(request, milestone):
                       content_type='text/plain; charset=utf-8')
     r['Content-Disposition'] = 'inline; filename=shipped-locales'
     return r
+
+
+def dstest(request):
+    import xmlrpclib
+    bzilla = xmlrpclib.ServerProxy("https://bugzilla.mozilla.org/xmlrpc.cgi")
+    print bzilla.Bug.get_bugs({'ids':[6323], 'permissive': 1})
+
+    return render_to_response('signoff/dstest.html', {
+        'mstone': 1,
+    }) 
