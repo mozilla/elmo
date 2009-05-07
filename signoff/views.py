@@ -1,10 +1,9 @@
 from django.shortcuts import render_to_response
 from django.http import HttpResponseRedirect, HttpResponse 
 from life.models import Locale, Push
-from signoff.models import Milestone, Signoff, SignoffForm
+from signoff.models import Milestone, Signoff, SignoffForm, AcceptForm
 from django import forms
 from django.core.urlresolvers import reverse
-
 
 import datetime
 
@@ -98,49 +97,49 @@ def milestone_list(request, loc=None):
 
 def _getstatus(locale, mstone):
     enabled = True
+    today = datetime.date.today()
 
-    if mstone.start_event.date < datetime.date.today() and \
-        mstone.end_event.date > datetime.date.today():
-        timeslot = 'open'
+    if mstone.start_event.date < today and \
+       mstone.end_event.date > today:
+        enabled = True
     else:
-        timeslot = 'closed'
-
-    if enabled and timeslot == 'closed':
         enabled = False
-
-    return (enabled, timeslot)
+    return enabled
 
 def signoff(request, loc, ms):
     locale = Locale.objects.get(code=loc)
     mstone = Milestone.objects.get(code=ms)
-    current = None
-    (enabled, timeslot) = _getstatus(locale, mstone)
+    current = _get_current_signoff(locale, mstone)
+    enabled = _getstatus(locale, mstone)
     user = request.user
+    anonymous = user.is_anonymous()
+    admin = user.is_staff
 
     if request.method == 'POST' and enabled:
-        if request.POST['accepted'] and Signoff.objects.get(id=request.POST['signoff']):
-            instance = Signoff.objects.get(id=request.POST['signoff'])
-            form = SignoffForm(request.POST, instance=instance)
-            form.save()
-            if request.POST['accepted'] == "False":
-                request.session['signoff_note'] = '<span style="font-style: italic">Declined'
-            else:
-                request.session['signoff_note'] = '<span style="font-style: italic">Accepted'
-            return HttpResponseRedirect(reverse('signoff.views.sublist', kwargs={'arg':loc, 'arg2':ms}))
+        if anonymous:
+            request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s</span> could not be added - <strong>User not logged in</strong>' % (mstone, locale)
         else:
-            instance = Signoff(milestone=mstone, locale=locale, author=user.username)
-            form = SignoffForm(request.POST, instance=instance)
-            if form.is_valid():
-                form.save()
-                request.session['signoff_note'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone, locale, user.username)
-                return HttpResponseRedirect(reverse('signoff.views.sublist', kwargs={'arg':loc, 'arg2':ms}))
+            if request.POST.has_key('accepted'):
+                form = AcceptForm(request.POST, instance=current)
+                if form.is_valid():
+                    form.save()
+                    if request.POST['accepted'] == "False":
+                        request.session['signoff_info'] = '<span style="font-style: italic">Declined'
+                    else:
+                        request.session['signoff_info'] = '<span style="font-style: italic">Accepted'
+                else:
+                    request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> could not be added' % (mstone, locale, user.username)
+            else:
+                instance = Signoff(milestone=mstone, locale=locale, author=user)
+                form = SignoffForm(request.POST, instance=instance)
+                if form.is_valid():
+                    form.save()
+                    request.session['signoff_info'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone, locale, user.username)
+                else:
+                    request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> could not be added' % (mstone, locale, user.username)
+        return HttpResponseRedirect(reverse('signoff.views.sublist', kwargs={'arg':loc, 'arg2':ms}))
 
-    current = Signoff.objects.filter(locale=locale, milestone=mstone).order_by('-pk')
-    if current:
-        current = current[0]
-        form = SignoffForm({'push': current.push.id})
-    else:
-        form = SignoffForm()
+    form = SignoffForm()
     
     forest = mstone.appver.tree.l10n
     repo_url = '%s%s/' % (forest.url, locale.code)
@@ -178,9 +177,27 @@ def signoff(request, loc, ms):
     if colspan > 0:
         pushes[len(pushes)-1-colspan]['colspan'] = colspan+1
 
-    note = request.session.get('signoff_note', None)
-    if note:
-        del request.session['signoff_note']
+    #request.session['signoff_info'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone, locale, user.username)
+    #request.session['signoff_warning'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> warning' % (mstone, locale, user.username)
+    #request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> alert!' % (mstone, locale, user.username)
+    notes = {}
+    notes['info'] = request.session.get('signoff_info', None)
+    if notes['info']:
+        del request.session['signoff_info']
+    else:
+        del notes['info']
+
+    notes['warning'] = request.session.get('signoff_warning', None)
+    if notes['warning']:
+        del request.session['signoff_warning']
+    else:
+        del notes['warning']
+
+    notes['error'] = request.session.get('signoff_error', None)
+    if notes['error']:
+        del request.session['signoff_error']
+    else:
+        del notes['error']
     
     if not current:
         curcol = 0
@@ -197,8 +214,7 @@ def signoff(request, loc, ms):
         'mstone': mstone,
         'locale': locale,
         'form': form,
-        'timeslot': timeslot,
-        'note': note,
+        'notes': notes,
         'pushes': pushes,
         'current': current,
         'curcol': curcol,

@@ -1,5 +1,6 @@
 from django.db import models
 from django.forms import ModelForm, Select
+from django.contrib.auth.models import User
 
 from life.models import Tree, Locale, Push
 
@@ -66,7 +67,7 @@ class Event(models.Model):
 class Signoff(models.Model):
     push = models.ForeignKey(Push)
     milestone = models.ForeignKey(Milestone, related_name = 'signoffs')
-    author = models.CharField(max_length = 50, blank = True, null = True)
+    author = models.ForeignKey(User)
     when = models.DateTimeField('signoff timestamp', default=datetime.now)
     locale = models.ForeignKey(Locale)
     accepted = models.NullBooleanField()
@@ -77,4 +78,9 @@ class Signoff(models.Model):
 class SignoffForm(ModelForm):
     class Meta:
         model = Signoff
-        fields = ('push', 'accepted')
+        fields = ('push',)
+
+class AcceptForm(ModelForm):
+    class Meta:
+        model = Signoff
+        fields = ('accepted',)

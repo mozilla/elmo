@@ -8,12 +8,17 @@
 
 {% block javascript %}
 $(document).ready(function(){
-  setTimeout('$(".note").fadeOut("slow")', 2000);
+  {% for note in notes %}
+  {% ifnotequal note "error" %}
+    setTimeout('$(".{{note}}").fadeOut("slow")', {% ifequal note "info" %}2000{% else %}{% ifequal note "warning" %}6000{% else %}15000{% endifequal %}{% endifequal %});
+  {% endifnotequal %}
+  {% endfor %}
  });
 
 var user = 0
 
 function handleReload(u) {
+  return 0;
   window.status = u
   switch (u) {
     case 0:
@@ -57,18 +62,51 @@ function handleReload(u) {
 }
 
 fieldset.note {
-  background-color: #ffff99;
-  border: 1px solid #dddd00;
   padding: 5px;
   margin: 10px 0;
 }
 
 fieldset.note legend {
+  font-weight: bold;
+  padding: 2px 5px 0px;
+}
+
+fieldset.info {
+  background-color: #99ff99;
+  border: 1px solid #55aa55;
+}
+
+fieldset.info legend {
+  background-color: #99ff99;
+  border-top: 1px solid #55aa55;
+  border-left: 1px solid #88cc88;
+  border-right: 1px solid #88cc88;
+}
+
+fieldset.warning {
+  background-color: #ffff99;
+  border: 1px solid #dddd00;
+}
+
+fieldset.warning legend {
   background-color: #ffff99;
   border-top: 1px solid #dddd00;
   border-left: 1px solid #ffff00;
   border-right: 1px solid #ffff00;
-  font-weight: bold;
+}
+
+fieldset.error {
+  color: white;
+  background-color: #bb0000;
+  border: 1px solid #550000;
+}
+
+fieldset.error legend {
+  color: white;
+  background-color: #bb0000;
+  border-top: 1px solid #990000;
+  border-left: 1px solid #990000;
+  border-right: 1px solid #990000;
 }
 
 #pushes td.push-{{ current.push.id }} {
@@ -96,12 +134,13 @@ fieldset.note legend {
 <a href="{% url signoff.views.locale_list ms=mstone.code %}">&lt;&lt; back to locales</a>
 <a href="{% url signoff.views.milestone_list loc=locale.code %}">&lt;&lt; back to milestones</a>
 <h3>Signoff for {{mstone}} {{locale.code}}</h3>
-<form id="form" action="" method="post">
-  <input type="hidden" id="id_push" name="push" value="{{ current.push.id }}" />
-  <input type="hidden" id="id_signoff" name="signoff" value="{{ current.id }}" />
+<form action="" method="post" id="form_accept">
   <input type="hidden" id="id_accepted" name="accepted" />
 </form>
-{{ form.errors }}
+<form action="" method="post" id="form_signoff">
+  <input type="hidden" id="id_push" name="push" />
+</form>
+
 <table id="pushes">
   <tr>
     {% for push in pushes %}
@@ -135,11 +174,7 @@ fieldset.note legend {
       {% if push.current %}
       <td class="push-{{ push.object.id }}">{{ current.when }} {{ current.author }}</td>
       {% else %}
-      {% if user %}
-      <td class="push-{{ push.object.id }}"><input type="button" value="Sign off" class="signoff_button" onclick="$('#id_push').val({{ push.object.id }});$('#form').submit()"/>&nbsp;</td>
-      {% else %}
-      <td class="push-{{ push.object.id }}">&nbsp;</td>
-      {% endif %}
+      <td class="push-{{ push.object.id }}"><input type="button" value="Sign off" class="signoff_button" onclick="$('#id_push').val({{ push.object.id }});$('#form_signoff').submit()"/>&nbsp;</td>
       {% endif %}
     {% endfor %}
   </tr>
@@ -149,14 +184,14 @@ fieldset.note legend {
       <td class="push-{{ push.object.id }}">
         accepted
         <br/>
-        <input type="button" value="Revoke" onclick="$('#id_accepted').val('False');$('#form').submit()"/>
+        <input type="button" value="Revoke" onclick="$('#id_accepted').val('False');$('#form_accept').submit()"/>
       </td>
       {% else %}
         {% if push.current %}
         <td class="push-{{ push.object.id }}">
-          <input type="button" value="Accept" onclick="$('#id_accepted').val('True');$('#form').submit()"/>
+          <input type="button" value="Accept" onclick="$('#id_accepted').val('True');$('#form_accept').submit()"/>
           {% ifnotequal curcol -1 %}
-          <input type="button" value="Decline" onclick="$('#id_accepted').val('False');$('#form').submit()"/>
+          <input type="button" value="Decline" onclick="$('#id_accepted').val('False');$('#form_accept').submit()"/>
           {% endifnotequal %}
           {% ifnotequal accepted.push.id current.push.id %}
           <br/><a href="">diff to previously accepted</a>
@@ -170,10 +205,11 @@ fieldset.note legend {
   </tr>
 </table>
 
-{% if note %}
-  <fieldset class="note">
-    <legend>note!</legend>
+{% for id, note in notes.items %}
+  <fieldset class="note {{ id }}">
+    <legend>{{ id }}!</legend>
   {{ note|safe }}
   </fieldset>
-{% endif %}
+{% endfor %}
+
 {% endblock %}
