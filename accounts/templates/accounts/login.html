@@ -2,6 +2,13 @@
 
 {% block title_matter %}Login{% endblock %}
 
+{% block head_matter %}
+<script type="text/javascript">
+if (window.parent['handleReload'])
+    window.parent['handleReload'](0)
+</script>
+{% endblock %}
+
 {% block content %}
 
 {% if form.errors %}

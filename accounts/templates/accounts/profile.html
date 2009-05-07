@@ -2,6 +2,13 @@
 
 {% block title_matter %}Account{% endblock %}
 
+{% block head_matter %}
+<script type="text/javascript">
+if (window.parent['handleReload'])
+    window.parent['handleReload']({% if user.is_staff %}2{% else %}1{% endif %})
+</script>
+{% endblock %}
+
 {% block content %}
 {% if user.is_authenticated %}
 
