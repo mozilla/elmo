@@ -62,7 +62,13 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.RemoteUserMiddleware',
 )
+
+AUTHENTICATION_BACKENDS = (
+    'l10n_site.auth.backends.MozLdapBackend',
+)
+
 
 ROOT_URLCONF = 'l10n_site.urls'
 
