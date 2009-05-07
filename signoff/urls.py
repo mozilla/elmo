@@ -9,5 +9,5 @@ urlpatterns = patterns('signoff.views',
     (r'^\/locales\/(?P<loc>[^\/]+)', 'milestone_list'),
     (r'^\/milestones\/?$', 'milestone_list'),
     (r'^\/milestones\/(?P<ms>.+)$', 'locale_list'),
-    (r'^\/(?P<arg>\S+)?\/(?P<arg2>\S+)?$', 'sublist'),
+    (r'^\/(?P<arg>[^\/]+)?\/(?P<arg2>[^\/]+)?$', 'sublist'),
 )

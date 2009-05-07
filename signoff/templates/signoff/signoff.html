@@ -8,46 +8,52 @@
 
 {% block javascript %}
 $(document).ready(function(){
-   setTimeout('$(".note").fadeOut("slow")', 1000);
+  setTimeout('$(".note").fadeOut("slow")', 2000);
  });
+
+var user = 0
+
+function handleReload(u) {
+  window.status = u
+  switch (u) {
+    case 0:
+      $('.signoff_button').hide()
+      $('tr.admin').hide()
+      break
+    case 1:
+      $('.signoff_button').show()
+      $('tr.admin').hide()
+      break
+    case 2:
+      $('.signoff_button').show()
+      $('tr.admin').show()
+      break
+  }
+  user = u
+}
 
 {% endblock %}
 
 {% block style %}
-td.disabled {
-  background-color: gray;
+
+#pushes {
+  width: 100%;
+  border: 1px solid black;
 }
 
-td.green {
-  background-color: green;
+#pushes tr {
+  margin: 0;
 }
 
-td.red {
-  background-color: red;
-}
-
-td.orange {
-  background-color: orange;
-}
-
-fieldset.disabled {
-  background-color: #cccccc;
-}
-
-fieldset legend {
+#pushes tr > td {
+  border: 2px solid black;
   padding: 3px;
+  width: 10%;
+  margin: 0;
 }
 
-fieldset.green legend {
-  background-color: #cccccc;
-}
-
-fieldset.green {
-  background-color: green;
-}
-
-fieldset.green legend {
-  background-color: green;
+#pushes tr.signoff td {
+  text-align: center;
 }
 
 fieldset.note {
@@ -64,59 +70,105 @@ fieldset.note legend {
   border-right: 1px solid #ffff00;
   font-weight: bold;
 }
+
+#pushes td.push-{{ current.push.id }} {
+  border: 2px solid #007700;
+{% ifequal curcol 1 %}
+  background-color: #99ff99;
+{% endifequal %}
+
+{% ifequal curcol -1 %}
+  background-color: #ff0000;
+{% endifequal %}
+}
+
+{% if accepted %}
+{% ifnotequal accepted.push.id current.push.id %}
+#pushes td.push-{{ accepted.push.id }} {
+  background-color: #ffeecc;
+  border-color: #ffdd88;
+}
+{% endifnotequal %}
+{% endif %}
 {% endblock %}
 
 {% block content %}
 <a href="{% url signoff.views.locale_list ms=mstone.code %}">&lt;&lt; back to locales</a>
 <a href="{% url signoff.views.milestone_list loc=locale.code %}">&lt;&lt; back to milestones</a>
 <h3>Signoff for {{mstone}} {{locale.code}}</h3>
-
-<fieldset class="{% ifequal timeslot 'open' %}green{%else%}disabled{% endifequal %}">
-  <legend>Dates</legend>
-  <span>Start date: {{mstone.start_event.date}}</span>
-  <span>End date: {{mstone.end_event.date}}</span>
-</fieldset>
-
-<fieldset>
-  <legend>Depends on</legend>
-<table>
-  <thead>
-    {% for dep in dependencies %}
-    <th>{{ dep.name }}</th>
-    {% endfor %}
-  </thead>
+<form id="form" action="" method="post">
+  <input type="hidden" id="id_push" name="push" value="{{ current.push.id }}" />
+  <input type="hidden" id="id_signoff" name="signoff" value="{{ current.id }}" />
+  <input type="hidden" id="id_accepted" name="accepted" />
+</form>
+{{ form.errors }}
+<table id="pushes">
   <tr>
-    {% for dep in dependencies %}
-    <td class="{{ dep.css }}">
-      {{ dep.completeness }}%
-      <ul>
-        {% for blocker in dep.blockers %}
-        <li><a href="{{blocker.1}}">{{blocker.0}}</a></li>
-        {% endfor %}
-      </ul>
-    </td>
+    {% for push in pushes %}
+      {% if push.date %}
+      <td {% if push.colspan %}colspan="{{ push.colspan }}"{% endif %}>{{ push.date }}</td>
+      {% endif %}
+    {% endfor %}
+  </tr>
+  <tr>
+    {% for push in pushes %}
+      <td class="push-{{ push.object.id }}">{{ push.time }}</td>
+    {% endfor %}
+  </tr>
+  <tr>
+    {% for push in pushes %}
+      <td class="push-{{ push.object.id }}">{{ push.object.user }}</td>
+    {% endfor %}
+  </tr>
+  <tr>
+    {% for push in pushes %}
+      <td class="push-{{ push.object.id }}">{{ push.build }}</td>
+    {% endfor %}
+  </tr>
+  <tr>
+    {% for push in pushes %}
+      <td class="push-{{ push.object.id }}">{{ push.compare }}</td>
+    {% endfor %}
+  </tr>
+  <tr class="signoff">
+    {% for push in pushes %}
+      {% if push.current %}
+      <td class="push-{{ push.object.id }}">{{ current.when }} {{ current.author }}</td>
+      {% else %}
+      {% if user %}
+      <td class="push-{{ push.object.id }}"><input type="button" value="Sign off" class="signoff_button" onclick="$('#id_push').val({{ push.object.id }});$('#form').submit()"/>&nbsp;</td>
+      {% else %}
+      <td class="push-{{ push.object.id }}">&nbsp;</td>
+      {% endif %}
+      {% endif %}
+    {% endfor %}
+  </tr>
+  <tr class="signoff admin">
+    {% for push in pushes %}
+      {% if  push.accepted %}
+      <td class="push-{{ push.object.id }}">
+        accepted
+        <br/>
+        <input type="button" value="Revoke" onclick="$('#id_accepted').val('False');$('#form').submit()"/>
+      </td>
+      {% else %}
+        {% if push.current %}
+        <td class="push-{{ push.object.id }}">
+          <input type="button" value="Accept" onclick="$('#id_accepted').val('True');$('#form').submit()"/>
+          {% ifnotequal curcol -1 %}
+          <input type="button" value="Decline" onclick="$('#id_accepted').val('False');$('#form').submit()"/>
+          {% endifnotequal %}
+          {% ifnotequal accepted.push.id current.push.id %}
+          <br/><a href="">diff to previously accepted</a>
+          {% endifnotequal %}
+        </td>
+        {% else %}
+        <td class="push-{{ push.object.id }}">&nbsp;</td>
+        {% endif %}
+      {% endif %}
     {% endfor %}
   </tr>
 </table>
-</fieldset>
-<div class="clear" />
-
-<fieldset class="{% if enabled %}enabled{%else%}disabled{% endif %}">
-  <legend>Sign off</legend>
-<form action="" method="POST" {% if not enabled %}class="disabled"{% endif %}>
-    <div class="fieldWrapper">
-        {{ form.push.errors }}
-        <label for="id_subject">{{ form.push.label_tag }}:</label>
-        {{ form.push }}
-    </div>
-    <div class="fieldWrapper">
-        {{ form.author.errors }}
-        <label for="id_subject">{{ form.author.label_tag }}:</label>
-        {{ form.author }}
-    </div>
-<input type="submit" value="Submit" {% if not enabled %}disabled="disabled"{% endif %} />
-</form>
-</fieldset>
 
 {% if note %}
   <fieldset class="note">

@@ -4,7 +4,6 @@ from life.models import Locale, Push
 from signoff.models import Milestone, Signoff, SignoffForm
 from django import forms
 from django.core.urlresolvers import reverse
-from django.db.models.query import QuerySet
 
 
 import datetime
@@ -116,6 +115,7 @@ def signoff(request, loc, ms):
     mstone = Milestone.objects.get(code=ms)
     current = None
     (enabled, timeslot) = _getstatus(locale, mstone)
+    user = request.user
 
     if request.method == 'POST' and enabled:
         if request.POST['accepted'] and Signoff.objects.get(id=request.POST['signoff']):
@@ -128,17 +128,17 @@ def signoff(request, loc, ms):
                 request.session['signoff_note'] = '<span style="font-style: italic">Accepted'
             return HttpResponseRedirect(reverse('signoff.views.sublist', kwargs={'arg':loc, 'arg2':ms}))
         else:
-            instance = Signoff(milestone=mstone, locale=locale)
+            instance = Signoff(milestone=mstone, locale=locale, author=user.username)
             form = SignoffForm(request.POST, instance=instance)
             if form.is_valid():
                 form.save()
-                request.session['signoff_note'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone, locale, form.cleaned_data['author'])
+                request.session['signoff_note'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone, locale, user.username)
                 return HttpResponseRedirect(reverse('signoff.views.sublist', kwargs={'arg':loc, 'arg2':ms}))
 
     current = Signoff.objects.filter(locale=locale, milestone=mstone).order_by('-pk')
     if current:
         current = current[0]
-        form = SignoffForm({'push': current.push.id, 'author': current.author})
+        form = SignoffForm({'push': current.push.id})
     else:
         form = SignoffForm()
     
@@ -177,10 +177,7 @@ def signoff(request, loc, ms):
                        'accepted': current.accepted if cur else None})
     if colspan > 0:
         pushes[len(pushes)-1-colspan]['colspan'] = colspan+1
-    
-    if request.user.is_authenticated():
-        form.fields['author'].initial = request.user
-    
+
     note = request.session.get('signoff_note', None)
     if note:
         del request.session['signoff_note']
@@ -196,7 +193,7 @@ def signoff(request, loc, ms):
     
     accepted = Signoff.objects.filter(locale=locale, milestone=mstone, accepted=True).order_by('-pk')
     accepted =  accepted[0] if accepted else None
-    return render_to_response('signoff/signoff2.html', {
+    return render_to_response('signoff/signoff.html', {
         'mstone': mstone,
         'locale': locale,
         'form': form,
@@ -206,6 +203,7 @@ def signoff(request, loc, ms):
         'current': current,
         'curcol': curcol,
         'accepted': accepted,
+        'user': user.username,
     }) 
 
 def _code_type(code):

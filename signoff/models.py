@@ -77,4 +77,4 @@ class Signoff(models.Model):
 class SignoffForm(ModelForm):
     class Meta:
         model = Signoff
-        fields = ('push', 'author', 'accepted')
+        fields = ('push', 'accepted')
