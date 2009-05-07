@@ -15,10 +15,6 @@ urlpatterns = patterns('',
                        (r'^status/l10n-repos$',
                         'status.views.repostatus'),
                        (r'^dashboard/', include('l10nstats.urls')),
-                       (r'^signoff',
-                        include('signoff.urls')),
-                       (r'^accounts/',
-                        include('accounts.urls')),
 
 
 
