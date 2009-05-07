@@ -58,16 +58,24 @@ TEMPLATE_LOADERS = (
 #     'django.template.loaders.eggs.load_template_source',
 )
 
+try:
+    import ldap
+    ldap_loaded = False
+except:
+    ldap_loaded = False
+
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.RemoteUserMiddleware',
 )
 
-AUTHENTICATION_BACKENDS = (
-    'l10n_site.auth.backends.MozLdapBackend',
-)
+
+if ldap_loaded:
+    MIDDLEWARE_CLASSES = MIDDLEWARE_CLASSES + ('django.contrib.auth.middleware.RemoteUserMiddleware',)
+    AUTHENTICATION_BACKENDS = (
+        'l10n_site.auth.backends.MozLdapBackend',
+    )
 
 
 ROOT_URLCONF = 'l10n_site.urls'
