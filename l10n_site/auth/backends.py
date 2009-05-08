@@ -20,12 +20,18 @@ class MozLdapBackend(RemoteUserBackend):
         self.password = ldap_settings.LDAP_PASS
 
     def authenticate(self,username=None,password=None):
-        try: # Let's see if connecting works!
-            user = User.objects.get(username=username)
+        try: # Let's see if we have such user
+            local_user = User.objects.get(username=username)
+            if local_user.check_password(password):
+                return local_user
         except User.DoesNotExist:
-            record = self.__getRecord(username)
-            print record
+            try:
+                record = self.__getRecord(username)
+            except ldap.SERVER_DOWN, e:
+                print "** debug: LDAP server is down"
+                return
             if not record:
+                print "** debug: LDAP did something funny"
                 return
             dn = record[0][0]
             ldap.set_option(ldap.OPT_DEBUG_LEVEL,4095)
@@ -40,7 +46,6 @@ class MozLdapBackend(RemoteUserBackend):
             except ldap.UNWILLING_TO_PERFORM: # Bad password, credentials are bad.
                 return
             else: # No exceptions: the connection succeeded and the user exists!
-                #print record
                 first_name =  record[0][1]['givenName'][0]
                 last_name =  record[0][1]['sn'][0]
                 email =  record[0][1]['mail'][0]
@@ -50,8 +55,8 @@ class MozLdapBackend(RemoteUserBackend):
                 user.set_password(password)
                 user.save()
             self.ldo.unbind_s()
-            print user
-        return user
+            return user
+        return # if we did not return anything yet, we're probably not authenticated
 
     def __getRecord(self, username):
         """Private method to find the distinguished name for a given username"""
