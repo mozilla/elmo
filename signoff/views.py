@@ -7,13 +7,6 @@ from django.core.urlresolvers import reverse
 
 import datetime
 
-def _get_current_signoff(locale, mstone):
-    current = Signoff.objects.filter(locale=locale, milestone=mstone).order_by('-pk')
-    try:
-        return current[0]
-    except IndexError:
-        return None
-
 def index(request):
     locales = Locale.objects.all().order_by('code')
     mstones = Milestone.objects.all().order_by('code')
@@ -95,59 +88,6 @@ def milestone_list(request, loc=None):
         'error': error,
     })
 
-def _getstatus(locale, mstone):
-    today = datetime.date.today()
-    if mstone.start_event.date < today and \
-       mstone.end_event.date > today:
-        return True
-    else:
-        return False
-
-def _get_pushes(repo_url, current):
-    pushobjs = Push.objects.filter(repository__url=repo_url).order_by('-push_date')[:10]
-    
-    pushes = []
-    prev_date = None
-    colspan = 0
-    for pushobj in pushobjs:
-        name = '%s on [%s]' % (pushobj.user, pushobj.push_date)
-        date = pushobj.push_date.strftime("%Y-%m-%d")
-        if date == prev_date:
-            date = None
-            colspan += 1
-        else:
-            if colspan > 0:
-                pushes[len(pushes)-1-colspan]['colspan'] = colspan+1
-                colspan = 0
-            prev_date = pushobj.push_date.strftime("%Y-%m-%d")
-        if current and current.push.id is pushobj.id:
-            cur = True
-        else:
-            cur = False
-
-        pushes.append({'name': name,
-                       'date': date,
-                       'time': pushobj.push_date.strftime("%H:%M:%S"),
-                       'object': pushobj,
-                       'status': 'green',
-                       'build': 'green',
-                       'compare': 'green',
-                       'colspan': 0,
-                       'current': cur,
-                       'accepted': current.accepted if cur else None})
-    if colspan > 0:
-        pushes[len(pushes)-1-colspan]['colspan'] = colspan+1
-    return pushes
-
-def _get_notes(session):
-    notes = {}
-    for i in ('info','warning','error'):
-        notes[i] = session.get('signoff_%s' % (i,), None)
-        if notes[i]:
-            del session['signoff_%s' % (i,)]
-        else:
-            del notes[i]
-    return notes
 
 def signoff(request, loc, ms):
     locale = Locale.objects.get(code=loc)
@@ -259,3 +199,65 @@ def dstest(request):
     return render_to_response('signoff/dstest.html', {
         'mstone': 1,
     }) 
+
+#
+#  Internal functions
+#
+
+def _get_current_signoff(locale, mstone):
+    current = Signoff.objects.filter(locale=locale, milestone=mstone).order_by('-pk')
+    try:
+        return current[0]
+    except IndexError:
+        return None
+
+def _getstatus(locale, mstone):
+    today = datetime.date.today()
+    if mstone.start_event.date < today and \
+       mstone.end_event.date > today:
+        return True
+    else:
+        return False
+
+def _get_pushes(repo_url, current):
+    pushobjs = Push.objects.filter(repository__url=repo_url).order_by('-push_date')[:10]
+    
+    pushes = []
+    prev_date = None
+    colspan = 0
+    for pushobj in pushobjs:
+        name = '%s on [%s]' % (pushobj.user, pushobj.push_date)
+        date = pushobj.push_date.strftime("%Y-%m-%d")
+        if date == prev_date:
+            date = None
+            colspan += 1
+        else:
+            if colspan > 0:
+                pushes[len(pushes)-1-colspan]['colspan'] = colspan+1
+                colspan = 0
+            prev_date = pushobj.push_date.strftime("%Y-%m-%d")
+        cur = current and current.push.id is pushobj.id
+
+        pushes.append({'name': name,
+                       'date': date,
+                       'time': pushobj.push_date.strftime("%H:%M:%S"),
+                       'object': pushobj,
+                       'status': 'green',
+                       'build': 'green',
+                       'compare': 'green',
+                       'colspan': 0,
+                       'current': cur,
+                       'accepted': current.accepted if cur else None})
+    if colspan > 0:
+        pushes[len(pushes)-1-colspan]['colspan'] = colspan+1
+    return pushes
+
+def _get_notes(session):
+    notes = {}
+    for i in ('info','warning','error'):
+        notes[i] = session.get('signoff_%s' % (i,), None)
+        if notes[i]:
+            del session['signoff_%s' % (i,)]
+        else:
+            del notes[i]
+    return notes
