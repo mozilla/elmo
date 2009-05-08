@@ -10,16 +10,12 @@ import datetime
 def index(request):
     locales = Locale.objects.all().order_by('code')
     mstones = Milestone.objects.all().order_by('code')
-    
-    i=0
-    while i < len(mstones):
-        if mstones[i].start_event.date < datetime.date.today() and \
-            mstones[i].end_event.date > datetime.date.today():
-            mstones[i].dates = 'Open till '+str(mstones[i].end_event.date)
-        else:
-            mstones[i].dates = str(mstones[i].start_event.date) + ' - ' + str(mstones[i].end_event.date)
 
-        i+=1
+    for i in mstones:
+        if _getstatus(i):
+            i.dates = 'Open till '+str(i.end_event.date)
+        else:
+            i.dates = '%s - %s' % (i.start_event.date, i.end_event.date)
     
     return render_to_response('signoff/index.html', {
         'locales': locales,
@@ -29,25 +25,22 @@ def index(request):
 def locale_list(request, ms=None):
     locales = Locale.objects.all().order_by('code')
     error = None
+    mstone = None
     if ms:
         try:
             mstone = Milestone.objects.get(code=ms)
         except:
             mstone = None
             error = 'Could not find requested milestone'
-    else:
-        mstone = None
-    
-    i=0
+
     if  mstone:
-        while i < len(locales):
-            locales[i].params = []
-            locales[i].params.append('Open' if _getstatus(locales[i], mstone) else 'Unmatched dependencies')
+        for i in locales:
+            i.params = []
+            i.params.append('Open' if _getstatus(mstone) else 'Unmatched dependencies')
             
-            current = _get_current_signoff(locales[i], mstone)
+            current = _get_current_signoff(i, mstone)
             if current is not None:
-                locales[i].params.append('Signed off at %s by %s' % (current.when.strftime("%Y-%m-%d %H:%M"), current.author))
-            i+=1
+                i.params.append('Signed off at %s by %s' % (current.when.strftime("%Y-%m-%d %H:%M"), current.author))
 
     return render_to_response('signoff/locale_list.html', {
         'locales': locales,
@@ -58,30 +51,27 @@ def locale_list(request, ms=None):
 def milestone_list(request, loc=None):
     mstones = Milestone.objects.all().order_by('code')
     error = None
+    locale = None
     if loc:
         try:
             locale = Locale.objects.get(code=loc)
         except:
             locale = None
             error = 'Could not find requested locale'
-    else:
-        locale = None
-    i=0
-    while i < len(mstones):
-        mstones[i].params = []
-        if mstones[i].start_event.date < datetime.date.today() and \
-            mstones[i].end_event.date > datetime.date.today():
-            mstones[i].params.append('Open till '+str(mstones[i].end_event.date))
+
+    for i in mstones:
+        i.params = []
+        if _getstatus(i):
+            i.params.append('Open till '+str(i.end_event.date))
         else:
-            mstones[i].params.append(str(mstones[i].start_event.date) + ' - ' + str(mstones[i].end_event.date))
+            i.params.append('%s - %s' % (i.start_event.date, i.end_event.date))
 
         if locale:
-            mstones[i].params.append('Dependencies matches' if _getstatus(locale, mstones[i]) else 'Dependencies unmatched')
-            current = _get_current_signoff(locale, mstones[i])
+            i.params.append('Dependencies matches' if _getstatus(i) else 'Dependencies unmatched')
+            current = _get_current_signoff(locale, i)
             if current:
-                mstones[i].params.append('Signed off at %s by %s' % (current.when.strftime("%Y-%m-%d %H:%M"), current.author))
+                i.params.append('Signed off at %s by %s' % (current.when.strftime("%Y-%m-%d %H:%M"), current.author))
 
-        i+=1
     return render_to_response('signoff/mstone_list.html', {
         'mstones': mstones,
         'locale': locale,
@@ -93,7 +83,7 @@ def signoff(request, loc, ms):
     locale = Locale.objects.get(code=loc)
     mstone = Milestone.objects.get(code=ms)
     current = _get_current_signoff(locale, mstone)
-    enabled = _getstatus(locale, mstone)
+    enabled = _getstatus(mstone)
     user = request.user
     anonymous = user.is_anonymous()
     staff = user.is_staff
@@ -211,13 +201,9 @@ def _get_current_signoff(locale, mstone):
     except IndexError:
         return None
 
-def _getstatus(locale, mstone):
+def _getstatus(mstone):
     today = datetime.date.today()
-    if mstone.start_event.date < today and \
-       mstone.end_event.date > today:
-        return True
-    else:
-        return False
+    return mstone.start_event.date < today and mstone.end_event.date > today
 
 def _get_pushes(repo_url, current):
     pushobjs = Push.objects.filter(repository__url=repo_url).order_by('-push_date')[:10]
