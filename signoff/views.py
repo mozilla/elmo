@@ -40,7 +40,7 @@ def locale_list(request, ms=None):
             
             current = _get_current_signoff(i, mstone)
             if current is not None:
-                i.params.append('Signed off at %s by %s' % (current.when.strftime("%Y-%m-%d %H:%M"), current.author))
+                i.params.append('Signed off at %s by %s' % (current.when, current.author))
 
     return render_to_response('signoff/locale_list.html', {
         'locales': locales,
@@ -70,7 +70,7 @@ def milestone_list(request, loc=None):
             i.params.append('Dependencies matches' if _getstatus(i) else 'Dependencies unmatched')
             current = _get_current_signoff(locale, i)
             if current:
-                i.params.append('Signed off at %s by %s' % (current.when.strftime("%Y-%m-%d %H:%M"), current.author))
+                i.params.append('Signed off at %s by %s' % (current.when, current.author))
 
     return render_to_response('signoff/mstone_list.html', {
         'mstones': mstones,
@@ -123,7 +123,7 @@ def signoff(request, loc, ms):
     notes = _get_notes(request.session)
     curcol = {None:0,False:-1,True:1}[current.accepted] if current else 0
     try:
-        accepted = Signoff.objects.filter(locale=locale, milestone=mstone, accepted=True).order_by('-pk')[0].get()
+        accepted = Signoff.objects.filter(locale=locale, milestone=mstone, accepted=True).order_by('-pk')[0]
     except:
         accepted = None
     return render_to_response('signoff/signoff.html', {
@@ -196,10 +196,10 @@ def dstest(request):
 
 def _get_current_signoff(locale, mstone):
     current = Signoff.objects.filter(locale=locale, milestone=mstone).order_by('-pk')
-    try:
-        return current[0]
-    except IndexError:
+    if not current:
         return None
+    #current[0].when = current[0].when.strftime("%Y-%m-%d %H:%M")
+    return current[0]
 
 def _getstatus(mstone):
     today = datetime.date.today()

@@ -40,9 +40,41 @@ function handleReload(u) {
 
 {% block style %}
 
+html, body {
+  background-color: #eee;
+  font-size: 14px;
+  padding: 0;
+  margin: 0;
+  font-family: Helvetica, Arial, sans-serfif;
+}
+
+.nav {
+  background-color: #eef;
+  padding: 10px;
+  border-bottom: 1px solid #aac;
+}
+
+.nav a {
+  color: #229;
+  margin-left: 15px;
+  text-decoration: none;
+}
+
+.nav a:hover {
+  text-decoration: underline;
+}
+
+h3 {
+  font-size: 18px;
+  margin-left: 10px;
+  color: #224;
+}
+
 #pushes {
   width: 100%;
-  border: 1px solid black;
+  border-top: 1px solid #bbd;
+  border-bottom: 1px solid #bbd;
+  background-color: #eef;
 }
 
 #pushes tr {
@@ -50,10 +82,11 @@ function handleReload(u) {
 }
 
 #pushes tr > td {
-  border: 2px solid black;
-  padding: 3px;
+  border: 1px dotted #bbd;
+  padding: 4px;
   width: 10%;
   margin: 0;
+  font-size: 13px;
 }
 
 #pushes tr.signoff td {
@@ -108,8 +141,28 @@ fieldset.error legend {
   border-right: 1px solid #990000;
 }
 
+.legend {
+  display: none;
+}
+
+.legend ul {
+  list-style-type: none;
+}
+
+.legend ul li {
+  float: left;
+  wrap: no-wrap;
+  border: 1px solid black;
+}
+
+.legend .box {
+  width: 80px;
+  height: 20px;
+}
+
 #pushes td.push-{{ current.push.id }} {
-  border: 2px solid #007700;
+  border: 1px solid #9a9;
+  background-color: #efe;
 {% ifequal curcol 1 %}
   background-color: #99ff99;
 {% endifequal %}
@@ -122,16 +175,18 @@ fieldset.error legend {
 {% if accepted %}
 {% ifnotequal accepted.push.id current.push.id %}
 #pushes td.push-{{ accepted.push.id }} {
-  background-color: #ffeecc;
-  border-color: #ffdd88;
+  border: 1px solid #aac;
+  background-color: #dde;
 }
 {% endifnotequal %}
 {% endif %}
 {% endblock %}
 
 {% block content %}
-<a href="{% url signoff.views.locale_list ms=mstone.code %}">&lt;&lt; back to locales</a>
-<a href="{% url signoff.views.milestone_list loc=locale.code %}">&lt;&lt; back to milestones</a>
+<div class="nav">
+  <a href="{% url signoff.views.locale_list ms=mstone.code %}">« all <i>{{mstone.name}}</i> locales</a>
+  <a href="{% url signoff.views.milestone_list loc=locale.code %}">« all <i>{{locale.code}}</i> milestones</a>
+</div>
 <h3>Signoff for {{mstone}} {{locale.code}}</h3>
 <form action="" method="post" id="form_accept">
   <input type="hidden" id="id_accepted" name="accepted" />
@@ -190,11 +245,13 @@ fieldset.error legend {
         <td class="push-{{ push.object.id }}">
           <input type="button" value="Accept" onclick="$('#id_accepted').val('True');$('#form_accept').submit()"/>
           {% ifnotequal curcol -1 %}
-          <input type="button" value="Decline" onclick="$('#id_accepted').val('False');$('#form_accept').submit()"/>
+          <input type="button" value="Refuse" onclick="$('#id_accepted').val('False');$('#form_accept').submit()"/>
           {% endifnotequal %}
+          {% if accepted %}
           {% ifnotequal accepted.push.id current.push.id %}
           <br/><a href="">diff to previously accepted</a>
           {% endifnotequal %}
+          {% endif %}
         </td>
         {% else %}
         <td class="push-{{ push.object.id }}">&nbsp;</td>
@@ -203,7 +260,15 @@ fieldset.error legend {
     {% endfor %}
   </tr>
 </table>
-
+<fieldset class="legend">
+  <legend>Legend</legend>
+  <ul>
+  	<li><div class="box signedoff" /> - signed off</li>
+  	<li><div class="box paccepted" /> - previously accepted</li>
+  	<li><div class="box accepted" /> - accepted</li>
+  	<li><div class="box refused" /> - refused</li>
+  </ul>
+</fieldset>
 {% for id, note in notes.items %}
   <fieldset class="note {{ id }}">
     <legend>{{ id }}!</legend>
