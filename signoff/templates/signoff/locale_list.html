@@ -1,8 +1,9 @@
 {% extends "signoff/base.html" %}
 
 {% block content %}
-<a href="{% url signoff.views.index %}">&lt; All milestones</a>
-<br />
+<div class="nav">
+  <a href="{% url signoff.views.index %}">« All milestones</a>
+</div>
 {% if error %}
 <p class="error">
   {{ error }}
