@@ -19,44 +19,76 @@ class MozLdapBackend(RemoteUserBackend):
         self.dn = ldap_settings.LDAP_DN
         self.password = ldap_settings.LDAP_PASS
 
+    #
+    # This is the path we take here:
+    # *) Try to find the user locally
+    # *) If the user exists, authenticate him locally
+    # *) If authentication is granted return his object
+    # *) If not, try to authenticate against LDAP
+    # *) If authentication is granted create/update his local account and
+    #    return the *local* one
+    #
+    # Important note:
+    #  We don't store LDAP password locally, so LDAP accounts will
+    #  never be authenticated locally
     def authenticate(self,username=None,password=None):
         try: # Let's see if we have such user
             local_user = User.objects.get(username=username)
-            if local_user.check_password(password):
-                return local_user
+            if local_user.has_usable_password():
+                if local_user.check_password(password):
+                    return local_user
+                else:
+                    return
+            else:
+                return self._authenticate_ldap(username, password, local_user)
         except User.DoesNotExist:
-            try:
-                record = self.__getRecord(username)
-            except ldap.SERVER_DOWN, e:
-                print "** debug: LDAP server is down"
-                return
-            if not record:
-                print "** debug: LDAP did something funny"
-                return
-            dn = record[0][0]
-            ldap.set_option(ldap.OPT_DEBUG_LEVEL,4095)
-            ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
-            ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, self.certfile)
-            self.ldo = ldap.initialize(self.host)
-            self.ldo.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
-            try:
-                self.ldo.simple_bind_s(dn, password)
-            except ldap.INVALID_CREDENTIALS: # Bad password, credentials are bad.
-                return
-            except ldap.UNWILLING_TO_PERFORM: # Bad password, credentials are bad.
-                return
-            else: # No exceptions: the connection succeeded and the user exists!
-                first_name =  record[0][1]['givenName'][0]
-                last_name =  record[0][1]['sn'][0]
-                email =  record[0][1]['mail'][0]
-                user = User(username=username,first_name=first_name,last_name=last_name,email=email)
-                user.is_staff = False
-                user.is_superuser = False
-                user.set_password(password)
-                user.save()
-            self.ldo.unbind_s()
-            return user
+            return self._authenticate_ldap(username, password)
         return # if we did not return anything yet, we're probably not authenticated
+
+    def _authenticate_ldap(self, username, password, user=None):
+        try:
+            record = self.__getRecord(username)
+        except ldap.SERVER_DOWN, e:
+            print "** debug: LDAP server is down"
+            return
+        if not record:
+            print "** debug: LDAP did something funny"
+            return
+        dn = record[0][0]
+        #ldap.set_option(ldap.OPT_DEBUG_LEVEL,4095)
+        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+        ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, self.certfile)
+        self.ldo = ldap.initialize(self.host)
+        self.ldo.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
+        try:
+            self.ldo.simple_bind_s(dn, password)
+        except ldap.INVALID_CREDENTIALS: # Bad password, credentials are bad.
+            return
+        except ldap.UNWILLING_TO_PERFORM: # Bad password, credentials are bad.
+            return
+        else:
+            first_name =  record[0][1]['givenName'][0]
+            last_name =  record[0][1]['sn'][0]
+            email =  record[0][1]['mail'][0]
+            if not user:
+                user = User(username=username,first_name=first_name,last_name=last_name,email=email)
+                user.set_unusable_password()
+                user.save()
+            else:
+                changed = False
+                if user.first_name != first_name:
+                    user.first_name = first_name
+                    changed = True
+                if user.last_name != last_name:
+                    user.las_tname = last_name
+                    changed = True
+                if user.email != email:
+                    user.email = email
+                    changed = True
+                if changed:
+                    user.save()
+        self.ldo.unbind_s()
+        return user
 
     def __getRecord(self, username):
         """Private method to find the distinguished name for a given username"""
