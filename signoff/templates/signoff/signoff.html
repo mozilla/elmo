@@ -84,7 +84,7 @@ function handleReload(u) {
   </tr>
   <tr>
     {% for push in pushes %}
-      <td class="push-{{ push.object.id }}">{{ push.time }}</td>
+      <td class="push-{{ push.object.id }}"><a href="{{ push.url }}">{{ push.time }}</a></td>
     {% endfor %}
   </tr>
   <tr>
@@ -126,11 +126,6 @@ function handleReload(u) {
           {% ifnotequal curcol -1 %}
           <input type="button" value="Refuse" onclick="$('#id_accepted').val('False');$('#form_accept').submit()"/>
           {% endifnotequal %}
-          {% if accepted %}
-          {% ifnotequal accepted.push.id current.push.id %}
-          <br/><a href="">diff to previously accepted</a>
-          {% endifnotequal %}
-          {% endif %}
         </td>
         {% else %}
         <td class="push-{{ push.object.id }}">&nbsp;</td>

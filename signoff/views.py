@@ -233,6 +233,7 @@ def _get_pushes(repo_url, current):
                        'compare': 'green',
                        'colspan': 0,
                        'current': cur,
+                       'url': '%spushloghtml?changeset=%s' % (pushobj.repository.url, pushobj.tip.shortrev),
                        'accepted': current.accepted if cur else None})
     if colspan > 0:
         pushes[len(pushes)-1-colspan]['colspan'] = colspan+1
