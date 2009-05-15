@@ -39,6 +39,38 @@ function handleReload(u) {
 {% endblock %}
 
 {% block style %}
+
+.legend {
+  display: inline;
+  margin-top: 20px;
+  margin-left: 10px;
+}
+
+.legend ul {
+  list-style-type: none;
+  margin: 0;
+  padding:0;
+}
+
+.legend ul li {
+  float: left;
+  wrap: no-wrap;
+  margin-left: 10px;
+}
+
+.legend .box {
+  width: 20px;
+  height: 10px;
+  display: inline-block;
+  border: 1px solid black;
+}
+
+.legend .box.accepted {background-color:#efe;}
+.legend .box.refused {background-color:#ff0000;}
+.legend .box.signedoff {background-color:#99ff99;}
+.legend .box.paccepted {background-color: #dde;}
+
+
 #pushes td.push-{{ current.push.id }} {
   border: 1px solid #9a9;
   background-color: #efe;
@@ -137,10 +169,10 @@ function handleReload(u) {
 <fieldset class="legend">
   <legend>Legend</legend>
   <ul>
-  	<li><div class="box signedoff" /> - signed off</li>
-  	<li><div class="box paccepted" /> - previously accepted</li>
-  	<li><div class="box accepted" /> - accepted</li>
-  	<li><div class="box refused" /> - refused</li>
+  	<li><div class="box accepted"></div> - accepted</li>
+  	<li><div class="box paccepted"></div> - previously accepted</li>
+  	<li><div class="box refused"></div> - refused</li>
+  	<li><div class="box signedoff"></div> - signed off</li>
   </ul>
 </fieldset>
 {% for id, note in notes.items %}

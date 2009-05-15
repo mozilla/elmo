@@ -119,7 +119,7 @@ def signoff(request, loc, ms):
     
     forest = mstone.appver.tree.l10n
     repo_url = '%s%s/' % (forest.url, locale.code)
-    pushes = _get_pushes(repo_url, current)
+    pushes = _get_pushes(repo_url, current, offset=0)
     notes = _get_notes(request.session)
     curcol = {None:0,False:-1,True:1}[current.accepted] if current else 0
     try:
@@ -180,6 +180,11 @@ def shipped_locales(request, milestone):
     r['Content-Disposition'] = 'inline; filename=shipped-locales'
     return r
 
+def get_pushes(request, loc, ms, offset=0):
+    locale = Locale.objects.get(code=loc)
+    mstone = Milestone.objects.get(code=ms)
+    current = _get_current_signoff(locale, mstone)
+    pushes = _get_pushes(repo_url, current, offset=0)
 
 def dstest(request):
     import xmlrpclib
@@ -205,8 +210,8 @@ def _getstatus(mstone):
     today = datetime.date.today()
     return mstone.start_event.date < today and mstone.end_event.date > today
 
-def _get_pushes(repo_url, current):
-    pushobjs = Push.objects.filter(repository__url=repo_url).order_by('-push_date')[:10]
+def _get_pushes(repo_url, current, offset=0):
+    pushobjs = Push.objects.filter(repository__url=repo_url).order_by('-push_date')[offset:offset+10]
     
     pushes = []
     prev_date = None
