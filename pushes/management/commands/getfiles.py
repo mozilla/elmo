@@ -34,13 +34,13 @@ class Command(BaseCommand):
             if not os.path.isfile(configpath):
                 print "You need to clone " + repo.name
                 for p in repo.push_set.iterator():
-                    for cs in p.changeset_set.iterator():
+                    for cs in p.changesets.iterator():
                         print repo.name, cs.revision
                 continue
             ui.readconfig(configpath)
             hgrepo = repository(ui, repopath)
             for p in repo.push_set.iterator():
-                for cs in p.changeset_set.iterator():
+                for cs in p.changesets.iterator():
                     try:
                         ctx = hgrepo.changectx(cs.revision)
                         dbfiles = set(map(str, cs.files.all()))
