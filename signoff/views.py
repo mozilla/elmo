@@ -2,6 +2,7 @@ from django.shortcuts import render_to_response
 from django.http import HttpResponseRedirect, HttpResponse 
 from life.models import Locale, Push
 from signoff.models import Milestone, Signoff, SignoffForm, AcceptForm
+from l10nstats.models import Run
 from django import forms
 from django.core.urlresolvers import reverse
 
@@ -227,7 +228,22 @@ def _get_pushes(repo_url, current, offset=0):
                 pushes[len(pushes)-1-colspan]['colspan'] = colspan+1
                 colspan = 0
             prev_date = pushobj.push_date.strftime("%Y-%m-%d")
-        cur = current and current.push.id is pushobj.id
+        cur = current and current.push.id == pushobj.id
+
+        # check compare-locales
+        runs = Run.objects.filter(revisions=pushobj.tip)
+        runs = runs.order_by('-build__id')
+        try:
+            lastrun = runs[0]
+            missing = lastrun.missing + lastrun.missingInFiles
+            if missing:
+                compare = '%d missing' % missing
+            elif lastrun.obsolete:
+                compare = '%d obsolete' % lastrun.obsolete
+            else:
+                compare = 'green (%d%%)' % lastrun.completion
+        except:
+            compare = 'no build'
 
         pushes.append({'name': name,
                        'date': date,
@@ -235,7 +251,7 @@ def _get_pushes(repo_url, current, offset=0):
                        'object': pushobj,
                        'status': 'green',
                        'build': 'green',
-                       'compare': 'green',
+                       'compare': compare,
                        'colspan': 0,
                        'current': cur,
                        'url': '%spushloghtml?changeset=%s' % (pushobj.repository.url, pushobj.tip.shortrev),

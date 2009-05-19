@@ -4,6 +4,7 @@
 
 {% block js_include %}
   <script type="text/javascript" src="/static/jquery.js"></script>
+  <script type="text/javascript" src="/static/slider.js"></script>
 {% endblock %}
 
 {% block javascript %}
@@ -18,7 +19,6 @@ $(document).ready(function(){
 var user = 0
 
 function handleReload(u) {
-  window.status = u
   switch (u) {
     case 0:
       $('.signoff_button').hide()
@@ -63,6 +63,30 @@ function handleReload(u) {
   height: 10px;
   display: inline-block;
   border: 1px solid black;
+}
+
+.slider {
+  float: right;
+  margin-top: 10px;
+  margin-right: 10px;
+}
+
+.slider .prev,
+.slider .next,
+.slider .slide {
+  display: inline-block;
+}
+
+.slider .slide {
+  width: 100px;
+  height: 15px;
+  background-color: #d59;
+}
+
+.slider .slide .marker {
+  width: 0px;
+  height: 15px;
+  background-color: green;
 }
 
 .legend .box.accepted {background-color:#efe;}
@@ -116,7 +140,9 @@ function handleReload(u) {
   </tr>
   <tr>
     {% for push in pushes %}
-      <td class="push-{{ push.object.id }}"><a href="{{ push.url }}">{{ push.time }}</a></td>
+      <td class="push-{{ push.object.id }}"><a href="{{ push.url }}"
+	title="{{ push.object.tip.description }}"
+	>{{ push.object.tip.shortrev }}</a></td>
     {% endfor %}
   </tr>
   <tr>
@@ -175,6 +201,13 @@ function handleReload(u) {
   	<li><div class="box signedoff"></div> - signed off</li>
   </ul>
 </fieldset>
+<div class="slider">
+  <button class="prev">prev</button>
+  <div class="slide">
+    <div class="marker"></div>
+  </div>
+  <button class="next">next</button>
+</div>
 {% for id, note in notes.items %}
   <fieldset class="note {{ id }}">
     <legend>{{ id }}!</legend>
