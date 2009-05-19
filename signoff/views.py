@@ -97,7 +97,10 @@ def signoff(request, loc, ms):
                 if not staff: # ... but we have no privileges for that!
                     request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s</span> could not be accepted/rejected - <strong>User has not enough privileges</strong>' % (mstone, locale)
                 else:
-                    form = AcceptForm(request.POST, instance=current)
+                    # hack around AcceptForm not taking strings, fixed in
+                    # django 1.1
+                    bval = {"True": True, "False": False}[request.POST['accepted']]
+                    form = AcceptForm({'accepted': bval}, instance=current)
                     if form.is_valid():
                         form.save()
                         if request.POST['accepted'] == "False":
