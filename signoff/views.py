@@ -123,7 +123,7 @@ def signoff(request, loc, ms):
     
     forest = mstone.appver.tree.l10n
     repo_url = '%s%s/' % (forest.url, locale.code)
-    pushes = _get_pushes(repo_url, current, offset=0)
+    pushes = _get_pushes(repo_url, mstone, current, offset=0)
     notes = _get_notes(request.session)
     curcol = {None:0,False:-1,True:1}[current.accepted] if current else 0
     try:
@@ -161,7 +161,7 @@ def sublist(request, arg=None, arg2=None):
             return locale_list(request, arg)
 
 def l10n_changesets(request, milestone):
-    sos = Signoff.objects.filter(milestone__code=milestone)
+    sos = Signoff.objects.filter(milestone__code=milestone, accepted=True)
     sos = sos.order_by('locale__code')
     r = HttpResponse(("%s %s\n" % (so.locale.code, so.push.tip.shortrev)
                       for so in sos),
@@ -170,8 +170,8 @@ def l10n_changesets(request, milestone):
     return r
 
 def shipped_locales(request, milestone):
-    sos = Signoff.objects.filter(milestone__code=milestone)
-    locales = list(sos.values_list('locale__code', flat=True)) + ['en-US']
+    sos = Signoff.objects.filter(milestone__code=milestone, accepted=True)
+    locales = list(sos.values_list('locale__code', flat=True).distinct()) + ['en-US']
     def withPlatforms(loc):
         if loc == 'ja':
             return 'ja linux win32\n'
@@ -188,7 +188,7 @@ def get_pushes(request, loc, ms, offset=0):
     locale = Locale.objects.get(code=loc)
     mstone = Milestone.objects.get(code=ms)
     current = _get_current_signoff(locale, mstone)
-    pushes = _get_pushes(repo_url, current, offset=0)
+    pushes = _get_pushes(repo_url, mstone, current, offset=0)
 
 def dstest(request):
     import xmlrpclib
@@ -214,7 +214,7 @@ def _getstatus(mstone):
     today = datetime.date.today()
     return mstone.start_event.date < today and mstone.end_event.date > today
 
-def _get_pushes(repo_url, current, offset=0):
+def _get_pushes(repo_url, mstone, current, offset=0):
     pushobjs = Push.objects.filter(repository__url=repo_url).order_by('-push_date')[offset:offset+10]
     
     pushes = []
@@ -234,7 +234,8 @@ def _get_pushes(repo_url, current, offset=0):
         cur = current and current.push.id == pushobj.id
 
         # check compare-locales
-        runs = Run.objects.filter(revisions=pushobj.tip)
+        runs = Run.objects.filter(revisions=pushobj.tip,
+                                  tree=mstone.appver.tree)
         runs = runs.order_by('-build__id')
         try:
             lastrun = runs[0]
