@@ -67,10 +67,8 @@ class Property(models.Model):
     value           = fields.PickledObjectField(null = True, blank = True,
                                                 db_index = True)
     class Meta:
-        if settings.DATABASE_ENGINE == 'mysql':
+        if settings.DATABASE_ENGINE != 'mysql':
             # hack around mysql, that doesn't do unique of unconstrained texts
-            unique_together = (('name', 'source'),)
-        else:
             unique_together = (('name', 'source', 'value'),)
 
     def __unicode__(self):
