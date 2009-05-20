@@ -1,0 +1,11 @@
+{% extends "l10nstats/index.html" %}
+{% block title_matter %}{{ mstone }} dashboard{% endblock %}
+{% block extra_data %}<link href="{% url signoff.views.json mstone.code %}" type="application/json" rel="exhibit/data"/>{% endblock %}
+
+{% block extra_labels %}, Sign-off{% endblock %}
+{% block extra_columns %}, .locale.signoff{% endblock %}
+{% block extra_cells %}<td ex:content=".locale.signoff"></td>{% endblock %}
+{% block extra_facets %}
+<div ex:role="facet" ex:expression=".locale.signoff"
+  ex:facetLabel="Sign-off" id="signoff-facet"></div>
+{% endblock %}

@@ -5,7 +5,9 @@ from signoff.models import Milestone, Signoff, SignoffForm, AcceptForm
 from l10nstats.models import Run
 from django import forms
 from django.core.urlresolvers import reverse
+from django.utils import simplejson
 
+from collections import defaultdict
 import datetime
 
 def index(request):
@@ -140,7 +142,27 @@ def signoff(request, loc, ms):
         'curcol': curcol,
         'accepted': accepted,
         'user': user.username,
-    }) 
+    })
+
+def dashboard(request, ms):
+    mstone = Milestone.objects.get(code=ms)
+    tree = mstone.appver.tree
+    args = ["tree=%s" % tree.code]
+    return render_to_response('signoff/dashboard.html', {
+            'mstone': mstone,
+            'args': args,
+            })
+
+def json(request, ms):
+    sos = Signoff.objects.filter(milestone__code=ms)
+    items = defaultdict(set)
+    values = {True: 'accepted', False: 'rejected', None: 'pending'}
+    for so in sos.select_related('locale'):
+        items[so.locale.code].add(values[so.accepted])
+    # make a list now
+    items = [{"type": "SignOff", "label": locale, 'signoff': list(values)}
+             for locale, values in items.iteritems()]
+    return HttpResponse(simplejson.dumps({'items': items}, indent=2))
 
 def _code_type(code):
     if len(code)<4 or code.find('-')!=-1:

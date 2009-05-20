@@ -4,9 +4,10 @@
   <!-- <link href="schema.json" type="application/json" rel="exhibit/data" /> -->
 <!--  -->
   <link href="{% url l10nstats.views.status_json %}?{{ args|join:"&" }}" type="application/json" rel="exhibit/data" />
-
-  <script src="http://static.simile.mit.edu/exhibit/api-2.0/exhibit-api.js?autoCreate=false"
-              type="text/javascript"></script>
+{% block extra_data %}{% endblock %}
+<!--  <script src="http://static.simile.mit.edu/exhibit/api-2.0/exhibit-api.js?autoCreate=false"
+              type="text/javascript"></script> -->
+  <script src="http://simile-widgets.googlecode.com/svn/exhibit/trunk/src/webapp/api/exhibit-api.js?autoCreate=false" type="text/javascript"></script>
   <script type="text/javascript">
         SimileAjax.jQuery(document).ready(function() {
             var fDone = function() {
@@ -99,8 +100,8 @@ div.thumbnail {border: solid black 1px; margin: 2px;}
        </span>
     <div ex:role="view" ex:viewClass="Tabular"
       ex:collectionID="buids"
-      ex:columnLabels="Locale, Tree, %, Errors, Missing, Unchanged, Web bugs, Stats, Status"
-      ex:columns=".locale, .tree, .completion, .errors, .missing, .unchanged, .locale.missing_webbugs, .locale, .changed"
+      ex:columnLabels="Locale, Tree, %, Errors, Missing, Unchanged, Web bugs, Stats, Status{% block extra_labels %}{% endblock %}"
+      ex:columns=".locale, .tree, .completion, .errors, .missing, .unchanged, .locale.missing_webbugs, .locale, .changed{% block extra_columns %}{% endblock %}"
       ex:cellSpacing="0">
       <table>
     <tr>
@@ -112,7 +113,7 @@ div.thumbnail {border: solid black 1px; margin: 2px;}
       <td class="coverage_cell" ex:content=".missing"></td>
       <td class="coverage_cell" ex:content=".unchanged"></td>
       <td class="bugs_cell"><a ex:href-subcontent="http://l10n.mozilla.org/webdashboard/?locale={&#123;.locale}}" target="_blank" ex:content=".locale.missing_webbugs"></a> (<span ex:content=".locale.total_webbugs"></span>)</td>
-      <td><a title="History" ex:href-subcontent="{% url l10nstats.views.history_plot %}?tree={&#123;.tree}}&locale={&#123;.locale}}" target="_blank">H</a></td>
+      <td><a title="History" ex:href-subcontent="{% url l10nstats.views.history_plot %}?tree={&#123;.tree}}&locale={&#123;.locale}}" target="_blank">H</a>/<a title="Comparison" ex:href-subcontent="{% url compare_locales %}?run={&#123;.runid}}" target="_blank">C</a></td>
 
       <td>
         <table class="stats">
@@ -123,7 +124,7 @@ div.thumbnail {border: solid black 1px; margin: 2px;}
                </tr>
              </table>
        </td>
-
+{% block extra_cells %}{% endblock %}
     </tr>
       </table>
     </div>
@@ -132,6 +133,11 @@ div.thumbnail {border: solid black 1px; margin: 2px;}
        <div ex:role="facet" ex:expression=".result" ex:facetLabel="Result"
          id="result-facet"
          ex:fixedOrder="success;warnings;failure;exception"></div>
+       <div ex:role="facet" ex:height="15ex" ex:width="300"
+         ex:facetLabel="Missing"
+         ex:expression=".missing"
+         ex:facetClass="Slider">
+       </div>
        <div ex:role="facet" ex:expression=".locale.tier" ex:facetLabel="Tier"
          ex:fixedOrder="1;2"></div>
        <div ex:role="facet" ex:expression=".tree" ex:facetLabel="Tree"
@@ -142,6 +148,7 @@ div.thumbnail {border: solid black 1px; margin: 2px;}
 
        <div ex:role="facet" ex:expression=".locale.missing_webbugs" ex:facetLabel="Web bugs"></div>
        <div ex:role="facet" ex:expression=".locale.shipped" ex:facetLabel="Shipped in ..." id="shipping-facet"></div>
+       {% block extra_facets %}{% endblock %}
      </td>
    </tr>
  </table>
