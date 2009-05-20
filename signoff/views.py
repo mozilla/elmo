@@ -162,10 +162,17 @@ def sublist(request, arg=None, arg2=None):
 
 def l10n_changesets(request, milestone):
     sos = Signoff.objects.filter(milestone__code=milestone, accepted=True)
-    sos = sos.order_by('locale__code')
-    r = HttpResponse(("%s %s\n" % (so.locale.code, so.push.tip.shortrev)
-                      for so in sos),
-                      content_type='text/plain; charset=utf-8')
+    sos = sos.order_by('locale__code', '-when')
+    sos = sos.select_related('locale__code', 'push__changesets__tip')
+    def createLines(q):
+        lastLoc = None
+        for so in q:
+            if lastLoc == so.locale.code:
+                # we already have an older signoff for this locale, skip
+                continue
+            lastLoc = so.locale.code
+            yield "%s %s\n" % (so.locale.code, so.push.tip.shortrev)
+    r = HttpResponse(createLines(sos), content_type='text/plain; charset=utf-8')
     r['Content-Disposition'] = 'inline; filename=l10n-changesets'
     return r
 
