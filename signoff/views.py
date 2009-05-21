@@ -90,7 +90,6 @@ def signoff(request, loc, ms):
     user = request.user
     anonymous = user.is_anonymous()
     staff = user.is_staff
-
     if request.method == 'POST' and enabled: # we're going to process forms
         if anonymous: # ... but we're not logged in. Panic!
             request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s</span> could not be added - <strong>User not logged in</strong>' % (mstone, locale)
@@ -241,7 +240,7 @@ def _get_current_signoff(locale, mstone):
 
 def _getstatus(mstone):
     today = datetime.date.today()
-    return mstone.start_event.date < today and mstone.end_event.date > today
+    return mstone.start_event.date <= today and mstone.end_event.date >= today
 
 def _get_pushes(repo_url, mstone, current, offset=0):
     pushobjs = Push.objects.filter(repository__url=repo_url).order_by('-push_date')[offset:offset+10]

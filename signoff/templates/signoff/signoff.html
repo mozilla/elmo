@@ -9,6 +9,7 @@
 
 {% block javascript %}
 $(document).ready(function(){
+  stylePushes();
   {% for note in notes %}
   {% ifnotequal note "error" %}
     setTimeout('$(".{{note}}").fadeOut("slow")', {% ifequal note "info" %}2000{% else %}{% ifequal note "warning" %}6000{% else %}15000{% endifequal %}{% endifequal %});
@@ -36,9 +37,51 @@ function handleReload(u) {
   user = u
 }
 
+function stylePushes() {
+  var v=3
+  $('#pushes tr').each(function(i){
+    $('td', this).each(function(j){
+      with($(this)) {
+        css('background-color','rgb('+(228+(j*v))+','+(228+(j*v))+',255)')
+        css('color','rgb('+(j*v*4)+','+(j*v*4)+','+(j*v*4)+')')
+      }
+    })
+  })
+}
+
 {% endblock %}
 
 {% block style %}
+
+#pushes {
+  width: 100%;
+  border: 1px solid #bbd;
+  border-collapse: collapse;
+}
+
+#pushes tr {
+  margin: 0;
+}
+
+#pushes tr > td {
+  border: 1px dotted #bbd;
+  padding: 4px;
+  width: 10%;
+  margin: 0;
+  font-size: 13px;
+}
+
+#pushes td.date {
+  border-right: 0 !important;
+}
+
+#pushes td.empty {
+  border: 0 !important;
+}
+
+#pushes tr.signoff td {
+  text-align: center;
+}
 
 .legend {
   display: inline;
@@ -95,23 +138,25 @@ function handleReload(u) {
 .legend .box.paccepted {background-color: #dde;}
 
 
-#pushes td.push-{{ current.push.id }} {
-  border: 1px solid #9a9;
-  background-color: #efe;
+#pushes td.push-{{ current.push.id }}:not(.date) {
+  border: 1px solid #9a9 !important;
+  background-color: #efe !important;
+  color: black !important;
 {% ifequal curcol 1 %}
-  background-color: #99ff99;
+  background-color: #99ff99 !important;
 {% endifequal %}
 
 {% ifequal curcol -1 %}
-  background-color: #ff0000;
+  background-color: #ff0000 !important;
 {% endifequal %}
 }
 
 {% if accepted %}
 {% ifnotequal accepted.push.id current.push.id %}
-#pushes td.push-{{ accepted.push.id }} {
-  border: 1px solid #aac;
-  background-color: #dde;
+#pushes td.push-{{ accepted.push.id }}:not(.date) {
+  border: 1px solid #aac !important;
+  background-color: #dde !important;
+  color: black !important;
 }
 {% endifnotequal %}
 {% endif %}
@@ -135,7 +180,9 @@ function handleReload(u) {
   <tr>
     {% for push in pushes %}
       {% if push.date %}
-      <td {% if push.colspan %}colspan="{{ push.colspan }}"{% endif %}>{{ push.date }}</td>
+      <td class="push-{{ push.object.id }} date">{{ push.date }}</td>
+      {% else %}
+      <td class="push-{{ push.object.id }} date empty">&nbsp;</td>
       {% endif %}
     {% endfor %}
   </tr>
