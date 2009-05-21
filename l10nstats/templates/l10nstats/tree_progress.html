@@ -23,6 +23,9 @@ data = {
 var timeplot, timeGeometry;
 
 function onLoad() {
+  var theme = Timeline.ClassicTheme.create();
+  theme.event.bubble.width = 50;
+  theme.event.bubble.height = 50; 
   var eventSource = new Timeplot.DefaultEventSource();
   var eventSource2 = new Timeplot.DefaultEventSource();
   timeGeometry = new Timeplot.MagnifyingTimeGeometry({
@@ -41,7 +44,8 @@ function onLoad() {
       id: "checkins",
       timeGeometry: timeGeometry,
       eventSource: eventSource2,
-      lineColor: "blue"
+      lineColor: "blue",
+      theme: theme
     }),
     Timeplot.createPlotInfo({
       id: "good",

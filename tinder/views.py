@@ -6,9 +6,13 @@ from django.http import HttpResponse, HttpResponseNotFound
 
 
 import operator
+from bz2 import BZ2File
+import os
+import re
 from datetime import datetime, timedelta
 import calendar
 from mbdb.models import *
+from tinder.models import MasterMap
 
 
 resultclasses = ['success', 'warning', 'failure', 'skip', 'except']
@@ -377,3 +381,55 @@ def showbuild(request, buildername, buildnumber):
                               {'build': build,
                                'steps': steps,
                                'props': props})
+
+mastermaps = MasterMap.objects.filter(webhead__name='head 1')
+def generateLog(master, filename):
+    """Generic generator to read buildbot step logs.
+    """
+    base = mastermaps.get(master__name=master).logmount
+    head=re.compile('(\d+):(\d)')
+    f = None
+    filename = os.path.join(base, filename)
+    try:
+        f = BZ2File(filename + ".bz2", "r")
+    except IOError:
+        f = open(filename, "r")
+    buflen = 64*1024
+    buf = f.read(buflen)
+    offset = 0
+    while buf:
+        m = head.match(buf, offset)
+        if m:
+            cnt = int(m.group(1))
+            channel = int(m.group(2))
+            offset = m.end()
+            chunk = buf[offset:offset+cnt-1]
+            if len(chunk) < cnt - 1:
+                cnt -= len(chunk)
+                morebuf = f.read(cnt)
+                chunk += morebuf[:-1] # drop ','
+                buf = []
+                offset = 0
+            else:
+                offset += cnt
+            yield {'channel': channel, 'data': chunk}
+        buf = buf[offset:] + f.read(buflen)
+        offset = 0
+
+def showlog(request, master, file):
+    """Show a log file.
+
+    Right now, this only supports locally mounted buildbot logs.
+    """
+    def classify(chunks):
+        classes = ["stdout", "stderr", "header"]
+        for chunk in chunks:
+            if chunk['channel'] < 3:
+                yield {'class': classes[chunk['channel']],
+                       'data': chunk['data']}
+    build = Build.objects.get(steps__logs__filename=file,
+                              builder__master__name=master)
+    return render_to_response('tinder/log.html',
+                              {'build': build,
+                               'file': file,
+                               'chunks': classify(generateLog(master, file))})

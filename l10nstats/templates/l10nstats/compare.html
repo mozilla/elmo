@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load compare_logic %}
+{% block title_matter %}
+Comparison for {{ run.tree.code }}-{{run.locale.code }} ({{ run.build.buildnumber }}) {% endblock %}
+{% block head_matter %}
+<style type="text/css">
+.json-child {
+  padding-left:1em;
+}
+.diff {
+  padding-left:.5em;
+  margin-left:1em;
+  border:solid black 1px;
+}
+.obsoleteFile {
+  text-decoration: line-through;
+  color: grey;
+}
+.error {
+  color: red;
+  font-weight: bolder;
+}
+.obsolete {
+  text-decoration: line-through;
+  color: grey;
+}
+#stats {
+  background-color: white;
+  cell-padding:0px;
+  border-spacing:0px;
+  padding: 3px;
+}
+.status {
+  height: 2ex;
+  margin:0px;
+  padding:0px;
+  border:0px
+}
+.changed {background-color: green;}
+.unchanged {background-color: grey;}
+.missingkeys {background-color: red;}
+</style>
+{% endblock %}
+{% block content %}
+<h1>Comparison for {{ run.tree.code }}-{{ run.locale.code }}</h1>
+<p id="backlink"><a href="{% url tinder_show_build run.build.builder.name,run.build.buildnumber %}">Build {{ run.build.buildnumber }}</a> from
+{{ run.build.starttime|date }} {{ run.build.starttime|time }}</p>
+<p id="stats">
+{{ summary.completion }}% changed, ignoring {{ summary.keys }} keys
+<table class="stats">
+<tr>
+<td title="changed" class="status changed" width="{{ widths.changed }}px">
+<td title="missing" class="status missingkeys" width="{{ widths.missing }}px">
+<td title="missing in new files" class="status missingkeys" width="{{ widths.missingInFiles }}px">
+<td title="unchanged" class="status unchanged" width="{{ widths.unchanged }}px">
+</tr>
+</table>
+{% if summary.missing or summary.missingInFiles %}
+<p id="missing">
+{% if summary.missing %}
+{{ summary.missing }}  entries missing in existing files{% if summary.missingInFiles %}, {% endif %}
+{% endif %}{% if summary.missingInFiles %}
+{{ summary.missingInFiles }} entries missing in new files
+{% endif %}
+</p>
+{% endif %}
+</p>
+<p id="blurb">
+Below you see the files and localizable strings missing and obsolete. The obsolete ones are striked through and grey. The data is organized hierarchically, the full path for a file is available as an tooltip.
+</p><p>
+{% recurse_children %}
+{% for node in nodes %}
+<div class="json-child">
+  {% if node.fileIs %}
+  <div class="{{ node.fileIs }}File">
+    <span title="{{ node.path }}">{{ node.fragment }}</span>
+  </div>
+  {% else %}
+  <div class="file-path">
+     <span title="{{ node.path }}">{{ node.fragment }}</span>
+   </div>
+  {% if node.entities or node.errors %}
+   <div class="diff">
+     {% for e in node.entities %}<div class="{{ e.class }}">{{ e.key }}</div>
+     {% endfor %}
+   </div>
+  {% else %}
+   {% if node.children %}
+   {% recurse node as nodes %}
+   {% else %}
+   {{ node.fragment }}
+   {{ node.value }}
+   {% endif %}
+ {% endif %}
+{% endif %}
+</div>
+{% endfor %}
+{% endrecurse %}
+</p>
+{% endblock %}

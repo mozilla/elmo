@@ -8,6 +8,7 @@ from django.http import HttpResponse, HttpResponseNotFound,\
 from django.utils import simplejson
 
 from l10nstats.models import *
+from tinder.views import generateLog
 
 def getRunsBefore(tree, stamp, locales):
     """Get the latest run for each of the given locales and tree.
@@ -50,6 +51,30 @@ def index(request):
     return render_to_response('l10nstats/index.html',
                               {'args': args})
 
+schema = {
+    "types": {
+        "Build": {
+            "pluralLabel": "Builds"
+            },
+        "Priority": {
+            "pluralLabel": "Priorities"
+            }
+        },
+    "properties": {
+        "changed": {
+            "valueType": "number"
+            },
+        "missing": {
+            "valueType": "number"
+            },
+        "starttime": {
+            "valueType": "date"
+            },
+        "endtime": {
+            "valueType": "date"
+            }
+        }
+    }
 
 def status_json(request):
     """The json output for the builds.
@@ -63,7 +88,7 @@ def status_json(request):
         q = q.filter(tree__code__in=request.GET.getlist('tree'))
     if 'locale' in request.GET:
         q = q.filter(locale__code__in=request.GET.getlist('locale'))
-    leafs = ['tree__code', 'locale__code',
+    leafs = ['tree__code', 'locale__code', 'id',
              'missing', 'missingInFiles',
              'errors', 'unchanged', 'total', 'obsolete', 'changed',
              'completion']
@@ -77,6 +102,7 @@ def status_json(request):
         elif d['obsolete']:
             result = 'warnings'
         return {'id': '%s/%s' % (tree, locale),
+                'runid': d['id'],
                 'label': locale,
                 'locale': locale,
                 'tree': tree,
@@ -89,7 +115,9 @@ def status_json(request):
                 'completion': d['completion']
                 }
     items = map(toExhibit, q.values(*leafs))
-    return HttpResponse(simplejson.dumps({'items': items}, indent=2))
+    data = {'items': items}
+    data.update(schema)
+    return HttpResponse(simplejson.dumps(data, indent=2))
 
 
 def history_plot(request):
@@ -162,6 +190,17 @@ def tree_progress(request, tree):
     endtime = datetime.utcnow().replace(microsecond=0)
     starttime = endtime - timedelta(14)
 
+    if 'starttime' in request.GET:
+        try:
+            starttime = datetime.utcfromtimestamp(int(request.GET['starttime']))
+        except Exception:
+            pass
+    if 'endtime' in request.GET:
+        try:
+            endtime = datetime.utcfromtimestamp(int(request.GET['endtime']))
+        except Exception:
+            pass
+
     q = Run.objects.filter(tree=tree)
     q2 = q.filter(srctime__lte=endtime,
                   srctime__gte=starttime).order_by('srctime')
@@ -208,3 +247,123 @@ def exhibit_empty_iframe(request):
     iframe for back and forth, return an empty page for those.
     """
     return HttpResponse()
+
+
+def grid(request):
+    """View to show which runs are against which revisions.
+
+    Parameters are locale and tree. If not given, shows a selection
+    page.
+
+    Experimental, might not stay.
+    """
+    trees = request.GET.getlist('tree')
+    locales = request.GET.getlist('locale')
+    if not (trees and locales):
+        # hook up template here
+        return HttpResponse("specify locale and tree")
+    tree = trees[0]
+    locale = locales[0]
+
+    # find the runs for this locale and tree
+    runs = Run.objects.filter(locale__code=locale,
+                              tree__code=tree)[:20]
+    changesets = Changeset.objects.filter(run__in=runs).distinct()
+    changesets = changesets.order_by('push__push_date')
+    changesets = changesets.select_related('push__repository')
+
+    table = defaultdict(list)
+    x = set()
+    y = set()
+    for run in runs:
+        revs = run.revisions.all()
+        l10n = None
+        en = []
+        for rev in revs:
+            if rev.push.repository.forest_id is not None:
+                l10n = rev
+            else:
+                en.append(rev)
+        en.sort(key=lambda _rev: _rev.push.repository.name)
+        en = tuple(en)
+        x.add(l10n)
+        y.add(en)
+        table[(l10n,en)].append(run)
+    X = sorted(x, key=lambda cs: cs.push.push_date)
+    Y = sorted(y, key=lambda t: map(lambda cs: cs.push.push_date, t))
+    rows = []
+    for y in Y:
+        row = [(x,y) in table and table[(x,y)] or None for x in X]
+        rows.append(row)
+    return render_to_response('l10nstats/grid.html',
+                              {'X': X,
+                               'rows': zip(Y, rows)})
+
+
+class JSONAdaptor(object):
+    """Helper class to make the json output from compare-locales
+    easier to digest for the django templating language.
+    """
+    def __init__(self, node, base):
+        self.fragment = node[0]
+        self.base = base
+        data = node[1]
+        self.children = data.get('children', [])
+        if 'value' in data:
+            self.value = data['value']
+            if 'obsoleteFile' in self.value:
+                self.fileIs = 'obsolete'
+            elif 'missingFile' in self.value:
+                self.fileIs = 'missing'
+            elif ('missingEntity' in self.value or 
+                  'obsoleteEntity' in self.value or
+                  'error' in self.value):
+                errors = [{'key': e, 'class': 'error'}
+                          for e in self.value.get('error', [])]
+                entities = \
+                    [{'key': e, 'class': 'missing'}
+                     for e in self.value.get('missingEntity', [])] + \
+                     [{'key': e, 'class': 'obsolete'}
+                     for e in self.value.get('obsoleteEntity', [])]
+                entities.sort(key=lambda d: d['key'])
+                self.entities = errors + entities
+    @classmethod
+    def adaptChildren(cls, _lst, base=''):
+        for node in _lst:
+            yield JSONAdaptor(node, base)
+    def __iter__(self):
+        if self.base:
+            base = self.base + '/' + self.fragment
+        else:
+            base = self.fragment
+        return self.adaptChildren(self.children, base)
+    @property
+    def path(self):
+        if self.base:
+            return self.base + '/' + self.fragment
+        return self.fragment
+
+def compare(request):
+    """HTML pretty-fied output of compare-locales.
+    """
+    run = Run.objects.get(id=request.GET['run'])
+    json = ''
+    for step in run.build.steps.filter(name__startswith='moz_inspectlocales'):
+        for log in step.logs.all():
+            for chunk in generateLog(run.build.builder.master.name,
+                                     log.filename):
+                if chunk['channel'] == 5:
+                    json += chunk['data']
+    json = simplejson.loads(json)
+    nodes = JSONAdaptor.adaptChildren(json['details'].get('children', []))
+    summary = json['summary']
+    # create table widths for the progress bar
+    _width = 300
+    widths = {}
+    for k in ('changed', 'missing', 'missingInFiles', 'unchanged'):
+        widths[k] = summary[k]*300/summary['total']
+    return render_to_response('l10nstats/compare.html',
+                              {'run': run,
+                               'nodes': nodes,
+                               'widths': widths,
+                               'summary': json['summary']})

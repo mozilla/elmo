@@ -10,8 +10,7 @@
 <dt>{{ step.text|join:" " }}</dt>
 <dd>
   {% for log in step.logs.all %}
-  {# XXX temporary URL pointing to buildbot log output #}
-  <a href="/buildbot/builders/{{build.builder.name}}/builds/{{build.buildnumber}}/steps/{{step.name}}/logs/{{log.name}}">{{log.name}}</a>
+ <a href="{% url showlog build.builder.master.name,log.filename%}">{{log.name}}</a>
   {% endfor %}
   {{ step.starttime|timedelta:step.endtime }}</dd>
 {% endfor %}

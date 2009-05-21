@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load build_extras %}
+{% block title_matter %}{{ build.builder.name }} {{ file }}{% endblock %}
+{% block head_matter %}
+<style type="text/css">
+.pre { white-space: pre; }
+.header { color: blue; }
+.stderr { color: red; }
+</style>
+{% endblock %}
+{% block content %}
+<h1>{{ build.builder.name }} {{ file }}</h1>
+{% for chunk in chunks %}
+<span class="pre {{ chunk.class }}"> {{ chunk.data }} </span>
+{% endfor %}
+{% endblock %}

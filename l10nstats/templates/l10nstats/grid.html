@@ -1,0 +1,36 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title></title>
+<style type="text/css">
+.frot {
+  -moz-transform: rotate(-45deg);
+  height: 12ex;
+}
+</style>
+</head>
+
+<body>
+<h1></h1>
+
+<table border="1" cellspacing="0" cellpadding="10">
+  <thead style="height:12ex;">
+    <tr>
+      <td></td>
+{% for x in X %}
+      <td><a href="{{x}}" class="rot" title="{{x.description}}">{{x.shortrev}}</a></td>
+{% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+{% for row in rows %}
+    <tr>
+      <td>{% for cs in row.0 %}<a href="{{cs}}" title="{{cs.description}}">{{cs.shortrev}}</a>{% endfor %}</td>
+{% for cell in row.1 %}
+      <td>{% for run in cell %}{{run.id}} {% endfor %}</td>
+{% endfor %}
+    </tr>
+{% endfor %}
+  </tbody>
+</table>
+</body>
+</html>
