@@ -1,6 +1,20 @@
 [
   {
     "pk": 1, 
+    "model": "mbdb.master", 
+    "fields": {
+      "name": "test-master"
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "mbdb.slave", 
+    "fields": {
+      "name": "test-slave"
+    }
+  }, 
+  {
+    "pk": 1, 
     "model": "mbdb.file", 
     "fields": {
       "path": "l10n/af/browser/file"
@@ -17,6 +31,7 @@
       "who": "John Doe", 
       "when": "2008-12-25 14:00:00", 
       "comments": null, 
+      "master": 1, 
       "branch": "HEAD", 
       "revision": null
     }
@@ -117,6 +132,7 @@
     "fields": {
       "category": null, 
       "bigState": "idle", 
+      "master": 1, 
       "name": "dummy"
     }
   }, 
@@ -126,7 +142,7 @@
     "fields": {
       "builder": 1, 
       "buildnumber": 0, 
-      "slavename": "bot1", 
+      "slave": 1, 
       "reason": "fx_tree af", 
       "result": 0, 
       "starttime": "2008-12-25 14:08:00", 

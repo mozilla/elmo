@@ -1,4 +1,25 @@
 [
+  {
+    "pk": 1, 
+    "model": "mbdb.master", 
+    "fields": {
+      "name": "test-master"
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "mbdb.slave", 
+    "fields": {
+      "name": "test-slave-1"
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "mbdb.slave", 
+    "fields": {
+      "name": "test-slave-2"
+    }
+  }, 
  {
    "pk": 1,
      "model": "mbdb.change",
@@ -8,6 +29,7 @@
        "who": "John Doe <who@am.i>",
        "when": "2009-01-01 00:00:00",
        "comments": null,
+       "master": 1, 
        "branch": "default",
        "revision": null
        }
@@ -36,6 +58,7 @@
      "fields": {
      "category": null, 
        "bigState": "idle", 
+       "master": 1, 
        "name": "dummy"
        }
  }, 
@@ -45,7 +68,7 @@
      "fields": {
      "builder": 1,
        "buildnumber": 0,
-       "slavename": "bot1",
+       "slave": 1,
        "reason": "fx_tree af", 
        "result": 0, 
        "starttime": "2009-01-01 00:00:00", 
@@ -78,7 +101,7 @@
      "fields": {
      "builder": 1,
        "buildnumber": 1,
-       "slavename": "bot1",
+       "slave": 2,
        "reason": "fx_tree af", 
        "result": 0, 
        "starttime": "2009-01-01 00:00:01", 
