@@ -6,6 +6,8 @@ from l10nstats.models import Run
 from django import forms
 from django.core.urlresolvers import reverse
 from django.utils import simplejson
+from django.core import serializers
+
 
 from collections import defaultdict
 import datetime
@@ -216,7 +218,11 @@ def get_pushes(request, loc, ms, offset=0):
     locale = Locale.objects.get(code=loc)
     mstone = Milestone.objects.get(code=ms)
     current = _get_current_signoff(locale, mstone)
+    forest = mstone.appver.tree.l10n
+    repo_url = '%s%s/' % (forest.url, locale.code)
     pushes = _get_pushes(repo_url, mstone, current, offset=0)
+    return HttpResponse(simplejson.dumps({'pushes': pushes}, indent=2))
+
 
 def dstest(request):
     import xmlrpclib
@@ -280,7 +286,11 @@ def _get_pushes(repo_url, mstone, current, offset=0):
         pushes.append({'name': name,
                        'date': date,
                        'time': pushobj.push_date.strftime("%H:%M:%S"),
-                       'object': pushobj,
+                       #'object': pushobj,
+                       'id': pushobj.id,
+                       'user': pushobj.user,
+                       'revision': pushobj.tip.shortrev,
+                       'revdesc': pushobj.tip.description,
                        'status': 'green',
                        'build': 'green',
                        'compare': compare,

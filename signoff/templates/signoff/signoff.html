@@ -8,8 +8,27 @@
 {% endblock %}
 
 {% block javascript %}
+var pushes = []
+{% for push in pushes %}
+pushes.push({'id':"{{push.id}}",
+             'date':"{{push.date}}",
+             'time':"{{push.time}}",
+             'url':"{{push.url}}",
+             'revision':"{{push.revision}}",
+             'revdesc':"{{push.revdesc}}",
+             'user':"{{push.user}}",
+             'build':"{{push.build}}",
+             'cmploc':"{{push.compare}}",})
+{% endfor %}
+
+var current = null;
+{% if current %}
+current = {'id':"{{current.id}}",
+           'author':"{{current.author}}",}
+{% endif %}
+
 $(document).ready(function(){
-  stylePushes();
+  fillPushes(document.getElementById('pushes'), pushes);
   {% for note in notes %}
   {% ifnotequal note "error" %}
     setTimeout('$(".{{note}}").fadeOut("slow")', {% ifequal note "info" %}2000{% else %}{% ifequal note "warning" %}6000{% else %}15000{% endifequal %}{% endifequal %});
@@ -42,28 +61,46 @@ function stylePushes() {
   $('#pushes tr').each(function(i){
     $('td', this).each(function(j){
       with($(this)) {
-        css('background-color','rgb('+(228+(j*v))+','+(228+(j*v))+',255)')
+        css('background-color','rgb('+(225+(j*v))+','+(225+(j*v))+',255)')
+        if (i==2) // signoff row
+          $('a',this).css('color','rgb('+(34+j*v*2)+','+(34+j*v*2)+','+(153+j*v*2)+')')
         css('color','rgb('+(j*v*4)+','+(j*v*4)+','+(j*v*4)+')')
       }
     })
   })
 }
 
+function fillPushes(obj, pushes) {
+  var trs = []
+  for (var i in pushes) {
+    for (var attr in pushes[i]) {
+      if (!trs[attr])
+        trs[attr] = $('tr.'+attr, obj).get()
+      if (trs[attr]) {
+        var td = document.createElement('td')
+        $(td).addClass('push-'+pushes[i].id).text('aa')
+        trs[attr].appendChild(td)
+      }
+    }
+  }
+//stylePushes()
+}
+
 {% endblock %}
 
 {% block style %}
 
-#pushes {
+.pushes {
   width: 100%;
   border: 1px solid #bbd;
   border-collapse: collapse;
 }
 
-#pushes tr {
+.pushes tr {
   margin: 0;
 }
 
-#pushes tr > td {
+.pushes tr > td {
   border: 1px dotted #bbd;
   padding: 4px;
   width: 10%;
@@ -71,15 +108,15 @@ function stylePushes() {
   font-size: 13px;
 }
 
-#pushes td.date {
+.pushes td.date {
   border-right: 0 !important;
 }
 
-#pushes td.empty {
+.pushes td.empty {
   border: 0 !important;
 }
 
-#pushes tr.signoff td {
+.pushes tr.signoff td {
   text-align: center;
 }
 
@@ -176,74 +213,78 @@ function stylePushes() {
   <input type="hidden" id="id_push" name="push" />
 </form>
 
-<table id="pushes">
+<table id="pushes2" class="pushes">
   <tr>
     {% for push in pushes %}
       {% if push.date %}
-      <td class="push-{{ push.object.id }} date">{{ push.date }}</td>
+      <td class="push-{{ push.id }} date">{{ push.date }}</td>
       {% else %}
-      <td class="push-{{ push.object.id }} date empty">&nbsp;</td>
+      <td class="push-{{ push.id }} date empty">&nbsp;</td>
       {% endif %}
     {% endfor %}
   </tr>
   <tr>
     {% for push in pushes %}
-      <td class="push-{{ push.object.id }}">{{ push.time }}</td>
+      <td class="push-{{ push.id }}">{{ push.time }}</td>
     {% endfor %}
   </tr>
   <tr>
     {% for push in pushes %}
-      <td class="push-{{ push.object.id }}"><a href="{{ push.url }}"
-	title="{{ push.object.tip.description }}"
-	>{{ push.object.tip.shortrev }}</a></td>
+      <td class="push-{{ push.id }}"><a href="{{ push.url }}"
+	title="{{ push.revdesc }}"
+	>{{ push.revision }}</a></td>
     {% endfor %}
   </tr>
   <tr>
     {% for push in pushes %}
-      <td class="push-{{ push.object.id }}">{{ push.object.user }}</td>
+      <td class="push-{{ push.id }}">{{ push.user }}</td>
     {% endfor %}
   </tr>
   <tr>
     {% for push in pushes %}
-      <td class="push-{{ push.object.id }}">{{ push.build }}</td>
+      <td class="push-{{ push.id }}">{{ push.build }}</td>
     {% endfor %}
   </tr>
   <tr>
     {% for push in pushes %}
-      <td class="push-{{ push.object.id }}">{{ push.compare }}</td>
+      <td class="push-{{ push.id }}">{{ push.compare }}</td>
     {% endfor %}
   </tr>
   <tr class="signoff">
     {% for push in pushes %}
       {% if push.current %}
-      <td class="push-{{ push.object.id }}">{{ current.when }} {{ current.author }}</td>
+      <td class="push-{{ push.id }}">{{ current.when }} {{ current.author }}</td>
       {% else %}
-      <td class="push-{{ push.object.id }}"><input type="button" value="Sign off" class="signoff_button" onclick="$('#id_push').val({{ push.object.id }});$('#form_signoff').submit()"/>&nbsp;</td>
+      <td class="push-{{ push.id }}"><input type="button" value="Sign off" class="signoff_button" onclick="$('#id_push').val({{ push.id }});$('#form_signoff').submit()"/>&nbsp;</td>
       {% endif %}
     {% endfor %}
   </tr>
   <tr class="signoff admin">
     {% for push in pushes %}
-      {% if  push.accepted %}
-      <td class="push-{{ push.object.id }}">
+      {% if push.accepted %}
+      <td class="push-{{ push.id }}">
         accepted
         <br/>
         <input type="button" value="Revoke" onclick="$('#id_accepted').val('False');$('#form_accept').submit()"/>
       </td>
       {% else %}
         {% if push.current %}
-        <td class="push-{{ push.object.id }}">
+        <td class="push-{{ push.id }}">
           <input type="button" value="Accept" onclick="$('#id_accepted').val('True');$('#form_accept').submit()"/>
           {% ifnotequal curcol -1 %}
           <input type="button" value="Refuse" onclick="$('#id_accepted').val('False');$('#form_accept').submit()"/>
           {% endifnotequal %}
         </td>
         {% else %}
-        <td class="push-{{ push.object.id }}">&nbsp;</td>
+        <td class="push-{{ push.id }}">&nbsp;</td>
         {% endif %}
       {% endif %}
     {% endfor %}
   </tr>
+</table>
+
+<table id="pushes" class"pushes">
+  <tr class="date"></tr>
 </table>
 <fieldset class="legend">
   <legend>Legend</legend>
