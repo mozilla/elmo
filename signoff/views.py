@@ -230,6 +230,7 @@ def get_api_items(request):
         current = {}
         current['when'] = str(cur.when)
         current['author'] = str(cur.author)
+        current['accepted'] = cur.accepted
     
     
     pushes = _get_api_items(locale, mstone, cur)

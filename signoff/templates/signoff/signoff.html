@@ -61,7 +61,7 @@ function fillPushes() {
       if (trs[attr]) {
         var td = document.createElement('td')
         if (trs[attr]) {
-          var t = $(td).addClass('push-'+push.id).addClass(attr)
+          var t = $(td).addClass('push-'+push.id)
           switch (attr) {
             case 'date':
               if (!prev_date || prev_date != push['date']) {
@@ -81,6 +81,23 @@ function fillPushes() {
               break
             case 'revision':
               t.html('<a href="'+(push['url'])+'" title="'+(push['revdesc'])+'">'+(push[attr])+'</a>')
+              break
+            case 'accepted':
+              if (push['signoff']) {
+                switch (current.accepted) {
+                  case null:
+                    t.html('<input type="button" value="Accept" onclick="$(\'#id_accepted\').val(\'True\');$(\'#form_accept\').submit()"/><input type="button" value="Refuse" onclick="$(\'#id_accepted\').val(\'False\');$(\'#form_accept\').submit()"/>')
+                    break
+                  case false:
+                    t.html('<input type="button" value="Accept" onclick="$(\'#id_accepted\').val(\'True\');$(\'#form_accept\').submit()"/>')
+                    break
+                  case true:
+                    t.html('<input type="button" value="Revoke" onclick="$(\'#id_accepted\').val(\'False\');$(\'#form_accept\').submit()"/>')
+                    break
+                }
+              } else {
+                t.html('&nbsp;')
+              }
               break
             default:
               if (push[attr])
@@ -119,7 +136,7 @@ function handleReload(u) {
 
 .pushes {
   width: 100%;
-  height: 200px;
+  height: 220px;
   border: 1px solid #bbd;
   border-collapse: collapse;
 }
@@ -144,7 +161,8 @@ function handleReload(u) {
   border: 0 !important;
 }
 
-.pushes tr.signoff td {
+.pushes tr.signoff td,
+.pushes tr.accepted td {
   text-align: center;
 }
 
@@ -249,7 +267,7 @@ function handleReload(u) {
   <tr class="build"></tr>
   <tr class="compare"></tr>
   <tr class="signoff"></tr>
-  <tr class="admin"></tr>
+  <tr class="accepted"></tr>
 </table>
 <fieldset class="legend">
   <legend>Legend</legend>
