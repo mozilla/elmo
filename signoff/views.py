@@ -1,6 +1,6 @@
 from django.shortcuts import render_to_response
 from django.http import HttpResponseRedirect, HttpResponse 
-from life.models import Locale, Push
+from life.models import Locale, Push, Tree
 from signoff.models import Milestone, Signoff, SignoffForm, AcceptForm
 from l10nstats.models import Run
 from django import forms
@@ -126,7 +126,6 @@ def signoff(request, loc, ms):
     
     forest = mstone.appver.tree.l10n
     repo_url = '%s%s/' % (forest.url, locale.code)
-    pushes = _get_pushes(repo_url, mstone, current, offset=0)
     notes = _get_notes(request.session)
     curcol = {None:0,False:-1,True:1}[current.accepted] if current else 0
     try:
@@ -138,7 +137,6 @@ def signoff(request, loc, ms):
         'locale': locale,
         'form': form,
         'notes': notes,
-        'pushes': pushes,
         'current': current,
         'curcol': curcol,
         'accepted': accepted,
@@ -214,14 +212,28 @@ def shipped_locales(request, milestone):
     r['Content-Disposition'] = 'inline; filename=shipped-locales'
     return r
 
-def get_pushes(request, loc, ms, offset=0):
-    locale = Locale.objects.get(code=loc)
-    mstone = Milestone.objects.get(code=ms)
-    current = _get_current_signoff(locale, mstone)
-    forest = mstone.appver.tree.l10n
-    repo_url = '%s%s/' % (forest.url, locale.code)
-    pushes = _get_pushes(repo_url, mstone, current, offset=0)
-    return HttpResponse(simplejson.dumps({'pushes': pushes}, indent=2))
+def get_api_items(request):
+    loc = request.GET.get('locale', None)
+    ms = request.GET.get('mstone', None)
+    start = request.GET.get('start', 0)
+    offset = request.GET.get('offset', 10)
+    
+    locale = None
+    mstone = None
+    current = None
+    if loc:
+        locale = Locale.objects.get(code=loc)
+    if ms:
+        mstone = Milestone.objects.get(code=ms)
+    if loc and ms:
+        cur = _get_current_signoff(locale, mstone)
+        current = {}
+        current['when'] = str(cur.when)
+        current['author'] = str(cur.author)
+    
+    
+    pushes = _get_api_items(locale, mstone, cur)
+    return HttpResponse(simplejson.dumps({'pushes': pushes, 'current': current}, indent=2))
 
 
 def dstest(request):
@@ -248,58 +260,54 @@ def _getstatus(mstone):
     today = datetime.date.today()
     return mstone.start_event.date <= today and mstone.end_event.date >= today
 
-def _get_pushes(repo_url, mstone, current, offset=0):
-    pushobjs = Push.objects.filter(repository__url=repo_url).order_by('-push_date')[offset:offset+10]
+def _get_api_items(locale=None, mstone=None, current=None, offset=0, limit=10):
+    if mstone:
+        forest = mstone.appver.tree.l10n
+        repo_url = '%s%s/' % (forest.url, locale.code) 
+        pushobjs = Push.objects.filter(repository__url=repo_url).order_by('-push_date')[offset:offset+limit]
+    else:
+        pushobjs = Push.objects.order_by('-push_date')[offset:offset+limit]
     
     pushes = []
-    prev_date = None
-    colspan = 0
     for pushobj in pushobjs:
+        if mstone:
+            signoff_trees = [mstone.appver.tree]
+        else:
+            signoff_trees = Tree.objects.filter(l10n__repositories=pushobj.repository, appversion__milestone__isnull=False)
+        print signoff_trees
         name = '%s on [%s]' % (pushobj.user, pushobj.push_date)
         date = pushobj.push_date.strftime("%Y-%m-%d")
-        if date == prev_date:
-            date = None
-            colspan += 1
-        else:
-            if colspan > 0:
-                pushes[len(pushes)-1-colspan]['colspan'] = colspan+1
-                colspan = 0
-            prev_date = pushobj.push_date.strftime("%Y-%m-%d")
         cur = current and current.push.id == pushobj.id
 
         # check compare-locales
-        runs = Run.objects.filter(revisions=pushobj.tip,
-                                  tree=mstone.appver.tree)
-        runs = runs.order_by('-build__id')
-        try:
-            lastrun = runs[0]
-            missing = lastrun.missing + lastrun.missingInFiles
-            if missing:
-                compare = '%d missing' % missing
-            elif lastrun.obsolete:
-                compare = '%d obsolete' % lastrun.obsolete
-            else:
-                compare = 'green (%d%%)' % lastrun.completion
-        except:
-            compare = 'no build'
+        runs2 = Run.objects.filter(revisions=pushobj.tip)
+        for tree in signoff_trees:
+            try:
+                lastrun = runs2.filter(tree=tree).order_by('-build__id')[0]
+                missing = lastrun.missing + lastrun.missingInFiles
+                if missing:
+                    compare = '%d missing' % missing
+                elif lastrun.obsolete:
+                    compare = '%d obsolete' % lastrun.obsolete
+                else:
+                    compare = 'green (%d%%)' % lastrun.completion
+            except:
+                compare = 'no build'
 
-        pushes.append({'name': name,
-                       'date': date,
-                       'time': pushobj.push_date.strftime("%H:%M:%S"),
-                       #'object': pushobj,
-                       'id': pushobj.id,
-                       'user': pushobj.user,
-                       'revision': pushobj.tip.shortrev,
-                       'revdesc': pushobj.tip.description,
-                       'status': 'green',
-                       'build': 'green',
-                       'compare': compare,
-                       'colspan': 0,
-                       'current': cur,
-                       'url': '%spushloghtml?changeset=%s' % (pushobj.repository.url, pushobj.tip.shortrev),
-                       'accepted': current.accepted if cur else None})
-    if colspan > 0:
-        pushes[len(pushes)-1-colspan]['colspan'] = colspan+1
+            pushes.append({'name': name,
+                           'date': date,
+                           'time': pushobj.push_date.strftime("%H:%M:%S"),
+                           #'object': pushobj,
+                           'id': pushobj.id,
+                           'user': pushobj.user,
+                           'revision': pushobj.tip.shortrev,
+                           'revdesc': pushobj.tip.description,
+                           'status': 'green',
+                           'build': 'green',
+                           'compare': compare,
+                           'signoff': cur,
+                           'url': '%spushloghtml?changeset=%s' % (pushobj.repository.url, pushobj.tip.shortrev),
+                           'accepted': current.accepted if cur else None})
     return pushes
 
 def _get_notes(session):

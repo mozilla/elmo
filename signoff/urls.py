@@ -2,7 +2,7 @@ from django.conf.urls.defaults import *
 
 urlpatterns = patterns('signoff.views',
     (r'^\/?$', 'index'),
-    (r'^\/pushes\/(?P<loc>[^\/]+)\/(?P<ms>[^\/]+)$', 'get_pushes'),
+    (r'^\/api\/pushes$', 'get_api_items'),
     (r'^\/milestones\/([^/]+)\/l10n-changesets$', 'l10n_changesets'),
     (r'^\/milestones\/([^/]+)\/shipped-locales$', 'shipped_locales'),
     (r'^\/locales\/?$', 'locale_list'),
