@@ -17,10 +17,7 @@ def index(request):
     mstones = Milestone.objects.all().order_by('code')
 
     for i in mstones:
-        if _getstatus(i):
-            i.dates = 'Open till '+str(i.end_event.date)
-        else:
-            i.dates = '%s - %s' % (i.start_event.date, i.end_event.date)
+        i.dates = _timeframe_desc(i)
     
     return render_to_response('signoff/index.html', {
         'locales': locales,
@@ -66,10 +63,7 @@ def milestone_list(request, loc=None):
 
     for i in mstones:
         i.params = []
-        if _getstatus(i):
-            i.params.append('Open till '+str(i.end_event.date))
-        else:
-            i.params.append('%s - %s' % (i.start_event.date, i.end_event.date))
+        i.params.append(_timeframe_desc(i))
 
         if locale:
             i.params.append('Dependencies matches' if _getstatus(i) else 'Dependencies unmatched')
@@ -260,7 +254,8 @@ def _get_current_signoff(locale, mstone):
 
 def _getstatus(mstone):
     today = datetime.date.today()
-    return mstone.start_event.date <= today and mstone.end_event.date >= today
+    return ((not mstone.start_event) or mstone.start_event.date <= today) and \
+           ((not mstone.end_event) or mstone.end_event.date >= today)
 
 def _get_api_items(locale=None, mstone=None, current=None, offset=0, limit=10):
     if mstone:
@@ -321,3 +316,15 @@ def _get_notes(session):
         else:
             del notes[i]
     return notes
+
+def _timeframe_desc(i):
+    if _getstatus(i):
+        if i.end_event:
+            return 'Open till '+str(i.end_event.date)
+        else:
+            return 'Open'
+    else:
+        if i.start_event and i.end_event:
+            return '%s - %s' % (i.start_event.date, i.end_event.date)
+        else:
+            return 'Open'

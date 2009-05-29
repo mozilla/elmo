@@ -36,10 +36,16 @@ class Milestone(models.Model):
     appver = models.ForeignKey(AppVersion)
 
     def get_start_event(self):
-        return Event.objects.get(type=0, milestone=self) or None
+        try:
+            return Event.objects.get(type=0, milestone=self)
+        except:
+            return None
 
     def get_end_event(self):
-        return Event.objects.get(type=1, milestone=self) or None
+        try:
+            return Event.objects.get(type=1, milestone=self)
+        except:
+            return None
 
     start_event = property(get_start_event)
     end_event = property(get_end_event)
