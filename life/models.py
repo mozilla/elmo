@@ -60,10 +60,18 @@ class Repository(models.Model):
     locale = models.ForeignKey(Locale, null=True, blank=True)
     def last_known_push(self):
         try:
-            return self.push_set.order_by('-push_id')[0].push_id
+            return Push.objects.filter(changesets__repository=self).order_by('-push_id').values_list('push_id', flat=True)[0]
         except IndexError:
             # no push in repo, return 0
             return 0
+    def save(self, force_insert=False, force_update=False):
+        needsInitialChangeset = self.id is None
+        # Call the "real" save() method.
+        super(Repository, self).save(force_insert, force_update)
+        if needsInitialChangeset:
+            cs = Changeset(repository=self,
+                           revision='0'*40)
+            cs.save()
     def __unicode__(self):
         return self.name
 
@@ -72,12 +80,10 @@ class Push(models.Model):
     """stores list of revisions pushed to repositories
     
     Fields:
-    repository -- repository this revision was pushed to
     user -- person who did the push
     push_date -- date and time of the push
     push_id -- unique id of the push
     """
-    repository = models.ForeignKey(Repository)
     user = models.CharField(max_length=200, db_index=True)
     push_date = models.DateTimeField('date of push', db_index=True)
     push_id = models.PositiveIntegerField(default=0)
@@ -88,7 +94,7 @@ class Push(models.Model):
 
     def __unicode__(self):
         tip = self.tip.shortrev
-        return self.repository.url + 'pushloghtml?changeset=' + tip
+        return self.tip.repository.url + 'pushloghtml?changeset=' + tip
         #return 'Push to %s by %s [%s]' % (self.repository.name, self.user, self.push_date)
 
 if 'mbdb' in settings.INSTALLED_APPS:
@@ -106,16 +112,19 @@ class Changeset(models.Model):
     """stores list of changsets
     
     Fields:
-    push -- push this changeset is part of
+    repository -- repository of this revision
+    push -- push this changeset is part of (if not 000000000000)
     revision -- revision that has been created by this changeset
     user -- author of this changeset
     description -- description added to this changeset
     files -- files affected by this changeset
     """
-    push = models.ForeignKey(Push, related_name='changesets')
+    repository = models.ForeignKey(Repository, related_name='changesets')
+    push = models.ForeignKey(Push, related_name='changesets',
+                             null=True, blank=True)
     revision = models.CharField(max_length=40, db_index=True)
-    user = models.CharField(null = True, blank = True, max_length=200, db_index=True)
-    description = models.TextField(null = True, blank = True, db_index=True)
+    user = models.CharField(max_length=200, db_index=True, default='')
+    description = models.TextField(null = True, default='')
     files = models.ManyToManyField(File)
     branch = models.ForeignKey(Branch, default=1, related_name='changesets')
 
@@ -124,7 +133,7 @@ class Changeset(models.Model):
         return self.revision[:12]
 
     def url(self):
-        return self.push.repository.url + "rev/" + self.shortrev
+        return self.repository.url + "rev/" + self.shortrev
     __unicode__ = url
 
 

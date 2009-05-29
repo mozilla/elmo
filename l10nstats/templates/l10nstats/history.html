@@ -84,7 +84,7 @@ $(window).resize(onResize);
 </script>
 {% endblock %}
 {% block content %}
-<h1>Statistics for {{ locale }}, {{ tree }}</h1>
+<h1>Statistics for {{ locale }}, {{ tree }}, {{starttime}}-{{endtime}}</h1>
 <div id="my-timeplot" style="height: 400px;"></div>
 <div class="legend" style="float:right">
   left scale:
@@ -95,6 +95,7 @@ $(window).resize(onResize);
 <div id="txtData" style="display:none">{% for run in runs %}
 {{ run.srctime.isoformat }}Z,{{ run.missing }},{{ run.obsolete }},{{ run.unchanged }}{% endfor %}
 </div>
+<div><a href="?locale={{locale}}&tree={{tree}}&starttime={{stamps.previous}}&endtime={{stamps.start}}">Previous</a><a href="?locale={{locale}}&tree={{tree}}&starttime={{stamps.end}}&endtime={{stamps.next}}">Next</a></div>
 <div id="events" style="display:none">
 <data date-time-format="iso8601">
 </data>

@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
+import time
 
 from django.shortcuts import render_to_response
 from django.template import Context, loader
@@ -139,6 +140,10 @@ def history_plot(request):
             locale = Locale.objects.get(code=request.GET['locale'])
         except Locale.DoesNotExist:
             pass
+    if 'starttime' in request.GET:
+        starttime = datetime.utcfromtimestamp(int(request.GET['starttime']))
+    if 'endtime' in request.GET:
+        endtime = datetime.utcfromtimestamp(int(request.GET['endtime']))
     if locale is not None and tree is not None:
         q = Run.objects.filter(tree=tree, locale=locale)
         q2 = q.filter(srctime__lte=endtime,
@@ -154,6 +159,7 @@ def history_plot(request):
                        'missing': p.missing + p.missingInFiles,
                        'obsolete': p.obsolete,
                        'unchanged': p.unchanged}
+            r = None
             for r in _q:
                 if p is not None:
                     yield {'srctime': r.srctime - second,
@@ -165,13 +171,22 @@ def history_plot(request):
                        'obsolete': r.obsolete,
                        'unchanged': r.unchanged}
                 p = r
-            yield {'srctime': endtime,
-                   'missing': r.missing + r.missingInFiles,
-                   'obsolete': r.obsolete,
-                   'unchanged': r.unchanged}
+            if r is not None:
+                yield {'srctime': endtime,
+                       'missing': r.missing + r.missingInFiles,
+                       'obsolete': r.obsolete,
+                       'unchanged': r.unchanged}
+        stamps = {}
+        stamps['start'] = int(time.mktime(starttime.timetuple()))
+        stamps['end'] = int(time.mktime(endtime.timetuple()))
+        stamps['previous'] = stamps['start']*2 - stamps['end']
+        stamps['next'] = stamps['end']*2 - stamps['start']
         return render_to_response('l10nstats/history.html',
                                   {'locale': locale.code,
                                    'tree': tree.code,
+                                   'starttime': starttime,
+                                   'endtime': endtime,
+                                   'stamps': stamps,
                                    'runs': runs(q2, p)})
     return HttpResponseNotFound("sorry, gimme tree and locale")
 
@@ -262,12 +277,13 @@ def grid(request):
     if not (trees and locales):
         # hook up template here
         return HttpResponse("specify locale and tree")
+    epoch = datetime.utcfromtimestamp(0)
     tree = trees[0]
     locale = locales[0]
 
     # find the runs for this locale and tree
     runs = Run.objects.filter(locale__code=locale,
-                              tree__code=tree)[:20]
+                              tree__code=tree)[:100]
     changesets = Changeset.objects.filter(run__in=runs).distinct()
     changesets = changesets.order_by('push__push_date')
     changesets = changesets.select_related('push__repository')
@@ -280,17 +296,17 @@ def grid(request):
         l10n = None
         en = []
         for rev in revs:
-            if rev.push.repository.forest_id is not None:
+            if rev.repository.forest_id is not None:
                 l10n = rev
             else:
                 en.append(rev)
-        en.sort(key=lambda _rev: _rev.push.repository.name)
+        en.sort(key=lambda _rev: _rev.repository.name)
         en = tuple(en)
         x.add(l10n)
         y.add(en)
         table[(l10n,en)].append(run)
-    X = sorted(x, key=lambda cs: cs.push.push_date)
-    Y = sorted(y, key=lambda t: map(lambda cs: cs.push.push_date, t))
+    X = sorted(x, key=lambda cs: cs.push and cs.push.push_date or epoch)
+    Y = sorted(y, key=lambda t: map(lambda cs: cs.push and cs.push.push_date or epoch, t))
     rows = []
     for y in Y:
         row = [(x,y) in table and table[(x,y)] or None for x in X]

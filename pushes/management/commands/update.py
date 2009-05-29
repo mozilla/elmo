@@ -108,11 +108,12 @@ class Command(BaseCommand):
                 data = pushes[id]
                 p = Push(push_id = int(id),
                          user = data['user'],
-                         repository = repo,
                          push_date = datetime.utcfromtimestamp(data['date']))
                 p.save()
                 for revision in data['changesets']:
-                    cs = Changeset(push = p, revision = revision)
+                    cs = Changeset(push = p,
+                                   repository = repo,
+                                   revision = revision)
                     try:
                         ctx = hgrepo.changectx(cs.revision)
                         cs.user = ctx.user()

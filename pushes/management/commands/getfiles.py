@@ -23,7 +23,7 @@ class Command(BaseCommand):
         else:
             repos = Repository.objects.all()
         for repo in repos:
-            if not repo.push_set.count():
+            if not repo.changesets.count():
                 continue
             if not quiet:
                 print "Checking %s" % repo.name
@@ -33,32 +33,30 @@ class Command(BaseCommand):
             configpath = os.path.join(repopath, '.hg', 'hgrc')
             if not os.path.isfile(configpath):
                 print "You need to clone " + repo.name
-                for p in repo.push_set.iterator():
-                    for cs in p.changesets.iterator():
-                        print repo.name, cs.revision
+                for p in repo.changesets.iterator():
+                    print repo.name, cs.revision
                 continue
             ui.readconfig(configpath)
             hgrepo = repository(ui, repopath)
-            for p in repo.push_set.iterator():
-                for cs in p.changesets.iterator():
-                    try:
-                        ctx = hgrepo.changectx(cs.revision)
-                        dbfiles = set(map(str, cs.files.all()))
-                        hgfiles = set(ctx.files())
-                        if dbfiles == hgfiles:
-                            continue
-                        for path in sorted(hgfiles - dbfiles):
-                            f, created = File.objects.get_or_create(path = path)
-                            cs.files.add(f)
-                            if created:
-                                f.save()
-                        if dbfiles - hgfiles:
-                            # unhook files
-                            obsolete = sorted(dbfiles - hgfiles)
-                            if not quiet:
-                                print "removing " + " ".join(obsolete)
-                            fls = cs.files.filter(path__in = obsolete)
-                            cs.files.remove(*list(fls))
-                        cs.save()
-                    except Exception, e:
-                        print repo.name, e
+            for p in repo.changesets.iterator():
+                try:
+                    ctx = hgrepo.changectx(cs.revision)
+                    dbfiles = set(map(str, cs.files.all()))
+                    hgfiles = set(ctx.files())
+                    if dbfiles == hgfiles:
+                        continue
+                    for path in sorted(hgfiles - dbfiles):
+                        f, created = File.objects.get_or_create(path = path)
+                        cs.files.add(f)
+                        if created:
+                            f.save()
+                    if dbfiles - hgfiles:
+                        # unhook files
+                        obsolete = sorted(dbfiles - hgfiles)
+                        if not quiet:
+                            print "removing " + " ".join(obsolete)
+                        fls = cs.files.filter(path__in = obsolete)
+                        cs.files.remove(*list(fls))
+                    cs.save()
+                except Exception, e:
+                    print repo.name, e

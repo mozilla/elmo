@@ -68,11 +68,12 @@ def handlePushes(repo_id, submits, do_update=True):
     for data in submits:
         p = Push(push_id = data.id,
                  user = data.user,
-                 repository = repo,
                  push_date = datetime.utcfromtimestamp(data.date))
         p.save()
         for revision in data.changesets:
-            cs = Changeset(push = p, revision = revision)
+            cs = Changeset(push = p,
+                           repository = repo,
+                           revision = revision)
             try:
                 ctx = hgrepo.changectx(cs.revision)
                 cs.user = ctx.user().decode('utf-8', 'replace')

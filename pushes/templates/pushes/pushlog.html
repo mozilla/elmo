@@ -171,9 +171,9 @@ function addSearch(select) {
 	  {% for push in pushes %}
 	  <tr class="{{push.class}}">
 	    <td rowspan="{{push.span}}"><cite>{{push.push.user}}<br /><span class="date">{{push.push.push_date}}</span></cite></td>
-	    <td rowspan="{{push.span}}"><a href="{% url pushlog %}{{push.push.repository.name}}/">{{push.push.repository.name}}</a></td>
+	    <td rowspan="{{push.span}}"><a href="{% url pushlog %}{{push.tip.repository.name}}/">{{push.tip.repository.name}}</a></td>
 	    <td class="age">
-	      <a href="{{push.push.repository.url}}rev/{{push.tip.revision}}"
+	      <a href="{{push.tip.repository.url}}rev/{{push.tip.revision}}"
 	      target="_blank">
 	      {{push.tip.revision|slice:":12"}}
 	      </a>
@@ -186,7 +186,7 @@ function addSearch(select) {
 	  {% for change in push.changesets %}
 	  <tr class="{{push.class}}">	  
 	    <td class="age">
-	      <a href="{{push.push.repository.url}}rev/{{change.revision}}"
+	      <a href="{{push.tip.repository.url}}rev/{{change.revision}}"
 	      target="_blank">
 	      {{change.revision|slice:":12"}}
 	      </a>

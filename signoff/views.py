@@ -228,9 +228,10 @@ def get_api_items(request):
     if loc and ms:
         cur = _get_current_signoff(locale, mstone)
         current = {}
-        current['when'] = str(cur.when)
-        current['author'] = str(cur.author)
-        current['accepted'] = cur.accepted
+        if cur is not None:
+            current['when'] = str(cur.when)
+            current['author'] = str(cur.author)
+            current['accepted'] = cur.accepted
     
     
     pushes = _get_api_items(locale, mstone, cur)
@@ -265,7 +266,7 @@ def _get_api_items(locale=None, mstone=None, current=None, offset=0, limit=10):
     if mstone:
         forest = mstone.appver.tree.l10n
         repo_url = '%s%s/' % (forest.url, locale.code) 
-        pushobjs = Push.objects.filter(repository__url=repo_url).order_by('-push_date')[offset:offset+limit]
+        pushobjs = Push.objects.filter(changesets__repository__url=repo_url).order_by('-push_date')[offset:offset+limit]
     else:
         pushobjs = Push.objects.order_by('-push_date')[offset:offset+limit]
     
@@ -274,7 +275,7 @@ def _get_api_items(locale=None, mstone=None, current=None, offset=0, limit=10):
         if mstone:
             signoff_trees = [mstone.appver.tree]
         else:
-            signoff_trees = Tree.objects.filter(l10n__repositories=pushobj.repository, appversion__milestone__isnull=False)
+            signoff_trees = Tree.objects.filter(l10n__repositories=pushobj.tip.repository, appversion__milestone__isnull=False)
         print signoff_trees
         name = '%s on [%s]' % (pushobj.user, pushobj.push_date)
         date = pushobj.push_date.strftime("%Y-%m-%d")
@@ -307,7 +308,7 @@ def _get_api_items(locale=None, mstone=None, current=None, offset=0, limit=10):
                            'build': 'green',
                            'compare': compare,
                            'signoff': cur,
-                           'url': '%spushloghtml?changeset=%s' % (pushobj.repository.url, pushobj.tip.shortrev),
+                           'url': '%spushloghtml?changeset=%s' % (pushobj.tip.repository.url, pushobj.tip.shortrev),
                            'accepted': current.accepted if cur else None})
     return pushes
 

@@ -1,4 +1,4 @@
-from life.models import Tree, Repository, Locale, Changeset, Forest, Push
+from life.models import Tree, Repository, Locale, Changeset, Forest
 from django.contrib import admin
 
 admin.site.register(Locale)

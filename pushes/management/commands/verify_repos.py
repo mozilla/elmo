@@ -33,7 +33,7 @@ class Command(BaseCommand):
         else:
             repos = Repository.objects.all()
         for repo in repos:
-            ids=repo.push_set.all().values_list('push_id', flat=True)
+            ids=Push.objects.filter(changesets__repository=repo).values_list('push_id', flat=True)
             if not test_repo:
                 continue
             if not quiet:
@@ -44,23 +44,21 @@ class Command(BaseCommand):
             configpath = os.path.join(repopath, '.hg', 'hgrc')
             if not os.path.isfile(configpath):
                 print "You need to clone " + repo.name
-                for p in repo.push_set.iterator():
-                    for cs in p.changeset_set.iterator():
-                        print repo.name, cs.revision
+                for p in repo.changesets.iterator():
+                    print repo.name, cs.revision
                 continue
             ui.readconfig(configpath)
             hgrepo = repository(ui, repopath)
-            for p in repo.push_set.iterator():
-                for cs in p.changesets.iterator():
-                    try:
-                        ctx = hgrepo.changectx(cs.revision)
-                        branch = ctx.branch()
-                        if branch != 'default':
-                            dbb, created = \
-                                Branch.objects.get_or_create(name=branch)
-                            if created and not quiet:
-                                print "Created branch object for %s" % branch
-                            cs.branch = dbb
-                            cs.save()
-                    except Exception, e:
-                        print repo.name, e
+            for p in repo.changesets.iterator():
+                try:
+                    ctx = hgrepo.changectx(cs.revision)
+                    branch = ctx.branch()
+                    if branch != 'default':
+                        dbb, created = \
+                            Branch.objects.get_or_create(name=branch)
+                        if created and not quiet:
+                            print "Created branch object for %s" % branch
+                        cs.branch = dbb
+                        cs.save()
+                except Exception, e:
+                    print repo.name, e
