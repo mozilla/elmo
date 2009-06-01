@@ -135,6 +135,8 @@ def signoff(request, loc, ms):
         'curcol': curcol,
         'accepted': accepted,
         'user': user.username,
+        'pushes': simplejson.dumps(_get_api_items(locale, mstone, current)),
+        'current_js': simplejson.dumps(_get_current_js(current)),
     })
 
 def dashboard(request, ms):
@@ -221,15 +223,9 @@ def get_api_items(request):
         mstone = Milestone.objects.get(code=ms)
     if loc and ms:
         cur = _get_current_signoff(locale, mstone)
-        current = {}
-        if cur is not None:
-            current['when'] = str(cur.when)
-            current['author'] = str(cur.author)
-            current['accepted'] = cur.accepted
-    
     
     pushes = _get_api_items(locale, mstone, cur)
-    return HttpResponse(simplejson.dumps({'pushes': pushes, 'current': current}, indent=2))
+    return HttpResponse(simplejson.dumps({'pushes': pushes, 'current': _get_current_js(cur)}, indent=2))
 
 
 def dstest(request):
@@ -306,6 +302,14 @@ def _get_api_items(locale=None, mstone=None, current=None, offset=0, limit=10):
                            'url': '%spushloghtml?changeset=%s' % (pushobj.tip.repository.url, pushobj.tip.shortrev),
                            'accepted': current.accepted if cur else None})
     return pushes
+
+def _get_current_js(cur):
+    current = {}
+    if cur:
+        current['when'] = str(cur.when)
+        current['author'] = str(cur.author)
+        current['accepted'] = cur.accepted
+    return current
 
 def _get_notes(session):
     notes = {}

@@ -9,11 +9,11 @@
 
 {% block javascript %}
 
-var pushes = []
-var current = null
+var pushes = {{ pushes|safe }}
+var current = {{ current_js|safe}}
 
 $(document).ready(function(){
-  getPushes()
+  fillPushes()
   {% for note in notes %}
   {% ifnotequal note "error" %}
     setTimeout('$(".{{note}}").fadeOut("slow")', {% ifequal note "info" %}2000{% else %}{% ifequal note "warning" %}6000{% else %}15000{% endifequal %}{% endifequal %});
