@@ -274,6 +274,8 @@ class MyServiceMaker(object):
         """
         Construct a TCPServer from a factory defined in myproject.
         """
+        # set umask back to public reading against twistd daemonize
+        os.umask(18)
         HTTPClientFactory.noisy = False
         poller = getPoller(options)
         timer = float(options['time'])
