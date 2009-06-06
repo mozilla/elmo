@@ -247,6 +247,8 @@ def getPoller(options):
         def jsonErr(self, failure, repo):
             # catch errors on killing the service
             failure.trap(task.SchedulerStopped, error.ConnectionLost,
+                         error.DNSLookupError,
+                         error.TimeoutError,
                          defer.TimeoutError)
             log.err(failure, "failed to load json for %s, adding back" % repo.name)
             self.repos.pushback(repo)
