@@ -3,7 +3,10 @@ from django.db.models import Q
 from django.shortcuts import render_to_response
 from django.template import Context, loader
 from django.http import HttpResponse, HttpResponseNotFound
-
+from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
+from django.contrib.syndication.views import feed
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.urlresolvers import reverse
 
 import operator
 from bz2 import BZ2File
@@ -344,6 +347,10 @@ def waterfall(request):
                                'rows': rows})
 
 def builds_for_change(request):
+    """View for builds for one particular change.
+
+    Has a corresponding feed in BuildsForChangeFeed.
+    """
     try:
         changenumber = int(request.GET['change'])
         change = Change.objects.get(number = changenumber)
@@ -362,6 +369,60 @@ def builds_for_change(request):
                               {'done_builds': done,
                                'change': change})
 
+
+class BuildsForChangeFeed(Feed):
+    ttl = str(5*60)
+    title_template = 'tinder/builds_for_change_title.html'
+
+    def get_object(self, bits):
+        """Return a closure to be used to create the feed for this change.
+
+        404 for anything that isn't a single change ID.
+        """
+        if len(bits) != 1:
+            raise ObjectDoesNotExist
+        try:
+            id = int(bits[0])
+        except ValueError:
+            raise ObjectDoesNotExist
+        return Change.objects.get(number=id)
+
+    def title(self, change):
+        title = []
+        pending = change.builds.filter(endtime__isnull=True).count()
+        if pending:
+            title.append("%d pending" % pending)
+        failed = change.builds.filter(result=2).count()
+        if failed:
+            title.append("%d failed" % failed)
+        warnings = change.builds.filter(result=1).count()
+        if warnings:
+            title.append("%d warnings" % warnings)
+        good = change.builds.filter(result=0).count()
+        if good:
+            title.append("%d good" % good)
+        if not title:
+            title.append("no builds")
+        return ", ".join(title)
+
+    def link(self, change):
+        lnk = reverse('tinder.views.builds_for_change') + '?change=%d' % change.pk
+        lnk = self.request.build_absolute_uri(lnk)
+        return lnk
+
+    def description(self, change):
+        tmpl = '''Builds for %s by %s'''
+        return tmpl % (change.comments, change.who)
+
+    def items(self, change):
+        builds = change.builds.order_by('starttime')
+        return builds
+
+    def item_link(self, build):
+        lnk = reverse('tinder_show_build',
+                      args=(build.builder.name, build.buildnumber))
+        lnk = self.request.build_absolute_uri(lnk)
+        return lnk
 
 def showbuild(request, buildername, buildnumber):
     try:
