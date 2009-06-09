@@ -199,7 +199,7 @@ def setupBridge(master, settings, config):
                 db = b.builds.get(buildnumber=build.getNumber())
                 req.builds.add(db)
                 req.save()
-            return addBuild
+            request.subscribe(addBuild)
 
         def builderChangedState(self, builderName, state):
             log.msg("%s changed state to %s" % (builderName, state))
