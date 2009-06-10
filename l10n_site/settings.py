@@ -96,7 +96,7 @@ INSTALLED_APPS = (
     'life',
     'mbdb',
     'pushes',
-    'status',
+    'l10nstats',
     'tinder',
 )
 
