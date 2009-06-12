@@ -1,7 +1,7 @@
 from django.shortcuts import render_to_response
 from django.http import HttpResponseRedirect, HttpResponse 
 from life.models import Locale, Push, Tree
-from signoff.models import Milestone, Signoff, SignoffForm, AcceptForm
+from signoff.models import Milestone, Signoff, SignoffForm, ActionForm
 from l10nstats.models import Run
 from django import forms
 from django.core.urlresolvers import reverse
@@ -96,8 +96,8 @@ def signoff(request, loc, ms):
                 else:
                     # hack around AcceptForm not taking strings, fixed in
                     # django 1.1
-                    bval = {"True": True, "False": False}[request.POST['accepted']]
-                    form = AcceptForm({'accepted': bval}, instance=current)
+                    bval = {"True": 0, "False": 1}[request.POST['accepted']]
+                    form = ActionForm({'signoff': current.id, 'flag': bval, 'author': user.id})
                     if form.is_valid():
                         form.save()
                         if request.POST['accepted'] == "False":
@@ -107,7 +107,7 @@ def signoff(request, loc, ms):
                     else:
                         request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> could not be added' % (mstone, locale, user.username)
             else:
-                instance = Signoff(milestone=mstone, locale=locale, author=user)
+                instance = Signoff(appversion=mstone.appver, locale=locale, author=user)
                 form = SignoffForm(request.POST, instance=instance)
                 if form.is_valid():
                     form.save()
@@ -121,7 +121,8 @@ def signoff(request, loc, ms):
     forest = mstone.appver.tree.l10n
     repo_url = '%s%s/' % (forest.url, locale.code)
     notes = _get_notes(request.session)
-    curcol = {None:0,False:-1,True:1}[current.accepted] if current else 0
+    print current.status
+    curcol = {None:0,1:-1,0:1}[current.status] if current else 0
     try:
         accepted = Signoff.objects.filter(locale=locale, milestone=mstone, accepted=True).order_by('-pk')[0]
     except:
@@ -242,7 +243,7 @@ def dstest(request):
 #
 
 def _get_current_signoff(locale, mstone):
-    current = Signoff.objects.filter(locale=locale, milestone=mstone).order_by('-pk')
+    current = Signoff.objects.filter(locale=locale, appversion=mstone.appver).order_by('-pk')
     if not current:
         return None
     #current[0].when = current[0].when.strftime("%Y-%m-%d %H:%M")

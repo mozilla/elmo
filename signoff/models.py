@@ -26,6 +26,43 @@ class AppVersion(models.Model):
     def __unicode__(self):
         return '%s %s' % (self.app.name, self.version)
 
+class Signoff(models.Model):
+    push = models.ForeignKey(Push)
+    appversion = models.ForeignKey(AppVersion, related_name = 'signoffs')
+    author = models.ForeignKey(User)
+    when = models.DateTimeField('signoff timestamp', default=datetime.now)
+    locale = models.ForeignKey(Locale)
+
+    @property
+    def accepted(self):
+        if self.status == 0:
+            return True
+        else:
+            return False
+
+    @property
+    def status(self):
+        action = Action.objects.filter(signoff=self).order_by('-pk')
+        if action:
+            return action[0].flag
+        else:
+            return None
+
+    def __unicode__(self):
+        return 'Signoff for %s %s by %s [%s]' % (self.appversion, self.locale.code, self.author, self.when.strftime("%Y-%m-%d %H:%M"))
+
+FLAG_CHOICES = (
+    (0, 'accepted'),
+    (1, 'rejected'),
+    (2, 'revoked'),
+    (3, 'obsoleted'),
+)
+
+class Action(models.Model):
+    signoff = models.ForeignKey(Signoff)
+    flag = models.IntegerField(choices=FLAG_CHOICES)
+    author = models.ForeignKey(User)
+    when = models.DateTimeField('signoff action timestamp', default=datetime.now)
 
 class Milestone(models.Model):
     """ stores unique milestones like fx35b4
@@ -34,6 +71,7 @@ class Milestone(models.Model):
     code = models.CharField(max_length = 30)
     name = models.CharField(max_length = 50, blank = True, null = True)
     appver = models.ForeignKey(AppVersion)
+    signoffs = models.ManyToManyField(Signoff, related_name='shipped list', null=True, blank=True)
 
     def get_start_event(self):
         try:
@@ -70,23 +108,13 @@ class Event(models.Model):
     def __unicode__(self):
         return '%s for %s (%s)' % (self.name, self.milestone, self.date)
 
-class Signoff(models.Model):
-    push = models.ForeignKey(Push)
-    milestone = models.ForeignKey(Milestone, related_name = 'signoffs')
-    author = models.ForeignKey(User)
-    when = models.DateTimeField('signoff timestamp', default=datetime.now)
-    locale = models.ForeignKey(Locale)
-    accepted = models.NullBooleanField()
-
-    def __unicode__(self):
-        return 'Signoff for %s %s by %s [%s]' % (self.milestone, self.locale.code, self.author, self.when.strftime("%Y-%m-%d %H:%M"))
 
 class SignoffForm(ModelForm):
     class Meta:
         model = Signoff
         fields = ('push',)
 
-class AcceptForm(ModelForm):
+class ActionForm(ModelForm):
     class Meta:
-        model = Signoff
-        fields = ('accepted',)
+        model = Action
+        fields = ('signoff','flag','author')
