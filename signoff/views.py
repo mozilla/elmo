@@ -18,7 +18,7 @@ def index(request):
 
     for i in mstones:
         i.dates = _timeframe_desc(i)
-    
+
     return render_to_response('signoff/index.html', {
         'locales': locales,
         'mstones': mstones,
@@ -38,7 +38,7 @@ def locale_list(request, ms=None):
     if  mstone:
         for i in locales:
             i.params = []
-            i.params.append('Open' if _getstatus(mstone) else 'Unmatched dependencies')
+            i.params.append('Open' if _getstatus(mstone)==0 else 'Unmatched dependencies')
             
             current = _get_current_signoff(i, mstone)
             if current is not None:
@@ -66,7 +66,7 @@ def milestone_list(request, loc=None):
         i.params.append(_timeframe_desc(i))
 
         if locale:
-            i.params.append('Dependencies matches' if _getstatus(i) else 'Dependencies unmatched')
+            i.params.append('Dependencies matches' if _getstatus(i)==0 else 'Dependencies unmatched')
             current = _get_current_signoff(locale, i)
             if current:
                 i.params.append('Signed off at %s by %s' % (current.when, current.author))
@@ -82,7 +82,7 @@ def signoff(request, loc, ms):
     locale = Locale.objects.get(code=loc)
     mstone = Milestone.objects.get(code=ms)
     current = _get_current_signoff(locale, mstone)
-    enabled = _getstatus(mstone)
+    enabled = _getstatus(mstone)==0
     user = request.user
     anonymous = user.is_anonymous()
     staff = user.is_staff
@@ -97,7 +97,7 @@ def signoff(request, loc, ms):
                     # hack around AcceptForm not taking strings, fixed in
                     # django 1.1
                     bval = {"True": 0, "False": 1}[request.POST['accepted']]
-                    form = ActionForm({'signoff': current.id, 'flag': bval, 'author': user.id})
+                    form = ActionForm({'signoff': current.id, 'flag': bval, 'author': user.id, 'comment': request.POST['comment']})
                     if form.is_valid():
                         form.save()
                         if request.POST['accepted'] == "False":
@@ -250,9 +250,7 @@ def _get_current_signoff(locale, mstone):
     return current[0]
 
 def _getstatus(mstone):
-    today = datetime.date.today()
-    return ((not mstone.start_event) or mstone.start_event.date <= today) and \
-           ((not mstone.end_event) or mstone.end_event.date >= today)
+    return mstone.status
 
 def _get_api_items(locale=None, mstone=None, current=None, offset=0, limit=10):
     if mstone:
@@ -291,7 +289,6 @@ def _get_api_items(locale=None, mstone=None, current=None, offset=0, limit=10):
             pushes.append({'name': name,
                            'date': date,
                            'time': pushobj.push_date.strftime("%H:%M:%S"),
-                           #'object': pushobj,
                            'id': pushobj.id,
                            'user': pushobj.user,
                            'revision': pushobj.tip.shortrev,

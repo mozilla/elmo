@@ -63,6 +63,13 @@ class Action(models.Model):
     flag = models.IntegerField(choices=FLAG_CHOICES)
     author = models.ForeignKey(User)
     when = models.DateTimeField('signoff action timestamp', default=datetime.now)
+    comment = models.TextField(blank=True, null=True)
+
+STATUS_CHOICES = (
+    (0, 'upcoming'),
+    (1, 'open'),
+    (2, 'shipped'),
+)
 
 class Milestone(models.Model):
     """ stores unique milestones like fx35b4
@@ -72,6 +79,7 @@ class Milestone(models.Model):
     name = models.CharField(max_length = 50, blank = True, null = True)
     appver = models.ForeignKey(AppVersion)
     signoffs = models.ManyToManyField(Signoff, related_name='shipped list', null=True, blank=True)
+    status = models.IntegerField(choices=STATUS_CHOICES, default=0)
 
     def get_start_event(self):
         try:
@@ -117,4 +125,4 @@ class SignoffForm(ModelForm):
 class ActionForm(ModelForm):
     class Meta:
         model = Action
-        fields = ('signoff','flag','author')
+        fields = ('signoff','flag','author', 'comment')
