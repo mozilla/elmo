@@ -82,7 +82,7 @@ def signoff(request, loc, ms):
     locale = Locale.objects.get(code=loc)
     mstone = Milestone.objects.get(code=ms)
     current = _get_current_signoff(locale, mstone)
-    enabled = _getstatus(mstone)==0
+    enabled = _getstatus(mstone)<2
     user = request.user
     anonymous = user.is_anonymous()
     staff = user.is_staff
