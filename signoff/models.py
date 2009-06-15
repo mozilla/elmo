@@ -20,7 +20,7 @@ class AppVersion(models.Model):
     """
     app = models.ForeignKey(Application)
     version = models.CharField(max_length = 10)
-    codename = models.CharField(max_length = 30, blank = True, null = True)
+    code = models.CharField(max_length = 30, blank = True, null = True)
     tree = models.ForeignKey(Tree)
 
     def __unicode__(self):

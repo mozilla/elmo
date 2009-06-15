@@ -149,7 +149,8 @@ def dashboard(request, ms):
             })
 
 def json(request, ms):
-    sos = Signoff.objects.filter(milestone__code=ms)
+    mso = Milestone.objects.get(code=ms)
+    sos = Signoff.objects.filter(appversion__code=mso.appver.code)
     items = defaultdict(set)
     values = {True: 'accepted', False: 'rejected', None: 'pending'}
     for so in sos.select_related('locale'):
