@@ -121,7 +121,6 @@ def signoff(request, loc, ms):
     forest = mstone.appver.tree.l10n
     repo_url = '%s%s/' % (forest.url, locale.code)
     notes = _get_notes(request.session)
-    print current.status
     curcol = {None:0,1:-1,0:1}[current.status] if current else 0
     try:
         accepted = Signoff.objects.filter(locale=locale, milestone=mstone, accepted=True).order_by('-pk')[0]
