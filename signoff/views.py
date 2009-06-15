@@ -38,7 +38,7 @@ def locale_list(request, ms=None):
     if  mstone:
         for i in locales:
             i.params = []
-            i.params.append('Open' if _getstatus(mstone)==0 else 'Unmatched dependencies')
+            i.params.append('Open' if _getstatus(mstone)<2 else 'Unmatched dependencies')
             
             current = _get_current_signoff(i, mstone)
             if current is not None:
@@ -66,7 +66,7 @@ def milestone_list(request, loc=None):
         i.params.append(_timeframe_desc(i))
 
         if locale:
-            i.params.append('Dependencies matches' if _getstatus(i)==0 else 'Dependencies unmatched')
+            i.params.append('Dependencies matches' if _getstatus(i)<2 else 'Dependencies unmatched')
             current = _get_current_signoff(locale, i)
             if current:
                 i.params.append('Signed off at %s by %s' % (current.when, current.author))
