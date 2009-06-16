@@ -1,9 +1,6 @@
 {% extends "signoff/base.html" %}
 
 {% block content %}
-<div class="nav">
-  <a href="{% url signoff.views.index %}">« All locales</a>
-</div>
 {% if error %}
 <p class="error">
   {{ error }}
@@ -17,7 +14,7 @@
 {% endif %}
 <ul>
   {% for mstone in mstones %}
-    <li><a href="{% url signoff.views.sublist arg=locale.code,arg2=mstone.code %}">{{mstone}}
+    <li><a href="{% url signoff.views.dashboard ms=mstone.code %}">{{mstone}}
     {% for elem in mstone.params %}
       [{{elem}}]
     {% endfor %}</a></li>
