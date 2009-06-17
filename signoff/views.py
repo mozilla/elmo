@@ -24,32 +24,6 @@ def index(request):
         'mstones': mstones,
     })
 
-def locale_list(request, ms=None):
-    locales = Locale.objects.all().order_by('code')
-    error = None
-    mstone = None
-    if ms:
-        try:
-            mstone = Milestone.objects.get(code=ms)
-        except:
-            mstone = None
-            error = 'Could not find requested milestone'
-
-    if  mstone:
-        for i in locales:
-            i.params = []
-            i.params.append('Open' if _getstatus(mstone)<2 else 'Unmatched dependencies')
-            
-            current = _get_current_signoff(i, mstone)
-            if current is not None:
-                i.params.append('Signed off at %s by %s' % (current.when, current.author))
-
-    return render_to_response('signoff/locale_list.html', {
-        'locales': locales,
-        'mstone': mstone,
-        'error': error,
-    })
-
 def milestone_list(request, loc=None):
     mstones = Milestone.objects.all().order_by('code')
     error = None
@@ -66,7 +40,7 @@ def milestone_list(request, loc=None):
         i.params.append(_timeframe_desc(i))
 
         if locale:
-            i.params.append('Dependencies matches' if _getstatus(i)<2 else 'Dependencies unmatched')
+            i.params.append('Dependencies matches' if i.status<2 else 'Dependencies unmatched')
             current = _get_current_signoff(locale, i)
             if current:
                 i.params.append('Signed off at %s by %s' % (current.when, current.author))
@@ -78,11 +52,13 @@ def milestone_list(request, loc=None):
     })
 
 
-def signoff(request, loc, ms):
-    locale = Locale.objects.get(code=loc)
-    mstone = Milestone.objects.get(code=ms)
+def pushes(request):
+    if request.GET['locale']:
+        locale = Locale.objects.get(code=request.GET['locale'])
+    if request.GET['ms']:
+        mstone = Milestone.objects.get(code=request.GET['ms'])
     current = _get_current_signoff(locale, mstone)
-    enabled = _getstatus(mstone)<2
+    enabled = mstone.status<2
     user = request.user
     anonymous = user.is_anonymous()
     staff = user.is_staff
@@ -114,7 +90,7 @@ def signoff(request, loc, ms):
                     request.session['signoff_info'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone, locale, user.username)
                 else:
                     request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> could not be added' % (mstone, locale, user.username)
-        return HttpResponseRedirect(reverse('signoff.views.sublist', kwargs={'arg':loc, 'arg2':ms}))
+        return HttpResponseRedirect('%s?locale=%s&ms=%s' % (reverse('signoff.views.pushes'), locale.code ,mstone.code))
 
     form = SignoffForm()
     
@@ -126,7 +102,7 @@ def signoff(request, loc, ms):
         accepted = Signoff.objects.filter(locale=locale, milestone=mstone, accepted=True).order_by('-pk')[0]
     except:
         accepted = None
-    return render_to_response('signoff/signoff.html', {
+    return render_to_response('signoff/pushes.html', {
         'mstone': mstone,
         'locale': locale,
         'form': form,
@@ -147,36 +123,6 @@ def dashboard(request, ms):
             'mstone': mstone,
             'args': args,
             })
-
-def json(request, ms):
-    mso = Milestone.objects.get(code=ms)
-    sos = Signoff.objects.filter(appversion__code=mso.appver.code)
-    items = defaultdict(set)
-    values = {True: 'accepted', False: 'rejected', None: 'pending'}
-    for so in sos.select_related('locale'):
-        items[so.locale.code].add(values[so.accepted])
-    # make a list now
-    items = [{"type": "SignOff", "label": locale, 'signoff': list(values)}
-             for locale, values in items.iteritems()]
-    return HttpResponse(simplejson.dumps({'items': items}, indent=2))
-
-def _code_type(code):
-    if len(code)<4 or code.find('-')!=-1:
-        return 'locale'
-    else:
-        return 'mstone'
-
-def sublist(request, arg=None, arg2=None):
-    if arg2:
-        if _code_type(arg) == 'locale':
-            return signoff(request, loc=arg, ms=arg2)
-        else:
-            return signoff(request, loc=arg2, ms=arg)
-    else:
-        if _code_type(arg) == 'locale':
-            return milestone_list(request, arg)
-        else:
-            return locale_list(request, arg)
 
 def l10n_changesets(request, milestone):
     sos = Signoff.objects.filter(milestone__code=milestone, accepted=True)
@@ -209,7 +155,21 @@ def shipped_locales(request, milestone):
     r['Content-Disposition'] = 'inline; filename=shipped-locales'
     return r
 
-def get_api_items(request):
+
+def signoff_json(request):
+    if request.GET['ms']:
+        mso = Milestone.objects.get(code=request.GET['ms'])
+    sos = Signoff.objects.filter(appversion__code=mso.appver.code)
+    items = defaultdict(set)
+    values = {True: 'accepted', False: 'rejected', None: 'pending'}
+    for so in sos.select_related('locale'):
+        items[so.locale.code].add(values[so.accepted])
+    # make a list now
+    items = [{"type": "SignOff", "label": locale, 'signoff': list(values)}
+             for locale, values in items.iteritems()]
+    return HttpResponse(simplejson.dumps({'items': items}, indent=2))
+
+def pushes_json(request):
     loc = request.GET.get('locale', None)
     ms = request.GET.get('mstone', None)
     start = request.GET.get('start', 0)
@@ -228,16 +188,6 @@ def get_api_items(request):
     pushes = _get_api_items(locale, mstone, cur)
     return HttpResponse(simplejson.dumps({'pushes': pushes, 'current': _get_current_js(cur)}, indent=2))
 
-
-def dstest(request):
-    import xmlrpclib
-    bzilla = xmlrpclib.ServerProxy("https://bugzilla.mozilla.org/xmlrpc.cgi")
-    print bzilla.Bug.get_bugs({'ids':[6323], 'permissive': 1})
-
-    return render_to_response('signoff/dstest.html', {
-        'mstone': 1,
-    }) 
-
 #
 #  Internal functions
 #
@@ -246,11 +196,7 @@ def _get_current_signoff(locale, mstone):
     current = Signoff.objects.filter(locale=locale, appversion=mstone.appver).order_by('-pk')
     if not current:
         return None
-    #current[0].when = current[0].when.strftime("%Y-%m-%d %H:%M")
     return current[0]
-
-def _getstatus(mstone):
-    return mstone.status
 
 def _get_api_items(locale=None, mstone=None, current=None, offset=0, limit=10):
     if mstone:
@@ -320,7 +266,7 @@ def _get_notes(session):
     return notes
 
 def _timeframe_desc(i):
-    if _getstatus(i):
+    if i.status<2:
         if i.end_event:
             return 'Open till '+str(i.end_event.date)
         else:
