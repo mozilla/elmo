@@ -6,14 +6,14 @@
 <h3>Locales</h3>
 <ul>
   {% for locale in locales %}
-  <li><a href="{% url signoff.views.milestone_list loc=locale.code %}">{{ locale }}</a></li>
+  <li><a href="{% url signoff.views.dashboard %}?locale={{locale.code}}">{{ locale }}</a></li>
   {% endfor %}
 </ul>
 
 <h3>Milestones</h3>
 <ul>
   {% for mstone in mstones %}
-  <li><a href="{% url signoff.views.locale_list ms=mstone.code %}">{{ mstone }} [{{mstone.dates}}]</a></li>
+  <li><a href="{% url signoff.views.dashboard %}?ms={{mstone.code}}">{{ mstone }} [{{mstone.dates}}]</a></li>
   {% endfor %}
 </ul>
 {% endblock %}

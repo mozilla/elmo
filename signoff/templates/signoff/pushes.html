@@ -247,7 +247,7 @@ function handleReload(u) {
 
 {% block content %}
 <div class="nav">
-  <a href="{% url signoff.views.dashboard ms=mstone.code %}">« all <i>{{mstone.name}}</i> locales</a>
+  <a href="{% url signoff.views.dashboard %}?ms={{mstone.code}}">« all <i>{{mstone.name}}</i> locales</a>
 </div>
 <h3>Signoff for {{mstone}} {{locale.code}}</h3>
 <p>Search: <input type="text" size="10" id="search"></p>

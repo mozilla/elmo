@@ -24,34 +24,6 @@ def index(request):
         'mstones': mstones,
     })
 
-def milestone_list(request, loc=None):
-    mstones = Milestone.objects.all().order_by('code')
-    error = None
-    locale = None
-    if loc:
-        try:
-            locale = Locale.objects.get(code=loc)
-        except:
-            locale = None
-            error = 'Could not find requested locale'
-
-    for i in mstones:
-        i.params = []
-        i.params.append(_timeframe_desc(i))
-
-        if locale:
-            i.params.append('Dependencies matches' if i.status<2 else 'Dependencies unmatched')
-            current = _get_current_signoff(locale, i)
-            if current:
-                i.params.append('Signed off at %s by %s' % (current.when, current.author))
-
-    return render_to_response('signoff/mstone_list.html', {
-        'mstones': mstones,
-        'locale': locale,
-        'error': error,
-    })
-
-
 def pushes(request):
     if request.GET['locale']:
         locale = Locale.objects.get(code=request.GET['locale'])
@@ -115,8 +87,9 @@ def pushes(request):
         'current_js': simplejson.dumps(_get_current_js(current)),
     })
 
-def dashboard(request, ms):
-    mstone = Milestone.objects.get(code=ms)
+def dashboard(request):
+    if request.GET['ms']:
+        mstone = Milestone.objects.get(code=request.GET['ms'])
     tree = mstone.appver.tree
     args = ["tree=%s" % tree.code]
     return render_to_response('signoff/dashboard.html', {
