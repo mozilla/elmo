@@ -11,8 +11,12 @@
 
 var pushes = {{ pushes|safe }}
 var current = {{ current_js|safe}}
+var slider = null
 
 $(document).ready(function(){
+  slider = Slider()
+  slider.setUp($('.slider').get()[0], {{max_pushes}}, sliderMove)
+
   fillPushes()
   {% for note in notes %}
   {% ifnotequal note "error" %}
@@ -21,40 +25,85 @@ $(document).ready(function(){
   {% endfor %}
  });
 
+function sliderMove(cb) {
+  var start = slider.status().start
+  var offset = slider.status().offset 
+  if (start+offset>pushes.length) {
+    getPushes(false, start+offset-1,10, [fillPushes,cb])
+    return false
+  } else {
+    fillPushes()
+    return true
+  }
+}
+
 function stylePushes() {
-  var v=3
+  var v=30/10
   $('#pushes tr').each(function(i){
     $('td', this).each(function(j){
       with($(this)) {
-        css('background-color','rgb('+(225+(j*v))+','+(225+(j*v))+',255)')
+        css('background-color','rgb('+(225+parseInt(j*v))+','+(225+parseInt(j*v))+',255)')
         if (i==2) // signoff row
-          $('a',this).css('color','rgb('+(34+j*v*2)+','+(34+j*v*2)+','+(153+j*v*2)+')')
-        css('color','rgb('+(j*v*4)+','+(j*v*4)+','+(j*v*4)+')')
+          $('a',this).css('color','rgb('+parseInt(34+j*v*2)+','+parseInt(34+j*v*2)+','+parseInt(153+j*v*2)+')')
+        css('color','rgb('+parseInt(j*v*4)+','+parseInt(j*v*4)+','+parseInt(j*v*4)+')')
       }
     })
   })
 }
-
-function getPushes() {
-  $.getJSON("/signoff/api/pushes?locale={{locale.code}}&mstone={{mstone.code}}",
+var calling = false
+function getPushes(clear,start,offset, callback) {
+  if (calling)
+    return true
+  start = start||0
+  offset = offset||10
+  $.getJSON("/signoff/api/pushes?locale={{locale.code}}&mstone={{mstone.code}}&start="+start+"&offset="+offset,
     function(data){
-      pushes = []
+      if (clear)
+        pushes = []
       $.each(data.pushes, function(i,push){
         pushes.push(push)
       });
       current = data.current
-      fillPushes()
-      stylePushes()
+      calling = false
+      for (var i in callback)
+        callback[i]()
     }
   )
+  calling = true
+  return false
 }
 
-function fillPushes() {
+function fillPushes(start, offset) {
+  start = slider.status().start
+  offset = slider.status().offset
+  window.status = start + " - " + offset + " = " + (start+offset) + " | " + pushes.length
   var trs = []
   var obj = $("#pushes").get()
   var prev_date = null
-  for (var i in pushes) {
+  for(var i in pushes) {
+    //alert(i)
     var push = pushes[i]
+    if (i<start) {
+      if (push['class'])
+        $('.'+push['class']).hide()
+      continue
+    }else if (i>=offset+start) {
+      if (push['class'])
+        $('.'+push['class']).hide()
+      continue
+    } else if (push['class']) {
+      $('.'+push['class']).show()
+      var td = $('.date > .push-'+push.id, obj)
+      if (!prev_date || prev_date != push['date']) {
+        if (td.hasClass('empty'))
+          td.removeClass('empty').text(push['date'])
+        prev_date = push['date']
+      } else {
+        if (!td.hasClass('empty'))
+          td.addClass('empty').html('&nbsp;')
+      }
+      continue
+    } else {
     for (var attr in push) {
       if (!trs[attr])
         trs[attr] = $('tr.'+attr, obj).get()
@@ -106,8 +155,11 @@ function fillPushes() {
           t.appendTo(trs[attr])
         }
       }
+      push['class'] = 'push-'+push.id
+      }
     }
   }
+  stylePushes()
 }
 
 
@@ -136,7 +188,7 @@ function handleReload(u) {
 
 .pushes {
   width: 100%;
-  height: 220px;
+  height: 240px;
   border: 1px solid #bbd;
   border-collapse: collapse;
 }
@@ -149,6 +201,7 @@ function handleReload(u) {
   border: 1px dotted #bbd;
   padding: 4px;
   width: 10%;
+  height: 30px;
   margin: 0;
   font-size: 13px;
 }
@@ -207,12 +260,17 @@ function handleReload(u) {
   width: 100px;
   height: 15px;
   background-color: #d59;
+  overflow: hidden;
 }
 
 .slider .slide .marker {
   width: 0px;
   height: 15px;
   background-color: green;
+}
+
+.search {
+  float: right;
 }
 
 .legend .box.accepted {background-color:#efe;}
@@ -249,8 +307,8 @@ function handleReload(u) {
 <div class="nav">
   <a href="{% url signoff.views.dashboard %}?ms={{mstone.code}}">« all <i>{{mstone.name}}</i> locales</a>
 </div>
+<p class="search">Search: <input type="text" size="10" id="search"></p>
 <h3>Signoff for {{mstone}} {{locale.code}}</h3>
-<p>Search: <input type="text" size="10" id="search"></p>
 <form action="" method="post" id="form_accept">
   <input type="hidden" id="id_comment" name="comment" />
   <input type="hidden" id="id_accepted" name="accepted" />

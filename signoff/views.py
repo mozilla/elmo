@@ -74,6 +74,10 @@ def pushes(request):
         accepted = Signoff.objects.filter(locale=locale, milestone=mstone, accepted=True).order_by('-pk')[0]
     except:
         accepted = None
+    
+    max_pushes = _get_total_pushes(locale, mstone)
+    if max_pushes > 50:
+        max_pushes = 50
     return render_to_response('signoff/pushes.html', {
         'mstone': mstone,
         'locale': locale,
@@ -84,6 +88,7 @@ def pushes(request):
         'accepted': accepted,
         'user': user.username,
         'pushes': simplejson.dumps(_get_api_items(locale, mstone, current)),
+        'max_pushes': max_pushes,
         'current_js': simplejson.dumps(_get_current_js(current)),
     })
 
@@ -158,7 +163,7 @@ def pushes_json(request):
     if loc and ms:
         cur = _get_current_signoff(locale, mstone)
     
-    pushes = _get_api_items(locale, mstone, cur)
+    pushes = _get_api_items(locale, mstone, cur, start=int(start), offset=int(offset))
     return HttpResponse(simplejson.dumps({'pushes': pushes, 'current': _get_current_js(cur)}, indent=2))
 
 #
@@ -169,15 +174,25 @@ def _get_current_signoff(locale, mstone):
     current = Signoff.objects.filter(locale=locale, appversion=mstone.appver).order_by('-pk')
     if not current:
         return None
+    current[0].when = current[0].when.strftime("%Y-%m-%d %H:%M")
     return current[0]
 
-def _get_api_items(locale=None, mstone=None, current=None, offset=0, limit=10):
+def _get_total_pushes(locale=None, mstone=None):
     if mstone:
         forest = mstone.appver.tree.l10n
         repo_url = '%s%s/' % (forest.url, locale.code) 
-        pushobjs = Push.objects.filter(changesets__repository__url=repo_url).order_by('-push_date')[offset:offset+limit]
+        return Push.objects.filter(changesets__repository__url=repo_url).count()
     else:
-        pushobjs = Push.objects.order_by('-push_date')[offset:offset+limit]
+        return Push.objects.count()
+
+def _get_api_items(locale=None, mstone=None, current=None, start=0, offset=10):
+    if mstone:
+        forest = mstone.appver.tree.l10n
+        repo_url = '%s%s/' % (forest.url, locale.code) 
+        print repo_url
+        pushobjs = Push.objects.filter(changesets__repository__url=repo_url).order_by('-push_date')[start:start+offset]
+    else:
+        pushobjs = Push.objects.order_by('-push_date')[start:start+offset]
     
     pushes = []
     for pushobj in pushobjs:
@@ -185,7 +200,6 @@ def _get_api_items(locale=None, mstone=None, current=None, offset=0, limit=10):
             signoff_trees = [mstone.appver.tree]
         else:
             signoff_trees = Tree.objects.filter(l10n__repositories=pushobj.tip.repository, appversion__milestone__isnull=False)
-        print signoff_trees
         name = '%s on [%s]' % (pushobj.user, pushobj.push_date)
         date = pushobj.push_date.strftime("%Y-%m-%d")
         cur = current and current.push.id == pushobj.id
