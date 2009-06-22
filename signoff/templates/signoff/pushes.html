@@ -4,26 +4,39 @@
 
 {% block js_include %}
   <script type="text/javascript" src="/static/jquery.js"></script>
+  <script type="text/javascript" src="/static/ajaxarray.js"></script>
+  <script type="text/javascript" src="/static/vptable.js"></script>
   <script type="text/javascript" src="/static/slider.js"></script>
 {% endblock %}
 
 {% block javascript %}
 
-var pushes = {{ pushes|safe }}
+var pushes = Array()
 var current = {{ current_js|safe}}
 var slider = null
 
 $(document).ready(function(){
   slider = Slider()
-  slider.setUp($('.slider').get()[0], {{max_pushes}}, sliderMove)
+  slider.setUp($('.slider').get()[0], {{max_pushes}}, {{offset}}, sliderMove)
 
-  fillPushes()
+  var items = Array();
+
+  pushes = jQuery.AjaxArray({
+    'json_url': '/signoff/api/pushes?locale={{locale.code}}&mstone={{mstone.code}}&from=$1&to=$2',
+    'length': 50,
+  }, items)
+  
+  $('#pushes').vptable({'items':pushes})
+  $('#pushes').vptDraw()
+
   {% for note in notes %}
   {% ifnotequal note "error" %}
     setTimeout('$(".{{note}}").fadeOut("slow")', {% ifequal note "info" %}2000{% else %}{% ifequal note "warning" %}6000{% else %}15000{% endifequal %}{% endifequal %});
   {% endifnotequal %}
   {% endfor %}
  });
+
+
 
 function sliderMove(cb) {
   var start = slider.status().start
@@ -50,38 +63,19 @@ function stylePushes() {
     })
   })
 }
-var calling = false
-function getPushes(clear,start,offset, callback) {
-  if (calling)
-    return true
-  start = start||0
-  offset = offset||10
-  $.getJSON("/signoff/api/pushes?locale={{locale.code}}&mstone={{mstone.code}}&start="+start+"&offset="+offset,
-    function(data){
-      if (clear)
-        pushes = []
-      $.each(data.pushes, function(i,push){
-        pushes.push(push)
-      });
-      current = data.current
-      calling = false
-      for (var i in callback)
-        callback[i]()
-    }
-  )
-  calling = true
-  return false
-}
 
-function fillPushes(start, offset) {
-  start = slider.status().start
-  offset = slider.status().offset
+function fillPushes(start, offset, N) {
+  if (start===N)
+    start = slider.status().start
+  if (offset===N)
+    offset = slider.status().offset
   window.status = start + " - " + offset + " = " + (start+offset) + " | " + pushes.length
   var trs = []
   var obj = $("#pushes").get()
   var prev_date = null
+  pushes.get(0,10)
+  return
   for(var i in pushes) {
-    //alert(i)
     var push = pushes[i]
     if (i<start) {
       if (push['class'])
@@ -106,7 +100,9 @@ function fillPushes(start, offset) {
     } else {
     for (var attr in push) {
       if (!trs[attr])
-        trs[attr] = $('tr.'+attr, obj).get()
+        trs[attr] = $('tr.'+attr, obj).get()[0]
+      if (!trs[attr])
+        continue
       if (trs[attr]) {
         var td = document.createElement('td')
         if (trs[attr]) {
@@ -152,16 +148,30 @@ function fillPushes(start, offset) {
               if (push[attr])
                 t.text(push[attr])
           }
-          t.appendTo(trs[attr])
+          insertTdPos(trs[attr], t, i, attr)
+          //t.appendTo(trs[attr])
+          if (!push['tds'])
+            push['tds'] = Array()
+          push['tds'][attr] = t
         }
       }
       push['class'] = 'push-'+push.id
       }
     }
   }
-  stylePushes()
+  //stylePushes()
 }
 
+function insertTdPos(node, elem, pos, attr) {
+  for (var i in pushes) {
+    var push = pushes[i]
+    if (push['class'] && i>pos) {
+      elem.insertBefore(push['tds'][attr])
+      return true
+    }
+  }
+  elem.appendTo(node)
+}
 
 var user = 0
 
@@ -233,7 +243,6 @@ function handleReload(u) {
 
 .legend ul li {
   float: left;
-  wrap: no-wrap;
   margin-left: 10px;
 }
 

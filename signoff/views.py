@@ -35,6 +35,7 @@ def pushes(request):
     anonymous = user.is_anonymous()
     staff = user.is_staff
     if request.method == 'POST' and enabled: # we're going to process forms
+        center_id = ''
         if anonymous: # ... but we're not logged in. Panic!
             request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s</span> could not be added - <strong>User not logged in</strong>' % (mstone, locale)
         else:
@@ -46,6 +47,7 @@ def pushes(request):
                     # django 1.1
                     bval = {"True": 0, "False": 1}[request.POST['accepted']]
                     form = ActionForm({'signoff': current.id, 'flag': bval, 'author': user.id, 'comment': request.POST['comment']})
+                    center_id = current.push.tip.shortrev
                     if form.is_valid():
                         form.save()
                         if request.POST['accepted'] == "False":
@@ -59,10 +61,11 @@ def pushes(request):
                 form = SignoffForm(request.POST, instance=instance)
                 if form.is_valid():
                     form.save()
+                    center_id = instance.push.tip.shortrev
                     request.session['signoff_info'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone, locale, user.username)
                 else:
                     request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> could not be added' % (mstone, locale, user.username)
-        return HttpResponseRedirect('%s?locale=%s&ms=%s' % (reverse('signoff.views.pushes'), locale.code ,mstone.code))
+        return HttpResponseRedirect('%s?locale=%s&ms=%s&center=%s' % (reverse('signoff.views.pushes'), locale.code ,mstone.code, center_id))
 
     form = SignoffForm()
     
@@ -78,6 +81,14 @@ def pushes(request):
     max_pushes = _get_total_pushes(locale, mstone)
     if max_pushes > 50:
         max_pushes = 50
+
+    if request.GET.has_key('center'):
+        offset = _get_push_offset(request.GET['center'],-5)
+    elif request.GET.has_key('offset'):
+        offset = _get_push_offset(request.GET['offset'])
+    else:
+        offset = 0
+
     return render_to_response('signoff/pushes.html', {
         'mstone': mstone,
         'locale': locale,
@@ -87,8 +98,9 @@ def pushes(request):
         'curcol': curcol,
         'accepted': accepted,
         'user': user.username,
-        'pushes': simplejson.dumps(_get_api_items(locale, mstone, current)),
+        'pushes': simplejson.dumps(_get_api_items(locale, mstone, current, offset=offset+10)),
         'max_pushes': max_pushes,
+        'offset': offset,
         'current_js': simplejson.dumps(_get_current_js(current)),
     })
 
@@ -150,8 +162,8 @@ def signoff_json(request):
 def pushes_json(request):
     loc = request.GET.get('locale', None)
     ms = request.GET.get('mstone', None)
-    start = request.GET.get('start', 0)
-    offset = request.GET.get('offset', 10)
+    start = int(request.GET.get('from', 0))
+    to = int(request.GET.get('to', 10))
     
     locale = None
     mstone = None
@@ -163,8 +175,10 @@ def pushes_json(request):
     if loc and ms:
         cur = _get_current_signoff(locale, mstone)
     
-    pushes = _get_api_items(locale, mstone, cur, start=int(start), offset=int(offset))
-    return HttpResponse(simplejson.dumps({'pushes': pushes, 'current': _get_current_js(cur)}, indent=2))
+    pushes = _get_api_items(locale, mstone, cur, start=start, offset=start+to)
+    #return HttpResponse(simplejson.dumps({'pushes': pushes, 'current': _get_current_js(cur)}, indent=2))
+    return HttpResponse(simplejson.dumps({'items': pushes}, indent=2))
+    #return HttpResponse(simplejson.dumps({'items': range(start,to)}, indent=2))
 
 #
 #  Internal functions
@@ -263,3 +277,11 @@ def _timeframe_desc(i):
             return '%s - %s' % (i.start_event.date, i.end_event.date)
         else:
             return 'Open'
+
+def _get_push_offset(id, shift=0):
+    """returns an offset of the push for signoff slider"""
+    push = Push.objects.get(changesets__revision__startswith=id)
+    num = Push.objects.filter(pk__gt=push.pk, changesets__repository__url=push.tip.repository.url).count()
+    if num+shift<0:
+        return 0
+    return num+shift
