@@ -1,34 +1,46 @@
 (function($) {
   var defaults = {
-    'vp_width': 10,
+    'width': 10,
     'items': Array(),
   }
-
-  $.fn.vptable = function(options) {
-    return this.each(function (){
-      this.vpt_opts = $.extend({}, defaults, options)
-    })
+  
+  function addInPos(tr, td, pos) {
   }
 
-  $.fn.vptDraw = function() {
-    return this.each(function (){
-      var self = this
-      
-      function draw(slice) {
-        for (var i in slice) {
-          var item = slice[i]
-          for (var attr in item) {
-            tr = $('tr.'+attr, self).get()[0]
-            if (tr) {
-              var td = $('<td/>').addClass('item-'+item.id)
-              td.text(item[attr])
-              td.appendTo(tr)
-            }
-          }
-        }
-      }
+  $.vpTable = function(tableNode, options) {
+    var opts = $.extend({}, defaults, options)
+    var node = tableNode
 
-      self.vpt_opts['items'].get(0, 10, draw)
-    }) 
+    return {
+      draw: function(offset, customRow, cb) {
+        if (!offset) offset=0
+      
+        function draw(slice, cb) {
+          var tr = $('tr.revision', node)
+          tr.empty()
+          for (var i in slice) {
+            var item = slice[i]
+            var tr = $('tr.revision', node)
+            if (item['domobj']) {
+              var td = item['domobj']
+            } else {
+              var td = $('<td/>').text(item)
+              item['domobj'] = td
+            }
+            td.appendTo(tr)
+            //for (var attr in item) {
+            //  tr = $('tr.'+attr, self).get()[0]
+            //  if (tr) {
+            //    var td = $('<td/>').addClass('item-'+item.id)
+            //    customRow(self, attr, td, item)
+            //    td.appendTo(tr)
+            //  }
+            //}
+          }
+          if (cb) cb()
+        }
+        opts['items'].get(offset, offset+opts['width'], draw, cb)
+      }
+    }
   }
 })(jQuery);
