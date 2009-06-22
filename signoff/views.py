@@ -180,8 +180,8 @@ def pushes_json(request):
     #return HttpResponse(simplejson.dumps({'items': pushes}, indent=2))
     if start<0:
         start=0
-    if to>20:
-        to=20
+    if to>50:
+        to=50
     return HttpResponse(simplejson.dumps({'items': range(start,to)}, indent=2))
 
 #

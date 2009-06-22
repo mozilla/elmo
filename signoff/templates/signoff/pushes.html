@@ -27,11 +27,7 @@ $(document).ready(function(){
   }, items)
   
   vpt = jQuery.vpTable($('#pushes').get(), {'items':pushes})
-  vpt.draw(5, customizeRow)
-
-  //setTimeout("$('#pushes').vptDraw(1, customizeRow)", 5000)
-  //setTimeout("$('#pushes').vptDraw(10, customizeRow)", 1100)
-  //setTimeout("$('#pushes').vptDraw(15, customizeRow)", 1200)
+  vpt.draw(0, customizeRow)
 
   {% for note in notes %}
   {% ifnotequal note "error" %}
@@ -39,6 +35,47 @@ $(document).ready(function(){
   {% endifnotequal %}
   {% endfor %}
  });
+
+function sliderMove(cb) {
+  var start = slider.status().start
+  var offset = slider.status().offset
+  vpt.draw(start, customizeRow, cb)
+}
+
+function stylePushes() {
+  var v=30/10
+  $('#pushes tr').each(function(i){
+    $('td', this).each(function(j){
+      with($(this)) {
+        css('background-color','rgb('+(225+parseInt(j*v))+','+(225+parseInt(j*v))+',255)')
+        if (i==2) // signoff row
+          $('a',this).css('color','rgb('+parseInt(34+j*v*2)+','+parseInt(34+j*v*2)+','+parseInt(153+j*v*2)+')')
+        css('color','rgb('+parseInt(j*v*4)+','+parseInt(j*v*4)+','+parseInt(j*v*4)+')')
+      }
+    })
+  })
+}
+
+var user = 0
+
+function handleReload(u) {
+  switch (u) {
+    case 0:
+      $('.signoff_button').hide()
+      $('tr.admin').hide()
+      break
+    case 1:
+      $('.signoff_button').show()
+      $('tr.admin').hide()
+      break
+    case 2:
+      $('.signoff_button').show()
+      $('tr.admin').show()
+      break
+  }
+  user = u
+}
+
 
 function customizeRow(table, attr, t, push) {
   var prev_date = table.hasAttribute('prev_date')?table.getAttribute('prev_date'):null
@@ -84,53 +121,6 @@ function customizeRow(table, attr, t, push) {
         t.text(push[attr])
   }
   return t
-}
-
-
-function sliderMove(cb) {
-  var start = slider.status().start
-  var offset = slider.status().offset 
-  if (start+offset>pushes.length) {
-    getPushes(false, start+offset-1,10, [fillPushes,cb])
-    return false
-  } else {
-    fillPushes()
-    return true
-  }
-}
-
-function stylePushes() {
-  var v=30/10
-  $('#pushes tr').each(function(i){
-    $('td', this).each(function(j){
-      with($(this)) {
-        css('background-color','rgb('+(225+parseInt(j*v))+','+(225+parseInt(j*v))+',255)')
-        if (i==2) // signoff row
-          $('a',this).css('color','rgb('+parseInt(34+j*v*2)+','+parseInt(34+j*v*2)+','+parseInt(153+j*v*2)+')')
-        css('color','rgb('+parseInt(j*v*4)+','+parseInt(j*v*4)+','+parseInt(j*v*4)+')')
-      }
-    })
-  })
-}
-
-var user = 0
-
-function handleReload(u) {
-  switch (u) {
-    case 0:
-      $('.signoff_button').hide()
-      $('tr.admin').hide()
-      break
-    case 1:
-      $('.signoff_button').show()
-      $('tr.admin').hide()
-      break
-    case 2:
-      $('.signoff_button').show()
-      $('tr.admin').show()
-      break
-  }
-  user = u
 }
 {% endblock %}
 
