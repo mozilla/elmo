@@ -163,7 +163,7 @@ def pushes_json(request):
     loc = request.GET.get('locale', None)
     ms = request.GET.get('mstone', None)
     start = int(request.GET.get('from', 0))
-    to = int(request.GET.get('to', 10))
+    to = int(request.GET.get('to', 20))
     
     locale = None
     mstone = None
@@ -175,10 +175,14 @@ def pushes_json(request):
     if loc and ms:
         cur = _get_current_signoff(locale, mstone)
     
-    pushes = _get_api_items(locale, mstone, cur, start=start, offset=start+to)
+    #pushes = _get_api_items(locale, mstone, cur, start=start, offset=start+to)
     #return HttpResponse(simplejson.dumps({'pushes': pushes, 'current': _get_current_js(cur)}, indent=2))
-    return HttpResponse(simplejson.dumps({'items': pushes}, indent=2))
-    #return HttpResponse(simplejson.dumps({'items': range(start,to)}, indent=2))
+    #return HttpResponse(simplejson.dumps({'items': pushes}, indent=2))
+    if start<0:
+        start=0
+    if to>20:
+        to=20
+    return HttpResponse(simplejson.dumps({'items': range(start,to)}, indent=2))
 
 #
 #  Internal functions

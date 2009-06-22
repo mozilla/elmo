@@ -26,8 +26,12 @@ $(document).ready(function(){
     'length': 50,
   }, items)
   
-  $('#pushes').vptable({'items':pushes})
-  $('#pushes').vptDraw()
+  vpt = jQuery.vpTable($('#pushes').get(), {'items':pushes})
+  vpt.draw(5, customizeRow)
+
+  //setTimeout("$('#pushes').vptDraw(1, customizeRow)", 5000)
+  //setTimeout("$('#pushes').vptDraw(10, customizeRow)", 1100)
+  //setTimeout("$('#pushes').vptDraw(15, customizeRow)", 1200)
 
   {% for note in notes %}
   {% ifnotequal note "error" %}
@@ -36,6 +40,51 @@ $(document).ready(function(){
   {% endfor %}
  });
 
+function customizeRow(table, attr, t, push) {
+  var prev_date = table.hasAttribute('prev_date')?table.getAttribute('prev_date'):null
+
+  switch (attr) {
+    case 'date':
+      if (!prev_date || prev_date != push['date']) {
+        t.text(push[attr])
+        table.setAttribute('prev_date', push['date'])
+      } else {
+        t.html('&nbsp;').addClass('empty')
+      }
+      break
+    case 'signoff':
+      if (push['signoff']) {
+        t.text(current['when']+' '+current['author'])
+      } else {
+        t.html('<input type="button" value="Sign off" class="signoff_button" onclick="$(\'#id_push\').val('+push['id']+');$(\'#form_signoff\').submit()"/>')
+      }
+      break
+    case 'revision':
+      t.html('<a href="'+(push['url'])+'" title="'+(push['revdesc'])+'">'+(push[attr])+'</a>')
+      break
+    case 'accepted':
+      if (push['signoff']) {
+        switch (current.accepted) {
+          case null:
+            t.html('<input type="button" value="Accept" onclick="$(\'#id_accepted\').val(\'True\');$(\'#form_accept\').submit()"/><input type="button" value="Refuse" onclick="$(\'#id_accepted\').val(\'False\');$(\'#form_accept\').submit()"/>')
+            break
+          case false:
+            t.html('<input type="button" value="Accept" onclick="$(\'#id_accepted\').val(\'True\');$(\'#form_accept\').submit()"/>')
+            break
+          case true:
+            t.html('<input type="button" value="Revoke" onclick="$(\'#id_accepted\').val(\'False\');$(\'#form_accept\').submit()"/>')
+            break
+        }
+      } else {
+        t.html('&nbsp;')
+      }
+      break
+    default:
+      if (push[attr])
+        t.text(push[attr])
+  }
+  return t
+}
 
 
 function sliderMove(cb) {
@@ -62,115 +111,6 @@ function stylePushes() {
       }
     })
   })
-}
-
-function fillPushes(start, offset, N) {
-  if (start===N)
-    start = slider.status().start
-  if (offset===N)
-    offset = slider.status().offset
-  window.status = start + " - " + offset + " = " + (start+offset) + " | " + pushes.length
-  var trs = []
-  var obj = $("#pushes").get()
-  var prev_date = null
-  pushes.get(0,10)
-  return
-  for(var i in pushes) {
-    var push = pushes[i]
-    if (i<start) {
-      if (push['class'])
-        $('.'+push['class']).hide()
-      continue
-    }else if (i>=offset+start) {
-      if (push['class'])
-        $('.'+push['class']).hide()
-      continue
-    } else if (push['class']) {
-      $('.'+push['class']).show()
-      var td = $('.date > .push-'+push.id, obj)
-      if (!prev_date || prev_date != push['date']) {
-        if (td.hasClass('empty'))
-          td.removeClass('empty').text(push['date'])
-        prev_date = push['date']
-      } else {
-        if (!td.hasClass('empty'))
-          td.addClass('empty').html('&nbsp;')
-      }
-      continue
-    } else {
-    for (var attr in push) {
-      if (!trs[attr])
-        trs[attr] = $('tr.'+attr, obj).get()[0]
-      if (!trs[attr])
-        continue
-      if (trs[attr]) {
-        var td = document.createElement('td')
-        if (trs[attr]) {
-          var t = $(td).addClass('push-'+push.id)
-          switch (attr) {
-            case 'date':
-              if (!prev_date || prev_date != push['date']) {
-                t.text(push[attr])
-                prev_date = push['date']
-              } else {
-                t.html('&nbsp;')
-                t.addClass('empty')
-              }
-              break
-            case 'signoff':
-              if (push['signoff']) {
-                t.text(current['when']+' '+current['author'])
-              } else {
-                t.html('<input type="button" value="Sign off" class="signoff_button" onclick="$(\'#id_push\').val('+push['id']+');$(\'#form_signoff\').submit()"/>')
-              }
-              break
-            case 'revision':
-              t.html('<a href="'+(push['url'])+'" title="'+(push['revdesc'])+'">'+(push[attr])+'</a>')
-              break
-            case 'accepted':
-              if (push['signoff']) {
-                switch (current.accepted) {
-                  case null:
-                    t.html('<input type="button" value="Accept" onclick="$(\'#id_accepted\').val(\'True\');$(\'#form_accept\').submit()"/><input type="button" value="Refuse" onclick="$(\'#id_accepted\').val(\'False\');$(\'#form_accept\').submit()"/>')
-                    break
-                  case false:
-                    t.html('<input type="button" value="Accept" onclick="$(\'#id_accepted\').val(\'True\');$(\'#form_accept\').submit()"/>')
-                    break
-                  case true:
-                    t.html('<input type="button" value="Revoke" onclick="$(\'#id_accepted\').val(\'False\');$(\'#form_accept\').submit()"/>')
-                    break
-                }
-              } else {
-                t.html('&nbsp;')
-              }
-              break
-            default:
-              if (push[attr])
-                t.text(push[attr])
-          }
-          insertTdPos(trs[attr], t, i, attr)
-          //t.appendTo(trs[attr])
-          if (!push['tds'])
-            push['tds'] = Array()
-          push['tds'][attr] = t
-        }
-      }
-      push['class'] = 'push-'+push.id
-      }
-    }
-  }
-  //stylePushes()
-}
-
-function insertTdPos(node, elem, pos, attr) {
-  for (var i in pushes) {
-    var push = pushes[i]
-    if (push['class'] && i>pos) {
-      elem.insertBefore(push['tds'][attr])
-      return true
-    }
-  }
-  elem.appendTo(node)
 }
 
 var user = 0
