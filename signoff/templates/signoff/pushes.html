@@ -17,7 +17,7 @@ var slider = null
 
 $(document).ready(function(){
   slider = Slider()
-  slider.setUp($('.slider').get()[0], {{max_pushes}}, 0, sliderMove)
+  slider.setUp($('.slider').get()[0], {{max_pushes}}, {{offset}}, sliderMove)
 
   var items = Array();
 
@@ -27,7 +27,7 @@ $(document).ready(function(){
   }, items)
   
   vpt = jQuery.vpTable($('#pushes').get(), {'items':pushes})
-  vpt.draw(0, customizeRow)
+  vpt.draw({{offset}}, customizeRow)
   //setTimeout("vpt.draw(20, customizeRow)", 2000)
 
   {% for note in notes %}
