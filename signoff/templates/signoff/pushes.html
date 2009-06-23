@@ -17,17 +17,18 @@ var slider = null
 
 $(document).ready(function(){
   slider = Slider()
-  slider.setUp($('.slider').get()[0], {{max_pushes}}, {{offset}}, sliderMove)
+  slider.setUp($('.slider').get()[0], {{max_pushes}}, 0, sliderMove)
 
   var items = Array();
 
   pushes = jQuery.AjaxArray({
     'json_url': '/signoff/api/pushes?locale={{locale.code}}&mstone={{mstone.code}}&from=$1&to=$2',
-    'length': 50,
+    'length': {{max_pushes}},
   }, items)
   
   vpt = jQuery.vpTable($('#pushes').get(), {'items':pushes})
   vpt.draw(0, customizeRow)
+  //setTimeout("vpt.draw(20, customizeRow)", 2000)
 
   {% for note in notes %}
   {% ifnotequal note "error" %}
@@ -37,9 +38,9 @@ $(document).ready(function(){
  });
 
 function sliderMove(cb) {
-  var start = slider.status().start
-  var offset = slider.status().offset
+  var start = slider.status().start+slider.status().v
   vpt.draw(start, customizeRow, cb)
+  return false
 }
 
 function stylePushes() {
@@ -78,13 +79,13 @@ function handleReload(u) {
 
 
 function customizeRow(table, attr, t, push) {
-  var prev_date = table.hasAttribute('prev_date')?table.getAttribute('prev_date'):null
+  var prev_date = $(table).attr('prev_date')||null
 
   switch (attr) {
     case 'date':
       if (!prev_date || prev_date != push['date']) {
         t.text(push[attr])
-        table.setAttribute('prev_date', push['date'])
+        $(table).attr('prev_date', push['date'])
       } else {
         t.html('&nbsp;').addClass('empty')
       }

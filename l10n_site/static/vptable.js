@@ -16,26 +16,27 @@
         if (!offset) offset=0
       
         function draw(slice, cb) {
-          var tr = $('tr.revision', node)
-          tr.empty()
+          //var tr = $('tr.revision', node)
+          //tr.empty()
+          $('tr', node).empty()
           for (var i in slice) {
             var item = slice[i]
-            var tr = $('tr.revision', node)
-            if (item['domobj']) {
-              var td = item['domobj']
-            } else {
-              var td = $('<td/>').text(item)
-              item['domobj'] = td
-            }
-            td.appendTo(tr)
-            //for (var attr in item) {
-            //  tr = $('tr.'+attr, self).get()[0]
-            //  if (tr) {
-            //    var td = $('<td/>').addClass('item-'+item.id)
-            //    customRow(self, attr, td, item)
-            //    td.appendTo(tr)
-            //  }
+            //var tr = $('tr.revision', node)
+            //if (item['domobj']) {
+            //  var td = item['domobj']
+            //} else {
+            //  var td = $('<td/>').text(item)
+            //  item['domobj'] = td
             //}
+            //td.appendTo(tr)
+            for (var attr in item) {
+              tr = $('tr.'+attr, node)
+              if (tr) {
+                var td = $('<td/>').addClass('item-'+item.id)
+                customRow(node, attr, td, item)
+                td.appendTo(tr)
+              }
+            }
           }
           if (cb) cb()
         }

@@ -175,14 +175,16 @@ def pushes_json(request):
     if loc and ms:
         cur = _get_current_signoff(locale, mstone)
     
-    #pushes = _get_api_items(locale, mstone, cur, start=start, offset=start+to)
+    pushes = _get_api_items(locale, mstone, cur, start=start, offset=start+to)
     #return HttpResponse(simplejson.dumps({'pushes': pushes, 'current': _get_current_js(cur)}, indent=2))
-    #return HttpResponse(simplejson.dumps({'items': pushes}, indent=2))
-    if start<0:
-        start=0
-    if to>50:
-        to=50
-    return HttpResponse(simplejson.dumps({'items': range(start,to)}, indent=2))
+    return HttpResponse(simplejson.dumps({'items': pushes}, indent=2))
+    #if start<0:
+    #    start=0
+    #if to>50:
+    #    to=50
+    #for i in range(0,10000000):
+    #    pass
+    #return HttpResponse(simplejson.dumps({'items': range(start,to)}, indent=2))
 
 #
 #  Internal functions
