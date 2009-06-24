@@ -35,7 +35,7 @@ def pushes(request):
     anonymous = user.is_anonymous()
     staff = user.is_staff
     if request.method == 'POST' and enabled: # we're going to process forms
-        center_id = ''
+        offset_id = ''
         if anonymous: # ... but we're not logged in. Panic!
             request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s</span> could not be added - <strong>User not logged in</strong>' % (mstone, locale)
         else:
@@ -45,9 +45,9 @@ def pushes(request):
                 else:
                     # hack around AcceptForm not taking strings, fixed in
                     # django 1.1
-                    bval = {"True": 0, "False": 1}[request.POST['accepted']]
+                    bval = {"true": 0, "false": 1}[request.POST['accepted']]
                     form = ActionForm({'signoff': current.id, 'flag': bval, 'author': user.id, 'comment': request.POST['comment']})
-                    center_id = current.push.tip.shortrev
+                    offset_id = request.POST['first_row']
                     if form.is_valid():
                         form.save()
                         if request.POST['accepted'] == "False":
@@ -61,11 +61,11 @@ def pushes(request):
                 form = SignoffForm(request.POST, instance=instance)
                 if form.is_valid():
                     form.save()
-                    center_id = instance.push.tip.shortrev
+                    offset_id = request.POST['first_row']
                     request.session['signoff_info'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone, locale, user.username)
                 else:
                     request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> could not be added' % (mstone, locale, user.username)
-        return HttpResponseRedirect('%s?locale=%s&ms=%s&center=%s' % (reverse('signoff.views.pushes'), locale.code ,mstone.code, center_id))
+        return HttpResponseRedirect('%s?locale=%s&ms=%s&offset=%s' % (reverse('signoff.views.pushes'), locale.code ,mstone.code, offset_id))
 
     form = SignoffForm()
     
@@ -88,7 +88,6 @@ def pushes(request):
         offset = _get_push_offset(request.GET['offset'])
     else:
         offset = 0
-
     return render_to_response('signoff/pushes.html', {
         'mstone': mstone,
         'locale': locale,
@@ -98,7 +97,7 @@ def pushes(request):
         'curcol': curcol,
         'accepted': accepted,
         'user': user.username,
-        'pushes': simplejson.dumps(_get_api_items(locale, mstone, current, offset=offset+10)),
+        'pushes': (simplejson.dumps(_get_api_items(locale, mstone, current, offset=offset+20)), 0, offset+10),
         'max_pushes': max_pushes,
         'offset': offset,
         'current_js': simplejson.dumps(_get_current_js(current)),
@@ -259,7 +258,8 @@ def _get_current_js(cur):
     if cur:
         current['when'] = str(cur.when)
         current['author'] = str(cur.author)
-        current['accepted'] = cur.accepted
+        current['status'] = None if cur.status==None else cur.accepted
+        current['id'] = str(cur.id)
     return current
 
 def _get_notes(session):
@@ -286,6 +286,8 @@ def _timeframe_desc(i):
 
 def _get_push_offset(id, shift=0):
     """returns an offset of the push for signoff slider"""
+    if not id:
+        return 0
     push = Push.objects.get(changesets__revision__startswith=id)
     num = Push.objects.filter(pk__gt=push.pk, changesets__repository__url=push.tip.repository.url).count()
     if num+shift<0:

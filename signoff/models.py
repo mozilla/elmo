@@ -49,7 +49,7 @@ class Signoff(models.Model):
             return None
 
     def __unicode__(self):
-        return 'Signoff for %s %s by %s [%s]' % (self.appversion, self.locale.code, self.author, self.when.strftime("%Y-%m-%d %H:%M"))
+        return 'Signoff for %s %s by %s [%s]' % (self.appversion, self.locale.code, self.author, self.when)
 
 FLAG_CHOICES = (
     (0, 'accepted'),

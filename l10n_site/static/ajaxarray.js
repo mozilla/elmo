@@ -21,8 +21,8 @@
     var items = Array()
     var loading = false
 
-    for (var i in pitems) {
-      items[i] = pitems[i]
+    for (var i in pitems[0]) {
+      items[parseInt(i)+parseInt(pitems[1])] = pitems[0][i]
     }
 
     function get(from, to) {
@@ -49,7 +49,7 @@
     }
 
     return {
-      get: function (from, to, cb, cbarg) {
+      get: function(from, to, cb, cbarg) {
         var buf = opts['buffer']
         var lseq = array_scan(items, Math.max(from-buf,0), 1)
         var rseq = array_scan(items, Math.min(to+buf, opts['length']-1), -1) 
@@ -57,6 +57,13 @@
           loadMissing(lseq, rseq, cb, cbarg, from, to)
         else
           if (cb) cb(get(from, to), cbarg)
+      },
+      get_current: function() {
+        for (var i in items) {
+          if (items[i] && items[i]['signoff'])
+            return i
+        }
+        return null
       },
       length: getLength,
     }

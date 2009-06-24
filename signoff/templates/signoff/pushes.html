@@ -14,21 +14,21 @@
 var pushes = Array()
 var current = {{ current_js|safe}}
 var slider = null
+var curpos = null
 
 $(document).ready(function(){
   slider = Slider()
   slider.setUp($('.slider').get()[0], {{max_pushes}}, {{offset}}, sliderMove)
 
-  var items = Array();
+  var items = {{pushes.0|safe}};
 
   pushes = jQuery.AjaxArray({
     'json_url': '/signoff/api/pushes?locale={{locale.code}}&mstone={{mstone.code}}&from=$1&to=$2',
     'length': {{max_pushes}},
-  }, items)
+  }, [items,{{pushes.1}},{{pushes.2}}])
   
   vpt = jQuery.vpTable($('#pushes').get(), {'items':pushes})
   vpt.draw({{offset}}, customizeRow)
-  //setTimeout("vpt.draw(20, customizeRow)", 2000)
 
   {% for note in notes %}
   {% ifnotequal note "error" %}
@@ -44,10 +44,18 @@ function sliderMove(cb) {
 }
 
 function stylePushes() {
-  var v=30/10
+  var v=30/{{max_pushes}}
+  var o=slider.status().start+slider.status().v
+  if (curpos===null)
+    curpos = pushes.get_current()
   $('#pushes tr').each(function(i){
     $('td', this).each(function(j){
+      j+=o
       with($(this)) {
+        if (j==curpos) {
+          addClass('current')
+        } else
+          removeClass('current')
         css('background-color','rgb('+(225+parseInt(j*v))+','+(225+parseInt(j*v))+',255)')
         if (i==2) // signoff row
           $('a',this).css('color','rgb('+parseInt(34+j*v*2)+','+parseInt(34+j*v*2)+','+parseInt(153+j*v*2)+')')
@@ -79,13 +87,13 @@ function handleReload(u) {
 
 
 function customizeRow(table, attr, t, push) {
-  var prev_date = $(table).attr('prev_date')||null
+  var prev_date = table.attr('prev_date')||null
 
   switch (attr) {
     case 'date':
       if (!prev_date || prev_date != push['date']) {
         t.text(push[attr])
-        $(table).attr('prev_date', push['date'])
+        table.attr('prev_date', push['date'])
       } else {
         t.html('&nbsp;').addClass('empty')
       }
@@ -94,7 +102,7 @@ function customizeRow(table, attr, t, push) {
       if (push['signoff']) {
         t.text(current['when']+' '+current['author'])
       } else {
-        t.html('<input type="button" value="Sign off" class="signoff_button" onclick="$(\'#id_push\').val('+push['id']+');$(\'#form_signoff\').submit()"/>')
+        t.html('<input type="button" value="Sign off" class="signoff_button" onclick="onSignoff('+push['id']+')"/>')
       }
       break
     case 'revision':
@@ -102,15 +110,15 @@ function customizeRow(table, attr, t, push) {
       break
     case 'accepted':
       if (push['signoff']) {
-        switch (current.accepted) {
+        switch (current.status) {
           case null:
-            t.html('<input type="button" value="Accept" onclick="$(\'#id_accepted\').val(\'True\');$(\'#form_accept\').submit()"/><input type="button" value="Refuse" onclick="$(\'#id_accepted\').val(\'False\');$(\'#form_accept\').submit()"/>')
+            t.html('<input type="button" value="Accept" onclick="onAccept(true)"/><input type="button" value="Refuse" onclick="onAccept(false)"/>')
             break
           case false:
-            t.html('<input type="button" value="Accept" onclick="$(\'#id_accepted\').val(\'True\');$(\'#form_accept\').submit()"/>')
+            t.html('<input type="button" value="Accept" onclick="onAccept(true)"/>')
             break
           case true:
-            t.html('<input type="button" value="Revoke" onclick="$(\'#id_accepted\').val(\'False\');$(\'#form_accept\').submit()"/>')
+            t.html('<input type="button" value="Revoke" onclick="onAccept(false)"/>')
             break
         }
       } else {
@@ -122,6 +130,22 @@ function customizeRow(table, attr, t, push) {
         t.text(push[attr])
   }
   return t
+}
+
+function getFirstRevision() {
+  return $('#pushes tr.revision > td:first > a').text() 
+}
+
+function onAccept(status) {
+  $('#id_accepted').val(status)
+  $('#id_first_row2').val(getFirstRevision())
+  $('#form_accept').submit()
+}
+
+function onSignoff(id) {
+  $('#id_push').val(id)
+  $('#id_first_row').val(getFirstRevision())
+  $('#form_signoff').submit()
 }
 {% endblock %}
 
@@ -218,8 +242,7 @@ function customizeRow(table, attr, t, push) {
 .legend .box.signedoff {background-color:#99ff99;}
 .legend .box.paccepted {background-color: #dde;}
 
-
-#pushes td.push-{{ current.push.id }}:not(.date) {
+#pushes tr:not(.date) td.current {
   border: 1px solid #9a9 !important;
   background-color: #efe !important;
   color: black !important;
@@ -252,9 +275,11 @@ function customizeRow(table, attr, t, push) {
 <form action="" method="post" id="form_accept">
   <input type="hidden" id="id_comment" name="comment" />
   <input type="hidden" id="id_accepted" name="accepted" />
+  <input type="hidden" id="id_first_row2" name="first_row" />
 </form>
 <form action="" method="post" id="form_signoff">
   <input type="hidden" id="id_push" name="push" />
+  <input type="hidden" id="id_first_row" name="first_row" />
 </form>
 
 <table id="pushes" class="pushes">

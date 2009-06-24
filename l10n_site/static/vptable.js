@@ -9,33 +9,38 @@
 
   $.vpTable = function(tableNode, options) {
     var opts = $.extend({}, defaults, options)
-    var node = tableNode
+    var node = $(tableNode)
+    var cells = Array()
+    var trs = Array()
 
     return {
       draw: function(offset, customRow, cb) {
         if (!offset) offset=0
       
         function draw(slice, cb) {
-          $('tr', node).empty()
+          node.removeAttr('prev_date')
           for (var i in slice) {
             var item = slice[i]
-            if (!item['domobj']) {
-              item['domobj'] = Array()
-            }
             for (var attr in item) {
-              tr = $('tr.'+attr, node)
+              if (!trs[attr])
+                trs[attr] = $('tr.'+attr, node)
+              tr = trs[attr] 
               if (tr) {
-                if (item['domobj'][attr]) {
-                  var td = item['domobj'][attr]
+                if (!cells[attr])
+                  cells[attr] = Array()
+                if (cells[attr][i]) {
+                  var td = cells[attr][i]
+                  customRow(node, attr, td, item)
                 } else {
                   var td = $('<td/>').addClass('item-'+item.id)
                   customRow(node, attr, td, item)
-                  item['domobj'][attr] = td
+                  cells[attr][i] = td
+                  td.appendTo(tr)
                 }
-                td.appendTo(tr)
               }
             }
           }
+          stylePushes()
           if (cb) cb()
         }
         opts['items'].get(offset, offset+opts['width'], draw, cb)
