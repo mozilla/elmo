@@ -65,6 +65,10 @@ class Action(models.Model):
     when = models.DateTimeField('signoff action timestamp', default=datetime.now)
     comment = models.TextField(blank=True, null=True)
 
+    def __unicode__(self):
+        return '%s action for [Signoff %s] by %s [%s]' % (self.get_flag_display(), self.signoff.id, self.author, self.when)
+
+
 STATUS_CHOICES = (
     (0, 'upcoming'),
     (1, 'open'),

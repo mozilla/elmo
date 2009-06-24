@@ -4,9 +4,15 @@
 
 {% block js_include %}
   <script type="text/javascript" src="/static/jquery.js"></script>
+  <script type="text/javascript" src="/static/jquery.ui/ui/ui.core.js"></script>
+  <script type="text/javascript" src="/static/jquery.ui/ui/ui.dialog.js"></script>
   <script type="text/javascript" src="/static/ajaxarray.js"></script>
   <script type="text/javascript" src="/static/vptable.js"></script>
   <script type="text/javascript" src="/static/slider.js"></script>
+{% endblock %}
+
+{% block style_include %}
+  <link rel="stylesheet" href="/static/jquery.ui/themes/base/ui.all.css" type="text/css" media="all" />
 {% endblock %}
 
 {% block javascript %}
@@ -21,6 +27,20 @@ $(document).ready(function(){
   slider.setUp($('.slider').get()[0], {{max_pushes}}, {{offset}}, sliderMove)
 
   var items = {{pushes.0|safe}};
+
+  $("#dialog").dialog({
+      bgiframe: true,
+      modal: false,
+      autoOpen: false,
+      width: '320px',
+      buttons: {
+          Ok: function() {
+              $('#id_comment').val($('.comment',this).val())
+              $('#form_accept').submit()
+              $(this).dialog('close');
+          }
+      }
+  })
 
   pushes = jQuery.AjaxArray({
     'json_url': '/signoff/api/pushes?locale={{locale.code}}&mstone={{mstone.code}}&from=$1&to=$2',
@@ -139,7 +159,7 @@ function getFirstRevision() {
 function onAccept(status) {
   $('#id_accepted').val(status)
   $('#id_first_row2').val(getFirstRevision())
-  $('#form_accept').submit()
+  $("#dialog").dialog('open');
 }
 
 function onSignoff(id) {
@@ -237,6 +257,16 @@ function onSignoff(id) {
   float: right;
 }
 
+#dialog {
+  display: none;
+  font-size: 0.8em;
+}
+
+#dialog  .comment {
+  width: 300px;
+  height: 100px;
+}
+
 .legend .box.accepted {background-color:#efe;}
 .legend .box.refused {background-color:#ff0000;}
 .legend .box.signedoff {background-color:#99ff99;}
@@ -307,6 +337,13 @@ function onSignoff(id) {
     <div class="marker"></div>
   </div>
   <button class="next">next</button>
+</div>
+<div id="dialog" title="Action comment">
+    <p>
+        You can add an optional action comment here.
+        <br/>
+        <textarea class="comment"></textarea>
+    </p>
 </div>
 {% for id, note in notes.items %}
   <fieldset class="note {{ id }}">
