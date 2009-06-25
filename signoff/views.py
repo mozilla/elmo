@@ -35,7 +35,7 @@ def pushes(request):
     anonymous = user.is_anonymous()
     staff = user.is_staff
     if request.method == 'POST' and enabled: # we're going to process forms
-        offset_id = ''
+        offset_id = request.POST['first_row']
         if anonymous: # ... but we're not logged in. Panic!
             request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s</span> could not be added - <strong>User not logged in</strong>' % (mstone, locale)
         else:
@@ -47,7 +47,6 @@ def pushes(request):
                     # django 1.1
                     bval = {"true": 0, "false": 1}[request.POST['accepted']]
                     form = ActionForm({'signoff': current.id, 'flag': bval, 'author': user.id, 'comment': request.POST['comment']})
-                    offset_id = request.POST['first_row']
                     if form.is_valid():
                         form.save()
                         if request.POST['accepted'] == "False":
@@ -61,7 +60,6 @@ def pushes(request):
                 form = SignoffForm(request.POST, instance=instance)
                 if form.is_valid():
                     form.save()
-                    offset_id = request.POST['first_row']
                     request.session['signoff_info'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone, locale, user.username)
                 else:
                     request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> could not be added' % (mstone, locale, user.username)
@@ -96,7 +94,8 @@ def pushes(request):
         'current': current,
         'curcol': curcol,
         'accepted': accepted,
-        'user': user.username,
+        'user': user,
+        'user_type': 0 if user.is_anonymous() else 2 if user.is_staff else 1,
         'pushes': (simplejson.dumps(_get_api_items(locale, mstone, current, offset=offset+20)), 0, offset+10),
         'max_pushes': max_pushes,
         'offset': offset,
@@ -175,15 +174,7 @@ def pushes_json(request):
         cur = _get_current_signoff(locale, mstone)
     
     pushes = _get_api_items(locale, mstone, cur, start=start, offset=start+to)
-    #return HttpResponse(simplejson.dumps({'pushes': pushes, 'current': _get_current_js(cur)}, indent=2))
     return HttpResponse(simplejson.dumps({'items': pushes}, indent=2))
-    #if start<0:
-    #    start=0
-    #if to>50:
-    #    to=50
-    #for i in range(0,10000000):
-    #    pass
-    #return HttpResponse(simplejson.dumps({'items': range(start,to)}, indent=2))
 
 #
 #  Internal functions

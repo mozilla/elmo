@@ -49,6 +49,7 @@ $(document).ready(function(){
   
   vpt = jQuery.vpTable($('#pushes').get(), {'items':pushes})
   vpt.draw({{offset}}, customizeRow)
+  
 
   {% for note in notes %}
   {% ifnotequal note "error" %}
@@ -85,21 +86,21 @@ function stylePushes() {
   })
 }
 
-var user = 0
+var user = {{user_type}}
 
 function handleReload(u) {
   switch (u) {
     case 0:
       $('.signoff_button').hide()
-      $('tr.admin').hide()
+      $('tr.accepted input').hide()
       break
     case 1:
       $('.signoff_button').show()
-      $('tr.admin').hide()
+      $('tr.accepted input').hide()
       break
     case 2:
       $('.signoff_button').show()
-      $('tr.admin').show()
+      $('tr.accepted input').show()
       break
   }
   user = u
@@ -108,7 +109,6 @@ function handleReload(u) {
 
 function customizeRow(table, attr, t, push) {
   var prev_date = table.attr('prev_date')||null
-
   switch (attr) {
     case 'date':
       if (!prev_date || prev_date != push['date']) {
@@ -118,28 +118,48 @@ function customizeRow(table, attr, t, push) {
         t.html('&nbsp;').addClass('empty')
       }
       break
+    case 'revision':
+      t.html('<a href="'+(push['url'])+'" title="'+(push['revdesc'])+'">'+(push[attr])+'</a>')
+      break
     case 'signoff':
       if (push['signoff']) {
         t.text(current['when']+' '+current['author'])
       } else {
-        t.html('<input type="button" value="Sign off" class="signoff_button" onclick="onSignoff('+push['id']+')"/>')
+        t.empty()
+        var input = document.createElement('input')
+        $(input).attr('type', 'button')
+                .val('Sign off')
+                .attr('push_id', push['id'])
+                .addClass('signoff_button')
+                .addClass(user>0?'':'hidden')
+                .click(onSignoff)
+                .appendTo(t)
       }
-      break
-    case 'revision':
-      t.html('<a href="'+(push['url'])+'" title="'+(push['revdesc'])+'">'+(push[attr])+'</a>')
       break
     case 'accepted':
       if (push['signoff']) {
+        t.empty()
         switch (current.status) {
           case null:
-            t.html('<input type="button" value="Accept" onclick="onAccept(true)"/><input type="button" value="Refuse" onclick="onAccept(false)"/>')
+            var buttons = {'Accept':'true','Refuse':'false'}
             break
           case false:
-            t.html('<input type="button" value="Accept" onclick="onAccept(true)"/>')
+            var buttons = {'Accept':'true'}
             break
           case true:
-            t.html('<input type="button" value="Revoke" onclick="onAccept(false)"/>')
+            var buttons = {'Revoke':'false'}
             break
+          default:
+            var buttons = {}
+            break
+        }
+        for (var i in buttons) {
+          var input = document.createElement('input')
+          $(input).attr('type', 'button')
+                  .addClass(user>1?'':'hidden')
+                  .attr('action', buttons[i])
+                  .val(i).click(onAccept)
+                  .appendTo(t)
         }
       } else {
         t.html('&nbsp;')
@@ -156,14 +176,14 @@ function getFirstRevision() {
   return $('#pushes tr.revision > td:first > a').text() 
 }
 
-function onAccept(status) {
-  $('#id_accepted').val(status)
+function onAccept() {
+  $('#id_accepted').val($(this).attr('action'))
   $('#id_first_row2').val(getFirstRevision())
   $("#dialog").dialog('open');
 }
 
-function onSignoff(id) {
-  $('#id_push').val(id)
+function onSignoff() {
+  $('#id_push').val($(this).attr('push_id'))
   $('#id_first_row').val(getFirstRevision())
   $('#form_signoff').submit()
 }
@@ -265,6 +285,10 @@ function onSignoff(id) {
 #dialog  .comment {
   width: 300px;
   height: 100px;
+}
+
+.hidden {
+  display: none;
 }
 
 .legend .box.accepted {background-color:#efe;}
