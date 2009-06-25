@@ -211,6 +211,11 @@ function onSignoff() {
   font-size: 13px;
 }
 
+.pushes tr.signoff > td {
+  font-size: 0.8em;
+  height: 36px;
+}
+
 .pushes td.date {
   border-right: 0 !important;
 }
@@ -252,25 +257,38 @@ function onSignoff() {
   float: right;
   margin-top: 10px;
   margin-right: 10px;
+  text-align: center;
+}
+
+.slider .prev,
+.slider .next {
+  font-weight: bold;
+  width: 20px;
 }
 
 .slider .prev,
 .slider .next,
 .slider .slide {
   display: inline-block;
+  vertical-align: middle;
+  padding: 0;
+  margin: 0;
+  line-height: 15px;
+  height: 20px;
+  border: 1px solid #ccc;
 }
 
 .slider .slide {
   width: 100px;
-  height: 15px;
-  background-color: #d59;
+  background-color: #eee;
+  height: 18px;
   overflow: hidden;
 }
 
 .slider .slide .marker {
   width: 0px;
-  height: 15px;
-  background-color: green;
+  height: 18px;
+  background-color: #666;
 }
 
 .search {
@@ -357,11 +375,11 @@ function onSignoff() {
   </ul>
 </fieldset>
 <div class="slider">
-  <button class="prev">prev</button>
+  <button class="prev">&lt;</button>
   <div class="slide">
     <div class="marker"></div>
   </div>
-  <button class="next">next</button>
+  <button class="next">&gt;</button>
 </div>
 <div id="dialog" title="Action comment">
     <p>
