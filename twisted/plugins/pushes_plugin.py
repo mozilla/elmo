@@ -241,15 +241,13 @@ def getPoller(options):
                 repos.append(r)
 
         def failedForest(self, failure, forest):
+            if failure.check(task.SchedulerStopped):
+                failure.raiseException()
             log.err(failure, "failed to load %s" % forest.name)
-            failure.trap(defer.TimeoutError)
             self.forests.pushback(forest)
         def jsonErr(self, failure, repo):
-            # catch errors on killing the service
-            failure.trap(task.SchedulerStopped, error.ConnectionLost,
-                         error.DNSLookupError,
-                         error.TimeoutError,
-                         defer.TimeoutError)
+            if failure.check(task.SchedulerStopped):
+                failure.raiseException()
             log.err(failure, "failed to load json for %s, adding back" % repo.name)
             self.repos.pushback(repo)
 
