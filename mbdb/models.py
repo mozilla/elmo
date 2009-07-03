@@ -37,7 +37,7 @@ class Tag(models.Model):
 
 class Change(models.Model):
     """Model for buildbot.changes.changes.Change"""
-    number = models.PositiveIntegerField(primary_key = True)
+    number = models.PositiveIntegerField()
     master = models.ForeignKey(Master)
     branch = models.CharField(max_length = 100, null = True, blank = True)
     revision = models.CharField(max_length = 50, null = True, blank = True)
@@ -48,6 +48,9 @@ class Change(models.Model):
     when = models.DateTimeField()
     tags = models.ManyToManyField(Tag)
 
+    class Meta:
+        unique_together = (('number', 'master'),)
+
     def __unicode__(self):
         rv = u'Change %d' % self.number
         if self.branch:
@@ -55,6 +58,19 @@ class Change(models.Model):
         if self.tags:
             rv += u' (%s)' % ', '.join(map(unicode, self.tags.all()))
         return rv
+
+
+class SourceStamp(models.Model):
+    changes = models.ManyToManyField(Change, through='NumberedChange',
+                                     related_name='stamps')
+    branch = models.CharField(max_length = 100, null = True, blank = True)
+    revision = models.CharField(max_length = 50, null = True, blank = True)
+
+class NumberedChange(models.Model):
+    change = models.ForeignKey(Change, related_name='numbered_changes')
+    sourcestamp = models.ForeignKey(SourceStamp,
+                                    related_name='numbered_changes')
+    number = models.IntegerField()
 
 
 class Property(models.Model):
@@ -97,8 +113,8 @@ class Build(models.Model):
     endtime     = models.DateTimeField(null = True, blank = True)
     result      = models.SmallIntegerField(null = True, blank = True)
     reason      = models.CharField(max_length = 50, null = True, blank = True)
-    changes     = models.ManyToManyField(Change, null = True,
-                                         related_name = 'builds')
+    sourcestamp = models.ForeignKey(SourceStamp, null = True,
+                                    related_name = 'builds')
 
     def setProperty(self, name, value, source):
         if name in ('buildername', 'buildnumber'):
@@ -189,3 +205,4 @@ class BuildRequest(models.Model):
     builder = models.ForeignKey(Builder)
     submitTime = models.DateTimeField()
     builds = models.ManyToManyField(Build, related_name='requests')
+    sourcestamp = models.ForeignKey(SourceStamp, related_name='requests')

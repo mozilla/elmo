@@ -41,6 +41,8 @@ from buildbot.status.base import StatusReceiverMultiService, StatusReceiver
 from buildbot.scheduler import BaseScheduler
 from twisted.python import log
 
+from collections import defaultdict
+
 # no imports of bb2mbdb code here, needs to be done after setting
 # settings.py in os.environ in setupBridge
 
@@ -70,8 +72,10 @@ def setupBridge(master, settings, config):
     reload(bb2mbdb.utils)
     import mbdb.models
     reload(mbdb.models)
-    from bb2mbdb.utils import modelForChange, modelForLog, timeHelper
-    from mbdb.models import Master, Slave, Builder, BuildRequest, Build
+    from bb2mbdb.utils import modelForSource, modelForChange, modelForLog, \
+        timeHelper
+    from mbdb.models import Master, Slave, Builder, BuildRequest, Build, \
+        SourceStamp, NumberedChange
 
     dbm, new_master = Master.objects.get_or_create(name=master)
 
@@ -143,7 +147,6 @@ def setupBridge(master, settings, config):
 
         def stepFinished(self, build, step, results):
             assert step == self.latestStep, "We lost a step somewhere"
-            log.msg("step finished with %s" % str(results))
             try:
                 self.latestStep = None
                 self.latestDbStep.endtime = timeHelper(step.getTimes()[1])
@@ -167,6 +170,7 @@ def setupBridge(master, settings, config):
     class MyStatusReceiver(StatusReceiverMultiService):
         '''StatusReceiver for buildbot to db bridge.
         '''
+        requestsForBuild = defaultdict(list)
         def setServiceParent(self, parent):
             StatusReceiverMultiService.setServiceParent(self, parent)
             self.basedir = None
@@ -192,13 +196,14 @@ def setupBridge(master, settings, config):
 
         def requestSubmitted(self, request):
             b, created = dbm.builders.get_or_create(name = request.getBuilderName())
+            ss = modelForSource(dbm, request.source)
             req = BuildRequest.objects.create(builder = b,
-                                              submitTime = timeHelper(request.getSubmitTime()))
-            req.save()
+                                              submitTime = timeHelper(request.getSubmitTime()),
+                                              sourcestamp = ss)
             def addBuild(build):
-                db = b.builds.get(buildnumber=build.getNumber())
-                req.builds.add(db)
-                req.save()
+                dbbuild = b.builds.get(buildnumber=build.getNumber())
+                dbbuild.requests.add(req)
+                dbbuild.save()
             request.subscribe(addBuild)
 
         def builderChangedState(self, builderName, state):
@@ -211,11 +216,13 @@ def setupBridge(master, settings, config):
             log.msg("build started on  %s" % builderName)
             builder = Builder.objects.get(master=dbm, name = builderName)
             slave, newslave = Slave.objects.get_or_create(name = build.getSlavename())
+            ss = modelForSource(dbm, build.getSourceStamp())
             dbbuild, created = \
                 builder.builds.get_or_create(buildnumber = build.getNumber(),
                                              slave = slave,
                                              starttime = timeHelper(build.getTimes()[0]),
-                                             reason = build.getReason())
+                                             reason = build.getReason(),
+                                             sourcestamp = ss)
             if not created:
                 log.msg("%s build %d not created, endtime is %s" %
                         (builderName, build.getNumber(), dbbuild.endtime))
@@ -223,8 +230,6 @@ def setupBridge(master, settings, config):
                 return
             for key, value, source in build.getProperties().asList():
                 dbbuild.setProperty(key, value, source)
-            for change in build.getChanges():
-                dbbuild.changes.add(modelForChange(dbm, change))
             dbbuild.save()
 
             return BuildReceiver(dbbuild, self.basedir)

@@ -3,7 +3,7 @@
 
 from datetime import datetime
 
-from mbdb.models import Change, Tag, File, Log
+from mbdb.models import Change, Tag, File, Log, SourceStamp
 from django.conf import settings
 
 from twisted.python import log
@@ -38,6 +38,27 @@ def modelForChange(master, change):
         dbchange.files.add(*dbfiles)
         dbchange.save()
         return dbchange
+
+def modelForSource(master, source):
+    q = SourceStamp.objects.filter(branch=source.branch,
+                                   revision=source.revision)
+    for i, change in enumerate(source.changes):
+        q = q.filter(numbered_changes__number=i,
+                     numbered_changes__change__number=change.number,
+                     numbered_changes__change__master=master)
+    try:
+        return q[0]
+    except IndexError:
+        pass
+    # create a new source stamp.
+    ss = SourceStamp.objects.create(branch=source.branch,
+                                    revision=source.revision)
+    for i, change in enumerate(source.changes):
+        cm = modelForChange(master, change)
+        ss.numbered_changes.create(change=cm, number=i)
+    ss.save()
+    return ss
+
 
 def modelForLog(dbstep, logfile, basedir, isFinished = False):
     if not hasattr(logfile, 'getFilename'):

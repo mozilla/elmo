@@ -30,12 +30,12 @@ def showbuild(build_or_step, autoescape=None):
         rv = fmt % (b_url, build.starttime.isoformat(), build.buildnumber,
                     build.getProperty('tree'), build.getProperty('locale'))
         rv += '<br/>%s' % build.slave.name
-        if build.changes.count():
+        if build.sourcestamp.changes.count():
             fmt = ('<a href="' + 
                    reverse('tinder.views.builds_for_change')+ 
                    '?change=%d">%d</a>')
             links = map(lambda c: fmt % (c.number, c.number),
-                        build.changes.order_by('pk'))
+                        build.sourcestamp.changes.order_by('pk'))
             rv += '<br/>Changes ' + ', '.join(links)
         if build.endtime is not None:
             # We're a finished build, just show the build
