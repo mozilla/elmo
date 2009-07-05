@@ -4,13 +4,19 @@ from life.models import Locale, Push, Tree
 from signoff.models import Milestone, Signoff, SignoffForm, ActionForm
 from l10nstats.models import Run
 from django import forms
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils import simplejson
 from django.core import serializers
 
-
 from collections import defaultdict
+from ConfigParser import ConfigParser
 import datetime
+from difflib import SequenceMatcher
+
+from Mozilla.Parser import getParser, Junk
+from Mozilla.CompareLocales import AddRemove, Tree
+
 
 def index(request):
     locales = Locale.objects.all().order_by('code')
@@ -101,6 +107,86 @@ def pushes(request):
         'offset': offset,
         'current_js': simplejson.dumps(_get_current_js(current)),
     })
+
+
+def diff_app(request):
+    reponame = request.GET['repo']
+    repopath = settings.REPOSITORY_BASE + '/' + reponame
+    from mercurial.ui import ui as _ui
+    from mercurial.hg import repository
+    ui = _ui()
+    repo = repository(ui, repopath)
+    ctx1 = repo.changectx(request.GET['from'])
+    ctx2 = repo.changectx(request.GET['to'])
+    match = None # maybe get something from l10n.ini and cmdutil
+    changed, added, removed = repo.status(ctx1, ctx2, match=match)[:3]
+    diffs = Tree(dict)
+    for path in changed:
+        lines = []
+        try:
+            p = getParser(path)
+        except UserWarning:
+            diffs[path].update({'path': path,
+                                'lines': [{'class': 'issue',
+                                           'oldval': '',
+                                           'newval': '',
+                                           'entity': 'cannot parse ' + path}]})
+            print path
+            continue
+        data1 = ctx1.filectx(path).data()
+        data2 = ctx2.filectx(path).data()
+        p.readContents(data1)
+        a_entities, a_map = p.parse()
+        p.readContents(data2)
+        c_entities, c_map = p.parse()
+        del p
+        a_list = sorted(a_map.keys())
+        c_list = sorted(c_map.keys())
+        ar = AddRemove()
+        ar.set_left(a_list)
+        ar.set_right(c_list)
+        for action, item_or_pair in ar:
+            if action == 'delete':
+                lines.append({'class': 'removed',
+                              'oldval': [{'value':a_entities[a_map[item_or_pair]].val}],
+                              'newval': '',
+                              'entity': item_or_pair})
+            elif action == 'add':
+                lines.append({'class': 'added',
+                              'oldval': '',
+                              'newval':[{'value': c_entities[c_map[item_or_pair]].val}],
+                              'entity': item_or_pair})
+            else:
+                oldval = a_entities[a_map[item_or_pair[0]]].val
+                newval = c_entities[c_map[item_or_pair[1]]].val
+                if oldval == newval:
+                    continue
+                sm = SequenceMatcher(None, oldval, newval)
+                oldhtml = []
+                newhtml = []
+                for op, o1, o2, n1, n2 in sm.get_opcodes():
+                    if o1 != o2:
+                        oldhtml.append({'class':op, 'value':oldval[o1:o2]})
+                    if n1 != n2:
+                        newhtml.append({'class':op, 'value':newval[n1:n2]})
+                lines.append({'class':'changed',
+                              'oldval': oldhtml,
+                              'newval': newhtml,
+                              'entity': item_or_pair[0]})
+        container_class = lines and 'file' or 'empty-diff'
+        diffs[path].update({'path': path,
+                            'class': container_class,
+                            'lines': lines})
+    diffs = diffs.toJSON().get('children', [])
+    return render_to_response('signoff/diff.html',
+                              {'locale': request.GET['locale'],
+                               'added': added,
+                               'removed': removed,
+                               'repo_url': request.GET['url'],
+                               'old_rev': request.GET['from'],
+                               'new_rev': request.GET['to'],
+                               'diffs': diffs})
+
 
 def dashboard(request):
     if request.GET['ms']:

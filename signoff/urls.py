@@ -8,4 +8,5 @@ urlpatterns = patterns('signoff.views',
     (r'^\/milestones\/([^/]+)\/shipped-locales$', 'shipped_locales'),
     (r'^\/api\/pushes$', 'pushes_json'),
     (r'^\/api\/signoffs$', 'signoff_json'),
+    (r'^\/diff$', 'diff_app'),
 )

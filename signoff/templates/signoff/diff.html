@@ -1,0 +1,94 @@
+{% extends "signoff/base.html" %}
+{% load compare_logic %}
+
+{% block title %}Diff for {{locale}}{% endblock %}
+
+{% block js_include %}
+<script type="application/javascript"
+src="{% url static path="jquery.js" %}"></script>
+{% endblock %}
+
+{% block style_include %}
+<link rel="stylesheet" type="text/css"
+href="{% url static path="jquery.ui/themes/base/ui.all.css" %}">
+{% endblock %}
+
+{% block javascript %}
+$(document).ready(function(){
+  $('.ui-accordion-header').click(function(e) {
+    $(this).each(function(i){
+      $(this).children('.ui-icon').toggleClass('ui-icon-triangle-1-s') .toggleClass('ui-icon-triangle-1-e')
+    }).next().toggle()
+  })
+});
+{% endblock %}
+
+{% block style %}
+.children {
+  padding-left:1em;
+}
+.diff {
+  padding-left: 2ex;
+}
+.line-added {
+  color: green;
+}
+.line-removed {
+  color: red;
+}
+.empty-diff {
+  font-size: small;
+}
+.replace {
+  background-color: orange;
+}
+.delete {
+  background-color: red;
+}
+.insert {
+  background-color: #66ff00;
+}
+{% endblock %}
+{% block content %}
+{% if added %}
+Added files:
+{% for path in added %}
+<div><a href="{{repo_url}}file/{{new_rev}}/{{path}}" target="_blank">{{path}}</a></div>
+{% endfor %}
+{% endif %}
+{% if removed %}
+Removed files:
+{% for path in removed %}
+<div><a href="{{repo_url}}file/{{old_rev}}/{{path}}" target="_blank">{{path}}</a></div>
+{% endfor %}
+{% endif %}
+{% if diffs %}
+Changed files:
+{% recurse_children %}
+{% for fragment, diff in diffs %}
+<div class="diff-container {{diff.value.class}} ui-accordion
+  ui-widget ui-helper-reset"><div title="{{diff.value.path}}"
+    class="ui-accordion-header ui-helper-reset"><span class="ui-icon ui-icon-triangle-1-s"></span><a>{{fragment}}</a></div>
+  {% if diff.value %}
+<table class="diff">
+  {% for line in diff.value.lines %}
+  <tr class="line-{{line.class}}"><td rowspan="2" valign="top">{{line.entity}}</td>
+    <td>
+      {% for chunk in line.oldval %}<span class="{{chunk.class}}">{{chunk.value}}</span>{% endfor %}
+    </td></tr>
+  <tr class="line-{{line.class}}">
+  <td>
+      {% for chunk in line.newval %}<span class="{{chunk.class}}">{{chunk.value}}</span>{% endfor %}
+    </td></tr>
+  {% endfor %}
+  </table>
+  {% else %}
+  <div class="children">
+    {% recurse diff.children as diffs %}
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+{% endrecurse %}
+{% endif %}
+{% endblock %}
