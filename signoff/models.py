@@ -35,7 +35,10 @@ class Signoff(models.Model):
 
     @property
     def accepted(self):
-        if self.status == 0:
+        stat = self.status
+        if stat is None:
+            return None
+        if stat == 0:
             return True
         else:
             return False
