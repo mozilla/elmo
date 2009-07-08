@@ -1,13 +1,14 @@
 from django.shortcuts import render_to_response
 from django.http import HttpResponseRedirect, HttpResponse 
 from life.models import Locale, Push, Tree
-from signoff.models import Milestone, Signoff, SignoffForm, ActionForm
+from signoff.models import Milestone, Signoff, AppVersion, Action, SignoffForm, ActionForm
 from l10nstats.models import Run
 from django import forms
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils import simplejson
 from django.core import serializers
+from django.db import connection
 
 from collections import defaultdict
 from ConfigParser import ConfigParser
@@ -198,19 +199,27 @@ def dashboard(request):
             'args': args,
             })
 
-def l10n_changesets(request, milestone):
-    sos = Signoff.objects.filter(milestone__code=milestone, accepted=True)
-    sos = sos.order_by('locale__code', '-when')
-    sos = sos.select_related('locale__code', 'push__changesets__tip')
-    def createLines(q):
-        lastLoc = None
-        for so in q:
-            if lastLoc == so.locale.code:
-                # we already have an older signoff for this locale, skip
-                continue
-            lastLoc = so.locale.code
-            yield "%s %s\n" % (so.locale.code, so.push.tip.shortrev)
-    r = HttpResponse(createLines(sos), content_type='text/plain; charset=utf-8')
+def l10n_changesets(request):
+    if request.GET.has_key('ms'):
+        mstone = Milestone.objects.get(code=request.GET['ms'])
+        av = mstone.appver.id
+    elif request.GET.has_key('ver'):
+        aver = AppVersion.objects.get(code=request.GET['ver'])
+        av = aver.id
+    cursor = connection.cursor()
+    cursor.execute("SELECT a.flag,s.locale_id,s.push_id FROM signoff_action \
+                    AS a,signoff_signoff AS s WHERE a.signoff_id=s.id AND \
+                    s.appversion_id=%s GROUP BY a.signoff_id ORDER BY a.id;", [av])
+    sos = cursor.fetchall()
+    cs = {}
+    for so in sos:
+        if so[0] is not 0:
+            # if action.flag is not Accepted, skip
+            continue        
+        loc = Locale.objects.get(pk=so[1])
+        push = Push.objects.get(pk=so[2])
+        cs[loc.code] = "%s %s\n" % (loc.code, push.tip.shortrev)
+    r = HttpResponse('\n'.join(cs.values()), content_type='text/plain; charset=utf-8')
     r['Content-Disposition'] = 'inline; filename=l10n-changesets'
     return r
 
