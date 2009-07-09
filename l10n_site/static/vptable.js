@@ -19,13 +19,16 @@
       
         function draw(slice, cb) {
           node.removeAttr('prev_date')
-          for (var i in slice) {
-            var item = slice[i]
-            for (var attr in item) {
-              if (!trs[attr])
-                trs[attr] = $('tr.'+attr, node)
-              tr = trs[attr] 
-              if (tr) {
+          if (!trs.length) {
+            $('tr', node).each(function (n,tr) {
+              trs[tr.className] = $(tr)
+            })
+          }
+          for (var attr in trs) {
+            tr = trs[attr] 
+            if (tr) {
+              for (var i in slice) {
+                var item = slice[i]
                 if (!cells[attr])
                   cells[attr] = Array()
                 if (cells[attr][i]) {
