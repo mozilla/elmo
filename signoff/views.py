@@ -24,7 +24,7 @@ def index(request):
     mstones = Milestone.objects.all().order_by('code')
 
     for i in mstones:
-        i.dates = _timeframe_desc(i)
+        i.dates = ('upcoming','open','shipped')[i.status]
 
     return render_to_response('signoff/index.html', {
         'locales': locales,
@@ -219,9 +219,17 @@ def l10n_changesets(request):
     r['Content-Disposition'] = 'inline; filename=l10n-changesets'
     return r
 
-def shipped_locales(request, milestone):
-    sos = Signoff.objects.filter(milestone__code=milestone, accepted=True)
-    locales = list(sos.values_list('locale__code', flat=True).distinct()) + ['en-US']
+def shipped_locales(request):
+    if request.GET.has_key('ms'):
+        mstone = Milestone.objects.get(code=request.GET['ms'])
+        sos = _get_accepted_signoffs(ms=mstone)
+    elif request.GET.has_key('appver'):
+        appver = AppVersion.objects.get(code=request.GET['appver'])
+        sos = _get_accepted_signoffs(av=appver)
+    else:
+        return HttpResponse('No milestone or appversion given')
+
+    locales = [so.locale.code for so in sos.values()] + ['en-US']
     def withPlatforms(loc):
         if loc == 'ja':
             return 'ja linux win32\n'
@@ -364,18 +372,6 @@ def _get_notes(session):
             del notes[i]
     return notes
 
-def _timeframe_desc(i):
-    if i.status<2:
-        if i.end_event:
-            return 'Open till '+str(i.end_event.date)
-        else:
-            return 'Open'
-    else:
-        if i.start_event and i.end_event:
-            return '%s - %s' % (i.start_event.date, i.end_event.date)
-        else:
-            return 'Open'
-
 def _get_push_offset(id, shift=0):
     """returns an offset of the push for signoff slider"""
     if not id:
@@ -392,7 +388,10 @@ def _get_accepted_signoff(locale, ms):
     '''
 
     if ms.status==2: # shipped
-        return ms.signoffs.get(locale=locale.id)
+        try:
+            return ms.signoffs.get(locale=locale.id)
+        except:
+            return None
 
     cursor = connection.cursor()
     cursor.execute("SELECT a.flag,s.id FROM signoff_action \
