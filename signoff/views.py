@@ -105,7 +105,7 @@ def pushes(request):
         'accepted': accepted,
         'user': user,
         'user_type': 0 if user.is_anonymous() else 2 if user.is_staff else 1,
-        'pushes': (simplejson.dumps(_get_api_items(locale, mstone, current, offset=offset+20)), 0, offset+10),
+        'pushes': (simplejson.dumps(_get_api_items(locale, mstone, current, offset=offset+20)), 0, min(max_pushes,offset+10)),
         'max_pushes': max_pushes,
         'offset': offset,
         'current_js': simplejson.dumps(_get_current_js(current)),
