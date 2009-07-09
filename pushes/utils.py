@@ -85,6 +85,11 @@ def handlePushes(repo_id, submits, do_update=True):
                         Branch.objects.get_or_create(name=branch)
                     cs.branch = dbb
                 cs.save()
+                parents = map(lambda _cx: _cx.hex(), ctx.parents())
+                p_cs = Changeset.objects.filter(revision__in=parents,
+                                                repository=repo)
+                cs.parents.add(*list(p_cs))
+                cs.save()
                 for path in ctx.files():
                     # hack around mysql ignoring trailing ' ', and some
                     # of our localizers checking in files with trailing ' '.

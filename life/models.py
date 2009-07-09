@@ -72,6 +72,8 @@ class Repository(models.Model):
             cs = Changeset(repository=self,
                            revision='0'*40)
             cs.save()
+            cs.parents.add(cs)
+            cs.save()
     def __unicode__(self):
         return self.name
 
@@ -127,10 +129,16 @@ class Changeset(models.Model):
     description = models.TextField(null = True, default='')
     files = models.ManyToManyField(File)
     branch = models.ForeignKey(Branch, default=1, related_name='changesets')
+    parents = models.ManyToManyField("self", symmetrical=False,
+                                     related_name='_children')
 
     @property
     def shortrev(self):
         return self.revision[:12]
+
+    @property
+    def children(self):
+        return self._children.exclude(revision=40*'0')
 
     def url(self):
         return self.repository.url + "rev/" + self.shortrev
