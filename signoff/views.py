@@ -36,8 +36,11 @@ def pushes(request):
         locale = Locale.objects.get(code=request.GET['locale'])
     if request.GET['ms']:
         mstone = Milestone.objects.get(code=request.GET['ms'])
-    current = _get_current_signoff(locale, mstone)
     enabled = mstone.status<2
+    if enabled:
+        current = _get_current_signoff(locale, mstone)
+    else:
+        current = _get_accepted_signoff(locale, mstone)
     user = request.user
     anonymous = user.is_anonymous()
     staff = user.is_staff
@@ -78,11 +81,8 @@ def pushes(request):
     repo_url = '%s%s/' % (forest.url, locale.code)
     notes = _get_notes(request.session)
     curcol = {None:0,1:-1,0:1}[current.status] if current else 0
-    try:
-        accepted = Signoff.objects.filter(locale=locale, milestone=mstone, accepted=True).order_by('-pk')[0]
-    except:
-        accepted = None
-    
+    accepted = _get_accepted_signoff(locale, mstone)
+
     max_pushes = _get_total_pushes(locale, mstone)
     if max_pushes > 50:
         max_pushes = 50
@@ -200,26 +200,13 @@ def dashboard(request):
             })
 
 def l10n_changesets(request):
-    if request.GET.has_key('ms'):
-        mstone = Milestone.objects.get(code=request.GET['ms'])
-        av = mstone.appver.id
-    elif request.GET.has_key('ver'):
-        aver = AppVersion.objects.get(code=request.GET['ver'])
-        av = aver.id
-    cursor = connection.cursor()
-    cursor.execute("SELECT a.flag,s.locale_id,s.push_id FROM signoff_action \
-                    AS a,signoff_signoff AS s WHERE a.signoff_id=s.id AND \
-                    s.appversion_id=%s GROUP BY a.signoff_id ORDER BY a.id;", [av])
-    sos = cursor.fetchall()
+    mstone = Milestone.objects.get(code=request.GET['ms'])
+    sos = _get_accepted_signoffs(ms=mstone)
     cs = {}
-    for so in sos:
-        if so[0] is not 0:
-            # if action.flag is not Accepted, skip
-            continue        
-        loc = Locale.objects.get(pk=so[1])
-        push = Push.objects.get(pk=so[2])
-        cs[loc.code] = "%s %s\n" % (loc.code, push.tip.shortrev)
-    r = HttpResponse('\n'.join(cs.values()), content_type='text/plain; charset=utf-8')
+    for code,so in sos.items():
+        cs[code] = "%s %s\n" % (code, so.push.tip.shortrev)
+    r = HttpResponse('\n'.join(map(cs.get, sorted(cs.keys()))),
+                     content_type='text/plain; charset=utf-8')
     r['Content-Disposition'] = 'inline; filename=l10n-changesets'
     return r
 
@@ -240,7 +227,7 @@ def shipped_locales(request, milestone):
 
 
 def signoff_json(request):
-    if request.GET['ms']:
+    if request.GET.has_key('ms'):
         mso = Milestone.objects.get(code=request.GET['ms'])
     sos = Signoff.objects.filter(appversion__code=mso.appver.code)
     items = defaultdict(set)
@@ -270,6 +257,16 @@ def pushes_json(request):
     
     pushes = _get_api_items(locale, mstone, cur, start=start, offset=start+to)
     return HttpResponse(simplejson.dumps({'items': pushes}, indent=2))
+
+def ship_mstone(request):
+    if request.GET.has_key('ms'):
+        mso = Milestone.objects.get(code=request.GET['ms'])
+
+    cs = _get_accepted_signoffs(mso)    # get current signoffs
+    mso.signoffs = cs.values()    # add them
+
+    r = HttpResponse('OK', content_type='text/plain; charset=utf-8')
+    return r
 
 #
 #  Internal functions
@@ -379,3 +376,44 @@ def _get_push_offset(id, shift=0):
     if num+shift<0:
         return 0
     return num+shift
+
+def _get_accepted_signoff(locale, ms):
+    '''this function gets the latest accepted signoff
+    for a milestone/locale
+    '''
+
+    if ms.status==2: # shipped
+        return ms.signoffs.get(locale=locale.id)
+
+    cursor = connection.cursor()
+    cursor.execute("SELECT a.flag,s.id FROM signoff_action \
+                    AS a,signoff_signoff AS s WHERE a.signoff_id=s.id AND \
+                    s.appversion_id=%s AND s.locale_id=%s GROUP BY a.signoff_id ORDER BY a.id DESC;", [ms.appver.id, locale.id])
+    items = cursor.fetchall()
+    for item in items:
+        if item[0] is not 0:
+            # if action.flag is not Accepted, skip
+            continue
+        return Signoff.objects.get(pk=item[1])
+    return None
+
+def _get_accepted_signoffs(ms):
+    '''this function gets the latest accepted signoffs
+    for a milestone or appversion
+    '''
+    if ms.status==2: # shipped
+        return dict([(so.locale.code, so) for so in ms.signoffs.all()])
+    
+    cursor = connection.cursor()
+    cursor.execute("SELECT a.flag,s.id FROM signoff_action \
+                    AS a,signoff_signoff AS s WHERE a.signoff_id=s.id AND \
+                    s.appversion_id=%s GROUP BY a.signoff_id ORDER BY a.id;", [ms.appver.id])
+    items = cursor.fetchall()
+    sos = {}
+    for item in items:
+        if item[0] is not 0:
+            # if action.flag is not Accepted, skip
+            continue
+        so = Signoff.objects.get(pk=item[1])
+        sos[so.locale.code] = so
+    return sos

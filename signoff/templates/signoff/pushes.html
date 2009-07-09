@@ -21,6 +21,7 @@ var pushes = Array()
 var current = {{ current_js|safe}}
 var slider = null
 var curpos = null
+var msstatus = {{ mstone.status }}
 
 $(document).ready(function(){
   slider = Slider()
@@ -89,6 +90,7 @@ function stylePushes() {
 var user = {{user_type}}
 
 function handleReload(u) {
+  if (msstatus==2)u=0;
   switch (u) {
     case 0:
       $('.signoff_button').hide()
@@ -131,7 +133,7 @@ function customizeRow(table, attr, t, push) {
                 .val('Sign off')
                 .attr('push_id', push['id'])
                 .addClass('signoff_button')
-                .addClass(user>0?'':'hidden')
+                .addClass(user>0&&msstatus<2?'':'hidden')
                 .click(onSignoff)
                 .appendTo(t)
       }
@@ -156,7 +158,7 @@ function customizeRow(table, attr, t, push) {
         for (var i in buttons) {
           var input = document.createElement('input')
           $(input).attr('type', 'button')
-                  .addClass(user>1?'':'hidden')
+                  .addClass(user>1&&msstatus<2?'':'hidden')
                   .attr('action', buttons[i])
                   .val(i).click(onAccept)
                   .appendTo(t)
@@ -281,11 +283,11 @@ function onSignoff() {
   line-height: 15px;
   height: 20px;
   border: 1px solid #ccc;
+  background-color: #eee;
 }
 
 .slider .slide {
   width: 100px;
-  background-color: #eee;
   height: 18px;
   overflow: hidden;
 }
@@ -308,7 +310,7 @@ function onSignoff() {
 
 #dialog  .comment {
   width: 300px;
-  height: 100px;
+  height: 60px;
 }
 
 .hidden {
@@ -327,7 +329,6 @@ function onSignoff() {
 {% ifequal curcol 1 %}
   background-color: #99ff99 !important;
 {% endifequal %}
-
 {% ifequal curcol -1 %}
   background-color: #ff0000 !important;
 {% endifequal %}
@@ -335,7 +336,7 @@ function onSignoff() {
 
 {% if accepted %}
 {% ifnotequal accepted.push.id current.push.id %}
-#pushes td.push-{{ accepted.push.id }}:not(.date) {
+#pushes td.item-{{ accepted.push.id }}:not(.date) {
   border: 1px solid #aac !important;
   background-color: #dde !important;
   color: black !important;
@@ -349,7 +350,10 @@ function onSignoff() {
   <a href="{% url signoff.views.dashboard %}?ms={{mstone.code}}">« all <i>{{mstone.name}}</i> locales</a>
 </div>
 <p class="search">Search: <input type="text" size="10" id="search"></p>
-<h3>Signoff for {{mstone}} {{locale.code}}</h3>
+<h3>Signoff for {{mstone}} {{locale.code}}
+{% ifequal mstone.status 0%}(upcoming){% endifequal %}
+{% ifequal mstone.status 1%}(open){% endifequal %}
+{% ifequal mstone.status 2%}(shipped){% endifequal %}</h3>
 <form action="" method="post" id="form_accept">
   <input type="hidden" id="id_comment" name="comment" />
   <input type="hidden" id="id_accepted" name="accepted" />
