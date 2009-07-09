@@ -211,10 +211,8 @@ def l10n_changesets(request):
     else:
         return HttpResponse('No milestone or appversion given')
     
-    cs = {}
-    for code,so in sos.items():
-        cs[code] = "%s %s\n" % (code, so.push.tip.shortrev)
-    r = HttpResponse('\n'.join(map(cs.get, sorted(cs.keys()))),
+    r = HttpResponse(('%s %s\n' % (k, sos[k].push.tip.shortrev)
+                      for k in sorted(sos.keys())),
                      content_type='text/plain; charset=utf-8')
     r['Content-Disposition'] = 'inline; filename=l10n-changesets'
     return r
@@ -229,7 +227,7 @@ def shipped_locales(request):
     else:
         return HttpResponse('No milestone or appversion given')
 
-    locales = [so.locale.code for so in sos.values()] + ['en-US']
+    locales = sos.keys() + ['en-US']
     def withPlatforms(loc):
         if loc == 'ja':
             return 'ja linux win32\n'
@@ -418,15 +416,15 @@ def _get_accepted_signoffs(ms=None,av=None):
         aid = av.id
     
     cursor = connection.cursor()
-    cursor.execute("SELECT a.flag,s.id FROM signoff_action \
-                    AS a,signoff_signoff AS s WHERE a.signoff_id=s.id AND \
-                    s.appversion_id=%s GROUP BY a.signoff_id ORDER BY a.id;", [aid])
+    stmnt = (("SELECT a.flag,s.id FROM %s " +
+              "AS a,%s AS s WHERE a.signoff_id=s.id AND " +
+              "s.appversion_id=%%s GROUP BY a.signoff_id ORDER BY a.id;")
+             % (Action._meta.db_table, Signoff._meta.db_table))
+    cursor.execute(stmnt, [aid])
     items = cursor.fetchall()
-    sos = {}
-    for item in items:
-        if item[0] is not 0:
-            # if action.flag is not Accepted, skip
-            continue
-        so = Signoff.objects.get(pk=item[1])
-        sos[so.locale.code] = so
+    # strip non-accepted signoffs and just get the ids
+    so_ids = map(lambda t: t[1], filter(lambda t: t[0] is 0, items))
+    so_q = Signoff.objects.filter(pk__in=so_ids).select_related('locale__code',
+                                                                'push__changesets')
+    sos = dict((so.locale.code, so) for so in so_q)
     return sos
