@@ -44,9 +44,11 @@ def pushes(request):
     user = request.user
     anonymous = user.is_anonymous()
     staff = user.is_staff
-    if request.method == 'POST' and enabled: # we're going to process forms
+    if request.method == 'POST': # we're going to process forms
         offset_id = request.POST['first_row']
-        if anonymous: # ... but we're not logged in. Panic!
+        if not enabled: # ... but we're not logged in. Panic!
+            request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s</span> could not be added - <strong>Milestone is not open for edits</strong>' % (mstone, locale)
+        elif anonymous: # ... but we're not logged in. Panic!
             request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s</span> could not be added - <strong>User not logged in</strong>' % (mstone, locale)
         else:
             if request.POST.has_key('accepted'): # we're in AcceptedForm mode
@@ -200,8 +202,15 @@ def dashboard(request):
             })
 
 def l10n_changesets(request):
-    mstone = Milestone.objects.get(code=request.GET['ms'])
-    sos = _get_accepted_signoffs(ms=mstone)
+    if request.GET.has_key('ms'):
+        mstone = Milestone.objects.get(code=request.GET['ms'])
+        sos = _get_accepted_signoffs(ms=mstone)
+    elif request.GET.has_key('appver'):
+        appver = AppVersion.objects.get(code=request.GET['appver'])
+        sos = _get_accepted_signoffs(av=appver)
+    else:
+        return HttpResponse('No milestone or appversion given')
+    
     cs = {}
     for code,so in sos.items():
         cs[code] = "%s %s\n" % (code, so.push.tip.shortrev)
@@ -397,17 +406,22 @@ def _get_accepted_signoff(locale, ms):
         return Signoff.objects.get(pk=item[1])
     return None
 
-def _get_accepted_signoffs(ms):
+def _get_accepted_signoffs(ms=None,av=None):
     '''this function gets the latest accepted signoffs
     for a milestone or appversion
     '''
-    if ms.status==2: # shipped
+    if ms and ms.status==2: # shipped
         return dict([(so.locale.code, so) for so in ms.signoffs.all()])
+    
+    if ms:
+        aid = ms.appver.id
+    else:
+        aid = av.id
     
     cursor = connection.cursor()
     cursor.execute("SELECT a.flag,s.id FROM signoff_action \
                     AS a,signoff_signoff AS s WHERE a.signoff_id=s.id AND \
-                    s.appversion_id=%s GROUP BY a.signoff_id ORDER BY a.id;", [ms.appver.id])
+                    s.appversion_id=%s GROUP BY a.signoff_id ORDER BY a.id;", [aid])
     items = cursor.fetchall()
     sos = {}
     for item in items:
