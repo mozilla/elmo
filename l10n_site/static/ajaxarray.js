@@ -53,7 +53,7 @@
         var buf = opts['buffer']
         var lseq = array_scan(items, Math.max(from-buf,0), 1)
         var rseq = array_scan(items, Math.min(to+buf, opts['length']-1), -1) 
-        if (lseq!==rseq!==null && (rseq>=from && lseq<=to))
+        if (lseq!==null && rseq!==null && lseq!==rseq && (rseq>=from && lseq<=to))
           loadMissing(lseq, rseq, cb, cbarg, from, to)
         else
           if (cb) cb(get(from, to), cbarg)
