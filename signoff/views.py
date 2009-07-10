@@ -21,14 +21,22 @@ from Mozilla.CompareLocales import AddRemove, Tree
 
 def index(request):
     locales = Locale.objects.all().order_by('code')
-    mstones = Milestone.objects.all().order_by('code')
+    avs = AppVersion.objects.all().order_by('code')
 
-    for i in mstones:
-        i.dates = ('upcoming','open','shipped')[i.status]
+    for i in avs:
+        statuses = Milestone.objects.filter(appver=i.id).values_list('status', flat=True).distinct()
+        if 1 in statuses:
+            i.status = 'open'
+        elif 0 in statuses:
+            i.status = 'upcoming'
+        elif 2 in statuses:
+            i.status = 'shipped'
+        else:
+            i.status = 'unknown' 
 
     return render_to_response('signoff/index.html', {
         'locales': locales,
-        'mstones': mstones,
+        'avs': avs,
     })
 
 def pushes(request):

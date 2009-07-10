@@ -20,8 +20,15 @@ class AppVersion(models.Model):
     """
     app = models.ForeignKey(Application)
     version = models.CharField(max_length = 10)
-    code = models.CharField(max_length = 30, blank = True, null = True)
+    code = models.CharField(max_length = 20, blank = True)
+    codename = models.CharField(max_length = 30, blank = True, null = True)
     tree = models.ForeignKey(Tree)
+
+
+    def save(self):
+        if not self.code:
+            self.code = '%s%s' % (self.app.code, self.version)
+        super(AppVersion, self).save()
 
     def __unicode__(self):
         return '%s %s' % (self.app.name, self.version)
@@ -83,7 +90,7 @@ class Milestone(models.Model):
     The milestone is open for signoff between string_freeze and code
     """
     code = models.CharField(max_length = 30)
-    name = models.CharField(max_length = 50, blank = True, null = True)
+    name = models.CharField(max_length = 50)
     appver = models.ForeignKey(AppVersion)
     signoffs = models.ManyToManyField(Signoff, related_name='shipped list', null=True, blank=True)
     status = models.IntegerField(choices=STATUS_CHOICES, default=0)

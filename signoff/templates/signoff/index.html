@@ -10,10 +10,10 @@
   {% endfor %}
 </ul>
 
-<h3>Milestones</h3>
+<h3>Application versions</h3>
 <ul>
-  {% for mstone in mstones %}
-  <li><a href="{% url signoff.views.dashboard %}?ms={{mstone.code}}">{{ mstone }} [{{mstone.dates}}]</a></li>
+  {% for av in avs %}
+  <li><a href="{% url signoff.views.dashboard %}?av={{av.code}}">{{ av }} [{{av.status}}]</a></li>
   {% endfor %}
 </ul>
 {% endblock %}
