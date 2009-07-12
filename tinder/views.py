@@ -357,7 +357,7 @@ def builds_for_change(request):
     except (ValueError, KeyError):
         return HttpResponseNotFound("Given change does not exist")
 
-    builds = change.builds.order_by('starttime')
+    builds = Build.objects.filter(sourcestamp__changes=change).order_by('starttime')
     running = []
     done = []
     for b in builds:
