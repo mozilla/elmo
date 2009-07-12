@@ -366,10 +366,18 @@ def builds_for_change(request):
         done.append({'build': b,
                      'class': (b.result is not None and resultclasses[b.result])
                      or ''})
+
+    try:
+        from life.models import Push
+        url = str(Push.objects.get(changesets__revision=change.revison,
+                                   changesets__repository__name=change.branch))
+    except:
+        url=None
     
     return render_to_response('tinder/builds_for.html',
                               {'done_builds': done,
                                'pending': pending,
+                               'url': url,
                                'change': change})
 
 

@@ -24,7 +24,9 @@ on {{ change.branch }}
 {% endif %}
 </p>
 <p>
+{% if url %}<a href="{{url}}" target="_blank">{% endif %}
 {{ change.comments }}
+{% if url %}</a>{% endif %}
 </p>
 {% if pending %}<p>{{ pending }} builds pending</p>{% endif %}
 {% for build in done_builds %}
