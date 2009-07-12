@@ -359,7 +359,7 @@ def builds_for_change(request):
 
     builds = Build.objects.filter(sourcestamp__changes=change).order_by('starttime')
     pending = BuildRequest.objects.filter(builds__isnull=True,
-                                          sourcestamp__changes).count()
+                                          sourcestamp__changes=change).count()
     running = []
     done = []
     for b in builds:
@@ -393,7 +393,7 @@ class BuildsForChangeFeed(Feed):
     def title(self, change):
         title = []
         pending = BuildRequest.objects.filter(builds__isnull=True,
-                                              sourcestamp__changes).count()
+                                              sourcestamp__changes=change).count()
         if pending:
             title.append("%d pending" % pending)
         builds = Build.objects.filter(sourcestamp__changes=change)
