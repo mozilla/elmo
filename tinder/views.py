@@ -358,6 +358,8 @@ def builds_for_change(request):
         return HttpResponseNotFound("Given change does not exist")
 
     builds = Build.objects.filter(sourcestamp__changes=change).order_by('starttime')
+    pending = BuildRequest.objects.filter(builds__isnull=True,
+                                          sourcestamp__changes).count()
     running = []
     done = []
     for b in builds:
@@ -367,6 +369,7 @@ def builds_for_change(request):
     
     return render_to_response('tinder/builds_for.html',
                               {'done_builds': done,
+                               'pending': pending,
                                'change': change})
 
 
@@ -389,10 +392,14 @@ class BuildsForChangeFeed(Feed):
 
     def title(self, change):
         title = []
-        builds = Build.objects.filter(sourcestamp__changes=change)
-        pending = builds.filter(endtime__isnull=True).count()
+        pending = BuildRequest.objects.filter(builds__isnull=True,
+                                              sourcestamp__changes).count()
         if pending:
             title.append("%d pending" % pending)
+        builds = Build.objects.filter(sourcestamp__changes=change)
+        building = builds.filter(endtime__isnull=True).count()
+        if building:
+            title.append("%d building" % building)
         failed = builds.filter(result=2).count()
         if failed:
             title.append("%d failed" % failed)

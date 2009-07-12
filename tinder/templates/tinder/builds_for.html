@@ -19,10 +19,14 @@
 <h1>Builds for change {{change.number}}</h1>
 <p>
 {{ change.who }}
+{% if change.branch %}
+on {{ change.branch }}
+{% endif %}
 </p>
 <p>
 {{ change.comments }}
 </p>
+{% if pending %}{{ pending }} builds pending{% endif %}
 {% for build in done_builds %}
 <div class="buildbox {{ build.class }}">
   {{ build.build|showbuild }}
