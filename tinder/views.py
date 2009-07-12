@@ -389,16 +389,17 @@ class BuildsForChangeFeed(Feed):
 
     def title(self, change):
         title = []
-        pending = change.builds.filter(endtime__isnull=True).count()
+        builds = Build.objects.filter(sourcestamp__changes=change)
+        pending = builds.filter(endtime__isnull=True).count()
         if pending:
             title.append("%d pending" % pending)
-        failed = change.builds.filter(result=2).count()
+        failed = builds.filter(result=2).count()
         if failed:
             title.append("%d failed" % failed)
-        warnings = change.builds.filter(result=1).count()
+        warnings = builds.filter(result=1).count()
         if warnings:
             title.append("%d warnings" % warnings)
-        good = change.builds.filter(result=0).count()
+        good = builds.filter(result=0).count()
         if good:
             title.append("%d good" % good)
         if not title:
@@ -415,8 +416,8 @@ class BuildsForChangeFeed(Feed):
         return tmpl % (change.comments, change.who)
 
     def items(self, change):
-        builds = change.builds.order_by('starttime')
-        return builds
+        builds = Build.objects.filter(sourcestamp__changes=change)
+        return builds.order_by('starttime')
 
     def item_link(self, build):
         lnk = reverse('tinder_show_build',
