@@ -26,7 +26,7 @@ on {{ change.branch }}
 <p>
 {{ change.comments }}
 </p>
-{% if pending %}{{ pending }} builds pending{% endif %}
+{% if pending %}<p>{{ pending }} builds pending</p>{% endif %}
 {% for build in done_builds %}
 <div class="buildbox {{ build.class }}">
   {{ build.build|showbuild }}
