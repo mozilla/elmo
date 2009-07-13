@@ -1,6 +1,6 @@
 {% extends "l10nstats/index.html" %}
-{% block title_matter %}{{ mstone }} dashboard{% endblock %}
-{% block extra_data %}<link href="{% url signoff.views.signoff_json %}?ms={{mstone.code}}" type="application/json" rel="exhibit/data"/>{% endblock %}
+{% block title_matter %}{{ obj }} dashboard{% endblock %}
+{% block extra_data %}<link href="{% url signoff.views.signoff_json %}?{{query}}={{obj.code}}" type="application/json" rel="exhibit/data"/>{% endblock %}
 
 {% block extra_labels %}, Sign-off{% endblock %}
 {% block extra_columns %}, .locale.signoff{% endblock %}

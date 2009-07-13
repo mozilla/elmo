@@ -1,0 +1,75 @@
+{% extends "signoff/base.html" %}
+
+{% block title %}Milestones{% endblock %}
+
+{% block js_include %}
+ <script src="http://simile-widgets.googlecode.com/svn/exhibit/trunk/src/webapp/api/exhibit-api.js?autoCreate=false" type="text/javascript"></script>
+<link href="{% url signoff.views.stones_data %}" type="application/json" rel="exhibit/data" />
+{% endblock %}
+
+{% block javascript %}
+var schema = {}
+
+$(document).ready(function() {
+  window.database = Exhibit.Database.create();
+  window.database.loadData(schema);
+  window.database.loadDataLinks(function(){
+    window.exhibit = Exhibit.create();
+    window.exhibit.configureFromDOM();
+  });
+});
+
+function doForm(action, ms) {
+  console.log(ms);
+  var frm = document.getElementById(action + '_ms');
+  frm.ms.value = ms;
+  frm.submit();
+}
+{% endblock %}
+
+{% block content %}
+<h1>Milestones</h1>
+
+<div ex:role="view" ex:showAll="true" ex:ViewClass="Tabular"
+  ex:columnLabels="Milestone"
+  ex:columns=".label">
+  <table>
+    <tr>
+      <td>
+        <a ex:content=".label"
+        ex:href-subcontent="{% url signoff.views.dashboard %}?ms={&#123;.code}}"></a>
+      </td>
+      <td>
+        <span ex:if=".status = 0">
+        <input type="button" {% if not perms.signoff.can_open %}
+        disabled="disabled"{% endif %}
+        ex:onclick-subcontent="doForm('open','{&#123;.code}}')"
+          value="open">
+        </span>
+        <span ex:if=".status = 1">
+        <input type="button" {% if not perms.signoff.can_ship %}
+        disabled="disabled"{% endif %}
+        ex:onclick-subcontent="doForm('ship','{&#123;.code}}')"
+        value="ship">
+        </span>
+        <span ex:if=".status = 2">
+        <input type="button" {% if not perms.signoff.can_ship %}
+        disabled="disabled"{% endif %}
+        value="tweak">
+        </span>
+      </td>
+    </tr>
+  </table>
+</div>
+<div style="display:none">
+  <form id="open_ms" action="{% url signoff.views.open_mstone %}"
+  method="POST"
+  <input type="hidden" name="ms" />
+  </form>
+  <form id="ship_ms" action="{% url signoff.views.confirm_ship_mstone %}"
+  method="GET"
+  <input type="hidden" name="ms" />
+  </form>
+</div>
+
+{% endblock %}

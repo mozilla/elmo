@@ -94,6 +94,9 @@ class Milestone(models.Model):
     appver = models.ForeignKey(AppVersion)
     signoffs = models.ManyToManyField(Signoff, related_name='shipped list', null=True, blank=True)
     status = models.IntegerField(choices=STATUS_CHOICES, default=0)
+    class Meta:
+        permissions = (('can_open', 'Can open a Milestone for sign-off'),
+                       ('can_ship', 'Can ship a Milestone'))
 
     def get_start_event(self):
         try:

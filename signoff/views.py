@@ -1,4 +1,5 @@
 from django.shortcuts import render_to_response
+from django.template import RequestContext
 from django.http import HttpResponseRedirect, HttpResponse 
 from life.models import Locale, Push, Tree
 from signoff.models import Milestone, Signoff, AppVersion, Action, SignoffForm, ActionForm
@@ -200,22 +201,30 @@ def diff_app(request):
 
 
 def dashboard(request):
-    if request.GET['ms']:
+    if 'ms' in request.GET:
         mstone = Milestone.objects.get(code=request.GET['ms'])
-    tree = mstone.appver.tree
+        tree = mstone.appver.tree
+        obj = mstone
+        query = 'ms'
+    else:
+        appver = AppVersion.objects.get(code=request.GET['av'])
+        tree = appver.tree
+        obj = appver
+        query = 'av'
     args = ["tree=%s" % tree.code]
     return render_to_response('signoff/dashboard.html', {
-            'mstone': mstone,
+            'obj': obj,
+            'query': query,
             'args': args,
             })
 
 def l10n_changesets(request):
     if request.GET.has_key('ms'):
         mstone = Milestone.objects.get(code=request.GET['ms'])
-        sos = _get_accepted_signoffs(ms=mstone)
+        sos = _get_signoffs(ms=mstone)
     elif request.GET.has_key('appver'):
         appver = AppVersion.objects.get(code=request.GET['appver'])
-        sos = _get_accepted_signoffs(av=appver)
+        sos = _get_signoffs(av=appver)
     else:
         return HttpResponse('No milestone or appversion given')
     
@@ -228,10 +237,10 @@ def l10n_changesets(request):
 def shipped_locales(request):
     if request.GET.has_key('ms'):
         mstone = Milestone.objects.get(code=request.GET['ms'])
-        sos = _get_accepted_signoffs(ms=mstone)
+        sos = _get_signoffs(ms=mstone)
     elif request.GET.has_key('appver'):
         appver = AppVersion.objects.get(code=request.GET['appver'])
-        sos = _get_accepted_signoffs(av=appver)
+        sos = _get_signoffs(av=appver)
     else:
         return HttpResponse('No milestone or appversion given')
 
@@ -251,8 +260,10 @@ def shipped_locales(request):
 
 def signoff_json(request):
     if request.GET.has_key('ms'):
-        mso = Milestone.objects.get(code=request.GET['ms'])
-    sos = Signoff.objects.filter(appversion__code=mso.appver.code)
+        appver = Milestone.objects.get(code=request.GET['ms']).appver
+    else:
+        appver = AppVersion.objects.get(code=request.GET['av'])
+    sos = Signoff.objects.filter(appversion__code=appver.code)
     items = defaultdict(set)
     values = {True: 'accepted', False: 'rejected', None: 'pending'}
     for so in sos.select_related('locale'):
@@ -281,15 +292,93 @@ def pushes_json(request):
     pushes = _get_api_items(locale, mstone, cur, start=start, offset=start+to)
     return HttpResponse(simplejson.dumps({'items': pushes}, indent=2))
 
+
+def milestones(request):
+    """Administrate milestones.
+
+    Opens an exhibit that offers the actions below depending on 
+    milestone status and user permissions.
+    """
+    return render_to_response('signoff/milestones.html',
+                              {},
+                              context_instance=RequestContext(request))
+
+def stones_data(request):
+    """JSON data to be used by milestones
+    """
+    stones = Milestone.objects.order_by('-pk').select_related(depth=1)[:5]
+    items = [{'label': str(stone),
+              'appver': str(stone.appver),
+              'status': stone.status,
+              'code': stone.code}
+             for stone in stones]
+    return HttpResponse(simplejson.dumps({'items': items}, indent=2))
+
+def open_mstone(request):
+    """Open a milestone.
+
+    Only available to POST, and requires signoff.can_open permissions.
+    Redirects to milestones().
+    """
+    if (request.method == "POST" and
+        'ms' in request.POST and
+        request.user.has_perm('signoff.can_open')):
+        try:
+            mstone = Milestone.objects.get(code=request.POST['ms'])
+            mstone.status = 1
+            # XXX create event
+            mstone.save()
+        except:
+            pass
+    return HttpResponseRedirect(reverse('signoff.views.milestones'))
+
+def confirm_ship_mstone(request):
+    """Intermediate page when shipping a milestone.
+
+    Gathers all data to verify when shipping.
+    Ends up in ship_mstone if everything is fine.
+    Redirects to milestones() in case of trouble.
+    """
+    if not ("ms" in request.GET and
+            request.user.has_perm('signoff.can_ship')):
+        return HttpResponseRedirect(reverse('signoff.views.milestones'))
+    try:
+        mstone = Milestone.objects.get(code=request.GET['ms'])
+    except:
+        return HttpResponseRedirect(reverse('signoff.views.milestones'))
+    if mstone.status is not 1:
+        return HttpResponseRedirect(reverse('signoff.views.milestones'))
+    pendings = _get_signoffs(ms=mstone, status=None)
+    pending_locs = sorted(pendings.keys())
+    good = _get_signoffs(ms=mstone)
+    good_locs = sorted(good.keys())
+    return render_to_response('signoff/confirm-ship.html',
+                              {'mstone': mstone,
+                               'pendings': pendings,
+                               'pending_locs': pending_locs,
+                               'good': good,
+                               'good_locs': good_locs},
+                              context_instance=RequestContext(request))
+        
 def ship_mstone(request):
-    if request.GET.has_key('ms'):
-        mso = Milestone.objects.get(code=request.GET['ms'])
+    """The actual worker method to ship a milestone.
 
-    cs = _get_accepted_signoffs(mso)    # get current signoffs
-    mso.signoffs = cs.values()    # add them
-
-    r = HttpResponse('OK', content_type='text/plain; charset=utf-8')
-    return r
+    Only avaible to POST.
+    Redirects to milestones().
+    """
+    if (request.method == "POST" and
+        'ms' in request.POST and
+        request.user.has_perm('signoff.can_ship')):
+        try:
+            mstone = Milestone.objects.get(code=request.POST['ms'])
+            mstone.status = 2
+            cs = _get_signoffs(ms=mstone)    # get current signoffs
+            mstone.signoffs = cs.values()    # add them
+            # XXX create event
+            mstone.save()
+        except:
+            pass
+    return HttpResponseRedirect(reverse('signoff.views.milestones'))
 
 #
 #  Internal functions
@@ -411,7 +500,7 @@ def _get_accepted_signoff(locale, ms):
         return Signoff.objects.get(pk=item[1])
     return None
 
-def _get_accepted_signoffs(ms=None,av=None):
+def _get_signoffs(ms=None, av=None, status=0):
     '''this function gets the latest accepted signoffs
     for a milestone or appversion
     '''
@@ -431,7 +520,7 @@ def _get_accepted_signoffs(ms=None,av=None):
     cursor.execute(stmnt, [aid])
     items = cursor.fetchall()
     # strip non-accepted signoffs and just get the ids
-    so_ids = map(lambda t: t[1], filter(lambda t: t[0] is 0, items))
+    so_ids = map(lambda t: t[1], filter(lambda t: t[0] is status, items))
     so_q = Signoff.objects.filter(pk__in=so_ids).select_related('locale__code',
                                                                 'push__changesets')
     sos = dict((so.locale.code, so) for so in so_q)
