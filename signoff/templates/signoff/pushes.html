@@ -75,7 +75,7 @@ function stylePushes() {
       j+=o
       with($(this)) {
         if (j==curpos) {
-          addClass('current')
+          addClass('current').addClass(current.class);
         } else
           removeClass('current')
         css('background-color','rgb('+(225+parseInt(j*v))+','+(225+parseInt(j*v))+',255)')
@@ -325,12 +325,15 @@ function onSignoff() {
   border: 1px solid #9a9 !important;
   background-color: #efe !important;
   color: black !important;
-{% ifequal curcol 1 %}
-  background-color: #99ff99 !important;
-{% endifequal %}
-{% ifequal curcol -1 %}
-  background-color: #ff0000 !important;
-{% endifequal %}
+}
+#pushes tr:not(.date) td.current.accepted {
+ background-color: #99ff99 !important;
+}
+#pushes tr:not(.date) td.current.accepted {
+ background-color: #ff0000 !important;
+}
+#pushes tr:not(.date) td.current.obsoleted {
+ background-color: #cccccc !important;
 }
 
 {% if accepted %}

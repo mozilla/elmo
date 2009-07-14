@@ -4,7 +4,14 @@
 
 {% block extra_labels %}, Sign-off{% endblock %}
 {% block extra_columns %}, .locale.signoff{% endblock %}
-{% block extra_cells %}<td><a ex:href-subcontent="{% url signoff.views.pushes %}?locale={&#123;.locale}}&ms={{mstone.code}}" ex:content=".locale.signoff"></a></td>{% endblock %}
+{% block extra_cells %}<td>
+  <a ex:href-subcontent="{% url signoff.views.pushes %}?locale={&#123;.locale}}&ms={{obj.code}}">
+    <span ex:if="exists( .locale.signoff )">
+      <span ex:content=".locale.signoff"></span>
+      <span>no sign-offs</span>
+    </span>
+  </a>
+</td>{% endblock %}
 {% block extra_facets %}
 <div ex:role="facet" ex:expression=".locale.signoff"
   ex:facetLabel="Sign-off" id="signoff-facet"></div>

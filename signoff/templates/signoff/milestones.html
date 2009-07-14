@@ -20,7 +20,6 @@ $(document).ready(function() {
 });
 
 function doForm(action, ms) {
-  console.log(ms);
   var frm = document.getElementById(action + '_ms');
   frm.ms.value = ms;
   frm.submit();
@@ -40,28 +39,36 @@ function doForm(action, ms) {
         ex:href-subcontent="{% url signoff.views.dashboard %}?ms={&#123;.code}}"></a>
       </td>
       <td>
-        <span ex:if=".status = 0">
-        <input type="button" {% if not perms.signoff.can_open %}
-        disabled="disabled"{% endif %}
-        ex:onclick-subcontent="doForm('open','{&#123;.code}}')"
-          value="open">
-        </span>
-        <span ex:if=".status = 1">
-        <input type="button" {% if not perms.signoff.can_ship %}
-        disabled="disabled"{% endif %}
-        ex:onclick-subcontent="doForm('ship','{&#123;.code}}')"
-        value="ship">
-        </span>
         <span ex:if=".status = 2">
-        <input type="button" {% if not perms.signoff.can_ship %}
-        disabled="disabled"{% endif %}
-        value="tweak">
-        </span>
+          <input type="button" {% if not perms.signoff.can_ship %}
+          disabled="disabled"{% endif %}
+          value="tweak" />
+          <span>
+            <span ex:if=".status = 0">
+              <input type="button" {% if not perms.signoff.can_open %}
+              disabled="disabled"{% endif %}
+              ex:onclick-subcontent="doForm('open','{&#123;.code}}')"
+                value="open" />
+              <input type="button" {% if not perms.signoff.can_ship %}
+              disabled="disabled"{% endif %}
+              ex:onclick-subcontent="doForm('ship','{&#123;.code}}')"
+              value="ship" />
+            </span>
+            <input type="button" {% if not perms.signoff.can_open %}
+            disabled="disabled"{% endif %}
+            ex:onclick-subcontent="doForm('clear','{&#123;.code}}')"
+              value="clear" />
+          </span>
+       </span>
       </td>
     </tr>
   </table>
 </div>
 <div style="display:none">
+  <form id="clear_ms" action="{% url signoff.views.clear_mstone %}"
+  method="POST"
+  <input type="hidden" name="ms" />
+  </form>
   <form id="open_ms" action="{% url signoff.views.open_mstone %}"
   method="POST"
   <input type="hidden" name="ms" />

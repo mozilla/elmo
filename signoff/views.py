@@ -66,7 +66,7 @@ def pushes(request):
                 else:
                     # hack around AcceptForm not taking strings, fixed in
                     # django 1.1
-                    bval = {"true": 0, "false": 1}[request.POST['accepted']]
+                    bval = {"true": 1, "false": 2}[request.POST['accepted']]
                     form = ActionForm({'signoff': current.id, 'flag': bval, 'author': user.id, 'comment': request.POST['comment']})
                     if form.is_valid():
                         form.save()
@@ -91,7 +91,6 @@ def pushes(request):
     forest = mstone.appver.tree.l10n
     repo_url = '%s%s/' % (forest.url, locale.code)
     notes = _get_notes(request.session)
-    curcol = {None:0,1:-1,0:1}[current.status] if current else 0
     accepted = _get_accepted_signoff(locale, mstone)
 
     max_pushes = _get_total_pushes(locale, mstone)
@@ -110,7 +109,6 @@ def pushes(request):
         'form': form,
         'notes': notes,
         'current': current,
-        'curcol': curcol,
         'accepted': accepted,
         'user': user,
         'user_type': 0 if user.is_anonymous() else 2 if user.is_staff else 1,
@@ -260,14 +258,15 @@ def shipped_locales(request):
 
 def signoff_json(request):
     if request.GET.has_key('ms'):
-        appver = Milestone.objects.get(code=request.GET['ms']).appver
-    else:
-        appver = AppVersion.objects.get(code=request.GET['av'])
-    sos = Signoff.objects.filter(appversion__code=appver.code)
+        mstone = Milestone.objects.get(code=request.GET['ms'])
+        sos = _get_signoffs(ms=mstone, status=None)
+    elif request.GET.has_key('appver'):
+        appver = AppVersion.objects.get(code=request.GET['appver'])
+        sos = _get_signoffs(av=appver, status=None)
     items = defaultdict(set)
-    values = {True: 'accepted', False: 'rejected', None: 'pending'}
-    for so in sos.select_related('locale'):
-        items[so.locale.code].add(values[so.accepted])
+    values = dict(Action._meta.get_field('flag').flatchoices)
+    for loc, so in sos.iteritems():
+        items[loc].add(values[so.status])
     # make a list now
     items = [{"type": "SignOff", "label": locale, 'signoff': list(values)}
              for locale, values in items.iteritems()]
@@ -332,6 +331,29 @@ def open_mstone(request):
             pass
     return HttpResponseRedirect(reverse('signoff.views.milestones'))
 
+def clear_mstone(request):
+    """Clear a milestone, reset all sign-offs.
+
+    Only available to POST, and requires signoff.can_open permissions.
+    Redirects to dasboard() for the milestone.
+    """
+    if (request.method == "POST" and
+        'ms' in request.POST and
+        request.user.has_perm('signoff.can_open')):
+        try:
+            mstone = Milestone.objects.get(code=request.POST['ms'])
+            if mstone.status is 2:
+                return HttpResponseRedirect(reverse('signoff.views.milestones'))
+            # get all signoffs, independent of state, and file an obsolete
+            # action
+            for loc, so in _get_signoffs(ms=mstone, status=None).iteritems():
+                so.action_set.create(flag=4, author=request.user)
+            return HttpResponseRedirect(reverse('signoff.views.dashboard')
+                                        + "?ms=" + mstone.code)
+        except:
+            pass
+    return HttpResponseRedirect(reverse('signoff.views.milestones'))
+
 def confirm_ship_mstone(request):
     """Intermediate page when shipping a milestone.
 
@@ -348,7 +370,7 @@ def confirm_ship_mstone(request):
         return HttpResponseRedirect(reverse('signoff.views.milestones'))
     if mstone.status is not 1:
         return HttpResponseRedirect(reverse('signoff.views.milestones'))
-    pendings = _get_signoffs(ms=mstone, status=None)
+    pendings = _get_signoffs(ms=mstone, status=0)
     pending_locs = sorted(pendings.keys())
     good = _get_signoffs(ms=mstone)
     good_locs = sorted(good.keys())
@@ -371,9 +393,9 @@ def ship_mstone(request):
         request.user.has_perm('signoff.can_ship')):
         try:
             mstone = Milestone.objects.get(code=request.POST['ms'])
+            cs = _get_signoffs(ms=mstone)      # get current signoffs
+            mstone.signoffs.add(*cs.values())  # add them
             mstone.status = 2
-            cs = _get_signoffs(ms=mstone)    # get current signoffs
-            mstone.signoffs = cs.values()    # add them
             # XXX create event
             mstone.save()
         except:
@@ -385,11 +407,11 @@ def ship_mstone(request):
 #
 
 def _get_current_signoff(locale, mstone):
-    current = Signoff.objects.filter(locale=locale, appversion=mstone.appver).order_by('-pk')
-    if not current:
+    sos = Signoff.objects.filter(locale=locale, appversion=mstone.appver)
+    try:
+        return sos.order_by('-pk')[0]
+    except IndexError:
         return None
-    current[0].when = current[0].when.strftime("%Y-%m-%d %H:%M")
-    return current[0]
 
 def _get_total_pushes(locale=None, mstone=None):
     if mstone:
@@ -451,10 +473,11 @@ def _get_api_items(locale=None, mstone=None, current=None, start=0, offset=10):
 def _get_current_js(cur):
     current = {}
     if cur:
-        current['when'] = str(cur.when)
+        current['when'] = cur.when.strftime("%Y-%m-%d %H:%M")
         current['author'] = str(cur.author)
-        current['status'] = None if cur.status==None else cur.accepted
+        current['status'] = None if cur.status==0 else cur.accepted
         current['id'] = str(cur.id)
+        current['class'] = cur.flag
     return current
 
 def _get_notes(session):
@@ -484,7 +507,7 @@ def _get_accepted_signoff(locale, ms):
 
     if ms.status==2: # shipped
         try:
-            return ms.signoffs.get(locale=locale.id)
+            return ms.signoffs.get(locale=locale)
         except:
             return None
 
@@ -500,7 +523,7 @@ def _get_accepted_signoff(locale, ms):
         return Signoff.objects.get(pk=item[1])
     return None
 
-def _get_signoffs(ms=None, av=None, status=0):
+def _get_signoffs(ms=None, av=None, status=1):
     '''this function gets the latest accepted signoffs
     for a milestone or appversion
     '''
@@ -519,8 +542,12 @@ def _get_signoffs(ms=None, av=None, status=0):
              % (Action._meta.db_table, Signoff._meta.db_table))
     cursor.execute(stmnt, [aid])
     items = cursor.fetchall()
-    # strip non-accepted signoffs and just get the ids
-    so_ids = map(lambda t: t[1], filter(lambda t: t[0] is status, items))
+    # filter signoffs if wanted, strip obsolete and just get the ids
+    if status is not None:
+        items = filter(lambda t: t[0] is status, items)
+    else:
+        items = filter(lambda t: t[0] is not 4, items)
+    so_ids = map(lambda t: t[1], items)
     so_q = Signoff.objects.filter(pk__in=so_ids).select_related('locale__code',
                                                                 'push__changesets')
     sos = dict((so.locale.code, so) for so in so_q)

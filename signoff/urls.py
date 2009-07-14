@@ -12,6 +12,7 @@ urlpatterns = patterns('signoff.views',
     (r'^\/milestones$', 'milestones'),
     (r'^\/stones-data$', 'stones_data'),
     (r'^\/open-mstone$', 'open_mstone'),
+    (r'^\/clear-mstone$', 'clear_mstone'),
     (r'^\/confirm-ship$', 'confirm_ship_mstone'),
     (r'^\/ship$', 'ship_mstone'),
 )

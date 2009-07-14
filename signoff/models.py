@@ -42,30 +42,29 @@ class Signoff(models.Model):
 
     @property
     def accepted(self):
-        stat = self.status
-        if stat is None:
-            return None
-        if stat == 0:
-            return True
-        else:
-            return False
+        return self.status == 1
 
     @property
     def status(self):
-        action = Action.objects.filter(signoff=self).order_by('-pk')
-        if action:
-            return action[0].flag
-        else:
-            return None
+        try:
+            actions = Action.objects.filter(signoff=self).order_by('-pk')
+            return actions.values_list('flag', flat=True)[0]
+        except IndexError:
+            return 0
+
+    @property
+    def flag(self):
+        return dict(Action._meta.get_field('flag').flatchoices)[self.status]
 
     def __unicode__(self):
         return 'Signoff for %s %s by %s [%s]' % (self.appversion, self.locale.code, self.author, self.when)
 
 FLAG_CHOICES = (
-    (0, 'accepted'),
-    (1, 'rejected'),
-    (2, 'revoked'),
-    (3, 'obsoleted'),
+    (0, 'pending'),
+    (1, 'accepted'),
+    (2, 'rejected'),
+    (3, 'revoked'),
+    (4, 'obsoleted'),
 )
 
 class Action(models.Model):
@@ -92,7 +91,7 @@ class Milestone(models.Model):
     code = models.CharField(max_length = 30)
     name = models.CharField(max_length = 50)
     appver = models.ForeignKey(AppVersion)
-    signoffs = models.ManyToManyField(Signoff, related_name='shipped list', null=True, blank=True)
+    signoffs = models.ManyToManyField(Signoff, related_name='shipped_in', null=True, blank=True)
     status = models.IntegerField(choices=STATUS_CHOICES, default=0)
     class Meta:
         permissions = (('can_open', 'Can open a Milestone for sign-off'),
@@ -114,8 +113,11 @@ class Milestone(models.Model):
     end_event = property(get_end_event)
 
     def __unicode__(self):
-        if self.name:
-            return '%s %s %s' % (self.appver.app.name, self.appver.version, self.name)
+        if self.name is not None:
+            frags = [self.appver.app.name, self.appver.version]
+            if self.name:
+                frags.append(self.name)
+            return ' '.join(frags)
         else:
             return self.code
 
