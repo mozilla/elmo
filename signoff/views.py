@@ -41,10 +41,13 @@ def index(request):
     })
 
 def pushes(request):
-    if request.GET['locale']:
+    if request.GET.has_key('locale'):
         locale = Locale.objects.get(code=request.GET['locale'])
-    if request.GET['ms']:
+    if request.GET.has_key('ms'):
         mstone = Milestone.objects.get(code=request.GET['ms'])
+    if request.GET.has_key('av'):
+        av = AppVersion.objects.get(code=request.GET['av'])
+        mstone = Milestone.objects.filter(appver=av.id).order_by('-pk')[0]
     enabled = mstone.status<2
     if enabled:
         current = _get_current_signoff(locale, mstone)
@@ -260,8 +263,8 @@ def signoff_json(request):
     if request.GET.has_key('ms'):
         mstone = Milestone.objects.get(code=request.GET['ms'])
         sos = _get_signoffs(ms=mstone, status=None)
-    elif request.GET.has_key('appver'):
-        appver = AppVersion.objects.get(code=request.GET['appver'])
+    elif request.GET.has_key('av'):
+        appver = AppVersion.objects.get(code=request.GET['av'])
         sos = _get_signoffs(av=appver, status=None)
     items = defaultdict(set)
     values = dict(Action._meta.get_field('flag').flatchoices)

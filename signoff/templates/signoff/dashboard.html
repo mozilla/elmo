@@ -5,7 +5,7 @@
 {% block extra_labels %}, Sign-off{% endblock %}
 {% block extra_columns %}, .locale.signoff{% endblock %}
 {% block extra_cells %}<td>
-  <a ex:href-subcontent="{% url signoff.views.pushes %}?locale={&#123;.locale}}&ms={{obj.code}}">
+  <a ex:href-subcontent="{% url signoff.views.pushes %}?locale={&#123;.locale}}&av={{obj.code}}">
     <span ex:if="exists( .locale.signoff )">
       <span ex:content=".locale.signoff"></span>
       <span>no sign-offs</span>
