@@ -349,7 +349,7 @@ function onSignoff() {
 
 {% block content %}
 <div class="nav">
-  <a href="{% url signoff.views.dashboard %}?ms={{mstone.code}}">« all <i>{{mstone.name}}</i> locales</a>
+  <a href="{% url signoff.views.dashboard %}?av={{mstone.appver.code}}">« all <i>{{mstone.appver}}</i> locales</a>
 </div>
 <p class="search">Search: <input type="text" size="10" id="search"></p>
 <h3>Signoff for {{mstone}} {{locale.code}}
