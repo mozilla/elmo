@@ -1,6 +1,6 @@
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.http import HttpResponseRedirect, HttpResponse 
+from django.http import HttpResponseRedirect, HttpResponse
 from life.models import Locale, Push, Tree
 from signoff.models import Milestone, Signoff, AppVersion, Action, SignoffForm, ActionForm
 from l10nstats.models import Run
@@ -46,8 +46,7 @@ def pushes(request):
     if request.GET.has_key('ms'):
         mstone = Milestone.objects.get(code=request.GET['ms'])
     if request.GET.has_key('av'):
-        av = AppVersion.objects.get(code=request.GET['av'])
-        mstone = Milestone.objects.filter(appver=av.id).order_by('-pk')[0]
+        mstone = Milestone.objects.filter(appver__code=request.GET['av']).order_by('-pk')[0]
     enabled = mstone.status<2
     if enabled:
         current = _get_current_signoff(locale, mstone)
