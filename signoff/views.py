@@ -2,7 +2,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.http import HttpResponseRedirect, HttpResponse
 from life.models import Locale, Push, Tree
-from signoff.models import Milestone, Signoff, AppVersion, Action, SignoffForm, ActionForm
+from signoff.models import Milestone, Signoff, Snapshot, AppVersion, Action, SignoffForm, ActionForm
 from l10nstats.models import Run
 from django import forms
 from django.conf import settings
@@ -83,6 +83,13 @@ def pushes(request):
                 form = SignoffForm(request.POST, instance=instance)
                 if form.is_valid():
                     form.save()
+                    
+                    #add a snapshot of the current test results
+                    pushobj = Push.objects.get(id=request.POST['push'])
+                    lastrun = _get_compare_locales_result(pushobj.tip, mstone.appver.tree)
+                    if lastrun:
+                        Snapshot.objects.create(signoff_id=form.instance.id, test=Run, tid=lastrun.id)
+
                     request.session['signoff_info'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone, locale, user.username)
                 else:
                     request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> could not be added' % (mstone, locale, user.username)
@@ -423,11 +430,17 @@ def _get_total_pushes(locale=None, mstone=None):
     else:
         return Push.objects.count()
 
+def _get_compare_locales_result(rev, tree):
+        try:
+            return Run.objects.filter(revisions=rev,
+                                      tree=tree).order_by('-build__id')[0]
+        except:
+            return None
+
 def _get_api_items(locale=None, mstone=None, current=None, start=0, offset=10):
     if mstone:
         forest = mstone.appver.tree.l10n
         repo_url = '%s%s/' % (forest.url, locale.code) 
-        print repo_url
         pushobjs = Push.objects.filter(changesets__repository__url=repo_url).order_by('-push_date')[start:start+offset]
     else:
         pushobjs = Push.objects.order_by('-push_date')[start:start+offset]
@@ -519,7 +532,7 @@ def _get_accepted_signoff(locale, ms):
                     s.appversion_id=%s AND s.locale_id=%s GROUP BY a.signoff_id ORDER BY a.id DESC;", [ms.appver.id, locale.id])
     items = cursor.fetchall()
     for item in items:
-        if item[0] is not 0:
+        if item[0] is not 1:
             # if action.flag is not Accepted, skip
             continue
         return Signoff.objects.get(pk=item[1])
