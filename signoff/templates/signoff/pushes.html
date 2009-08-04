@@ -75,7 +75,7 @@ function stylePushes() {
       j+=o
       with($(this)) {
         if (j==curpos) {
-          addClass('current').addClass(current.class);
+          addClass('current').addClass(current['class']);
         } else
           removeClass('current')
         css('background-color','rgb('+(225+parseInt(j*v))+','+(225+parseInt(j*v))+',255)')
@@ -338,7 +338,7 @@ function onSignoff() {
 
 {% if accepted %}
 {% ifnotequal accepted.push.id current.push.id %}
-#pushes td.item-{{ accepted.push.id }}:not(.date) {
+#pushes tr:not(.date) td.item-{{ accepted.push.id }} {
   border: 1px solid #aac !important;
   background-color: #dde !important;
   color: black !important;
