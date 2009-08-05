@@ -72,7 +72,7 @@ def pushes(request):
                     form = ActionForm({'signoff': current.id, 'flag': bval, 'author': user.id, 'comment': request.POST['comment']})
                     if form.is_valid():
                         form.save()
-                        if request.POST['accepted'] == "False":
+                        if request.POST['accepted'] == "false":
                             request.session['signoff_info'] = '<span style="font-style: italic">Rejected'
                         else:
                             request.session['signoff_info'] = '<span style="font-style: italic">Accepted'
