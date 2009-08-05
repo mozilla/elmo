@@ -89,6 +89,7 @@ def pushes(request):
                     lastrun = _get_compare_locales_result(pushobj.tip, mstone.appver.tree)
                     if lastrun:
                         Snapshot.objects.create(signoff_id=form.instance.id, test=Run, tid=lastrun.id)
+                    Action.objects.create(signoff_id=form.instance.id, flag=0, author=user)
 
                     request.session['signoff_info'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone, locale, user.username)
                 else:
