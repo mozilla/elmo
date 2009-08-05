@@ -33,6 +33,8 @@
                   cells[attr] = Array()
                 if (cells[attr][i]) {
                   var td = cells[attr][i]
+                  td.attr('className', '')
+                  td.addClass('item-'+item.id)
                   customRow(node, attr, td, item)
                 } else {
                   var td = $('<td/>').addClass('item-'+item.id)

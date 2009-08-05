@@ -150,7 +150,6 @@ def diff_app(request):
                                            'oldval': '',
                                            'newval': '',
                                            'entity': 'cannot parse ' + path}]})
-            print path
             continue
         data1 = ctx1.filectx(path).data()
         data2 = ctx2.filectx(path).data()
@@ -229,8 +228,8 @@ def l10n_changesets(request):
     if request.GET.has_key('ms'):
         mstone = Milestone.objects.get(code=request.GET['ms'])
         sos = _get_signoffs(ms=mstone)
-    elif request.GET.has_key('appver'):
-        appver = AppVersion.objects.get(code=request.GET['appver'])
+    elif request.GET.has_key('av'):
+        appver = AppVersion.objects.get(code=request.GET['av'])
         sos = _get_signoffs(av=appver)
     else:
         return HttpResponse('No milestone or appversion given')
@@ -245,8 +244,8 @@ def shipped_locales(request):
     if request.GET.has_key('ms'):
         mstone = Milestone.objects.get(code=request.GET['ms'])
         sos = _get_signoffs(ms=mstone)
-    elif request.GET.has_key('appver'):
-        appver = AppVersion.objects.get(code=request.GET['appver'])
+    elif request.GET.has_key('av'):
+        appver = AppVersion.objects.get(code=request.GET['av'])
         sos = _get_signoffs(av=appver)
     else:
         return HttpResponse('No milestone or appversion given')
@@ -264,22 +263,22 @@ def shipped_locales(request):
     r['Content-Disposition'] = 'inline; filename=shipped-locales'
     return r
 
-
 def signoff_json(request):
     if request.GET.has_key('ms'):
         mstone = Milestone.objects.get(code=request.GET['ms'])
-        sos = _get_signoffs(ms=mstone, status=None)
+        lsd = _get_signoff_statuses(ms=mstone)
     elif request.GET.has_key('av'):
         appver = AppVersion.objects.get(code=request.GET['av'])
-        sos = _get_signoffs(av=appver, status=None)
-    items = defaultdict(set)
+        lsd = _get_signoff_statuses(av=appver)
+    items = defaultdict(list)
     values = dict(Action._meta.get_field('flag').flatchoices)
-    for loc, so in sos.iteritems():
-        items[loc].add(values[so.status])
+    for loc, sol in lsd.iteritems():
+        items[loc] = [values[so] for so in sol]
     # make a list now
     items = [{"type": "SignOff", "label": locale, 'signoff': list(values)}
              for locale, values in items.iteritems()]
     return HttpResponse(simplejson.dumps({'items': items}, indent=2))
+
 
 def pushes_json(request):
     loc = request.GET.get('locale', None)
@@ -535,8 +534,53 @@ def _get_accepted_signoff(locale, ms):
         if item[0] is not 1:
             # if action.flag is not Accepted, skip
             continue
+        if item[0] is 4:
+            return None
         return Signoff.objects.get(pk=item[1])
     return None
+
+def _get_signoff_statuses(ms=None, av=None):
+    '''this function gets the latest signoff flags
+    for a milestone or appversion
+    '''
+    if ms and ms.status==2: # shipped
+        return dict([(so.locale.code, so) for so in ms.signoffs.all()])
+    
+    if ms:
+        aid = ms.appver.id
+    else:
+        aid = av.id
+    
+    cursor = connection.cursor()
+    stmnt = (("SELECT s.locale_id,s.id,a.flag FROM %s as s " +
+              ",%s as a WHERE s.appversion_id=%%s AND a.signoff_id=s.id" +
+              " GROUP BY a.signoff_id ORDER BY a.id DESC")
+             % (Signoff._meta.db_table, Action._meta.db_table))
+    cursor.execute(stmnt, [aid])
+    # filter signoffs if wanted, strip obsolete and just get the ids
+
+    def items():
+        for item in cursor.fetchall():
+            yield item
+
+    locales = Locale.objects.all()
+
+    lf = defaultdict(list)
+    for i in items():
+        lf[i[0]].append(i[2])
+
+    for code,flags in lf.items():
+        for i,flag in enumerate(flags):
+            if flag==1:          # stop on accepted
+              del lf[code][i+1:]
+              break
+            if flag==4:          # stop on obsoleted
+              del lf[code][i:]
+              break
+
+    lcd = dict(Locale.objects.filter(pk__in=lf.keys()).values_list('id','code'))
+    return dict(map(lambda v: (lcd[v[0]],v[1]), lf.iteritems()))
+
 
 def _get_signoffs(ms=None, av=None, status=1):
     '''this function gets the latest accepted signoffs
@@ -567,3 +611,4 @@ def _get_signoffs(ms=None, av=None, status=1):
                                                                 'push__changesets')
     sos = dict((so.locale.code, so) for so in so_q)
     return sos
+
