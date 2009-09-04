@@ -220,8 +220,9 @@ def tree_progress(request, tree):
     q2 = q.filter(srctime__lte=endtime,
                   srctime__gte=starttime).order_by('srctime')
 
+    locales = Locale.objects.filter(run__tree=tree, run__active__isnull=False)
     initial_runs = getRunsBefore(tree, starttime,
-                                 Locale.objects.filter(run__in=q2).distinct())
+                                 locales)
     results = {}
     for loc, r in initial_runs.iteritems():
         results[loc] = (r.missing + r.missingInFiles) == 0
