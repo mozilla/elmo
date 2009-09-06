@@ -70,7 +70,7 @@ class NumberedChange(models.Model):
     change = models.ForeignKey(Change, related_name='numbered_changes')
     sourcestamp = models.ForeignKey(SourceStamp,
                                     related_name='numbered_changes')
-    number = models.IntegerField()
+    number = models.IntegerField(db_index = True)
 
 
 class Property(models.Model):

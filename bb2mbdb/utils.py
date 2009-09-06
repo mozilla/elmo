@@ -41,11 +41,11 @@ def modelForChange(master, change):
 
 def modelForSource(master, source):
     q = SourceStamp.objects.filter(branch=source.branch,
-                                   revision=source.revision)
+                                   revision=source.revision,
+                                   numbered_changes__change__master=master)
     for i, change in enumerate(source.changes):
         q = q.filter(numbered_changes__number=i,
-                     numbered_changes__change__number=change.number,
-                     numbered_changes__change__master=master)
+                     numbered_changes__change__number=change.number)
     try:
         return q[0]
     except IndexError:
