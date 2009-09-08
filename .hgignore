@@ -1,4 +1,5 @@
 # .hgignore - List of filenames hg should ignore
+^l10n_site/local_settings.py
 
 # Filenames that should be ignored wherever they appear
 ~$
