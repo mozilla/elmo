@@ -1,9 +1,10 @@
 {% extends "signoff/base.html" %}
+{% load simile %}
 
 {% block title %}Milestones{% endblock %}
 
 {% block js_include %}
- <script src="http://simile-widgets.googlecode.com/svn/exhibit/trunk/src/webapp/api/exhibit-api.js?autoCreate=false" type="text/javascript"></script>
+{% exhibit autoCreate=false %}
 <link href="{% url signoff.views.stones_data %}" type="application/json" rel="exhibit/data" />
 {% endblock %}
 
