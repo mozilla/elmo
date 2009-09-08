@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% load simile %}
 {% block title_matter %}{{ tree }} l10n stats{% endblock %}
 {% block head_matter %}
 
-<script src="http://api.simile-widgets.org/timeplot/1.1/timeplot-api.js" 
-             type="text/javascript"></script>
+{% timeplot autoCreate=false %}
+
 <script type="text/javascript">
 // json data for events
 data = {
@@ -54,6 +55,7 @@ function onLoad() {
       timeGeometry: timeGeometry,      
       lineColor: "#000000",
       fillColor: "#808080",
+      flat: true,
       showValues: true
     }),
     Timeplot.createPlotInfo({
@@ -63,6 +65,7 @@ function onLoad() {
       timeGeometry: timeGeometry,      
       lineColor: "#ff0000",
       fillColor: "rgba(204, 128, 128, .5)",
+      flat: true,
       showValues: true
     })
   ];
