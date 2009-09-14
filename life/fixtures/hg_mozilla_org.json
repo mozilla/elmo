@@ -16,6 +16,14 @@
     }
   }, 
   {
+    "pk": 3, 
+    "model": "life.forest", 
+    "fields": {
+      "url": "http://hg.mozilla.org/releases/l10n-mozilla-1.9.2/", 
+      "name": "releases/l10n-mozilla-1.9.2"
+    }
+  }, 
+  {
     "pk": 1, 
     "model": "life.repository", 
     "fields": {
@@ -62,6 +70,16 @@
       "url": "http://hg.mozilla.org/dom-inspector/", 
       "locale": null, 
       "name": "dom-inspector", 
+      "forest": null
+    }
+  },
+  {
+    "pk": 6, 
+    "model": "life.repository", 
+    "fields": {
+      "url": "http://hg.mozilla.org/releases/mozilla-1.9.2/", 
+      "locale": null, 
+      "name": "releases/mozilla-1.9.2", 
       "forest": null
     }
   },
@@ -124,6 +142,19 @@
       "files": [], 
       "description": "", 
       "repository": 5, 
+      "user": "", 
+      "branch": 1, 
+      "push": null, 
+      "revision": "0000000000000000000000000000000000000000"
+    }
+  },
+  {
+    "pk": 6, 
+    "model": "life.changeset", 
+    "fields": {
+      "files": [], 
+      "description": "", 
+      "repository": 6, 
       "user": "", 
       "branch": 1, 
       "push": null, 
