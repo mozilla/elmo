@@ -237,6 +237,7 @@ def getPoller(options):
                 locale, create = \
                     Locale.objects.get_or_create(code=name.rsplit('/',1)[1])
                 r = Repository.objects.create(name = name, url = urls[i],
+                                              locale = locale,
                                               forest = forest)
                 repos.append(r)
 
