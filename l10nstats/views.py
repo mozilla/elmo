@@ -216,46 +216,28 @@ def tree_progress(request, tree):
         except Exception:
             pass
 
-    q = Run.objects.filter(tree=tree)
+    locales = Locale.objects.filter(run__tree=tree, run__active__isnull=False)
+    locales = list(locales)
+    q = Run.objects.filter(tree=tree, locale__in=locales)
     q2 = q.filter(srctime__lte=endtime,
                   srctime__gte=starttime).order_by('srctime')
 
-    locales = Locale.objects.filter(run__tree=tree, run__active__isnull=False)
     initial_runs = getRunsBefore(tree, starttime,
                                  locales)
     results = {}
+    datadict = defaultdict(dict)
     for loc, r in initial_runs.iteritems():
-        results[loc] = (r.missing + r.missingInFiles) == 0
-    all_good = sum(results.values())
-    initial_data = {'srctime': starttime,
-                    'good': all_good,
-                    'bad': len(results) - all_good}
-    events = defaultdict(list)
-    def data(_q):
-        for r in _q:
-            good = (r.missing + r.missingInFiles) == 0
-            if r.locale.code in results and results[r.locale.code] != good:
-                events[r.srctime].append((r.locale.code, good))
-            results[r.locale.code] = good
-            all_good = sum(results.values())
-            yield {'srctime': r.srctime,
-                   'good': all_good,
-                   'bad': len(results) - all_good}
-    all_data = [initial_data] + list(data(q2))
-    trail_data = dict(all_data[-1])
-    trail_data['srctime'] = endtime
-    all_data.append(trail_data)
-    eventlist = []
-    for t in sorted(events.keys()):
-        eventlist.append({'srctime': t,
-                          'locales': ', '.join([c for c, g in events[t]])})
+        datadict[starttime][loc] = r.missing + r.missingInFiles
+    for r in q2:
+        datadict[r.srctime][r.locale.code] = r.missing + r.missingInFiles
+    data = [{'srctime': t, 'locales': simplejson.dumps(datadict[t])}
+            for t in sorted(datadict.keys())]
 
     return render_to_response('l10nstats/tree_progress.html',
                               {'tree': tree.code,
                                'startTime': starttime,
                                'endTime': endtime,
-                               'events': eventlist,
-                               'data': all_data})
+                               'data': data})
 
 
 def exhibit_empty_iframe(request):

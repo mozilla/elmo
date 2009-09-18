@@ -6,29 +6,21 @@
 {% timeplot autoCreate=false %}
 
 <script type="text/javascript">
-// json data for events
-data = {
-		dateTimeFormat: "iso8601",
-		events: [
-{% for e in events %}
-{start: "{{e.srctime.isoformat}}Z",
-	title: " ",
-	description: "{{ e.locales }}",
-	durationEvent: false
-},
-{% endfor %}
-]
-}
-</script>
-<script type="text/javascript">
 var timeplot, timeGeometry;
-
+var loc_data = [
+{% for item in data %}
+    {time: SimileAjax.DateTime.parseIso8601DateTime("{{item.srctime.isoformat }}Z"),
+     locales: {{ item.locales|safe }}
+    },{% endfor %}
+  ];
+var locales = [];
+var localesSource, changesSource;
 function onLoad() {
   var theme = Timeline.ClassicTheme.create();
   theme.event.bubble.width = 50;
   theme.event.bubble.height = 50; 
-  var eventSource = new Timeplot.DefaultEventSource();
-  var eventSource2 = new Timeplot.DefaultEventSource();
+  localesSource = new Timeplot.DefaultEventSource();
+  changesSource = new Timeplot.DefaultEventSource();
   timeGeometry = new Timeplot.MagnifyingTimeGeometry({
     gridColor: new Timeplot.Color("#000000"),
     axisLabelsPlacement: "top",
@@ -44,13 +36,13 @@ function onLoad() {
     Timeplot.createPlotInfo({
       id: "checkins",
       timeGeometry: timeGeometry,
-      eventSource: eventSource2,
+      eventSource: changesSource,
       lineColor: "blue",
       theme: theme
     }),
     Timeplot.createPlotInfo({
-      id: "good",
-      dataSource: new Timeplot.ColumnSource(eventSource,2),
+      id: "bad",
+      dataSource: new Timeplot.ColumnSource(localesSource,1),
       valueGeometry: valueGeometry,
       timeGeometry: timeGeometry,      
       lineColor: "#000000",
@@ -59,8 +51,8 @@ function onLoad() {
       showValues: true
     }),
     Timeplot.createPlotInfo({
-      id: "bad",
-      dataSource: new Timeplot.ColumnSource(eventSource,1),
+      id: "good",
+      dataSource: new Timeplot.ColumnSource(localesSource,2),
       valueGeometry: valueGeometry,
       timeGeometry: timeGeometry,      
       lineColor: "#ff0000",
@@ -71,8 +63,42 @@ function onLoad() {
   ];
             
   timeplot = Timeplot.create(document.getElementById("my-timeplot"), plotInfo);
-  eventSource.loadText($('#txtData').text(), ',', String(document.location));
-  eventSource2.loadJSON(data, String(document.location));
+  var i=0;
+  var good = total = 0;
+  var latest = {};
+  for (var loc in loc_data[i].locales) {
+    total += 1;
+    locales.push(loc);
+    latest[loc] = loc_data[i].locales[loc] ? false : true;
+    if (latest[loc]) {
+      good += 1;
+    }
+  }
+  var NE = Timeplot.DefaultEventSource.NumericEvent;
+  var E = Timeline.DefaultEventSource.Event;
+  var locEvents = [new NE(loc_data[i].time,[good, total-good])];
+  var changeEvents = [];
+  for (var i=1; i<loc_data.length; ++i) {
+    var loclist = [];
+    for (var loc in loc_data[i].locales) {
+      isGood = loc_data[i].locales[loc] ? false : true;
+      if (isGood != latest[loc]) {
+        good += isGood ? 1 : -1;
+        loclist.push(loc);
+        latest[loc] = isGood;
+      }
+    }
+    if (loclist.length) {
+      loclist.sort();
+      changeEvents.push(new E({start: loc_data[i].time,
+                              description: loclist.join(" "),
+                               instant: false}));
+    }
+    locEvents.push(new NE(loc_data[i].time,[good, total-good]));
+  }
+  locEvents.push(new NE(SimileAjax.DateTime.parseIso8601DateTime("{{ endTime.isoformat }}Z"), [good, total-good]));
+  localesSource.addMany(locEvents);
+  changesSource.addMany(changeEvents);
   timeplot.repaint();    
 }
 
@@ -97,9 +123,6 @@ $(window).resize(onResize);
 <div class="legend" style="float:right">
   red area: locales with missing strings<br>
   black area: good locales
-</div>
-<div id="txtData" style="display:none">{% for item in data %}
-{{ item.srctime.isoformat }}Z,{{ item.bad }},{{ item.good }}{% endfor %}
 </div>
 <div id="events" style="display:none">
 <data date-time-format="iso8601">
