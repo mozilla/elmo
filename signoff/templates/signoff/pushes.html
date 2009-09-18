@@ -169,8 +169,10 @@ function customizeRow(table, attr, t, push) {
       break
     case 'diff':
       var href = "{% url signoff.views.diff_app %}?tree={{mstone.appver.tree.code}}&locale={{locale.code}}&from={{current.push.tip.shortrev}}&repo={{current.push.tip.repository.name}}&url={{current.push.tip.repository.url}}&to=";
-      t.html('<a target="_blank">Diff</a>');
-      t.children('a').attr('href', href + push.revision);
+      if (push.revision != "{{current.push.tip.shortrev}}") {
+        t.html('<a target="_blank">Diff</a>');
+        t.children('a').attr('href', href + push.revision);
+      }
     default:
       if (push[attr])
         t.text(push[attr])
