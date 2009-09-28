@@ -39,17 +39,40 @@ def modelForChange(master, change):
         dbchange.save()
         return dbchange
 
-def modelForSource(master, source):
+def modelForSource(master, source, maxChanges=4):
+    '''Get a db model for a buildbot SourceStamp.
+
+    master is the db model for the buildbot master, source is the 
+    buildbot SourceStamp object.
+    Optional argument maxChanges limits how many changes are part
+    of the db query. All changes will be checked, this is just
+    to limit the query complexity in the rare case of tons of changes
+    per source stamp. sqlite seems to have a limit of 64, let's be well
+    below that by default.
+    '''
     q = SourceStamp.objects.filter(branch=source.branch,
                                    revision=source.revision,
                                    numbered_changes__change__master=master)
-    for i, change in enumerate(source.changes):
+    for i, change in enumerate(source.changes[:maxChanges]):
         q = q.filter(numbered_changes__number=i,
                      numbered_changes__change__number=change.number)
-    try:
-        return q[0]
-    except IndexError:
-        pass
+
+    if len(source.changes) < maxChanges:
+        # all change numbers are in the query, make sure we don't have more
+        # and just pick the first
+        for ss in q:
+            if ss.changes.count() == len(source.changes):
+                return ss
+    else:
+        # we have more changes than in the query, if we find one
+        # with the right change numbers, pick that
+        for ss in q:
+            cs = ss.numbered_changes.order_by('number')[maxChanges:]
+            cs = list(cs.values_list('change__number', flat=True))
+            if cs == map(lambda change: change.number,
+                         source.changes[maxChanges:]):
+                return ss
+
     # create a new source stamp.
     ss = SourceStamp.objects.create(branch=source.branch,
                                     revision=source.revision)
