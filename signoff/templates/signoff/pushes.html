@@ -44,7 +44,7 @@ $(document).ready(function(){
   })
 
   pushes = jQuery.AjaxArray({
-    'json_url': '{% url signoff.views.pushes_api %}?locale={{locale.code}}&mstone={{mstone.code}}&from=$1&to=$2',
+    'json_url': '{% url signoff.views.pushes_json %}?locale={{locale.code}}&mstone={{mstone.code}}&from=$1&to=$2',
     'length': {{max_pushes}},
   }, [items,{{pushes.1}},{{pushes.2}}])
   
@@ -351,10 +351,14 @@ function onSignoff() {
 
 {% block content %}
 <div class="nav">
-  <a href="{% url signoff.views.dashboard %}?av={{mstone.appver.code}}">« all <i>{{mstone.appver}}</i> locales</a>
+  <a href="{% url signoff.views.dashboard %}?av={{appver.code}}">« all <i>{{appver}}</i> locales</a>
 </div>
 <p class="search">Search: <input type="text" size="10" id="search"></p>
+{% if mstone %}
 <h3>Signoff for {{mstone}} {{locale.code}}
+{% else %}
+<h3>Signoff for {{appver}} {{locale.code}}
+{% endif %}
 {% ifequal mstone.status 0%}(upcoming){% endifequal %}
 {% ifequal mstone.status 1%}(open){% endifequal %}
 {% ifequal mstone.status 2%}(shipped){% endifequal %}</h3>
