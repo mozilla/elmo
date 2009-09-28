@@ -4,7 +4,17 @@
 {% block head_matter %}
 
 {% timeplot autoCreate=false %}
-
+<style type="text/css">
+  .hist_block {width:100%; height:100px; font-size:small; position:relative;}
+  .bar {position: absolute; border: 1px solid black;
+border-bottom-width: 0px;}
+  .cluster_a {background-color: blue;}
+  .cluster_b {background-color: red;}
+  .cluster_c {background-color: green;}
+  .hd {text-align: center; font-size: small;}
+  td:nth-child(even) {background-color: #c0c0c0;}
+</style>
+<script type="text/javascript" src="{% url static path="clusterer.js" %}"></script>
 <script type="text/javascript">
 var timeplot, timeGeometry;
 var loc_data = [
@@ -38,6 +48,8 @@ function onLoad() {
       timeGeometry: timeGeometry,
       eventSource: changesSource,
       lineColor: "blue",
+      bubbleWidth: 250,
+      bubbleHeight: 100,
       theme: theme
     }),
     Timeplot.createPlotInfo({
@@ -66,10 +78,12 @@ function onLoad() {
   var i=0;
   var good = total = 0;
   var latest = {};
+  var _data = {};
   for (var loc in loc_data[i].locales) {
     total += 1;
     locales.push(loc);
     latest[loc] = loc_data[i].locales[loc] ? false : true;
+    _data[loc] = loc_data[i].locales[loc];
     if (latest[loc]) {
       good += 1;
     }
@@ -81,6 +95,7 @@ function onLoad() {
   for (var i=1; i<loc_data.length; ++i) {
     var loclist = [];
     for (var loc in loc_data[i].locales) {
+      _data[loc] = loc_data[i].locales[loc];
       isGood = loc_data[i].locales[loc] ? false : true;
       if (isGood != latest[loc]) {
         good += isGood ? 1 : -1;
@@ -99,7 +114,9 @@ function onLoad() {
   locEvents.push(new NE(SimileAjax.DateTime.parseIso8601DateTime("{{ endTime.isoformat }}Z"), [good, total-good]));
   localesSource.addMany(locEvents);
   changesSource.addMany(changeEvents);
-  timeplot.repaint();    
+  timeplot.repaint();
+  paintHistogram(_data);
+  $('#my-timeplot').click(onClickPlot).dblclick(onDblClickPlot);
 }
 
 var resizeTimerID = null;
@@ -112,6 +129,137 @@ function onResize() {
     }
 }
 
+function onDblClickPlot(evt) {
+  var target = evt.currentTarget;
+  var elem = $(target).find('.timeplot-canvas')[0];
+  var offsetX = elem.offsetLeft;
+  while (elem.offsetParent) {
+    elem = elem.offsetParent;
+    if (elem.offsetLeft) {
+      offsetX += elem.offsetLeft;
+    }
+  }
+  var t = timeGeometry.fromScreen(evt.pageX - offsetX);
+  var time_window = timeGeometry.getPeriod()/8;
+  var starttime = t - time_window;
+  var endtime = t + time_window;
+  var href = document.location;
+  var q = "?starttime=" + Math.floor(starttime/1000)
+  q += "&endtime=" + Math.floor(endtime/1000);
+  document.location.search = q;
+}
+
+function onClickPlot(evt) {
+  var target = evt.currentTarget;
+  if (evt.originalTarget.nodeName.toLowerCase() == 'div') return; // only show timeplot stuff
+  var elem = $(target).find('.timeplot-canvas')[0];
+  var offsetX = elem.offsetLeft;
+  while (elem.offsetParent) {
+    elem = elem.offsetParent;
+    if (elem.offsetLeft) {
+      offsetX += elem.offsetLeft;
+    }
+  }
+  var t = new Date(timeGeometry.fromScreen(evt.pageX - offsetX));
+  var d = {};
+  for (var i = 0; i < loc_data.length && loc_data[i].time < t; ++i) {
+    for (var loc in loc_data[i].locales) {
+      d[loc] = loc_data[i].locales[loc];
+    }
+  }
+  paintHistogram(d);
+};
+
+function paintHistogram(d) {
+  var data=[];
+  for (var loc in d) {
+    data.push(d[loc]);
+  };
+  data.sort();
+  var smooth = Math.sqrt;
+  var clusterer = new Clusterer(data, smooth);
+  var ranges = clusterer.get_ranges(4); // TODO find something better
+  var hists = new Array(ranges.length);
+  for (var i=0; i < hists.length; ++i) hists[i] = [];
+  var maxcount = 1;
+  for (var loc in d) {
+    var val = d[loc];
+    for (i=0; i < ranges.length && val > ranges[i].max; ++i) {};
+    if (hists[i][val]) {
+      hists[i][val].push(loc);
+      if (hists[i][val].length > maxcount) maxcount = hists[i][val].length;
+    } else {
+      hists[i][val] = [loc];
+    }
+  }
+  // histogram
+  var colors = ['cluster_a', 'cluster_b', 'cluster_c'];
+  var hist_div = document.getElementById('histogram');
+  hist_div.innerHTML = '<table cellpadding="1"><tr class="hg"><td  class="axis"><div class="hist_block"></div></td></tr><tr class="hd"><td></td></tr></table>';
+  var graphs_row = hist_div.children[0].rows[0];
+  var descs_row = hist_div.children[0].rows[1];
+  var axis_div = $(graphs_row.children[0].children[0]);
+  var atitle = $('<span>'+maxcount+'</span>');
+  atitle.css('position','absolute').css('top','0px');
+  axis_div.append(atitle);
+  axis_div.css('width', atitle.css('width'));
+  axis_div.css('padding-left', '1px').css('padding-right', '1px');
+  // create display of histogram
+  var jmin = 0;
+  var barwidth = 10;
+  var chart_height = 100; // XXX get from computed style of hist_div
+  var display_f = function(_v){return Math.pow(_v, 3/4);};
+  var scale = chart_height*1.0/display_f(maxcount);
+  for (var i in hists) {
+    var hist = hists[i];
+    var range = ranges[i];
+    var jmin = undefined;
+    var td = $('<td></td>');
+    $(descs_row).append(td);
+    if (range.min == range.max) {
+      td.append(range.min);
+    } else {
+      td.append(range.min + " - " + range.max);
+    }
+    var td = $('<td><div class="hist_block"></div></td>');
+    td.attr('title', range.count);
+    hist_div = td.children()[0];
+    var color_class = colors[i % colors.length];
+    $(graphs_row).append(td);
+    var values = [];
+    $.each(hist, function(i, j){if (j !== undefined) values.push(i);});
+    values.sort(function(a, b){return a-b});
+    var _j = undefined;
+    var _left = 0;
+    for (var k in values) {
+      j = values[k];
+      if (jmin === undefined) {
+        jmin = j;
+      }
+      var v = hist[j];
+      v.sort();
+      var height = display_f(v.length) * scale;
+      var top = chart_height - height;
+      var width = barwidth;
+      var d = document.createElement('div');
+      hist_div.appendChild(d);
+      d.style.top = top + "px";
+      d.style.width = width-2 + "px";
+      d.style.height = height-1 + "px";
+      if (_j !== undefined) {
+        _left += (smooth(j-1) - smooth(_j))*barwidth;
+      }
+      _j = j;
+      d.style.left = Number(_left).toFixed(1) + "px";
+      _left += barwidth;
+      d.setAttribute("class", "bar " + color_class);
+      d.setAttribute("title", j + ": " + v.join(" ") + " (" + v.length
+  + ")");
+    }
+    hist_div.style.width =  Number(_left).toFixed(1) + "px";
+  }
+};
+
 $(document).ready(onLoad);
 $(window).resize(onResize);
 </script>
@@ -119,13 +267,11 @@ $(window).resize(onResize);
 {% block content %}
 <h1>Statistics for {{ tree }}</h1>
 <p>Green locales vs red over time</p>
-<div id="my-timeplot" style="height: 400px;"></div>
+<div id="my-timeplot" style="height: 350px;"></div>
 <div class="legend" style="float:right">
   red area: locales with missing strings<br>
   black area: good locales
 </div>
-<div id="events" style="display:none">
-<data date-time-format="iso8601">
-</data>
+<div id="histogram" style="height:100px">
 </div>
 {% endblock %}
