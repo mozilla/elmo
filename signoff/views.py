@@ -16,8 +16,8 @@ from ConfigParser import ConfigParser
 import datetime
 from difflib import SequenceMatcher
 
-from Mozilla.Parser import getParser, Junk
-from Mozilla.CompareLocales import AddRemove, Tree
+#from Mozilla.Parser import getParser, Junk
+#from Mozilla.CompareLocales import AddRemove, Tree
 
 
 def index(request):
@@ -45,13 +45,18 @@ def pushes(request):
         locale = Locale.objects.get(code=request.GET['locale'])
     if request.GET.has_key('ms'):
         mstone = Milestone.objects.get(code=request.GET['ms'])
+        appver = mstone.appver
     if request.GET.has_key('av'):
-        mstone = Milestone.objects.filter(appver__code=request.GET['av']).order_by('-pk')[0]
-    enabled = mstone.status<2
+        appver = AppVersion.objects.get(code=request.GET['av'])
+        try:
+            mstone = Milestone.objects.filter(appver__code=request.GET['av']).order_by('-pk')[0]
+        except:
+            mstone = None
+    enabled = mstone is None or mstone.status<2
     if enabled:
-        current = _get_current_signoff(locale, mstone)
+        current = _get_current_signoff(locale, ms=mstone, av=appver)
     else:
-        current = _get_accepted_signoff(locale, mstone)
+        current = _get_accepted_signoff(locale, ms=mstone, av=appver)
     user = request.user
     anonymous = user.is_anonymous()
     staff = user.is_staff
@@ -60,11 +65,11 @@ def pushes(request):
         if not enabled: # ... but we're not logged in. Panic!
             request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s</span> could not be added - <strong>Milestone is not open for edits</strong>' % (mstone, locale)
         elif anonymous: # ... but we're not logged in. Panic!
-            request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s</span> could not be added - <strong>User not logged in</strong>' % (mstone, locale)
+            request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s</span> could not be added - <strong>User not logged in</strong>' % (appver, locale)
         else:
             if request.POST.has_key('accepted'): # we're in AcceptedForm mode
                 if not staff: # ... but we have no privileges for that!
-                    request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s</span> could not be accepted/rejected - <strong>User has not enough privileges</strong>' % (mstone, locale)
+                    request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s</span> could not be accepted/rejected - <strong>User has not enough privileges</strong>' % (mstone or appver, locale)
                 else:
                     # hack around AcceptForm not taking strings, fixed in
                     # django 1.1
@@ -77,28 +82,31 @@ def pushes(request):
                         else:
                             request.session['signoff_info'] = '<span style="font-style: italic">Accepted'
                     else:
-                        request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> could not be added' % (mstone, locale, user.username)
+                        request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> could not be added' % (mstone or appver, locale, user.username)
             else:
-                instance = Signoff(appversion=mstone.appver, locale=locale, author=user)
+                instance = Signoff(appversion=appver, locale=locale, author=user)
                 form = SignoffForm(request.POST, instance=instance)
                 if form.is_valid():
                     form.save()
                     
                     #add a snapshot of the current test results
                     pushobj = Push.objects.get(id=request.POST['push'])
-                    lastrun = _get_compare_locales_result(pushobj.tip, mstone.appver.tree)
+                    lastrun = _get_compare_locales_result(pushobj.tip, appver.tree)
                     if lastrun:
                         Snapshot.objects.create(signoff_id=form.instance.id, test=Run, tid=lastrun.id)
                     Action.objects.create(signoff_id=form.instance.id, flag=0, author=user)
 
-                    request.session['signoff_info'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone, locale, user.username)
+                    request.session['signoff_info'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone or appver, locale, user.username)
                 else:
-                    request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> could not be added' % (mstone, locale, user.username)
-        return HttpResponseRedirect('%s?locale=%s&ms=%s&offset=%s' % (reverse('signoff.views.pushes'), locale.code ,mstone.code, offset_id))
+                    request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> could not be added' % (mstone or appver, locale, user.username)
+        if request.GET.has_key('av'):
+            return HttpResponseRedirect('%s?locale=%s&av=%s&offset=%s' % (reverse('signoff.views.pushes'), locale.code ,appver.code, offset_id))
+        else:
+            return HttpResponseRedirect('%s?locale=%s&ms=%s&offset=%s' % (reverse('signoff.views.pushes'), locale.code ,mstone.code, offset_id))
 
     form = SignoffForm()
     
-    forest = mstone.appver.tree.l10n
+    forest = appver.tree.l10n
     repo_url = '%s%s/' % (forest.url, locale.code)
     notes = _get_notes(request.session)
     accepted = _get_accepted_signoff(locale, mstone)
@@ -115,6 +123,7 @@ def pushes(request):
         offset = 0
     return render_to_response('signoff/pushes.html', {
         'mstone': mstone,
+        'appver': appver,
         'locale': locale,
         'form': form,
         'notes': notes,
@@ -415,8 +424,11 @@ def ship_mstone(request):
 #  Internal functions
 #
 
-def _get_current_signoff(locale, mstone):
-    sos = Signoff.objects.filter(locale=locale, appversion=mstone.appver)
+def _get_current_signoff(locale, ms=None, av=None):
+    if av:
+        sos = Signoff.objects.filter(locale=locale, appversion=av)
+    else:
+        sos = Signoff.objects.filter(locale=locale, appversion=ms.appver)
     try:
         return sos.order_by('-pk')[0]
     except IndexError:
@@ -515,12 +527,12 @@ def _get_push_offset(id, shift=0):
         return 0
     return num+shift
 
-def _get_accepted_signoff(locale, ms):
+def _get_accepted_signoff(locale, ms=None, av=None):
     '''this function gets the latest accepted signoff
     for a milestone/locale
     '''
 
-    if ms.status==2: # shipped
+    if av is None or ms.status==2: # shipped
         try:
             return ms.signoffs.get(locale=locale)
         except:
@@ -529,7 +541,8 @@ def _get_accepted_signoff(locale, ms):
     cursor = connection.cursor()
     cursor.execute("SELECT a.flag,s.id FROM signoff_action \
                     AS a,signoff_signoff AS s WHERE a.signoff_id=s.id AND \
-                    s.appversion_id=%s AND s.locale_id=%s GROUP BY a.signoff_id ORDER BY a.id DESC;", [ms.appver.id, locale.id])
+                    s.appversion_id=%s AND s.locale_id=%s GROUP BY a.signoff_id ORDER BY a.id DESC;", [ms.appver.id if av is None else av.id,
+                                                                                                       locale.id])
     items = cursor.fetchall()
     for item in items:
         if item[0] is not 1:
