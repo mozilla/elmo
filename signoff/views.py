@@ -17,7 +17,7 @@ import datetime
 from difflib import SequenceMatcher
 
 from Mozilla.Parser import getParser, Junk
-from Mozilla.CompareLocales import AddRemove, Tree
+from Mozilla.CompareLocales import AddRemove, DataTree
 
 
 def index(request):
@@ -149,7 +149,7 @@ def diff_app(request):
     ctx2 = repo.changectx(request.GET['to'])
     match = None # maybe get something from l10n.ini and cmdutil
     changed, added, removed = repo.status(ctx1, ctx2, match=match)[:3]
-    diffs = Tree(dict)
+    diffs = DataTree(dict)
     for path in changed:
         lines = []
         try:
