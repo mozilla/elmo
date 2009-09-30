@@ -21,7 +21,8 @@ var pushes = Array()
 var current = {{ current_js|safe}}
 var slider = null
 var curpos = null
-var msstatus = {{ mstone.status }}
+var msstatus = {% if mstone %}{{ mstone.status }}{% else %}null{% endif %}
+
 
 $(document).ready(function(){
   slider = Slider()
