@@ -17,7 +17,7 @@ import datetime
 from difflib import SequenceMatcher
 
 from Mozilla.Parser import getParser, Junk
-from Mozilla.CompareLocales import AddRemove, DataTree
+from Mozilla.CompareLocales import AddRemove, Tree as DataTree
 
 
 def index(request):
