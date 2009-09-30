@@ -1,6 +1,6 @@
 {% extends "signoff/base.html" %}
 
-{% block title %}Signoff for {{mstone}} {{locale.code}}{% endblock %}
+{% block title %}Signoff for {% if mstone %}{{mstone}}{% else %}{{appver}}{% endif %} {{locale.code}}{% endblock %}
 
 {% block js_include %}
   <script type="text/javascript" src="{% url static path="jquery.js" %}"></script>
