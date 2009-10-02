@@ -2,6 +2,10 @@
 {% load simile %}
 {% block title_matter %}{{ tree }} l10n stats{% endblock %}
 {% block head_matter %}
+<script type="application/javascript"
+src="{% url static path="jquery.js" %}"></script>
+<script type="application/javascript" src="{% url static path="jquery.ui/ui/ui.core.js" %}"></script>
+<script type="application/javascript" src="{% url static path="jquery.ui/ui/ui.slider.js" %}"></script>
 
 {% timeplot autoCreate=false %}
 <style type="text/css">
@@ -12,8 +16,9 @@ border-bottom-width: 0px;}
   .cluster_b {background-color: red;}
   .cluster_c {background-color: green;}
   .hd {text-align: center; font-size: small;}
-  td:nth-child(even) {background-color: #c0c0c0;}
+  td:nth-child(even) {background-color: #E6E6E6;}
 </style>
+<link rel="stylesheet" href="{% url static path="jquery.ui/themes/base/ui.all.css" %}" type="text/css" >
 <script type="text/javascript" src="{% url static path="clusterer.js" %}"></script>
 <script type="text/javascript">
 var timeplot, timeGeometry;
@@ -193,7 +198,6 @@ function paintHistogram(d) {
     }
   }
   // histogram
-  var colors = ['cluster_a', 'cluster_b', 'cluster_c'];
   var hist_div = document.getElementById('histogram');
   hist_div.innerHTML = '<table cellpadding="1"><tr class="hg"><td  class="axis"><div class="hist_block"></div></td></tr><tr class="hd"><td></td></tr></table>';
   var graphs_row = hist_div.children[0].rows[0];
@@ -224,7 +228,6 @@ function paintHistogram(d) {
     var td = $('<td><div class="hist_block"></div></td>');
     td.attr('title', range.count);
     hist_div = td.children()[0];
-    var color_class = colors[i % colors.length];
     $(graphs_row).append(td);
     var values = [];
     $.each(hist, function(i, j){if (j !== undefined) values.push(i);});
@@ -252,7 +255,7 @@ function paintHistogram(d) {
       _j = j;
       d.style.left = Number(_left).toFixed(1) + "px";
       _left += barwidth;
-      d.setAttribute("class", "bar " + color_class);
+      d.setAttribute("class", "bar ui-widget-header");
       d.setAttribute("title", j + ": " + v.join(" ") + " (" + v.length
   + ")");
     }
@@ -262,12 +265,25 @@ function paintHistogram(d) {
 
 $(document).ready(onLoad);
 $(window).resize(onResize);
+$(function() {
+  $("#time-slider").slider({
+    range: true,
+    min: {{ allStart|date:"U" }},
+    max: {{ allEnd|date:"U" }},
+    values: [{{ startTime|date:"U" }}, {{ endTime|date:"U" }}],
+    slide: function(event, ui) {
+      1+1;
+    }
+  });
+});
+
 </script>
 {% endblock %}
 {% block content %}
 <h1>Statistics for {{ tree }}</h1>
 <p>Green locales vs red over time</p>
 <div id="my-timeplot" style="height: 350px;"></div>
+<div id="time-slider"></div>
 <div class="legend" style="float:right">
   red area: locales with missing strings<br>
   black area: good locales

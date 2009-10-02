@@ -202,23 +202,40 @@ def tree_progress(request, tree):
     except Tree.DoesNotExist:
         return HttpResponseNotFound("sorry, gimme tree")
 
+    locales = Locale.objects.filter(run__tree=tree, run__active__isnull=False)
+    locales = list(locales)
+    if not locales:
+        return HttpResponse("no statistics for %s" % str(tree))
+    q = Run.objects.filter(tree=tree)
+    allStart = q.order_by('srctime').values_list('srctime', flat=True)[0]
+    allEnd = q.order_by('-srctime').values_list('srctime', flat=True)[0]
+    displayEnd = allEnd + timedelta(.5)
+
     endtime = datetime.utcnow().replace(microsecond=0)
     starttime = endtime - timedelta(14)
+
+    if starttime > allEnd:
+        # by default, we'd just see a flat graph, show half a day more 
+        # than allend
+        endtime = displayEnd
+        starttime = endtime - timedelta(14)
 
     if 'starttime' in request.GET:
         try:
             starttime = datetime.utcfromtimestamp(int(request.GET['starttime']))
         except Exception:
             pass
+        if starttime < allStart:
+            # make sure that even though there nothing to see, 
+            # the slider shows all times
+            allStart = starttime
     if 'endtime' in request.GET:
         try:
             endtime = datetime.utcfromtimestamp(int(request.GET['endtime']))
         except Exception:
             pass
 
-    locales = Locale.objects.filter(run__tree=tree, run__active__isnull=False)
-    locales = list(locales)
-    q = Run.objects.filter(tree=tree, locale__in=locales)
+    q = q.filter(locale__in=locales)
     q2 = q.filter(srctime__lte=endtime,
                   srctime__gte=starttime).order_by('srctime')
 
@@ -237,6 +254,8 @@ def tree_progress(request, tree):
                               {'tree': tree.code,
                                'startTime': starttime,
                                'endTime': endtime,
+                               'allStart': allStart,
+                               'allEnd': displayEnd,
                                'data': data})
 
 
