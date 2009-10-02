@@ -1,7 +1,7 @@
 /*
- * jQuery UI Progressbar 1.6rc6
+ * jQuery UI Progressbar 1.7.2
  *
- * Copyright (c) 2009 AUTHORS.txt (http://ui.jquery.com/about)
+ * Copyright (c) 2009 AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT (MIT-LICENSE.txt)
  * and GPL (GPL-LICENSE.txt) licenses.
  *
@@ -15,9 +15,6 @@
 $.widget("ui.progressbar", {
 
 	_init: function() {
-
-		var self = this,
-			options = this.options;
 
 		this.element
 			.addClass("ui-progressbar"
@@ -58,12 +55,16 @@ $.widget("ui.progressbar", {
 	},
 
 	value: function(newValue) {
-		arguments.length && this._setData("value", newValue);
-
-		return this._value();
+		if (newValue === undefined) {
+			return this._value();
+		}
+		
+		this._setData('value', newValue);
+		return this;
 	},
 
-	_setData: function(key, value){
+	_setData: function(key, value) {
+
 		switch (key) {
 			case 'value':
 				this.options.value = value;
@@ -73,25 +74,26 @@ $.widget("ui.progressbar", {
 		}
 
 		$.widget.prototype._setData.apply(this, arguments);
+
 	},
 
 	_value: function() {
+
 		var val = this.options.value;
 		if (val < this._valueMin()) val = this._valueMin();
 		if (val > this._valueMax()) val = this._valueMax();
 
 		return val;
+
 	},
 
 	_valueMin: function() {
 		var valueMin = 0;
-
 		return valueMin;
 	},
 
 	_valueMax: function() {
 		var valueMax = 100;
-
 		return valueMax;
 	},
 
@@ -105,7 +107,7 @@ $.widget("ui.progressbar", {
 });
 
 $.extend($.ui.progressbar, {
-	version: "1.6rc6",
+	version: "1.7.2",
 	defaults: {
 		value: 0
 	}

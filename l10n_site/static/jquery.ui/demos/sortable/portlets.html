@@ -3,13 +3,13 @@
 <head>
 	<title>jQuery UI Sortable - Portlets</title>
 	<link type="text/css" href="../../themes/base/ui.all.css" rel="stylesheet" />
-	<script type="text/javascript" src="../../jquery-1.3.1.js"></script>
+	<script type="text/javascript" src="../../jquery-1.3.2.js"></script>
 	<script type="text/javascript" src="../../ui/ui.core.js"></script>
 	<script type="text/javascript" src="../../ui/ui.sortable.js"></script>
 	<link type="text/css" href="../demos.css" rel="stylesheet" />
 	<style type="text/css">
 	.column { width: 170px; float: left; padding-bottom: 100px; }
-	.portlet { margin: 0 1em 1em 1em; }
+	.portlet { margin: 0 1em 1em 0; }
 	.portlet-header { margin: 0.3em; padding-bottom: 4px; padding-left: 0.2em; }
 	.portlet-header .ui-icon { float: right; }
 	.portlet-content { padding: 0.4em; }
@@ -19,7 +19,7 @@
 	<script type="text/javascript">
 	$(function() {
 		$(".column").sortable({
-			connectWith: ['.column']
+			connectWith: '.column'
 		});
 
 		$(".portlet").addClass("ui-widget ui-widget-content ui-helper-clearfix ui-corner-all")
@@ -33,6 +33,8 @@
 			$(this).toggleClass("ui-icon-minusthick");
 			$(this).parents(".portlet:first").find(".portlet-content").toggle();
 		});
+
+		$(".column").disableSelection();
 	});
 	</script>
 </head>

@@ -1,7 +1,7 @@
 /*
- * jQuery UI Selectable 1.6rc6
+ * jQuery UI Selectable 1.7.2
  *
- * Copyright (c) 2009 AUTHORS.txt (http://ui.jquery.com/about)
+ * Copyright (c) 2009 AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT (MIT-LICENSE.txt)
  * and GPL (GPL-LICENSE.txt) licenses.
  *
@@ -75,7 +75,7 @@ $.widget("ui.selectable", $.extend({}, $.ui.mouse, {
 
 		this._trigger("start", event);
 
-		$('body').append(this.helper);
+		$(options.appendTo).append(this.helper);
 		// position helper (lasso)
 		this.helper.css({
 			"z-index": 100,
@@ -242,7 +242,7 @@ $.widget("ui.selectable", $.extend({}, $.ui.mouse, {
 }));
 
 $.extend($.ui.selectable, {
-	version: "1.6rc6",
+	version: "1.7.2",
 	defaults: {
 		appendTo: 'body',
 		autoRefresh: true,

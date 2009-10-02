@@ -1,7 +1,7 @@
 /*
- * jQuery UI Effects Pulsate 1.6rc6
+ * jQuery UI Effects Pulsate 1.7.2
  *
- * Copyright (c) 2009 AUTHORS.txt (http://ui.jquery.com/about)
+ * Copyright (c) 2009 AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT (MIT-LICENSE.txt)
  * and GPL (GPL-LICENSE.txt) licenses.
  *

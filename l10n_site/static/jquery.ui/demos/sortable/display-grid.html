@@ -3,17 +3,18 @@
 <head>
 	<title>jQuery UI Sortable - Display as grid</title>
 	<link type="text/css" href="../../themes/base/ui.all.css" rel="stylesheet" />
-	<script type="text/javascript" src="../../jquery-1.3.1.js"></script>
+	<script type="text/javascript" src="../../jquery-1.3.2.js"></script>
 	<script type="text/javascript" src="../../ui/ui.core.js"></script>
 	<script type="text/javascript" src="../../ui/ui.sortable.js"></script>
 	<link type="text/css" href="../demos.css" rel="stylesheet" />
 	<style type="text/css">
 	#sortable { list-style-type: none; margin: 0; padding: 0; }
-	#sortable li { margin: 3px; padding: 1px; float: left; width: 100px; height: 90px; font-size: 4em; text-align: center; }
+	#sortable li { margin: 3px 3px 3px 0; padding: 1px; float: left; width: 100px; height: 90px; font-size: 4em; text-align: center; }
 	</style>
 	<script type="text/javascript">
 	$(function() {
 		$("#sortable").sortable();
+		$("#sortable").disableSelection();
 	});
 	</script>
 </head>
