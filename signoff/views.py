@@ -532,7 +532,7 @@ def _get_accepted_signoff(locale, ms=None, av=None):
     for a milestone/locale
     '''
 
-    if av is None or ms.status==2: # shipped
+    if ms.status==2: # shipped
         try:
             return ms.signoffs.get(locale=locale)
         except:
