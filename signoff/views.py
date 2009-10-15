@@ -109,7 +109,7 @@ def pushes(request):
     forest = appver.tree.l10n
     repo_url = '%s%s/' % (forest.url, locale.code)
     notes = _get_notes(request.session)
-    accepted = _get_accepted_signoff(locale, mstone)
+    accepted = _get_accepted_signoff(locale, ms=mstone, av=appver)
 
     max_pushes = _get_total_pushes(locale, mstone)
     if max_pushes > 50:
@@ -532,7 +532,7 @@ def _get_accepted_signoff(locale, ms=None, av=None):
     for a milestone/locale
     '''
 
-    if ms.status==2: # shipped
+    if ms and ms.status==2: # shipped
         try:
             return ms.signoffs.get(locale=locale)
         except:
@@ -541,7 +541,7 @@ def _get_accepted_signoff(locale, ms=None, av=None):
     cursor = connection.cursor()
     cursor.execute("SELECT a.flag,s.id FROM signoff_action \
                     AS a,signoff_signoff AS s WHERE a.signoff_id=s.id AND \
-                    s.appversion_id=%s AND s.locale_id=%s GROUP BY a.signoff_id ORDER BY a.id DESC;", [ms.appver.id if av is None else av.id,
+                    s.appversion_id=%s AND s.locale_id=%s GROUP BY a.signoff_id ORDER BY a.id DESC;", [ms.appver.id if ms else av.id,
                                                                                                        locale.id])
     items = cursor.fetchall()
     for item in items:
