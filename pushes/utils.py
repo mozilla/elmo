@@ -15,8 +15,6 @@ from mercurial.commands import pull, update, clone
 
 from pushes.models import Repository, Push, Changeset, Branch, File
 from django.conf import settings
-from django.db import connection
-from django.db import transaction
 
 def getURL(repo, limit):
     lkp = repo.last_known_push()
@@ -33,7 +31,6 @@ class PushJS(object):
     def __str__(self):
         return '<Push: %d>' % self.id
 
-@transaction.commit_manually
 def handlePushes(repo_id, submits, do_update=True):
     if not submits:
         return
@@ -69,13 +66,14 @@ def handlePushes(repo_id, submits, do_update=True):
             if do_update:
                 update(ui, hgrepo)
     for data in submits:
-        changesets = []
+        p = Push(push_id = data.id,
+                 user = data.user,
+                 push_date = datetime.utcfromtimestamp(data.date))
+        p.save()
         for revision in data.changesets:
-            cs, created = Changeset.objects.get_or_create(repository = repo,
-                                                          revision = revision)
-            changesets.append(cs)
-            if not created:
-                continue
+            cs = Changeset(push = p,
+                           repository = repo,
+                           revision = revision)
             try:
                 ctx = hgrepo.changectx(cs.revision)
                 cs.user = ctx.user().decode('utf-8', 'replace')
@@ -92,31 +90,7 @@ def handlePushes(repo_id, submits, do_update=True):
                                                 repository=repo)
                 cs.parents.add(*list(p_cs))
                 cs.save()
-                spacefiles = filter(lambda p: p.endswith(' '), ctx.files())
-                goodfiles = filter(lambda p: not p.endswith(' '), ctx.files())
-                if goodfiles:
-                    # chunk up the work on files,
-                    # mysql doesn't like them all at once
-                    chunk_count = len(goodfiles) / 1000 + 1
-                    chunk_size = len(goodfiles) / chunk_count
-                    if len(goodfiles) % chunk_size:
-                        chunk_size += 1
-                    for i in xrange(chunk_count):
-                        good_chunk = goodfiles[i*chunk_size:(i+1)*chunk_size]
-                        existingfiles = File.objects.filter(path__in=good_chunk)
-                        existingpaths = existingfiles.values_list('path',
-                                                                  flat=True)
-                        existingpaths = dict.fromkeys(existingpaths)
-                        missingpaths = filter(lambda p: p not in existingpaths,
-                                              good_chunk)
-                        cursor = connection.cursor()
-                        rv = cursor.executemany('INSERT INTO %s (path) VALUES (%%s)' % 
-                                                File._meta.db_table,
-                                                map(lambda p: (p,), missingpaths))
-                        good_ids = File.objects.filter(path__in=good_chunk)
-                        cs.files.add(*list(good_ids.values_list('pk',
-                                                                flat=True)))
-                for path in spacefiles:
+                for path in ctx.files():
                     # hack around mysql ignoring trailing ' ', and some
                     # of our localizers checking in files with trailing ' '.
                     f = filter(lambda fo: fo.path == path,
@@ -127,17 +101,8 @@ def handlePushes(repo_id, submits, do_update=True):
                         f = File.objects.create(path = path)
                         cs.files.add(f)
                         f.save()
-                cs.save()
-                transaction.commit()
             except Exception, e:
-                transaction.rollback()
-                raise
                 print repo.name, e
-        p = Push.objects.create(push_id = data.id, user = data.user,
-                                push_date =
-                                datetime.utcfromtimestamp(data.date))
-        p.changesets = changesets
-        transaction.commit()
+            cs.save()
     repo.save()
-    transaction.commit()
     return len(submits)

@@ -12,9 +12,7 @@ urlpatterns = patterns('',
                         include('tinder.urls')),
                        (r'^pushes/(?:(?P<repo_name>.*)/)?$',
                         'pushes.views.pushlog', {}, 'pushlog'),
-                       (r'^accounts/', include('accounts.urls')),
-                       (r'^signoff/', include('signoff.urls')),
-                       (r'^l10nstats/', include('l10nstats.urls')),
+                       (r'^dashboard/', include('l10nstats.urls')),
 
 
 
