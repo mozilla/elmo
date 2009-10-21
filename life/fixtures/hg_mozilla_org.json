@@ -29,6 +29,9 @@
     "fields": {
       "url": "http://hg.mozilla.org/mozilla-central/", 
       "locale": null, 
+      "changesets": [
+        1
+      ], 
       "name": "mozilla-central", 
       "forest": null
     }
@@ -39,6 +42,9 @@
     "fields": {
       "url": "http://hg.mozilla.org/comm-central/", 
       "locale": null, 
+      "changesets": [
+        1
+      ], 
       "name": "comm-central", 
       "forest": null
     }
@@ -49,6 +55,9 @@
     "fields": {
       "url": "http://hg.mozilla.org/releases/mozilla-1.9.1/", 
       "locale": null, 
+      "changesets": [
+        1
+      ], 
       "name": "releases/mozilla-1.9.1", 
       "forest": null
     }
@@ -69,6 +78,9 @@
     "fields": {
       "url": "http://hg.mozilla.org/dom-inspector/", 
       "locale": null, 
+      "changesets": [
+        1
+      ], 
       "name": "dom-inspector", 
       "forest": null
     }
@@ -79,87 +91,11 @@
     "fields": {
       "url": "http://hg.mozilla.org/releases/mozilla-1.9.2/", 
       "locale": null, 
+      "changesets": [
+        1
+      ], 
       "name": "releases/mozilla-1.9.2", 
       "forest": null
     }
-  },
-  {
-    "pk": 1, 
-    "model": "life.changeset", 
-    "fields": {
-      "files": [], 
-      "description": "", 
-      "repository": 1, 
-      "user": "", 
-      "branch": 1, 
-      "push": null, 
-      "revision": "0000000000000000000000000000000000000000"
-    }
-  },
-  {
-    "pk": 2, 
-    "model": "life.changeset", 
-    "fields": {
-      "files": [], 
-      "description": "", 
-      "repository": 2, 
-      "user": "", 
-      "branch": 1, 
-      "push": null, 
-      "revision": "0000000000000000000000000000000000000000"
-    }
-  },
-  {
-    "pk": 3, 
-    "model": "life.changeset", 
-    "fields": {
-      "files": [], 
-      "description": "", 
-      "repository": 3, 
-      "user": "", 
-      "branch": 1, 
-      "push": null, 
-      "revision": "0000000000000000000000000000000000000000"
-    }
-  },
-  {
-    "pk": 4, 
-    "model": "life.changeset", 
-    "fields": {
-      "files": [], 
-      "description": "", 
-      "repository": 4, 
-      "user": "", 
-      "branch": 1, 
-      "push": null, 
-      "revision": "0000000000000000000000000000000000000000"
-    }
-  },
-  {
-    "pk": 5, 
-    "model": "life.changeset", 
-    "fields": {
-      "files": [], 
-      "description": "", 
-      "repository": 5, 
-      "user": "", 
-      "branch": 1, 
-      "push": null, 
-      "revision": "0000000000000000000000000000000000000000"
-    }
-  },
-  {
-    "pk": 6, 
-    "model": "life.changeset", 
-    "fields": {
-      "files": [], 
-      "description": "", 
-      "repository": 6, 
-      "user": "", 
-      "branch": 1, 
-      "push": null, 
-      "revision": "0000000000000000000000000000000000000000"
-    }
   }
-
 ]

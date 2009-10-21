@@ -13,21 +13,11 @@
     "fields": {
       "url": "http://localhost:8001/mozilla/", 
       "locale": null, 
+      "changesets": [
+        1
+      ], 
       "name": "mozilla", 
       "forest": null
-    }
-  },
-  {
-    "pk": 1, 
-    "model": "life.changeset", 
-    "fields": {
-      "files": [], 
-      "description": "", 
-      "repository": 1, 
-      "user": "", 
-      "branch": 1, 
-      "push": null, 
-      "revision": "0000000000000000000000000000000000000000"
     }
   }
 ]

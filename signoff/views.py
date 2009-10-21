@@ -131,7 +131,7 @@ def pushes(request):
         'accepted': accepted,
         'user': user,
         'user_type': 0 if user.is_anonymous() else 2 if user.is_staff else 1,
-        'pushes': (simplejson.dumps(_get_api_items(locale, mstone, current, offset=offset+20)), 0, min(max_pushes,offset+10)),
+        'pushes': (simplejson.dumps(_get_api_items(locale, appver, current, offset=offset+20)), 0, min(max_pushes,offset+10)),
         'max_pushes': max_pushes,
         'offset': offset,
         'current_js': simplejson.dumps(_get_current_js(current)),
@@ -293,20 +293,24 @@ def signoff_json(request):
 def pushes_json(request):
     loc = request.GET.get('locale', None)
     ms = request.GET.get('mstone', None)
+    appver = request.GET.get('av', None)
     start = int(request.GET.get('from', 0))
     to = int(request.GET.get('to', 20))
     
     locale = None
     mstone = None
-    current = None
+    cur = None
     if loc:
         locale = Locale.objects.get(code=loc)
     if ms:
         mstone = Milestone.objects.get(code=ms)
+        appver = mstone.appver
+    if appver:
+        appver = AppVersion.objects.get(code=appver)
     if loc and ms:
         cur = _get_current_signoff(locale, mstone)
     
-    pushes = _get_api_items(locale, mstone, cur, start=start, offset=start+to)
+    pushes = _get_api_items(locale, appver, cur, start=start, offset=start+to)
     return HttpResponse(simplejson.dumps({'items': pushes}, indent=2))
 
 
@@ -438,7 +442,7 @@ def _get_total_pushes(locale=None, mstone=None):
     if mstone:
         forest = mstone.appver.tree.l10n
         repo_url = '%s%s/' % (forest.url, locale.code) 
-        return Push.objects.filter(changesets__repository__url=repo_url).count()
+        return Push.objects.filter(repository__url=repo_url).count()
     else:
         return Push.objects.count()
 
@@ -449,20 +453,20 @@ def _get_compare_locales_result(rev, tree):
         except:
             return None
 
-def _get_api_items(locale=None, mstone=None, current=None, start=0, offset=10):
-    if mstone:
-        forest = mstone.appver.tree.l10n
+def _get_api_items(locale=None, appver=None, current=None, start=0, offset=10):
+    if appver:
+        forest = appver.tree.l10n
         repo_url = '%s%s/' % (forest.url, locale.code) 
-        pushobjs = Push.objects.filter(changesets__repository__url=repo_url).order_by('-push_date')[start:start+offset]
+        pushobjs = Push.objects.filter(repository__url=repo_url).order_by('-push_date')[start:start+offset]
     else:
         pushobjs = Push.objects.order_by('-push_date')[start:start+offset]
     
     pushes = []
     for pushobj in pushobjs:
-        if mstone:
-            signoff_trees = [mstone.appver.tree]
+        if appver:
+            signoff_trees = [appver.tree]
         else:
-            signoff_trees = Tree.objects.filter(l10n__repositories=pushobj.tip.repository, appversion__milestone__isnull=False)
+            signoff_trees = Tree.objects.filter(l10n__repositories=pushobj.repository, appversion__milestone__isnull=False)
         name = '%s on [%s]' % (pushobj.user, pushobj.push_date)
         date = pushobj.push_date.strftime("%Y-%m-%d")
         cur = current and current.push.id == pushobj.id
@@ -493,7 +497,7 @@ def _get_api_items(locale=None, mstone=None, current=None, start=0, offset=10):
                            'build': 'green',
                            'compare': compare,
                            'signoff': cur,
-                           'url': '%spushloghtml?changeset=%s' % (pushobj.tip.repository.url, pushobj.tip.shortrev),
+                           'url': '%spushloghtml?changeset=%s' % (pushobj.repository.url, pushobj.tip.shortrev),
                            'accepted': current.accepted if cur else None})
     return pushes
 
@@ -522,7 +526,7 @@ def _get_push_offset(id, shift=0):
     if not id:
         return 0
     push = Push.objects.get(changesets__revision__startswith=id)
-    num = Push.objects.filter(pk__gt=push.pk, changesets__repository__url=push.tip.repository.url).count()
+    num = Push.objects.filter(pk__gt=push.pk, repository__url=push.repository.url).count()
     if num+shift<0:
         return 0
     return num+shift

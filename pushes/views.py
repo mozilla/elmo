@@ -43,16 +43,16 @@ def pushlog(request, repo_name):
         q = q.filter(push_date__lte = endTime)
         search['until'] = endTime
     if repo_name is not None:
-        q = q.filter(changesets__repository__name = repo_name)
+        q = q.filter(repository__name = repo_name)
     elif repo_parts:
-        repo_parts = map(lambda s:Q(changesets__repository__name__contains = s), repo_parts)
+        repo_parts = map(lambda s:Q(repository__name__contains = s), repo_parts)
         if len(repo_parts) == 1:
             q = q.filter(repo_parts[0])
         else:
             q = q.filter(reduce(operator.or_, repo_parts))
         search['repo'] = repo_parts
     if excludes:
-        q = q.exclude(changesets__repository__name__in = excludes)
+        q = q.exclude(repository__name__in = excludes)
     for p in paths:
         q = q.filter(changesets__files__path__contains=p)
     if paths:
