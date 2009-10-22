@@ -3,13 +3,6 @@
 {% block content %}
 <div class="nav"
 </div>
-<h3>Locales</h3>
-<ul>
-  {% for locale in locales %}
-  <li><a href="{% url signoff.views.dashboard %}?locale={{locale.code}}">{{ locale }}</a></li>
-  {% endfor %}
-</ul>
-
 <h3>Application versions</h3>
 <ul>
   {% for av in avs %}
