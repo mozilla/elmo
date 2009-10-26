@@ -89,11 +89,13 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.admin',
+    'accounts',
     'life',
     'mbdb',
     'pushes',
     'dashtags',
     'l10nstats',
     'tinder',
+    'signoff',
 )
 

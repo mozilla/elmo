@@ -13,6 +13,10 @@ urlpatterns = patterns('',
                        (r'^pushes/(?:(?P<repo_name>.*)/)?$',
                         'pushes.views.pushlog', {}, 'pushlog'),
                        (r'^dashboard/', include('l10nstats.urls')),
+                       (r'^signoff',
+                            include('signoff.urls')),
+                       (r'^accounts/',
+                            include('accounts.urls')),
 
 
 
