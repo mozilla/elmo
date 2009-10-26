@@ -57,6 +57,14 @@ Both are set up by calling into
 so that you can pass in a single settings.py, and a BuildMasterConfig.
 '''
 
+# Notes on transaction handling:
+# There are two patterns for the transaction handling in the status
+# plugin below. Firstly, for methods that simply update the db, the
+# handlers are decorated with @transation.commit_on_success. For
+# handlers that attach new handlers, the decoration is
+# @transition.commit_manually, and transaction.commit() is called after
+# the child db objects is got, and before the child listener is created.
+
 def setupBridge(master, settings, config):
     '''Setup the bridget between buildbot and the database.
 
@@ -77,9 +85,22 @@ def setupBridge(master, settings, config):
     from mbdb.models import Master, Slave, Builder, BuildRequest, Build, \
         SourceStamp, NumberedChange
 
-    dbm, new_master = Master.objects.get_or_create(name=master)
+    from django.db import transaction
+
+    try:
+        # hack around the lack of @transaction.commit_manually
+        transaction.enter_transaction_management()
+        transaction.managed(True)
+        dbm, new_master = Master.objects.get_or_create(name=master)
+        transaction.commit()
+    except:
+        transaction.rollback()
+        raise
+    finally:
+        transaction.leave_transaction_management()
 
     class Scheduler(BaseScheduler):
+        @transaction.commit_on_success
         def addChange(self, change):
             dbchange = modelForChange(dbm, change)
             log.msg('ADDED CHANGE to DB, %d' % dbchange.number)
@@ -101,20 +122,24 @@ def setupBridge(master, settings, config):
             self.step = dbstep
             self.basedir = basedir
 
+        @transaction.commit_on_success
         def stepTextChanged(self, build, step, text):
             self.step.text = text
             self.step.save()
 
+        @transaction.commit_on_success
         def stepText2Changed(self, build, step, text2):
             self.step.text2 = text2
             self.step.save()
 
+        @transaction.commit_on_success
         def logStarted(self, build, step, log):
             self.log = modelForLog(self.step, log, self.basedir)
 
         def logChunk(self, build, step, log, channel, text):
             pass
 
+        @transaction.commit_on_success
         def logFinished(self, build, step, log):
             self.log.isFinished = True
             self.log.save()
@@ -137,14 +162,17 @@ def setupBridge(master, settings, config):
             self.basedir = basedir
             self.latestStep = self.latestDbStep = None
 
+        @transaction.commit_manually
         def stepStarted(self, build, step):
             self.latestStep = step
             self.latestDbStep = self.build.steps.create(name = step.getName(),
                                                         starttime = timeHelper(step.getTimes()[0]),
                                                         text = step.getText(),
                                                         text2 = step.text2)
+            transaction.commit()
             return StepReceiver(self.latestDbStep, self.basedir)
 
+        @transaction.commit_on_success
         def stepFinished(self, build, step, results):
             assert step == self.latestStep, "We lost a step somewhere"
             try:
@@ -180,6 +208,8 @@ def setupBridge(master, settings, config):
             status = self.parent.getStatus()
             self.basedir = status.basedir
             status.subscribe(self)
+
+        @transaction.commit_on_success
         def builderAdded(self, builderName, builder):
             log.msg("adding %s to mbdb" % builderName)
             try:
@@ -194,24 +224,28 @@ def setupBridge(master, settings, config):
             log.msg("added %s to mbdb" % builderName)
             return self
 
+        @transaction.commit_manually
         def requestSubmitted(self, request):
             b, created = dbm.builders.get_or_create(name = request.getBuilderName())
             ss = modelForSource(dbm, request.source)
             req = BuildRequest.objects.create(builder = b,
                                               submitTime = timeHelper(request.getSubmitTime()),
                                               sourcestamp = ss)
+            transaction.commit()
             def addBuild(build):
                 dbbuild = b.builds.get(buildnumber=build.getNumber())
                 dbbuild.requests.add(req)
                 dbbuild.save()
             request.subscribe(addBuild)
 
+        @transaction.commit_on_success
         def builderChangedState(self, builderName, state):
             log.msg("%s changed state to %s" % (builderName, state))
             dbbuilder = Builder.objects.get(master=dbm, name = builderName)
             dbbuilder.bigState = state
             dbbuilder.save()
 
+        @transaction.commit_manually
         def buildStarted(self, builderName, build):
             log.msg("build started on  %s" % builderName)
             builder = Builder.objects.get(master=dbm, name = builderName)
@@ -231,9 +265,11 @@ def setupBridge(master, settings, config):
             for key, value, source in build.getProperties().asList():
                 dbbuild.setProperty(key, value, source)
             dbbuild.save()
+            transaction.commit()
 
             return BuildReceiver(dbbuild, self.basedir)
 
+        @transaction.commit_on_success
         def buildFinished(self, builderName, build, results):
             log.msg("finished build on %s with %s" % (builderName, str(results)))
             dbbuild = Build.objects.get(builder__name = builderName,
