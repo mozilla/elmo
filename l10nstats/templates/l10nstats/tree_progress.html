@@ -81,21 +81,22 @@ function onLoad() {
             
   timeplot = Timeplot.create(document.getElementById("my-timeplot"), plotInfo);
   var i=0;
-  var good = total = 0;
+  var good = bad = 0;
   var latest = {};
   var _data = {};
   for (var loc in loc_data[i].locales) {
-    total += 1;
     locales.push(loc);
     latest[loc] = loc_data[i].locales[loc] ? false : true;
     _data[loc] = loc_data[i].locales[loc];
     if (latest[loc]) {
       good += 1;
+    } else {
+      bad += 1;
     }
   }
   var NE = Timeplot.DefaultEventSource.NumericEvent;
   var E = Timeline.DefaultEventSource.Event;
-  var locEvents = [new NE(loc_data[i].time,[good, total-good])];
+  var locEvents = [new NE(loc_data[i].time,[good, bad])];
   var changeEvents = [];
   for (var i=1; i<loc_data.length; ++i) {
     var loclist = [];
@@ -103,7 +104,12 @@ function onLoad() {
       _data[loc] = loc_data[i].locales[loc];
       isGood = loc_data[i].locales[loc] ? false : true;
       if (isGood != latest[loc]) {
-        good += isGood ? 1 : -1;
+        if (loc in latest) {
+          good += isGood ? 1 : -1;
+          bad += isGood ? -1 : 1;
+        } else {
+          if (isGood) good += 1; else bad += 1;
+        }
         loclist.push(loc);
         latest[loc] = isGood;
       }
@@ -114,9 +120,9 @@ function onLoad() {
                               description: loclist.join(" "),
                                instant: false}));
     }
-    locEvents.push(new NE(loc_data[i].time,[good, total-good]));
+    locEvents.push(new NE(loc_data[i].time,[good, bad]));
   }
-  locEvents.push(new NE(SimileAjax.DateTime.parseIso8601DateTime("{{ endTime.isoformat }}Z"), [good, total-good]));
+  locEvents.push(new NE(SimileAjax.DateTime.parseIso8601DateTime("{{ endTime.isoformat }}Z"), [good, bad]));
   localesSource.addMany(locEvents);
   changesSource.addMany(changeEvents);
   timeplot.repaint();
