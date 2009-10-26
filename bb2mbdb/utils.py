@@ -51,8 +51,9 @@ def modelForSource(master, source, maxChanges=4):
     below that by default.
     '''
     q = SourceStamp.objects.filter(branch=source.branch,
-                                   revision=source.revision,
-                                   numbered_changes__change__master=master)
+                                   revision=source.revision)
+    if len(source.changes):
+        q = q.filter(numbered_changes__change__master=master)
     for i, change in enumerate(source.changes[:maxChanges]):
         q = q.filter(numbered_changes__number=i,
                      numbered_changes__change__number=change.number)
