@@ -157,7 +157,16 @@ def _waterfall(request):
     props = []
     isEnd = True
     filters = None
+    max_builds = None
     if request is not None:
+        filters = request.GET.copy()
+        if 'max-builds'in filters:
+            try:
+                max_builds = int(filters.pop('max-builds')[-1])
+                if max_builds <= 0:
+                    max_builds = None
+            except:
+                pass
         if 'endtime' in request.GET:
             try:
                 end_t = datetime.utcfromtimestamp(int(request.GET['endtime']))
@@ -180,15 +189,12 @@ def _waterfall(request):
             except Exception:
                 pass
         timeopts = ['endtime', 'starttime', 'hours']
-        filters = request.GET.copy()
         for opt in timeopts:
             if opt in filters:
                 filters.pop(opt)
         builderopts = ['name', 'category']
         buildopts = ['slavename']
-        for k, v in request.GET.items():
-            if k in timeopts:
-                continue
+        for k, v in filters.items():
             if k in builderopts:
                 buildf[str('builder__' + k)] = v
             elif k in buildopts:
@@ -212,7 +218,7 @@ def _waterfall(request):
     debug_("found %d builds" % q_buildsdone.count())
     q_changes = Change.objects.filter(when__gt = start_t,
                                       when__lte = end_t)
-    def ievents(builds, changes):
+    def ievents(builds, changes, max_builds=None):
         starts = []
         c_iter = changes.order_by('-when', '-pk').iterator()
         try:
@@ -226,9 +232,14 @@ def _waterfall(request):
         for b in builds.filter(endtime__isnull=True).order_by('-starttime', '-pk'):
             starts.insert(0, b)
             yield (None, 'end started build', b)
+            if max_builds:
+                max_builds -= 1
         # restrict to only finished builds now
         builds = builds.filter(endtime__isnull=False)
-        b_iter = builds.order_by('-endtime', '-pk').iterator()
+        builds = builds.order_by('-endtime', '-pk')
+        if max_builds:
+            builds = builds[:max_builds]
+        b_iter = builds.iterator()
         try:
             e = b_iter.next()
         except StopIteration:
@@ -274,7 +285,7 @@ def _waterfall(request):
                                              flat=True).distinct().order_by('builder__name'))
     cols = dict((builder, BColumn(builder)) for builder in builders)
     blame = BColumn('blame')
-    for t, type_, obj in ievents(q_buildsdone, q_changes):
+    for t, type_, obj in ievents(q_buildsdone, q_changes, max_builds):
         debug_(type_)
         if isinstance(obj, Build):
             debug_(str(obj.buildnumber))
