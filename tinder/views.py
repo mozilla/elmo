@@ -370,7 +370,7 @@ def builds_for_change(request):
     try:
         from life.models import Push
         url = str(Push.objects.get(changesets__revision__startswith=change.revision,
-                                   repository__name__startswith=change.branch)))
+                                   repository__name__startswith=change.branch))
     except:
         url=None
     
