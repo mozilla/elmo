@@ -2,7 +2,30 @@
 {% load build_extras %}
 {% block title_matter %}Builds{% endblock %}
 {% block head_matter %}
+<script type="application/javascript" src="{% url static path="jquery.js" %}"></script>
 <script type="application/javascript">
+var delay = 5*60*1000;
+var random = 0;
+var maxrows = 4;
+function onTimeout() {
+  var last_id = $('#buildrows').children('tbody').children('tr').attr('id');
+  last_id = last_id.match('stamp_([0-9]+)')[1];
+  random += 1;
+  $.get('{% url tinder_update_tbpl %}', {after: last_id, random: random},
+        function(data, res) {
+          if (res == 'success') {
+            $("#buildrows").children('tbody').prepend(data);
+            var rows = $("#buildrows tr");
+            if (rows.length > maxrows) {
+              $("#buildrows tr").filter(":gt("+maxrows+")[id]").nextAll().andSelf().remove();
+           }
+          }
+          window.setTimeout(onTimeout, delay);
+        });
+}
+$(document).ready(function() {
+  window.setTimeout(onTimeout, delay);
+});
 </script>
 <style type="text/css">
 .success {background-color: green;}
@@ -12,26 +35,16 @@
 .except {background-color: purple;}
 .buildbox {float: left; padding: 0.25em; margin: 0.25em;}
 .stamp {clear: left; }
-.changes {float:left;}
+.changes {background-color: lightgrey; padding: 0.25em;}
+.who {background-color: lightgrey;  padding: 0.25em;}
+.top {-moz-border-radius-topleft: 10px}
+.bottom {-moz-border-radius-bottomleft: 10px}
 </style>
 {% endblock %}
 {% block content %}
 <h1>Builds</h1>
 <div>
-{% for stamp in stamps %}
-<div class="stamp">
-<div class="changes">
-{% for change in stamp.changes %}
-  <a href="{{ change.url }}">{{ change.who }}<br> on<br> {{change.repo}}</a>
-{% endfor %}
-</div>
-{% for build in stamp.builds %}
-<div class="buildbox {{build|res2class}}">
-  {{ build|showbuild }}
-</div>
-{% endfor %}
-</div>
-</div>
-{% endfor %}
-</div>
+<table cell-spacing="0" id="buildrows">
+{% include "tinder/tbpl-rows.html" %}
+</table>
 {% endblock %}

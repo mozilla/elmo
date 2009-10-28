@@ -1,0 +1,20 @@
+{% load build_extras %}
+{% for stamp in stamps %}
+{% for change in stamp.changes %}
+<tr {% if forloop.first %}id="stamp_{{stamp.id}}"{% endif %}>
+<td class="changes{% if forloop.first %} top{% endif %}{% if forloop.last %}  bottom {% endif %}" title="{{ change.comments }}">
+ <a href="{{ change.url }}">{{ change.revision }}</a>
+</td>
+<td class="who" title="{{ change.comments }}">{{ change.who }}</td>
+{% if forloop.first %}
+<td class="build" rowspan="{{ stamp.changes|length }}">
+{% for build in stamp.builds %}
+<div class="buildbox {{build|res2class}}">
+  {{ build|showbuild }}
+</div>
+{% endfor %}
+</td>
+{% endif %}
+</tr>
+{% endfor %}
+{% endfor %}

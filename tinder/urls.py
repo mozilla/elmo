@@ -8,6 +8,7 @@ feeds = {
 urlpatterns = patterns('tinder.views',
                        (r'^waterfall$', 'waterfall'),
                        (r'^tbpl$', 'tbpl'),
+                       (r'^tbpl-rows$', 'tbpl_rows', {}, 'tinder_update_tbpl'),
                        (r'^builds_for', 'builds_for_change'),
                        (r'^builders/([^/]+)/(\d+)', 'showbuild',
                         {}, 'tinder_show_build'),

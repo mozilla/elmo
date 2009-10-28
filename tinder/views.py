@@ -27,11 +27,19 @@ def debug_(*msg):
         print ' '.join(msg)
 
 
-def tbpl(request):
+def tbpl_inner(request):
     ss = SourceStamp.objects.filter(builds__isnull=False).order_by('-pk')
     if request is not None:
         props = []
-        for prop, val in request.GET.iteritems():
+        params = request.GET.copy()
+        params.pop('random', None)
+        if "after" in params:
+            try:
+                id = params.pop("after")[-1]
+                ss = ss.filter(id__gt=int(id))
+            except:
+                pass
+        for prop, val in params.iteritems():
             try:
                 props.append(Property.objects.filter(name=prop, value=val)[0])
             except:
@@ -39,7 +47,7 @@ def tbpl(request):
         if props:
             ss = ss.filter(builds__properties__in=props)
     ss = ss.distinct()
-    ss = list(ss)
+    ss = list(ss[:10])
     blds = Build.objects
     if props:
         blds = blds.filter(properties__in=props)
@@ -54,6 +62,7 @@ def tbpl(request):
                 'url': url,
                 'comments': c.comments,
                 'when': c.when,
+                'revision': c.revision[:12],
                 'repo': reponame}
 
     changes_for_source = defaultdict(list)
@@ -65,9 +74,19 @@ def tbpl(request):
             cs = Change.objects.filter(id__in=changes_for_source[s.id]).order_by('-pk')
             chunk['changes'] = map(changer, cs)
             chunk['builds'] = blds.filter(sourcestamp=s).order_by('id')
+            chunk['id'] = s.id
             yield chunk
+    return chunks(ss)
+
+
+def tbpl(request):
     return render_to_response('tinder/tbpl.html',
-                              {'stamps': chunks(ss)})
+                              {'stamps': tbpl_inner(request)})
+
+
+def tbpl_rows(request):
+    return render_to_response('tinder/tbpl-rows.html',
+                              {'stamps': tbpl_inner(request)})
 
 
 class BColumn(object):
