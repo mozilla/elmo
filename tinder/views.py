@@ -12,9 +12,11 @@ import operator
 from bz2 import BZ2File
 import os
 import re
+from collections import defaultdict
 from datetime import datetime, timedelta
 import calendar
 from mbdb.models import *
+from life.models import Push
 from tinder.models import MasterMap
 
 
@@ -23,6 +25,49 @@ resultclasses = ['success', 'warning', 'failure', 'skip', 'except']
 def debug_(*msg):
     if False:
         print ' '.join(msg)
+
+
+def tbpl(request):
+    ss = SourceStamp.objects.filter(builds__isnull=False).order_by('-pk')
+    if request is not None:
+        props = []
+        for prop, val in request.GET.iteritems():
+            try:
+                props.append(Property.objects.filter(name=prop, value=val)[0])
+            except:
+                props.append(None)
+        if props:
+            ss = ss.filter(builds__properties__in=props)
+    ss = ss.distinct()
+    ss = list(ss)
+    blds = Build.objects
+    if props:
+        blds = blds.filter(properties__in=props)
+    nc = NumberedChange.objects.filter(sourcestamp__in=ss)
+    def changer(c):
+        branch = c.branch
+        reponame = '/'.join([c.branch] + 
+                            list(c.tags.values_list('value', flat=True)))
+        url = str(Push.objects.get(repository__name=reponame,
+                                   changesets__revision__startswith=c.revision))
+        return {'who': c.who,
+                'url': url,
+                'comments': c.comments,
+                'when': c.when,
+                'repo': reponame}
+
+    changes_for_source = defaultdict(list)
+    for c, s in nc.values_list('change', 'sourcestamp'):
+        changes_for_source[s].append(c)
+    def chunks(ss):
+        for s in ss:
+            chunk = {}
+            cs = Change.objects.filter(id__in=changes_for_source[s.id]).order_by('-pk')
+            chunk['changes'] = map(changer, cs)
+            chunk['builds'] = blds.filter(sourcestamp=s).order_by('id')
+            yield chunk
+    return render_to_response('tinder/tbpl.html',
+                              {'stamps': chunks(ss)})
 
 
 class BColumn(object):
