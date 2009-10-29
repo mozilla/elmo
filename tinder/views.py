@@ -1,5 +1,6 @@
 # Create your views here.
 from django.db.models import Q
+from django.db import connection
 from django.shortcuts import render_to_response
 from django.template import Context, loader
 from django.http import HttpResponse, HttpResponseNotFound
@@ -26,6 +27,35 @@ def debug_(*msg):
     if False:
         print ' '.join(msg)
 
+
+def pmap(props, bld_ids):
+    '''Create a map of build ids to dicts with the requested properties.
+    '''
+    b2pf=Build._meta.get_field_by_name('properties')[0]
+    args = {'t': b2pf.m2m_db_table(),
+            'b': b2pf.m2m_column_name(),
+            'p': b2pf.m2m_reverse_name()}
+    pattern = '''SELECT `%(t)s`.`%(b)s`, `%(t)s`.`%(p)s`
+      FROM `%(t)s` WHERE (
+        `%(t)s`.`%(b)s` IN (%(bs)s) AND
+        `%(t)s`.`%(p)s` IN (%(ps)s));'''
+    args['bs'] = ','.join(map(str, bld_ids))
+    cursor = connection.cursor()
+    rv = defaultdict(dict)
+    if not args['bs']:
+        # no builds, return empty dict
+        return {}
+    for prop in props:
+        lps = dict((p.id, p) for p in 
+                   Property.objects.filter(name=prop,builds__id__in=bld_ids).distinct())
+        args['ps'] = ','.join(map(str, lps.keys()))
+        if not args['ps']:
+            # no properties for this prop, continue
+            continue
+        cursor.execute(pattern % args)
+        for bid, pid in cursor.fetchall():
+            rv[bid][prop] = lps[pid].value
+    return rv
 
 def tbpl_inner(request):
     ss = SourceStamp.objects.filter(builds__isnull=False).order_by('-pk')
@@ -58,7 +88,8 @@ def tbpl_inner(request):
                             list(c.tags.values_list('value', flat=True)))
         url = str(Push.objects.get(repository__name=reponame,
                                    changesets__revision__startswith=c.revision))
-        return {'who': c.who,
+        return {'id': c.id,
+                'who': c.who,
                 'url': url,
                 'comments': c.comments,
                 'when': c.when,
@@ -68,13 +99,25 @@ def tbpl_inner(request):
     changes_for_source = defaultdict(list)
     for c, s in nc.values_list('change', 'sourcestamp'):
         changes_for_source[s].append(c)
+    bprops = pmap(('locale','tree','slavename'),
+                  blds.values_list('id', flat=True))
     def chunks(ss):
         for s in ss:
             chunk = {}
             cs = Change.objects.filter(id__in=changes_for_source[s.id]).order_by('-pk')
+            
             chunk['changes'] = map(changer, cs)
-            chunk['builds'] = blds.filter(sourcestamp=s).order_by('id')
+            chunk['builds'] = [{'id': b.id,
+                                'result': b.result,
+                                'props': bprops[b.id],
+                                'start': b.starttime,
+                                'end': b.endtime,
+                                'number': b.buildnumber,
+                                'builder': b.builder.name,
+                                'build': b} 
+                               for b in blds.filter(sourcestamp=s).order_by('id')]
             chunk['id'] = s.id
+            chunk['pending'] = BuildRequest.objects.filter(builds__isnull=True,sourcestamp=s).count()
             yield chunk
     return chunks(ss)
 
@@ -85,8 +128,11 @@ def tbpl(request):
 
 
 def tbpl_rows(request):
-    return render_to_response('tinder/tbpl-rows.html',
-                              {'stamps': tbpl_inner(request)})
+    qlen = len(connection.queries)
+    r = render_to_response('tinder/tbpl-rows.html',
+                           {'stamps': tbpl_inner(request)})
+    debug_(len(connection.queries) - qlen)
+    return r
 
 
 class BColumn(object):

@@ -1,7 +1,8 @@
 {% load build_extras %}
 {% for stamp in stamps %}
 {% for change in stamp.changes %}
-<tr {% if forloop.first %}id="stamp_{{stamp.id}}"{% endif %}>
+<tr {% if forloop.first %}id="stamp_{{stamp.id}}"{% endif %}
+  {% if stamp.pending %}class="pending"{% endif %}>
 <td class="changes{% if forloop.first %} top{% endif %}{% if forloop.last %}  bottom {% endif %}" title="{{ change.comments }}">
  <a href="{{ change.url }}">{{ change.revision }}</a>
 </td>
@@ -9,10 +10,17 @@
 {% if forloop.first %}
 <td class="build" rowspan="{{ stamp.changes|length }}">
 {% for build in stamp.builds %}
-<div class="buildbox {{build|res2class}}">
-  {{ build|showbuild }}
+<div class="buildbox {{build.build|res2class}}">
+  {%if build.end %}
+  <a target="_blank" href="{% url tinder.views.showbuild build.builder,build.number %}">{{ build.props.tree }} {{ build.props.locale }}</a>
+  {% else %}
+  {{ build.build|showbuild }}
+  {% endif %}
 </div>
 {% endfor %}
+{% if  stamp.pending %}
+<div class="buildbox">{{ stamp.pending }} more &hellip;<div>
+{% endif %}
 </td>
 {% endif %}
 </tr>
