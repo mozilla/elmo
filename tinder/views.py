@@ -117,6 +117,7 @@ def tbpl_inner(request):
                                 'build': b} 
                                for b in blds.filter(sourcestamp=s).order_by('id')]
             chunk['id'] = s.id
+            chunk['is_running'] = any(map(lambda c: c['end'] is None, chunk['builds']))
             chunk['pending'] = BuildRequest.objects.filter(builds__isnull=True,sourcestamp=s).count()
             yield chunk
     return chunks(ss)
