@@ -305,7 +305,7 @@ def pushes_json(request):
     if ms:
         mstone = Milestone.objects.get(code=ms)
         appver = mstone.appver
-    if appver:
+    elif appver:
         appver = AppVersion.objects.get(code=appver)
     if loc and ms:
         cur = _get_current_signoff(locale, mstone)
