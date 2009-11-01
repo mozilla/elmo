@@ -390,7 +390,7 @@ def confirm_ship_mstone(request):
         mstone = Milestone.objects.get(code=request.GET['ms'])
     except:
         return HttpResponseRedirect(reverse('signoff.views.milestones'))
-    if mstone.status is not 1:
+    if mstone.status != 1:
         return HttpResponseRedirect(reverse('signoff.views.milestones'))
     pendings = _get_signoffs(ms=mstone, status=0)
     pending_locs = sorted(pendings.keys())
@@ -621,9 +621,9 @@ def _get_signoffs(ms=None, av=None, status=1):
     items = cursor.fetchall()
     # filter signoffs if wanted, strip obsolete and just get the ids
     if status is not None:
-        items = filter(lambda t: t[0] is status, items)
+        items = filter(lambda t: t[0] == status, items)
     else:
-        items = filter(lambda t: t[0] is not 4, items)
+        items = filter(lambda t: t[0] != 4, items)
     so_ids = map(lambda t: t[1], items)
     so_q = Signoff.objects.filter(pk__in=so_ids).select_related('locale__code',
                                                                 'push__changesets')
