@@ -86,14 +86,19 @@ def tbpl_inner(request):
         branch = c.branch
         reponame = '/'.join([c.branch] + 
                             list(c.tags.values_list('value', flat=True)))
-        url = str(Push.objects.get(repository__name=reponame,
-                                   changesets__revision__startswith=c.revision))
+        try:
+            url = str(Push.objects.get(repository__name=reponame,
+                                       changesets__revision__startswith=c.revision))
+            rev = c.revision[:12]
+        except:
+            url = 'about:blank'
+            rev = 12*'0'
         return {'id': c.id,
                 'who': c.who,
                 'url': url,
                 'comments': c.comments,
                 'when': c.when,
-                'revision': c.revision[:12],
+                'revision': rev,
                 'repo': reponame}
 
     changes_for_source = defaultdict(list)
