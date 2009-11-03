@@ -570,10 +570,16 @@ def _get_signoff_statuses(ms=None, av=None):
         aid = av.id
     
     cursor = connection.cursor()
+
     stmnt = (("SELECT s.locale_id,s.id,a.flag FROM %s as s " +
-              ",%s as a WHERE s.appversion_id=%%s AND a.signoff_id=s.id" +
-              " GROUP BY a.signoff_id ORDER BY a.id DESC")
+              ",(select flag,signoff_id from %s order by id desc) as a " +
+              "WHERE s.appversion_id=%%s AND a.signoff_id=s.id GROUP BY a.signoff_id")
              % (Signoff._meta.db_table, Action._meta.db_table))
+
+    #stmnt = (("SELECT s.locale_id,s.id,a.flag FROM %s as s " +
+    #          ",%s as a WHERE s.appversion_id=%%s AND a.signoff_id=s.id" +
+    #          " GROUP BY a.signoff_id ORDER BY a.id DESC")
+    #         % (Signoff._meta.db_table, Action._meta.db_table))
     cursor.execute(stmnt, [aid])
     # filter signoffs if wanted, strip obsolete and just get the ids
 
