@@ -561,8 +561,10 @@ def _get_signoff_statuses(ms=None, av=None):
     '''this function gets the latest signoff flags
     for a milestone or appversion
     '''
-    if ms and ms.status==2: # shipped
-        return dict([(so.locale.code, so) for so in ms.signoffs.all()])
+    if ms and ms.status==2: # shipped, only accepted locales report
+        return dict.fromkeys(ms.signoffs.values_list('locale__code',
+                                                     flat=True),
+                             [1])
     
     if ms:
         aid = ms.appver.id
