@@ -612,17 +612,22 @@ def _get_signoffs(ms=None, av=None, status=1):
     '''
     if ms and ms.status==2: # shipped
         return dict([(so.locale.code, so) for so in ms.signoffs.all()])
-    
+
     if ms:
         aid = ms.appver.id
     else:
         aid = av.id
-    
+
     cursor = connection.cursor()
     stmnt = (("SELECT a.flag,s.id FROM %s " +
-              "AS a,%s AS s WHERE a.signoff_id=s.id AND " +
-              "s.appversion_id=%%s GROUP BY a.signoff_id ORDER BY a.id;")
-             % (Action._meta.db_table, Signoff._meta.db_table))
+              "AS s,(select flag,signoff_id from %s order by id desc) AS a " +
+              "WHERE a.signoff_id=s.id AND s.appversion_id=%%s GROUP BY a.signoff_id")
+             % (Signoff._meta.db_table, Action._meta.db_table))
+
+    #stmnt = (("SELECT a.flag,s.id FROM %s " +
+    #          "AS a,%s AS s WHERE a.signoff_id=s.id AND " +
+    #          "s.appversion_id=%%s GROUP BY a.signoff_id ORDER BY a.id;")
+    #         % (Action._meta.db_table, Signoff._meta.db_table))
     cursor.execute(stmnt, [aid])
     items = cursor.fetchall()
     # filter signoffs if wanted, strip obsolete and just get the ids
