@@ -277,16 +277,29 @@ def signoff_json(request):
     if request.GET.has_key('ms'):
         mstone = Milestone.objects.get(code=request.GET['ms'])
         lsd = _get_signoff_statuses(ms=mstone)
+        app = mstone.appver.app
     elif request.GET.has_key('av'):
         appver = AppVersion.objects.get(code=request.GET['av'])
         lsd = _get_signoff_statuses(av=appver)
+        app = appver.app
     items = defaultdict(list)
     values = dict(Action._meta.get_field('flag').flatchoices)
     for loc, sol in lsd.iteritems():
         items[loc] = [values[so] for so in sol]
+    # get shipped-in data, latest milestone of all appversions for now
+    shipped_in = defaultdict(list)
+    for _av in app.appversion_set.all():
+        try:
+            _ms = _av.milestone_set.filter(status=2).order_by('-pk')[0]
+        except IndexError:
+            continue
+        for loc in _ms.signoffs.values_list('locale__code', flat=True):
+            shipped_in[loc].append(_ms.code)
     # make a list now
     items = [{"type": "SignOff", "label": locale, 'signoff': list(values)}
              for locale, values in items.iteritems()]
+    items += [{"type": "Shippings", "label": locale, 'shipped': stones}
+              for locale, stones in shipped_in.iteritems()]
     return HttpResponse(simplejson.dumps({'items': items}, indent=2))
 
 
@@ -596,13 +609,22 @@ def _get_signoff_statuses(ms=None, av=None):
         lf[i[0]].append(i[2])
 
     for code,flags in lf.items():
-        for i,flag in enumerate(flags):
-            if flag==1:          # stop on accepted
-              del lf[code][i+1:]
-              break
-            if flag==4:          # stop on obsoleted
-              del lf[code][i:]
-              break
+        # newest first
+        flags.reverse()
+        # remove all that are older than an obsoleted, included
+        try:
+            cut = flags.index(4)
+            del flags[cut:]
+        except ValueError:
+            pass
+        # remove all that are older than an accepted, excluded
+        try:
+            cut = flags.index(1)
+            del flags[(cut+1):]
+        except ValueError:
+            pass
+        if not flags:
+            lf.pop(code)
 
     lcd = dict(Locale.objects.filter(pk__in=lf.keys()).values_list('id','code'))
     return dict(map(lambda v: (lcd[v[0]],v[1]), lf.iteritems()))
@@ -621,7 +643,7 @@ def _get_signoffs(ms=None, av=None, status=1):
         aid = av.id
 
     cursor = connection.cursor()
-    stmnt = (("SELECT a.flag,s.id FROM %s " +
+    stmnt = (("SELECT a.flag,s.id,s.locale_id FROM %s " +
               "AS s,(select flag,signoff_id from %s order by id desc) AS a " +
               "WHERE a.signoff_id=s.id AND s.appversion_id=%%s GROUP BY a.signoff_id")
              % (Signoff._meta.db_table, Action._meta.db_table))
@@ -633,11 +655,21 @@ def _get_signoffs(ms=None, av=None, status=1):
     cursor.execute(stmnt, [aid])
     items = cursor.fetchall()
     # filter signoffs if wanted, strip obsolete and just get the ids
+    signoffs = dict()
     if status is not None:
-        items = filter(lambda t: t[0] == status, items)
+        for flag, s_id, loc in items:
+            if flag==status:
+                signoffs[loc]=s_id
+            elif flag==4 and loc in signoffs:
+                signoffs.pop(loc)
     else:
-        items = filter(lambda t: t[0] != 4, items)
-    so_ids = map(lambda t: t[1], items)
+        for flag, s_id, loc in items:
+            if flag == 4:
+                if loc in signoffs:
+                    signoffs.pop(loc)
+            else:
+                signoffs[loc]= s_id
+    so_ids = signoffs.values()
     so_q = Signoff.objects.filter(pk__in=so_ids).select_related('locale__code',
                                                                 'push__changesets')
     sos = dict((so.locale.code, so) for so in so_q)
