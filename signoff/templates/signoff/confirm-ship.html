@@ -6,7 +6,7 @@
 <h1>Shipping {{ mstone }}</h1>
 {% if pending_locs %}
 <p class="warning">
-There are pending sign-offs for {{ pending_locs}}.
+There are pending sign-offs for {{ pending_locs|join:", " }}.
 </p>
 {% else %}
 <p class="good">
