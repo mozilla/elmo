@@ -497,10 +497,15 @@ def _get_api_items(locale=None, appver=None, current=None, start=0, offset=10):
             try:
                 lastrun = runs2.filter(tree=tree).order_by('-build__id')[0]
                 missing = lastrun.missing + lastrun.missingInFiles
+                cmp_segs = []
+                if lastrun.errors:
+                    cmp_segs.append('%d error(s)' % lastrun.errors)
                 if missing:
-                    compare = '%d missing' % missing
-                elif lastrun.obsolete:
-                    compare = '%d obsolete' % lastrun.obsolete
+                    cmp_segs.append('%d missing' % missing)
+                if lastrun.obsolete:
+                    cmp_segs.append('%d obsolete' % lastrun.obsolete)
+                if cmp_segs:
+                    compare = ', '.join(cmp_segs)
                 else:
                     compare = 'green (%d%%)' % lastrun.completion
             except:

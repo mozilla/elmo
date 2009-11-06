@@ -68,6 +68,12 @@ schema = {
         "missing": {
             "valueType": "number"
             },
+        "errors": {
+            "valueType": "number"
+            },
+        "obsolete": {
+            "valueType": "number"
+            },
         "starttime": {
             "valueType": "date"
             },
@@ -102,7 +108,7 @@ def status_json(request):
             result = 'failure'
         elif d['obsolete']:
             result = 'warnings'
-        return {'id': '%s/%s' % (tree, locale),
+        rd =  {'id': '%s/%s' % (tree, locale),
                 'runid': d['id'],
                 'label': locale,
                 'locale': locale,
@@ -115,6 +121,11 @@ def status_json(request):
                 'total': d['total'],
                 'completion': d['completion']
                 }
+        if 'errors' in d and d['errors']:
+            rd['errors'] = d['errors']
+        if 'obsolete' in d and d['obsolete']:
+            rd['obsolete'] = d['obsolete']
+        return rd
     items = map(toExhibit, q.values(*leafs))
     data = {'items': items}
     data.update(schema)
