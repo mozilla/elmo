@@ -1,5 +1,6 @@
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.template.loader import render_to_string
 from django.http import HttpResponseRedirect, HttpResponse
 from life.models import Locale, Push, Tree
 from signoff.models import Milestone, Signoff, Snapshot, AppVersion, Action, SignoffForm, ActionForm
@@ -39,6 +40,12 @@ def index(request):
         'locales': locales,
         'avs': avs,
     })
+
+def homesnippet(request):
+    miles = Milestone.objects.filter(status=1).order_by('code')
+    return render_to_string('signoff/snippet.html', {
+            'miles': miles,
+            })
 
 def pushes(request):
     if request.GET.has_key('locale'):

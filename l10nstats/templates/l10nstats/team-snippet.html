@@ -1,0 +1,6 @@
+<h2>Active trees</h2>
+<dl>{% for run in actives %}
+  <dt>{{ run.tree.code }}</dt>
+  <dd>{% if run.missing %} {{run.missing}} missing,{% endif %}
+  {{ run.completion }}% changed</dd>
+{% endfor %}</dl>

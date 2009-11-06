@@ -1,0 +1,8 @@
+<h2>Active trees</h2>
+{% if trees %}
+<ul>{% for tree in trees %}
+  <li><a href="{% url l10nstats.views.tree_progress tree %}">{{tree}}</a></li>
+{% endfor %}
+{% else %}
+<p>No trees active in the last week.</p>
+{% endif %}

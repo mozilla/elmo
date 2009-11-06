@@ -17,6 +17,8 @@ urlpatterns = patterns('',
                             include('signoff.urls')),
                        (r'^accounts/',
                             include('accounts.urls')),
+                       (r'^',
+                        include('homepage.urls')),
 
 
 

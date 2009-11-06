@@ -5,9 +5,9 @@ import os.path
 from time import mktime
 
 from django.http import HttpResponse
-from django.template import Context, loader
+from django.template.loader import render_to_string
 from django.shortcuts import render_to_response, get_object_or_404
-from django.db.models import Q
+from django.db.models import Q, Max
 
 from pushes.models import *
 from django.conf import settings
@@ -77,3 +77,11 @@ def pushlog(request, repo_name):
                                'limit': limit,
                                'search': search,
                                'timespan': timespan})
+
+def homesnippet(request):
+    repos = Repository.objects.filter(forest__isnull=False)
+    repos = repos.annotate(lpd=Max('push__push_date'))
+    repos = repos.order_by('-lpd')
+    return render_to_string('pushes/snippet.html', {
+            'repos': repos[:5],
+            })

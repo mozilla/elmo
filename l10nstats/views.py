@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import time
 
 from django.shortcuts import render_to_response
-from django.template import Context, loader
+from django.template.loader import render_to_string
 from django.http import HttpResponse, HttpResponseNotFound,\
     HttpResponseNotModified
 from django.utils import simplejson
@@ -119,6 +119,27 @@ def status_json(request):
     data = {'items': items}
     data.update(schema)
     return HttpResponse(simplejson.dumps(data, indent=2))
+
+
+def homesnippet(request):
+    week_ago = datetime.utcnow() - timedelta(7)
+    act = Active.objects.filter(run__srctime__gt=week_ago)
+    act = act.order_by('run__tree__code')
+    act = act.values_list('run__tree__code', flat=True).distinct()
+    return render_to_string('l10nstats/snippet.html', {
+            'trees': act,
+            })
+    
+
+
+def teamsnippet(request, loc):
+    act = Run.objects.filter(locale = loc, active__isnull=False)
+    week_ago = datetime.utcnow() - timedelta(7)
+    act = act.filter(srctime__gt=week_ago)
+    act = act.order_by('tree__code').select_related('tree')
+    return render_to_string('l10nstats/team-snippet.html', {
+            'actives': act,
+            })
 
 
 def history_plot(request):

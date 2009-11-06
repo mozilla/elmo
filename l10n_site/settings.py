@@ -90,6 +90,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.admin',
     'accounts',
+    'homepage',
     'life',
     'mbdb',
     'pushes',

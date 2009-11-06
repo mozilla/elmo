@@ -1,0 +1,5 @@
+<h2>Active l10n repositories</h2>
+<ul>{% for repo in repos %}
+  <li><a href="{% url pushes.views.pushlog %}?repo={{repo.name}}">{{repo.name}}</a></li>
+{% endfor %}</ul>
+<p><a href="{% url pushes.views.pushlog %}">All repositories&hellip;</a></p>

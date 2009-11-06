@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title_matter %}Mozilla Localization Teams{% endblock %}
+{% block head_matter %}
+{% endblock %}
+{% block content %}
+<h1>Mozilla Localization Teams</h1>
+<ul>{% for loc in locales %}
+  <li><a href="{% url homepage.views.locale_team loc.code %}">
+  {% if loc.name %}{{loc.name}}{% else %}{{loc.code}}{% endif %}
+  </li>
+{% endfor %}
+</ul>
+{% endblock %}
