@@ -1,0 +1,67 @@
+{% extends "signoff/base.html" %}
+{% block js_include %}
+  <script type="text/javascript" src="{% url static path="jquery.js" %}"></script>
+  <script type="text/javascript" src="{% url static path="jquery.ui/ui/ui.core.js" %}"></script>
+  <script type="text/javascript" src="{% url static path="jquery.ui/ui/ui.accordion.js" %}"></script>
+{% endblock %}
+
+{% block style_include %}
+  <link rel="stylesheet" href="{% url static path="jquery.ui/themes/base/ui.all.css" %}" type="text/css" media="all" />
+{% endblock %}
+{% block style %}
+#new_milestone {
+  float: left;
+}
+#controls {
+  clear: left;
+}
+{% endblock %}
+
+{% block javascript %}
+$(document).ready(function() {
+  var acc=$("#new_milestone").accordion({collapsible:true,animated:false,autoHeight:false});
+ acc.bind('accordionchange', function(event, ui) {
+    if (ui.oldHeader.length) {
+      // disabling new milestone
+     ui.oldHeader.children('a').html('Create a new milestone&hellip;');
+      document.forms.ship.create_new.value='no';
+    }
+    else {
+      ui.oldHeader.children('a').html('Creating a new milestone&hellip;');
+      document.forms.ship.create_new.value='yes';
+    }
+ });
+{% if not proposed %}  acc.accordion('activate', false);{% endif %}
+});
+{% endblock %}
+
+{% block title %}Shipping {{ mstone }}{% endblock %}
+
+{% block content %}
+<h1>Shipping {{ mstone }}</h1>
+This fire-drill release will not make any l10n-changes and take the
+shipping information from 
+<form id="ship" method="POST"
+  action="{% url signoff.views.drill_mstone %}">
+<input type="hidden" name="ms" value="{{ mstone.code }}" />
+<select name="base" size="{{ older|length }}">{% for base in older %}
+  <option value="{{base.code}}" {% if forloop.first %}selected{% endif %}>
+    {{ base }}
+  </option>
+{% endfor %}</select>
+<p>
+<div id="new_milestone"><h3><a href="#">Creating new milestone&hellip;</a></h3>
+  <div id="milestone_content">
+    <p>Suffix of the Milestone:<input value="{{proposed.name}}" name="new_name"><br>
+    Code of the Milestone: <input value="{{proposed.code}}" name="new_code"><br>
+    Code of application version: <input value="{{proposed.appver}}" name="new_app">
+    <input type="hidden" name="create_new" value="yes">
+    </p>
+  </div>
+</div>
+</p>
+<p id="controls">
+<input type="submit" value="Ship it" />
+</p>
+</form>
+{% endblock %}

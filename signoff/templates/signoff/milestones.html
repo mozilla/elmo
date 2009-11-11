@@ -50,10 +50,16 @@ function doForm(action, ms) {
               disabled="disabled"{% endif %}
               ex:onclick-subcontent="doForm('open','{&#123;.code}}')"
                 value="open" />
+	<span>
               <input type="button" {% if not perms.signoff.can_ship %}
               disabled="disabled"{% endif %}
               ex:onclick-subcontent="doForm('ship','{&#123;.code}}')"
               value="ship" />
+              <input type="button" {% if not perms.signoff.can_ship %}
+              disabled="disabled"{% endif %}
+              ex:onclick-subcontent="doForm('drill','{&#123;.code}}')"
+              value="drill" />
+	</span>
             </span>
             <input type="button" {% if not perms.signoff.can_open %}
             disabled="disabled"{% endif %}
@@ -67,15 +73,19 @@ function doForm(action, ms) {
 </div>
 <div style="display:none">
   <form id="clear_ms" action="{% url signoff.views.clear_mstone %}"
-  method="POST"
+  method="POST">
   <input type="hidden" name="ms" />
   </form>
   <form id="open_ms" action="{% url signoff.views.open_mstone %}"
-  method="POST"
+  method="POST">
   <input type="hidden" name="ms" />
   </form>
   <form id="ship_ms" action="{% url signoff.views.confirm_ship_mstone %}"
-  method="GET"
+  method="GET">
+  <input type="hidden" name="ms" />
+  </form>
+  <form id="drill_ms" action="{% url signoff.views.confirm_drill_mstone %}"
+  method="GET">
   <input type="hidden" name="ms" />
   </form>
 </div>

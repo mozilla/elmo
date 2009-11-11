@@ -16,6 +16,7 @@ from collections import defaultdict
 from ConfigParser import ConfigParser
 import datetime
 from difflib import SequenceMatcher
+import re
 
 from Mozilla.Parser import getParser, Junk
 from Mozilla.CompareLocales import AddRemove, Tree as DataTree
@@ -396,6 +397,30 @@ def clear_mstone(request):
             pass
     return HttpResponseRedirect(reverse('signoff.views.milestones'))
 
+
+def _propose_mstone(mstone):
+    """Propose a new milestone based on an existing one.
+
+    Tries to find the last integer in name and version, increment that
+    and create a new milestone.
+    """
+    last_int = re.compile('(\d+)$')
+    name_m = last_int.search(mstone.name)
+    if name_m is None:
+        return None
+    code_m = last_int.search(mstone.code)
+    if code_m is None:
+        return None
+    name_int = int(name_m.group())
+    code_int = int(code_m.group())
+    if name_int != code_int:
+        return None
+    new_rev = str(name_int + 1)
+    return dict(code=last_int.sub(new_rev, mstone.code),
+                name=last_int.sub(new_rev, mstone.name),
+                appver=mstone.appver.code)
+
+
 def confirm_ship_mstone(request):
     """Intermediate page when shipping a milestone.
 
@@ -443,6 +468,59 @@ def ship_mstone(request):
         except:
             pass
     return HttpResponseRedirect(reverse('signoff.views.milestones'))
+
+
+def confirm_drill_mstone(request):
+    """Intermediate page when fire-drilling a milestone.
+
+    Gathers all data to verify when shipping.
+    Ends up in drill_mstone if everything is fine.
+    Redirects to milestones() in case of trouble.
+    """
+    if not ("ms" in request.GET and
+            request.user.has_perm('signoff.can_ship')):
+        return HttpResponseRedirect(reverse('signoff.views.milestones'))
+    try:
+        mstone = Milestone.objects.get(code=request.GET['ms'])
+    except:
+        return HttpResponseRedirect(reverse('signoff.views.milestones'))
+    if mstone.status != 1:
+        return HttpResponseRedirect(reverse('signoff.views.milestones'))
+
+    drill_base = Milestone.objects.filter(appver=mstone.appver,status=2).order_by('-pk').select_related()
+    proposed = _propose_mstone(mstone)
+
+    return render_to_response('signoff/confirm-drill.html',
+                              {'mstone': mstone,
+                               'older': drill_base[:3],
+                               'proposed': proposed,
+                               },
+                              context_instance=RequestContext(request))
+
+def drill_mstone(request):
+    """The actual worker method to ship a milestone.
+
+    Only avaible to POST.
+    Redirects to milestones().
+    """
+    if (request.method == "POST" and
+        'ms' in request.POST and
+        'base' in request.POST and
+        request.user.has_perm('signoff.can_ship')):
+        try:
+            import pdb
+            pdb.set_trace()
+            mstone = Milestone.objects.get(code=request.POST['ms'])
+            base = Milestone.objects.get(code=request.POST['base'])
+            so_ids = list(base.signoffs.values_list('id', flat=True))
+            mstone.signoffs = so_ids  # add signoffs of base ms
+            mstone.status = 2
+            # XXX create event
+            mstone.save()
+        except Exception, e:
+            pass
+    return HttpResponseRedirect(reverse('signoff.views.milestones'))
+
 
 #
 #  Internal functions
