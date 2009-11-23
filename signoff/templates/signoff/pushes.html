@@ -188,7 +188,10 @@ function getFirstRevision() {
 function onAccept() {
   $('#id_accepted').val($(this).attr('action'))
   $('#id_first_row2').val(getFirstRevision())
-  $('#form_accept').submit()
+  if ($(this).attr('action')=='true')
+    $('#form_accept').submit()
+  else
+    $("#dialog").dialog('open');
 }
 
 function onSignoff() {
