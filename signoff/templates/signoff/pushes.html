@@ -122,7 +122,8 @@ function customizeRow(table, attr, t, push) {
       }
       break
     case 'revision':
-      t.html('<a href="'+(push['url'])+'" title="'+push['revdesc']+'">'+(push[attr])+'</a>')
+      t.html('<a href="'+(push['url'])+'">'+(push[attr])+'</a>')
+      $('a',t).attr('title', push['revdesc']);
       break
     case 'signoff':
       if (push['signoff']) {
