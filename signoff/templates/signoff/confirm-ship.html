@@ -13,7 +13,7 @@ There are pending sign-offs for {{ pending_locs|join:", " }}.
 There are no pending sign-offs.
 </p>
 {% endif %}
-<p>You'd be shipping {{ good_locs|length }} locales with
+<p>You'd be shipping {{ good }} locales with
 <a href="{% url signoff.views.shipped_locales %}?ms={{ mstone.code }}" target="_blank">shipped-locales</a>
 and
 <a href="{% url signoff.views.l10n_changesets %}?ms={{ mstone.code }}" target="_blank">l10n-changesets</a>.

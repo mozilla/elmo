@@ -2,7 +2,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.http import HttpResponseRedirect, HttpResponse
-from life.models import Locale, Push, Tree
+from life.models import Locale, Push, Changeset, Tree
 from signoff.models import Milestone, Signoff, Snapshot, AppVersion, Action, SignoffForm, ActionForm
 from l10nstats.models import Run
 from django import forms
@@ -11,6 +11,7 @@ from django.core.urlresolvers import reverse
 from django.utils import simplejson
 from django.core import serializers
 from django.db import connection
+from django.db.models import Max
 
 from collections import defaultdict
 from ConfigParser import ConfigParser
@@ -244,31 +245,31 @@ def dashboard(request):
 
 def l10n_changesets(request):
     if request.GET.has_key('ms'):
-        mstone = Milestone.objects.get(code=request.GET['ms'])
-        sos = _get_signoffs(ms=mstone)
+        av_or_m = Milestone.objects.get(code=request.GET['ms'])
     elif request.GET.has_key('av'):
-        appver = AppVersion.objects.get(code=request.GET['av'])
-        sos = _get_signoffs(av=appver)
+        av_or_m = AppVersion.objects.get(code=request.GET['av'])
     else:
         return HttpResponse('No milestone or appversion given')
-    
-    r = HttpResponse(('%s %s\n' % (k, sos[k].push.tip.shortrev)
-                      for k in sorted(sos.keys())),
+
+    sos = _signoffs(av_or_m).annotate(tip=Max('push__changesets__id'))
+    tips = dict(sos.values_list('locale__code', 'tip'))
+    revmap = dict(Changeset.objects.filter(id__in=tips.values()).values_list('id', 'revision'))
+    r = HttpResponse(('%s %s\n' % (l, revmap[tips[l]][:12])
+                      for l in sorted(tips.keys())),
                      content_type='text/plain; charset=utf-8')
     r['Content-Disposition'] = 'inline; filename=l10n-changesets'
     return r
 
 def shipped_locales(request):
     if request.GET.has_key('ms'):
-        mstone = Milestone.objects.get(code=request.GET['ms'])
-        sos = _get_signoffs(ms=mstone)
+        av_or_m = Milestone.objects.get(code=request.GET['ms'])
     elif request.GET.has_key('av'):
-        appver = AppVersion.objects.get(code=request.GET['av'])
-        sos = _get_signoffs(av=appver)
+        av_or_m = AppVersion.objects.get(code=request.GET['av'])
     else:
         return HttpResponse('No milestone or appversion given')
 
-    locales = sos.keys() + ['en-US']
+    sos = _signoffs(av_or_m).values_list('locale__code', flat=True)
+    locales = list(sos) + ['en-US']
     def withPlatforms(loc):
         if loc == 'ja':
             return 'ja linux win32\n'
@@ -283,20 +284,19 @@ def shipped_locales(request):
 
 def signoff_json(request):
     if request.GET.has_key('ms'):
-        mstone = Milestone.objects.get(code=request.GET['ms'])
-        lsd = _get_signoff_statuses(ms=mstone)
-        app = mstone.appver.app
+        av_or_m = Milestone.objects.get(code=request.GET['ms'])
+        appvers = AppVersion.object.filter(app=av_or_m.appver.app)
     elif request.GET.has_key('av'):
-        appver = AppVersion.objects.get(code=request.GET['av'])
-        lsd = _get_signoff_statuses(av=appver)
-        app = appver.app
+        av_or_m = AppVersion.objects.get(code=request.GET['av'])
+        appvers = AppVersion.objects.filter(app=av_or_m.app)
+    lsd = _signoffs(av_or_m, getlist=True)
     items = defaultdict(list)
     values = dict(Action._meta.get_field('flag').flatchoices)
     for loc, sol in lsd.iteritems():
         items[loc] = [values[so] for so in sol]
     # get shipped-in data, latest milestone of all appversions for now
     shipped_in = defaultdict(list)
-    for _av in app.appversion_set.all():
+    for _av in appvers:
         try:
             _ms = _av.milestone_set.filter(status=2).order_by('-pk')[0]
         except IndexError:
@@ -389,7 +389,7 @@ def clear_mstone(request):
                 return HttpResponseRedirect(reverse('signoff.views.milestones'))
             # get all signoffs, independent of state, and file an obsolete
             # action
-            for loc, so in _get_signoffs(ms=mstone, status=None).iteritems():
+            for so in _signoffs(mstone, status=None):
                 so.action_set.create(flag=4, author=request.user)
             return HttpResponseRedirect(reverse('signoff.views.dashboard')
                                         + "?ms=" + mstone.code)
@@ -437,16 +437,21 @@ def confirm_ship_mstone(request):
         return HttpResponseRedirect(reverse('signoff.views.milestones'))
     if mstone.status != 1:
         return HttpResponseRedirect(reverse('signoff.views.milestones'))
-    pendings = _get_signoffs(ms=mstone, status=0)
-    pending_locs = sorted(pendings.keys())
-    good = _get_signoffs(ms=mstone)
-    good_locs = sorted(good.keys())
+    statuses = _signoffs(mstone, getlist=True)
+    pending_locs = []
+    good = 0
+    for loc, flags in statuses.iteritems():
+        if 0 in flags:
+            # pending
+            pending_locs.append(loc)
+        if 1 in flags:
+            # good
+            good += 1
+    pending_locs.sort()
     return render_to_response('signoff/confirm-ship.html',
                               {'mstone': mstone,
-                               'pendings': pendings,
                                'pending_locs': pending_locs,
-                               'good': good,
-                               'good_locs': good_locs},
+                               'good': good},
                               context_instance=RequestContext(request))
         
 def ship_mstone(request):
@@ -460,8 +465,9 @@ def ship_mstone(request):
         request.user.has_perm('signoff.can_ship')):
         try:
             mstone = Milestone.objects.get(code=request.POST['ms'])
-            cs = _get_signoffs(ms=mstone)      # get current signoffs
-            mstone.signoffs.add(*cs.values())  # add them
+            # get current signoffs
+            cs = _signoffs(mstone).values_list('id', flat=True)
+            mstone.signoffs.add(*list(cs))  # add them
             mstone.status = 2
             # XXX create event
             mstone.save()
@@ -639,129 +645,71 @@ def _get_accepted_signoff(locale, ms=None, av=None):
     for a milestone/locale
     '''
 
-    if ms and ms.status==2: # shipped
-        try:
-            return ms.signoffs.get(locale=locale)
-        except:
-            return None
+    return _signoffs(ms is None and av or ms, locale=locale.code)
 
-    cursor = connection.cursor()
-    cursor.execute("SELECT a.flag,s.id FROM signoff_action \
-                    AS a,signoff_signoff AS s WHERE a.signoff_id=s.id AND \
-                    s.appversion_id=%s AND s.locale_id=%s GROUP BY a.signoff_id ORDER BY a.id DESC;", [ms.appver.id if ms else av.id,
-                                                                                                       locale.id])
-    items = cursor.fetchall()
-    for item in items:
-        if item[0] is not 1:
-            # if action.flag is not Accepted, skip
-            continue
-        if item[0] is 4:
-            return None
-        return Signoff.objects.get(pk=item[1])
-    return None
 
-def _get_signoff_statuses(ms=None, av=None):
-    '''this function gets the latest signoff flags
-    for a milestone or appversion
+def _signoffs(appver_or_ms, status=1, getlist=False, locale=None):
+    '''Get the signoffs for a milestone, or for the appversion as
+    queryset (or manager).
+    By default, returns the accepted ones, which can be overwritten to
+    get any (status=None) or a particular status.
+
+    If the locale argument is given, return the latest signoff with the
+    requested status, or None.
+
+    If getlist=True is specified, returns a dictionary mapping locale
+    codes to a list of statuses, all that are newer than the
+    latest obsolete action or accepted signoff (the latter is included).
     '''
-    if ms and ms.status==2: # shipped, only accepted locales report
-        return dict.fromkeys(ms.signoffs.values_list('locale__code',
-                                                     flat=True),
-                             [1])
-    
-    if ms:
-        aid = ms.appver.id
+    if isinstance(appver_or_ms, Milestone):
+        ms = appver_or_ms
+        if ms.status==2:
+            assert not getlist
+            return ms.signoffs
+        appver = ms.appver
     else:
-        aid = av.id
-    
-    cursor = connection.cursor()
+        appver = appver_or_ms
 
-    stmnt = (("SELECT s.locale_id,s.id,a.flag FROM %s as s " +
-              ",(select flag,signoff_id from %s order by id desc) as a " +
-              "WHERE s.appversion_id=%%s AND a.signoff_id=s.id GROUP BY a.signoff_id")
-             % (Signoff._meta.db_table, Action._meta.db_table))
-
-    #stmnt = (("SELECT s.locale_id,s.id,a.flag FROM %s as s " +
-    #          ",%s as a WHERE s.appversion_id=%%s AND a.signoff_id=s.id" +
-    #          " GROUP BY a.signoff_id ORDER BY a.id DESC")
-    #         % (Signoff._meta.db_table, Action._meta.db_table))
-    cursor.execute(stmnt, [aid])
-    # filter signoffs if wanted, strip obsolete and just get the ids
-
-    def items():
-        for item in cursor.fetchall():
-            yield item
-
-    locales = Locale.objects.all()
-
-    lf = defaultdict(list)
-    for i in items():
-        lf[i[0]].append(i[2])
-
-    for code,flags in lf.items():
-        # newest first
-        flags.reverse()
-        # remove all that are older than an obsoleted, included
-        try:
-            cut = flags.index(4)
-            del flags[cut:]
-        except ValueError:
-            pass
-        # remove all that are older than an accepted, excluded
-        try:
-            cut = flags.index(1)
-            del flags[(cut+1):]
-        except ValueError:
-            pass
-        if not flags:
-            lf.pop(code)
-
-    lcd = dict(Locale.objects.filter(pk__in=lf.keys()).values_list('id','code'))
-    return dict(map(lambda v: (lcd[v[0]],v[1]), lf.iteritems()))
-
-
-def _get_signoffs(ms=None, av=None, status=1):
-    '''this function gets the latest accepted signoffs
-    for a milestone or appversion
-    '''
-    if ms and ms.status==2: # shipped
-        return dict([(so.locale.code, so) for so in ms.signoffs.all()])
-
-    if ms:
-        aid = ms.appver.id
+    sos = Signoff.objects.filter(appversion=appver)
+    if locale is not None:
+        sos = sos.filter(locale__code=locale)
+    sos = sos.annotate(latest_action=Max('action__id'))
+    sos_vals = list(sos.values('locale__code','id','latest_action'))
+    actions = Action.objects
+    actionflags=dict(actions.filter(id__in=map(lambda d: d['latest_action'],
+                                               sos_vals)).values_list('id','flag'))
+    actionflags[0] = 0 # migrated pending signoffs lack any action :-(
+    if getlist:
+        lf = defaultdict(list)
     else:
-        aid = av.id
-
-    cursor = connection.cursor()
-    stmnt = (("SELECT a.flag,s.id,s.locale_id FROM %s " +
-              "AS s,(select flag,signoff_id from %s order by id desc) AS a " +
-              "WHERE a.signoff_id=s.id AND s.appversion_id=%%s GROUP BY a.signoff_id")
-             % (Signoff._meta.db_table, Action._meta.db_table))
-
-    #stmnt = (("SELECT a.flag,s.id FROM %s " +
-    #          "AS a,%s AS s WHERE a.signoff_id=s.id AND " +
-    #          "s.appversion_id=%%s GROUP BY a.signoff_id ORDER BY a.id;")
-    #         % (Action._meta.db_table, Signoff._meta.db_table))
-    cursor.execute(stmnt, [aid])
-    items = cursor.fetchall()
-    # filter signoffs if wanted, strip obsolete and just get the ids
-    signoffs = dict()
-    if status is not None:
-        for flag, s_id, loc in items:
-            if flag==status:
-                signoffs[loc]=s_id
-            elif flag==4 and loc in signoffs:
-                signoffs.pop(loc)
-    else:
-        for flag, s_id, loc in items:
-            if flag == 4:
-                if loc in signoffs:
-                    signoffs.pop(loc)
+        lf = dict()
+    for d in sos_vals:
+        loc = d['locale__code']
+        flag = actionflags[d['latest_action'] or 0]
+        if flag == 4:
+            # obsoleted, drop previous signoffs
+            lf.pop(loc, None)
+        else:
+            if getlist:
+                if flag == 1:
+                    # approved, forget previous
+                    lf[loc] = [flag]
+                else:
+                    lf[loc].append(flag)
             else:
-                signoffs[loc]= s_id
-    so_ids = signoffs.values()
-    so_q = Signoff.objects.filter(pk__in=so_ids).select_related('locale__code',
-                                                                'push__changesets')
-    sos = dict((so.locale.code, so) for so in so_q)
-    return sos
+                if status is not None:
+                    if flag == status:
+                        lf[loc] = d['id']
+                else:
+                    lf[loc] = d['id']
 
+    if getlist:
+        if locale is not None:
+            return lf[loc]
+        return lf
+    if locale is not None:
+        try:
+            return sos.get(id=lf[loc])
+        except KeyError:
+            return None
+    return sos.filter(id__in=lf.values())
