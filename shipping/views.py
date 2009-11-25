@@ -285,7 +285,7 @@ def shipped_locales(request):
 def signoff_json(request):
     if request.GET.has_key('ms'):
         av_or_m = Milestone.objects.get(code=request.GET['ms'])
-        appvers = AppVersion.object.filter(app=av_or_m.appver.app)
+        appvers = AppVersion.objects.filter(app=av_or_m.appver.app)
     elif request.GET.has_key('av'):
         av_or_m = AppVersion.objects.get(code=request.GET['av'])
         appvers = AppVersion.objects.filter(app=av_or_m.app)
