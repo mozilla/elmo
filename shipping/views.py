@@ -557,7 +557,7 @@ def _get_compare_locales_result(rev, tree):
         except:
             return None
 
-def _get_api_items(locale=None, appver=None, current=None, start=0, offset=10):
+def _get_api_items(locale, appver=None, current=None, start=0, offset=10):
     if appver:
         forest = appver.tree.l10n
         repo_url = '%s%s/' % (forest.url, locale.code) 
