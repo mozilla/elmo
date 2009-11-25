@@ -706,11 +706,14 @@ def _signoffs(appver_or_ms, status=1, getlist=False, locale=None):
 
     if getlist:
         if locale is not None:
-            return lf[loc]
+            try:
+                return lf[locale]
+            except KeyError:
+                return []
         return lf
     if locale is not None:
         try:
-            return sos.get(id=lf[loc])
+            return sos.get(id=lf[locale])
         except KeyError:
             return None
     return sos.filter(id__in=lf.values())
