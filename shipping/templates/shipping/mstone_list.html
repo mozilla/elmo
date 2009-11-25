@@ -1,4 +1,4 @@
-{% extends "signoff/base.html" %}
+{% extends "shipping/base.html" %}
 
 {% block content %}
 {% if error %}
@@ -14,7 +14,7 @@
 {% endif %}
 <ul>
   {% for mstone in mstones %}
-    <li><a href="{% url signoff.views.dashboard ms=mstone.code %}">{{mstone}}
+    <li><a href="{% url shipping.views.dashboard ms=mstone.code %}">{{mstone}}
     {% for elem in mstone.params %}
       [{{elem}}]
     {% endfor %}</a></li>

@@ -1,11 +1,11 @@
 {% extends "l10nstats/index.html" %}
 {% block title_matter %}{{ obj }} dashboard{% endblock %}
-{% block extra_data %}<link href="{% url signoff.views.signoff_json %}?{{query}}={{obj.code}}" type="application/json" rel="exhibit/data"/>{% endblock %}
+{% block extra_data %}<link href="{% url shipping.views.signoff_json %}?{{query}}={{obj.code}}" type="application/json" rel="exhibit/data"/>{% endblock %}
 
 {% block extra_labels %}, Sign-off{% endblock %}
 {% block extra_columns %}, .locale.signoff{% endblock %}
 {% block extra_cells %}<td>
-  <a ex:href-subcontent="{% url signoff.views.pushes %}?locale={&#123;.locale}}&{{query}}={{obj.code}}">
+  <a ex:href-subcontent="{% url shipping.views.pushes %}?locale={&#123;.locale}}&{{query}}={{obj.code}}">
     <span ex:if="exists( .locale.signoff )">
       <span ex:content=".locale.signoff"></span>
       <span>no sign-offs</span>

@@ -3,7 +3,7 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.http import HttpResponseRedirect, HttpResponse
 from life.models import Locale, Push, Changeset, Tree
-from signoff.models import Milestone, Signoff, Snapshot, AppVersion, Action, SignoffForm, ActionForm
+from shipping.models import Milestone, Signoff, Snapshot, AppVersion, Action, SignoffForm, ActionForm
 from l10nstats.models import Run
 from django import forms
 from django.conf import settings
@@ -38,14 +38,14 @@ def index(request):
         else:
             i.status = 'unknown' 
 
-    return render_to_response('signoff/index.html', {
+    return render_to_response('shipping/index.html', {
         'locales': locales,
         'avs': avs,
     })
 
 def homesnippet(request):
     miles = Milestone.objects.filter(status=1).order_by('code')
-    return render_to_string('signoff/snippet.html', {
+    return render_to_string('shipping/snippet.html', {
             'miles': miles,
             })
 
@@ -130,7 +130,7 @@ def pushes(request):
         offset = _get_push_offset(request.GET['offset'])
     else:
         offset = 0
-    return render_to_response('signoff/pushes.html', {
+    return render_to_response('shipping/pushes.html', {
         'mstone': mstone,
         'appver': appver,
         'locale': locale,
@@ -215,7 +215,7 @@ def diff_app(request):
                             'class': container_class,
                             'lines': lines})
     diffs = diffs.toJSON().get('children', [])
-    return render_to_response('signoff/diff.html',
+    return render_to_response('shipping/diff.html',
                               {'locale': request.GET['locale'],
                                'added': added,
                                'removed': removed,
@@ -237,7 +237,7 @@ def dashboard(request):
         obj = appver
         query = 'av'
     args = ["tree=%s" % tree.code]
-    return render_to_response('signoff/dashboard.html', {
+    return render_to_response('shipping/dashboard.html', {
             'obj': obj,
             'query': query,
             'args': args,
@@ -341,7 +341,7 @@ def milestones(request):
     Opens an exhibit that offers the actions below depending on 
     milestone status and user permissions.
     """
-    return render_to_response('signoff/milestones.html',
+    return render_to_response('shipping/milestones.html',
                               {},
                               context_instance=RequestContext(request))
 
@@ -364,7 +364,7 @@ def open_mstone(request):
     """
     if (request.method == "POST" and
         'ms' in request.POST and
-        request.user.has_perm('signoff.can_open')):
+        request.user.has_perm('shipping.can_open')):
         try:
             mstone = Milestone.objects.get(code=request.POST['ms'])
             mstone.status = 1
@@ -372,7 +372,7 @@ def open_mstone(request):
             mstone.save()
         except:
             pass
-    return HttpResponseRedirect(reverse('signoff.views.milestones'))
+    return HttpResponseRedirect(reverse('shipping.views.milestones'))
 
 def clear_mstone(request):
     """Clear a milestone, reset all sign-offs.
@@ -382,20 +382,20 @@ def clear_mstone(request):
     """
     if (request.method == "POST" and
         'ms' in request.POST and
-        request.user.has_perm('signoff.can_open')):
+        request.user.has_perm('shipping.can_open')):
         try:
             mstone = Milestone.objects.get(code=request.POST['ms'])
             if mstone.status is 2:
-                return HttpResponseRedirect(reverse('signoff.views.milestones'))
+                return HttpResponseRedirect(reverse('shipping.views.milestones'))
             # get all signoffs, independent of state, and file an obsolete
             # action
             for so in _signoffs(mstone, status=None):
                 so.action_set.create(flag=4, author=request.user)
-            return HttpResponseRedirect(reverse('signoff.views.dashboard')
+            return HttpResponseRedirect(reverse('shipping.views.dashboard')
                                         + "?ms=" + mstone.code)
         except:
             pass
-    return HttpResponseRedirect(reverse('signoff.views.milestones'))
+    return HttpResponseRedirect(reverse('shipping.views.milestones'))
 
 
 def _propose_mstone(mstone):
@@ -429,14 +429,14 @@ def confirm_ship_mstone(request):
     Redirects to milestones() in case of trouble.
     """
     if not ("ms" in request.GET and
-            request.user.has_perm('signoff.can_ship')):
-        return HttpResponseRedirect(reverse('signoff.views.milestones'))
+            request.user.has_perm('shipping.can_ship')):
+        return HttpResponseRedirect(reverse('shipping.views.milestones'))
     try:
         mstone = Milestone.objects.get(code=request.GET['ms'])
     except:
-        return HttpResponseRedirect(reverse('signoff.views.milestones'))
+        return HttpResponseRedirect(reverse('shipping.views.milestones'))
     if mstone.status != 1:
-        return HttpResponseRedirect(reverse('signoff.views.milestones'))
+        return HttpResponseRedirect(reverse('shipping.views.milestones'))
     statuses = _signoffs(mstone, getlist=True)
     pending_locs = []
     good = 0
@@ -448,7 +448,7 @@ def confirm_ship_mstone(request):
             # good
             good += 1
     pending_locs.sort()
-    return render_to_response('signoff/confirm-ship.html',
+    return render_to_response('shipping/confirm-ship.html',
                               {'mstone': mstone,
                                'pending_locs': pending_locs,
                                'good': good},
@@ -462,7 +462,7 @@ def ship_mstone(request):
     """
     if (request.method == "POST" and
         'ms' in request.POST and
-        request.user.has_perm('signoff.can_ship')):
+        request.user.has_perm('shipping.can_ship')):
         try:
             mstone = Milestone.objects.get(code=request.POST['ms'])
             # get current signoffs
@@ -473,7 +473,7 @@ def ship_mstone(request):
             mstone.save()
         except:
             pass
-    return HttpResponseRedirect(reverse('signoff.views.milestones'))
+    return HttpResponseRedirect(reverse('shipping.views.milestones'))
 
 
 def confirm_drill_mstone(request):
@@ -484,19 +484,19 @@ def confirm_drill_mstone(request):
     Redirects to milestones() in case of trouble.
     """
     if not ("ms" in request.GET and
-            request.user.has_perm('signoff.can_ship')):
-        return HttpResponseRedirect(reverse('signoff.views.milestones'))
+            request.user.has_perm('shipping.can_ship')):
+        return HttpResponseRedirect(reverse('shipping.views.milestones'))
     try:
         mstone = Milestone.objects.get(code=request.GET['ms'])
     except:
-        return HttpResponseRedirect(reverse('signoff.views.milestones'))
+        return HttpResponseRedirect(reverse('shipping.views.milestones'))
     if mstone.status != 1:
-        return HttpResponseRedirect(reverse('signoff.views.milestones'))
+        return HttpResponseRedirect(reverse('shipping.views.milestones'))
 
     drill_base = Milestone.objects.filter(appver=mstone.appver,status=2).order_by('-pk').select_related()
     proposed = _propose_mstone(mstone)
 
-    return render_to_response('signoff/confirm-drill.html',
+    return render_to_response('shipping/confirm-drill.html',
                               {'mstone': mstone,
                                'older': drill_base[:3],
                                'proposed': proposed,
@@ -512,7 +512,7 @@ def drill_mstone(request):
     if (request.method == "POST" and
         'ms' in request.POST and
         'base' in request.POST and
-        request.user.has_perm('signoff.can_ship')):
+        request.user.has_perm('shipping.can_ship')):
         try:
             import pdb
             pdb.set_trace()
@@ -525,7 +525,7 @@ def drill_mstone(request):
             mstone.save()
         except Exception, e:
             pass
-    return HttpResponseRedirect(reverse('signoff.views.milestones'))
+    return HttpResponseRedirect(reverse('shipping.views.milestones'))
 
 
 #

@@ -1,6 +1,6 @@
 from django.conf.urls.defaults import *
 
-urlpatterns = patterns('signoff.views',
+urlpatterns = patterns('shipping.views',
     (r'^\/?$', 'index'),
     (r'^\/pushes\/?$', 'pushes'),
     (r'^\/dashboard\/?$', 'dashboard'),

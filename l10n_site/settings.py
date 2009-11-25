@@ -97,6 +97,6 @@ INSTALLED_APPS = (
     'dashtags',
     'l10nstats',
     'tinder',
-    'signoff',
+    'shipping',
 )
 

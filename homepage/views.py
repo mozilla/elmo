@@ -8,16 +8,16 @@ from life.models import Locale
 
 
 def index(request):
-    from signoff.views import homesnippet as signoff_snippet
+    from shipping.views import homesnippet as shipping_snippet
     from pushes.views import homesnippet as pushes_snippet
     from l10nstats.views import homesnippet as stats_snippet
 
-    signoff_div = mark_safe(signoff_snippet(request))
+    shipping_div = mark_safe(shipping_snippet(request))
     pushes_div = mark_safe(pushes_snippet(request))
     l10nstats_div = mark_safe(stats_snippet(request))
 
     return render_to_response('homepage/index.html', {
-            'signoff': signoff_div,
+            'shipping': shipping_div,
             'pushes': pushes_div,
             'l10nstats': l10nstats_div,
             })

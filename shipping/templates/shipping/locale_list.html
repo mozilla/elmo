@@ -1,4 +1,4 @@
-{% extends "signoff/base.html" %}
+{% extends "shipping/base.html" %}
 
 {% block title %}Signoffs for {{mstone}}{% endblock %}
 
@@ -29,7 +29,7 @@ $(document).ready(
 
 {% block content %}
 <div class="nav">
-  <a href="{% url signoff.views.index %}">« All milestones</a>
+  <a href="{% url shipping.views.index %}">« All milestones</a>
 </div>
 {% if error %}
 <p class="error">
@@ -45,7 +45,7 @@ $(document).ready(
 <p>Search: <input type="text" size="10" id="search"></p>
 <ul>
   {% for locale in locales %}
-    <li locale="{{ locale.code }}"><a href="{% url signoff.views.sublist arg=mstone.code,arg2=locale.code %}">{{locale}}
+    <li locale="{{ locale.code }}"><a href="{% url shipping.views.sublist arg=mstone.code,arg2=locale.code %}">{{locale}}
     {% for elem in locale.params %}
       [{{elem}}]
     {% endfor %}</a></li>

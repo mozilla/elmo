@@ -1,4 +1,0 @@
-<h2>Open Milestones for sign-off</h2>
-<ul>{% for stone in miles %}
-  <li><a href="{% url signoff.views.dashboard %}?ms={{stone.code}}">{{ stone }}</a></li>
-{% endfor %}</ul>

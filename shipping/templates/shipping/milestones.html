@@ -1,11 +1,11 @@
-{% extends "signoff/base.html" %}
+{% extends "shipping/base.html" %}
 {% load simile %}
 
 {% block title %}Milestones{% endblock %}
 
 {% block js_include %}
 {% exhibit autoCreate=false %}
-<link href="{% url signoff.views.stones_data %}" type="application/json" rel="exhibit/data" />
+<link href="{% url shipping.views.stones_data %}" type="application/json" rel="exhibit/data" />
 {% endblock %}
 
 {% block javascript %}
@@ -37,31 +37,31 @@ function doForm(action, ms) {
     <tr>
       <td>
         <a ex:content=".label"
-        ex:href-subcontent="{% url signoff.views.dashboard %}?ms={&#123;.code}}"></a>
+        ex:href-subcontent="{% url shipping.views.dashboard %}?ms={&#123;.code}}"></a>
       </td>
       <td>
         <span ex:if=".status = 2">
-          <input type="button" {% if not perms.signoff.can_ship %}
+          <input type="button" {% if not perms.shipping.can_ship %}
           disabled="disabled"{% endif %}
           value="tweak" />
           <span>
             <span ex:if=".status = 0">
-              <input type="button" {% if not perms.signoff.can_open %}
+              <input type="button" {% if not perms.shipping.can_open %}
               disabled="disabled"{% endif %}
               ex:onclick-subcontent="doForm('open','{&#123;.code}}')"
                 value="open" />
 	<span>
-              <input type="button" {% if not perms.signoff.can_ship %}
+              <input type="button" {% if not perms.shipping.can_ship %}
               disabled="disabled"{% endif %}
               ex:onclick-subcontent="doForm('ship','{&#123;.code}}')"
               value="ship" />
-              <input type="button" {% if not perms.signoff.can_ship %}
+              <input type="button" {% if not perms.shipping.can_ship %}
               disabled="disabled"{% endif %}
               ex:onclick-subcontent="doForm('drill','{&#123;.code}}')"
               value="drill" />
 	</span>
             </span>
-            <input type="button" {% if not perms.signoff.can_open %}
+            <input type="button" {% if not perms.shipping.can_open %}
             disabled="disabled"{% endif %}
             ex:onclick-subcontent="doForm('clear','{&#123;.code}}')"
               value="clear" />
@@ -72,19 +72,19 @@ function doForm(action, ms) {
   </table>
 </div>
 <div style="display:none">
-  <form id="clear_ms" action="{% url signoff.views.clear_mstone %}"
+  <form id="clear_ms" action="{% url shipping.views.clear_mstone %}"
   method="POST">
   <input type="hidden" name="ms" />
   </form>
-  <form id="open_ms" action="{% url signoff.views.open_mstone %}"
+  <form id="open_ms" action="{% url shipping.views.open_mstone %}"
   method="POST">
   <input type="hidden" name="ms" />
   </form>
-  <form id="ship_ms" action="{% url signoff.views.confirm_ship_mstone %}"
+  <form id="ship_ms" action="{% url shipping.views.confirm_ship_mstone %}"
   method="GET">
   <input type="hidden" name="ms" />
   </form>
-  <form id="drill_ms" action="{% url signoff.views.confirm_drill_mstone %}"
+  <form id="drill_ms" action="{% url shipping.views.confirm_drill_mstone %}"
   method="GET">
   <input type="hidden" name="ms" />
   </form>

@@ -1,4 +1,4 @@
-{% extends "signoff/base.html" %}
+{% extends "shipping/base.html" %}
 
 {% block title %}Signoff for {% if mstone %}{{mstone}}{% else %}{{appver}}{% endif %} {{locale.code}}{% endblock %}
 
@@ -45,7 +45,7 @@ $(document).ready(function(){
   })
 
   pushes = jQuery.AjaxArray({
-    'json_url': '{% url signoff.views.pushes_json %}?locale={{locale.code}}&{% if mstone %}mstone={{mstone.code}}{% else %}av={{appver.code}}{% endif %}&from=$1&to=$2',
+    'json_url': '{% url shipping.views.pushes_json %}?locale={{locale.code}}&{% if mstone %}mstone={{mstone.code}}{% else %}av={{appver.code}}{% endif %}&from=$1&to=$2',
     'length': {{max_pushes}},
   }, [items,{{pushes.1}},{{pushes.2}}])
   
@@ -170,7 +170,7 @@ function customizeRow(table, attr, t, push) {
       }
       break
     case 'diff':
-      var href = "{% url signoff.views.diff_app %}?tree={{mstone.appver.tree.code}}&locale={{locale.code}}&from={{current.push.tip.shortrev}}&repo={{current.push.repository.name}}&url={{current.push.repository.url}}&to=";
+      var href = "{% url shipping.views.diff_app %}?tree={{mstone.appver.tree.code}}&locale={{locale.code}}&from={{current.push.tip.shortrev}}&repo={{current.push.repository.name}}&url={{current.push.repository.url}}&to=";
       if (push.revision != "{{current.push.tip.shortrev}}") {
         t.html('<a target="_blank">Diff</a>');
         t.children('a').attr('href', href + push.revision);
@@ -356,7 +356,7 @@ function onSignoff() {
 
 {% block content %}
 <div class="nav">
-  <a href="{% url signoff.views.dashboard %}?av={{appver.code}}">« all <i>{{appver}}</i> locales</a>
+  <a href="{% url shipping.views.dashboard %}?av={{appver.code}}">« all <i>{{appver}}</i> locales</a>
 </div>
 <p class="search">Search: <input type="text" size="10" id="search"></p>
 {% if mstone %}

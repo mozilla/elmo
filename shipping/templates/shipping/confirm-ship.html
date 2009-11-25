@@ -1,4 +1,4 @@
-{% extends "signoff/base.html" %}
+{% extends "shipping/base.html" %}
 
 {% block title %}Shipping {{ mstone }}{% endblock %}
 
@@ -14,12 +14,12 @@ There are no pending sign-offs.
 </p>
 {% endif %}
 <p>You'd be shipping {{ good }} locales with
-<a href="{% url signoff.views.shipped_locales %}?ms={{ mstone.code }}" target="_blank">shipped-locales</a>
+<a href="{% url shipping.views.shipped_locales %}?ms={{ mstone.code }}" target="_blank">shipped-locales</a>
 and
-<a href="{% url signoff.views.l10n_changesets %}?ms={{ mstone.code }}" target="_blank">l10n-changesets</a>.
+<a href="{% url shipping.views.l10n_changesets %}?ms={{ mstone.code }}" target="_blank">l10n-changesets</a>.
 </p>
 <form id="ship" method="POST"
-  action="{% url signoff.views.ship_mstone %}">
+  action="{% url shipping.views.ship_mstone %}">
 <input type="hidden" name="ms" value="{{ mstone.code }}" />
 <input type="submit" value="Ship it" />
 </form>

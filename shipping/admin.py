@@ -1,4 +1,4 @@
-from signoff.models import Action, Milestone, Signoff, Event, Application, AppVersion
+from shipping.models import Action, Milestone, Signoff, Event, Application, AppVersion
 from django.contrib import admin
 
 class MilestoneAdmin(admin.ModelAdmin):
