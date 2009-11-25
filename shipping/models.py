@@ -53,14 +53,6 @@ class Signoff(models.Model):
             return 0
 
     @property
-    def latest_action(self):
-        try:
-            actions = Action.objects.filter(signoff=self).order_by('-pk')
-            return actions[0]
-        except IndexError:
-            return None
-
-    @property
     def flag(self):
         return dict(Action._meta.get_field('flag').flatchoices)[self.status]
 

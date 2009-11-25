@@ -618,7 +618,12 @@ def _get_current_js(cur):
         current['status'] = None if cur.status==0 else cur.accepted
         current['id'] = str(cur.id)
         current['class'] = cur.flag
-        current['comment'] = cur.latest_action.comment
+        try:
+            actions = Action.objects.filter(signoff=cur).order_by('-pk')
+            latest_action = actions[0]
+            current['comment'] = latest_action.comment
+        except IndexError:
+            pass
     return current
 
 def _get_notes(session):
