@@ -127,7 +127,9 @@ function customizeRow(table, attr, t, push) {
       break
     case 'signoff':
       if (push['signoff']) {
-        t.text(current['when']+' '+current['author'])
+        t.html('<span/>')
+        $('span',t).attr('title',current['comment'])
+                   .text(current['when']+' '+current['author'])
       } else {
         t.empty()
         var input = document.createElement('input')

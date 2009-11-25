@@ -109,9 +109,9 @@ def pushes(request):
                 else:
                     request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> could not be added' % (mstone or appver, locale, user.username)
         if request.GET.has_key('av'):
-            return HttpResponseRedirect('%s?locale=%s&av=%s&offset=%s' % (reverse('signoff.views.pushes'), locale.code ,appver.code, offset_id))
+            return HttpResponseRedirect('%s?locale=%s&av=%s&offset=%s' % (reverse('shipping.views.pushes'), locale.code ,appver.code, offset_id))
         else:
-            return HttpResponseRedirect('%s?locale=%s&ms=%s&offset=%s' % (reverse('signoff.views.pushes'), locale.code ,mstone.code, offset_id))
+            return HttpResponseRedirect('%s?locale=%s&ms=%s&offset=%s' % (reverse('shipping.views.pushes'), locale.code ,mstone.code, offset_id))
 
     form = SignoffForm()
     
@@ -618,6 +618,7 @@ def _get_current_js(cur):
         current['status'] = None if cur.status==0 else cur.accepted
         current['id'] = str(cur.id)
         current['class'] = cur.flag
+        current['comment'] = cur.latest_action.comment
     return current
 
 def _get_notes(session):
