@@ -172,8 +172,8 @@ function customizeRow(table, attr, t, push) {
       }
       break
     case 'diff':
-      var href = "{% url shipping.views.diff_app %}?tree={{mstone.appver.tree.code}}&locale={{locale.code}}&from={{current.push.tip.shortrev}}&repo={{current.push.repository.name}}&url={{current.push.repository.url}}&to=";
-      if (push.revision != "{{current.push.tip.shortrev}}") {
+      var href = "{% url shipping.views.diff_app %}?tree={{mstone.appver.tree.code}}&locale={{locale.code}}&from={{accepted.push.tip.shortrev}}&repo={{accepted.push.repository.name}}&url={{accepted.push.repository.url}}&to=";
+      if (push.revision != "{{accepted.push.tip.shortrev}}") {
         t.html('<a target="_blank">Diff</a>');
         t.children('a').attr('href', href + push.revision);
       }

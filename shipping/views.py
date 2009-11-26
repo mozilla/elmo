@@ -143,7 +143,7 @@ def pushes(request):
         'pushes': (simplejson.dumps(_get_api_items(locale, appver, current, offset=offset+20)), 0, min(max_pushes,offset+10)),
         'max_pushes': max_pushes,
         'offset': offset,
-        'current_js': simplejson.dumps(_get_current_js(current)),
+        'current_js': simplejson.dumps(_get_signoff_js(current)),
     })
 
 
@@ -610,21 +610,21 @@ def _get_api_items(locale, appver=None, current=None, start=0, offset=10):
                            'accepted': current.accepted if cur else None})
     return pushes
 
-def _get_current_js(cur):
-    current = {}
-    if cur:
-        current['when'] = cur.when.strftime("%Y-%m-%d %H:%M")
-        current['author'] = str(cur.author)
-        current['status'] = None if cur.status==0 else cur.accepted
-        current['id'] = str(cur.id)
-        current['class'] = cur.flag
+def _get_signoff_js(so):
+    signoff = {}
+    if so:
+        signoff['when'] = so.when.strftime("%Y-%m-%d %H:%M")
+        signoff['author'] = str(so.author)
+        signoff['status'] = None if so.status==0 else so.accepted
+        signoff['id'] = str(so.id)
+        signoff['class'] = so.flag
         try:
-            actions = Action.objects.filter(signoff=cur).order_by('-pk')
+            actions = Action.objects.filter(signoff=so).order_by('-pk')
             latest_action = actions[0]
-            current['comment'] = latest_action.comment
+            signoff['comment'] = latest_action.comment
         except IndexError:
             pass
-    return current
+    return signoff
 
 def _get_notes(session):
     notes = {}
