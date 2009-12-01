@@ -125,9 +125,9 @@ def pushes(request):
         max_pushes = 50
 
     if request.GET.has_key('center'):
-        offset = _get_push_offset(request.GET['center'],-5)
+        offset = _get_push_offset(repo_url, request.GET['center'],-5)
     elif request.GET.has_key('offset'):
-        offset = _get_push_offset(request.GET['offset'])
+        offset = _get_push_offset(repo_url, request.GET['offset'])
     else:
         offset = 0
     return render_to_response('shipping/pushes.html', {
@@ -636,12 +636,12 @@ def _get_notes(session):
             del notes[i]
     return notes
 
-def _get_push_offset(id, shift=0):
+def _get_push_offset(repo_url, id, shift=0):
     """returns an offset of the push for signoff slider"""
     if not id:
         return 0
-    push = Push.objects.get(changesets__revision__startswith=id)
-    num = Push.objects.filter(pk__gt=push.pk, repository__url=push.repository.url).count()
+    push = Push.objects.get(changesets__revision__startswith=id, repository__url=repo_url)
+    num = Push.objects.filter(pk__gt=push.pk, repository__url=repo_url).count()
     if num+shift<0:
         return 0
     return num+shift
