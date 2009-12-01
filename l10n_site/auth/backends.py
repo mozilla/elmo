@@ -3,6 +3,7 @@ import ldap
 from django.conf import settings
 from django.contrib.auth.models import User, check_password
 from django.contrib.auth.backends import RemoteUserBackend
+from django.forms.fields import email_re
 import ldap_settings
 import os
 
@@ -33,7 +34,11 @@ class MozLdapBackend(RemoteUserBackend):
     #  never be authenticated locally
     def authenticate(self,username=None,password=None):
         try: # Let's see if we have such user
-            local_user = User.objects.get(username=username)
+            if email_re.search(username):
+                local_user = User.objects.get(email=username)
+            else:
+                local_user = User.objects.get(username=username)
+                
             if local_user.has_usable_password():
                 if local_user.check_password(password):
                     return local_user
