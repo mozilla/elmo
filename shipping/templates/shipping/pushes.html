@@ -171,12 +171,17 @@ function customizeRow(table, attr, t, push) {
         t.html('&nbsp;')
       }
       break
+    {% if accepted %}
     case 'diff':
       var href = "{% url shipping.views.diff_app %}?tree={{mstone.appver.tree.code}}&locale={{locale.code}}&from={{accepted.push.tip.shortrev}}&repo={{accepted.push.repository.name}}&url={{accepted.push.repository.url}}&to=";
       if (push.revision != "{{accepted.push.tip.shortrev}}") {
         t.html('<a target="_blank">Diff</a>');
         t.children('a').attr('href', href + push.revision);
+      } else {
+        t.html('')
       }
+      break
+    {% endif %}
     default:
       if (push[attr])
         t.text(push[attr])
