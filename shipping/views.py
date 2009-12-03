@@ -119,6 +119,11 @@ def pushes(request):
     repo_url = '%s%s/' % (forest.url, locale.code)
     notes = _get_notes(request.session)
     accepted = _get_accepted_signoff(locale, ms=mstone, av=appver)
+    if accepted is None:
+        # no accepted signoff to diff against, let's try the latest 
+        # obsolete one
+        accepted = _signoffs(mstone is None and appver or mstone, status=4,
+                             locale=locale.code)
 
     max_pushes = _get_total_pushes(locale, mstone)
     if max_pushes > 50:
@@ -692,7 +697,7 @@ def _signoffs(appver_or_ms, status=1, getlist=False, locale=None):
     for d in sos_vals:
         loc = d['locale__code']
         flag = actionflags[d['latest_action'] or 0]
-        if flag == 4:
+        if flag == 4 and status != 4:
             # obsoleted, drop previous signoffs
             lf.pop(loc, None)
         else:
