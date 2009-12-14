@@ -1,7 +1,7 @@
 import ldap
 
 from django.conf import settings
-from django.contrib.auth.models import User, check_password
+from django.contrib.auth.models import User, Group, check_password
 from django.contrib.auth.backends import RemoteUserBackend
 from django.forms.fields import email_re
 import ldap_settings
@@ -76,9 +76,14 @@ class MozLdapBackend(RemoteUserBackend):
             last_name =  record[0][1]['sn'][0]
             email =  record[0][1]['mail'][0]
             if not user:
-                user = User(username=username,first_name=first_name,last_name=last_name,email=email)
+                user = User(username=username,
+                            first_name=first_name,
+                            last_name=last_name,
+                            email=email)
                 user.set_unusable_password()
                 user.save()
+                if 'localizers' in record[0][1]['groups']:
+                    user.groups = (Group.objects.get(name='Localizers'),)
             else:
                 changed = False
                 if user.first_name != first_name:
@@ -104,5 +109,13 @@ class MozLdapBackend(RemoteUserBackend):
         self.ldo.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
         self.ldo.simple_bind_s(self.dn, self.password)
         result = self.ldo.search_s("dc=mozilla", ldap.SCOPE_SUBTREE, "mail="+username)
+        if self.__isLocalizer(username):
+            result[0][1]['groups'] = ('localizers',)
+        else:
+            result[0][1]['groups'] = ()
         self.ldo.unbind_s()
         return result
+
+    def __isLocalizer(self, username):
+        result = self.ldo.search_s("ou=groups,dc=mozilla", ldap.SCOPE_SUBTREE, "cn=hg_l10n")
+        return username in result[0][1]['memberUid']
