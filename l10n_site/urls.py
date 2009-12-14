@@ -1,6 +1,15 @@
 from django.conf.urls.defaults import *
 from django.conf import settings
 
+
+from django.contrib.auth.forms import AuthenticationForm, UserChangeForm
+
+for form in (AuthenticationForm, UserChangeForm):
+    user = form.base_fields['username']
+    user.max_length = 75
+    user.widget.attrs['maxlength'] = 75 
+    user.help_text = user.help_text.replace('30','75')
+
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
 admin.autodiscover()
@@ -39,3 +48,4 @@ urlpatterns += patterns('',
                          'django.views.static.serve',
                          {'document_root': 'static/'}, 'static'),
                         )
+ 
