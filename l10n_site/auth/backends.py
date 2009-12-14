@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth.models import User, Group, check_password
 from django.contrib.auth.backends import RemoteUserBackend
 from django.forms.fields import email_re
-import ldap_settings
+import l10n_site.ldap_settings as ldap_settings
 import os
 
 class MozLdapBackend(RemoteUserBackend):
