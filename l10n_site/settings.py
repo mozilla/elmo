@@ -56,7 +56,7 @@ TEMPLATE_LOADERS = (
 
 try:
     import ldap
-    ldap_loaded = False
+    ldap_loaded = True
 except:
     ldap_loaded = False
 
@@ -66,12 +66,10 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
 )
 
-
 if ldap_loaded:
     MIDDLEWARE_CLASSES = MIDDLEWARE_CLASSES + ('django.contrib.auth.middleware.RemoteUserMiddleware',)
-    AUTHENTICATION_BACKENDS = (
-        'l10n_site.auth.backends.MozLdapBackend',
-    )
+    AUTHENTICATION_BACKENDS = ('l10n_site.auth.backends.MozLdapBackend',)
+
 
 
 ROOT_URLCONF = 'l10n_site.urls'
@@ -99,4 +97,3 @@ INSTALLED_APPS = (
     'tinder',
     'shipping',
 )
-
