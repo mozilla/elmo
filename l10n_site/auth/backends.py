@@ -19,6 +19,7 @@ class MozLdapBackend(RemoteUserBackend):
         self.host = ldap_settings.LDAP_HOST
         self.dn = ldap_settings.LDAP_DN
         self.password = ldap_settings.LDAP_PASS
+        self.localizers = None
 
     #
     # This is the path we take here:
@@ -57,7 +58,7 @@ class MozLdapBackend(RemoteUserBackend):
             print "** debug: LDAP server is down"
             return
         if not record:
-            print "** debug: LDAP did something funny"
+            # wrong login/password
             return
         dn = record[0][0]
         #ldap.set_option(ldap.OPT_DEBUG_LEVEL,4095)
@@ -72,6 +73,7 @@ class MozLdapBackend(RemoteUserBackend):
         except ldap.UNWILLING_TO_PERFORM: # Bad password, credentials are bad.
             return
         else:
+            self.ldo.unbind_s()
             first_name =  record[0][1]['givenName'][0]
             last_name =  record[0][1]['sn'][0]
             email =  record[0][1]['mail'][0]
@@ -82,7 +84,7 @@ class MozLdapBackend(RemoteUserBackend):
                             email=email)
                 user.set_unusable_password()
                 user.save()
-                if 'localizers' in record[0][1]['groups']:
+                if self.__isLocalizer(username):
                     user.groups = (Group.objects.get(name='Localizers'),)
             else:
                 changed = False
@@ -97,7 +99,6 @@ class MozLdapBackend(RemoteUserBackend):
                     changed = True
                 if changed:
                     user.save()
-        self.ldo.unbind_s()
         return user
 
     def __getRecord(self, username):
@@ -109,13 +110,16 @@ class MozLdapBackend(RemoteUserBackend):
         self.ldo.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
         self.ldo.simple_bind_s(self.dn, self.password)
         result = self.ldo.search_s("dc=mozilla", ldap.SCOPE_SUBTREE, "mail="+username)
-        if self.__isLocalizer(username):
-            result[0][1]['groups'] = ('localizers',)
-        else:
-            result[0][1]['groups'] = ()
         self.ldo.unbind_s()
         return result
 
     def __isLocalizer(self, username):
-        result = self.ldo.search_s("ou=groups,dc=mozilla", ldap.SCOPE_SUBTREE, "cn=hg_l10n")
-        return username in result[0][1]['memberUid']
+        if self.localizers is None:
+            ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+            ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, self.certfile)
+            self.ldo = ldap.initialize(self.host)
+            self.ldo.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
+            self.ldo.simple_bind_s(self.dn, self.password)
+            self.localizers = self.ldo.search_s("ou=groups,dc=mozilla", ldap.SCOPE_SUBTREE, "cn=hg_l10n")
+            self.ldo.unbind_s()
+        return username in self.localizers[0][1]['memberUid']
