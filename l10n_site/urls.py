@@ -1,12 +1,13 @@
 from django.conf.urls.defaults import *
 from django.conf import settings
-
+import re
 
 from django.contrib.auth.forms import AuthenticationForm, UserChangeForm
 
 for form in (AuthenticationForm, UserChangeForm):
     user = form.base_fields['username']
     user.max_length = 75
+    user.regex = re.compile(r'^[a-zA-Z0-9._%-+]+@[a-zA-Z0-9._%-]+.[a-zA-Z]{2,6}$')
     user.widget.attrs['maxlength'] = 75 
     user.help_text = user.help_text.replace('30','75')
 
