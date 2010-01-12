@@ -56,6 +56,7 @@ TEMPLATE_LOADERS = (
 
 try:
     import ldap
+    import ldap_settings
     ldap_loaded = True
 except:
     ldap_loaded = False
