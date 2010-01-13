@@ -608,7 +608,6 @@ def _get_api_items(locale, appver=None, current=None, start=0, offset=10):
                            'revision': pushobj.tip.shortrev,
                            'revdesc': pushobj.tip.description,
                            'status': 'green',
-                           'build': 'green',
                            'compare': compare,
                            'signoff': cur,
                            'url': '%spushloghtml?changeset=%s' % (pushobj.repository.url, pushobj.tip.shortrev),
