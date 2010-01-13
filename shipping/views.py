@@ -353,7 +353,10 @@ def milestones(request):
 def stones_data(request):
     """JSON data to be used by milestones
     """
-    stones = Milestone.objects.order_by('-pk').select_related(depth=1)[:5]
+    avl = AppVersion.objects.all().order_by('-pk')
+    stones = []
+    for av in avl:
+        stones += Milestone.objects.filter(appver=av).order_by('-pk').select_related(depth=1)[:5]
     items = [{'label': str(stone),
               'appver': str(stone.appver),
               'status': stone.status,
