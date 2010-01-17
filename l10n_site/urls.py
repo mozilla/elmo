@@ -1,5 +1,6 @@
 from django.conf.urls.defaults import *
 from django.conf import settings
+from django.http import HttpResponse
 import re
 
 from django.contrib.auth.forms import AuthenticationForm, UserChangeForm
@@ -29,8 +30,8 @@ urlpatterns = patterns('',
                             include('accounts.urls')),
                        (r'^',
                         include('homepage.urls')),
-
-
+                       (r'^robots\.txt$', lambda r: HttpResponse("User-agent: *\nDisallow: /*",
+                                                                 mimetype="text/plain")),
 
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs' 
     # to INSTALLED_APPS to enable admin documentation:
