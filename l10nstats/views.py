@@ -7,6 +7,8 @@ from django.template.loader import render_to_string
 from django.http import HttpResponse, HttpResponseNotFound,\
     HttpResponseNotModified
 from django.utils import simplejson
+from django.utils.http import urlencode
+from django.utils.safestring import mark_safe
 
 from l10nstats.models import *
 from tinder.views import generateLog
@@ -42,15 +44,15 @@ def index(request):
         locales = Locale.objects.filter(code__in=locales)
         locales = locales.values_list('code', flat=True)
         if locales:
-            args += ['locale=%s' % loc for loc in locales]
+            args += [('locale', loc) for loc in locales]
     if 'tree' in request.GET:
         trees = request.GET.getlist('tree')
         trees = Tree.objects.filter(code__in=trees)
         trees = trees.values_list('code', flat=True)
         if trees:
-            args += ['tree=%s' % t for t in trees]
+            args += [('tree', t) for t in trees]
     return render_to_response('l10nstats/index.html',
-                              {'args': args})
+                              {'args': mark_safe(urlencode(args))})
 
 schema = {
     "types": {

@@ -36,8 +36,10 @@ def locale_team(request, code):
         return redirect('homepage.views.teams')
 
     from l10nstats.views import teamsnippet as stats_snippet
-
     l10nstats_div = mark_safe(stats_snippet(request, loc))
+
+    from shipping.views import teamsnippet as ship_snippet
+    ship_div = mark_safe(ship_snippet(request, loc))
 
     name = loc.name or loc.code
 
@@ -45,4 +47,5 @@ def locale_team(request, code):
             'locale': loc,
             'name': name,
             'l10nstats': l10nstats_div,
+            'shipping': ship_div,
             })

@@ -3,7 +3,7 @@
 {% block title_matter %}L10n Dashboard{% endblock %}
 {% block head_matter %}
   <!-- <link href="schema.json" type="application/json" rel="exhibit/data" /> -->
-  <link href="{% url l10nstats.views.status_json %}?{{ args|join:"&" }}" type="application/json" rel="exhibit/data" />
+  <link href="{% url l10nstats.views.status_json %}?{{ args }}" type="application/json" rel="exhibit/data" />
 {% block extra_data %}{% endblock %}
 {% exhibit autoCreate=false %}
   <script type="text/javascript">
@@ -84,7 +84,7 @@ div.thumbnail {border: solid black 1px; margin: 2px;}
    </style>
 {% endblock %}
 {% block content %}
- <h1>L10n dashboard</h1>
+ <h1>{% block h1_matter %}L10n Dashboard{% endblock %}</h1>
 
  <div ex:role="collection" ex:itemTypes="Build"></div>
  <table width="100%">
@@ -145,7 +145,7 @@ div.thumbnail {border: solid black 1px; margin: 2px;}
          id="locale-facet"></div>
 
        <div ex:role="facet" ex:expression=".locale.missing_webbugs" ex:facetLabel="Web bugs"></div>
-       <div ex:role="facet" ex:expression=".locale.shipped" ex:facetLabel="Shipped in ..." id="shipping-facet"></div>
+       <div ex:role="facet" ex:expression=".shipped" ex:facetLabel="Shipped in ..." id="shipping-facet"></div>
        {% block extra_facets %}{% endblock %}
      </td>
    </tr>

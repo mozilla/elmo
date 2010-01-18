@@ -364,6 +364,7 @@ function onSignoff() {
 {% block content %}
 <div class="nav">
   <a href="{% url shipping.views.dashboard %}?av={{appver.code}}">« all <i>{{appver}}</i> locales</a>
+  <a href="{% url shipping.views.dashboard %}?locale={{locale.code}}">« all <i>{{locale.code}}</i> versions</a>
 </div>
 <p class="search">Search: <input type="text" size="10" id="search"></p>
 {% if mstone %}

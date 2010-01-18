@@ -9,6 +9,8 @@ from django import forms
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils import simplejson
+from django.utils.http import urlencode
+from django.utils.safestring import mark_safe
 from django.core import serializers
 from django.db import connection
 from django.db.models import Max
@@ -48,6 +50,13 @@ def homesnippet(request):
     return render_to_string('shipping/snippet.html', {
             'miles': miles,
             })
+
+
+def teamsnippet(request, loc):
+    return render_to_string('shipping/team-snippet.html', {
+            'locale': loc,
+            })
+
 
 def pushes(request):
     if request.GET.has_key('locale'):
@@ -231,21 +240,31 @@ def diff_app(request):
 
 
 def dashboard(request):
+    args = [] # params to pass to l10nstats json
+    query = [] # params to pass to shipping json
+    subtitles = []
     if 'ms' in request.GET:
         mstone = Milestone.objects.get(code=request.GET['ms'])
-        tree = mstone.appver.tree
-        obj = mstone
-        query = 'ms'
-    else:
+        args.append(('tree', mstone.appver.tree.code))
+        subtitles.append(str(mstone))
+        query.append(('ms', mstone.code))
+    elif 'av' in request.GET:
         appver = AppVersion.objects.get(code=request.GET['av'])
-        tree = appver.tree
-        obj = appver
-        query = 'av'
-    args = ["tree=%s" % tree.code]
+        args.append(('tree', appver.tree.code))
+        subtitles.append(str(appver))
+        query.append(('av', appver.code))
+
+    # sanitize the list of locales to those that are actually on the dashboard
+    locales = Locale.objects.filter(code__in=request.GET.getlist('locale'))
+    locales = locales.values_list('code', flat=True)
+    args += [("locale", loc) for loc in locales]
+    query += [("locale", loc) for loc in locales]
+    subtitles += list(locales)
+
     return render_to_response('shipping/dashboard.html', {
-            'obj': obj,
-            'query': query,
-            'args': args,
+            'subtitles': subtitles,
+            'query': mark_safe(urlencode(query)),
+            'args': mark_safe(urlencode(args)),
             })
 
 def l10n_changesets(request):
@@ -288,17 +307,23 @@ def shipped_locales(request):
     return r
 
 def signoff_json(request):
+    appvers = AppVersion.objects
     if request.GET.has_key('ms'):
         av_or_m = Milestone.objects.get(code=request.GET['ms'])
-        appvers = AppVersion.objects.filter(app=av_or_m.appver.app)
+        appvers = appvers.filter(app=av_or_m.appver.app)
     elif request.GET.has_key('av'):
         av_or_m = AppVersion.objects.get(code=request.GET['av'])
-        appvers = AppVersion.objects.filter(app=av_or_m.app)
-    lsd = _signoffs(av_or_m, getlist=True)
+        appvers = appvers.filter(app=av_or_m.app)
+    else:
+        av_or_m = None
+        appvers = appvers.all()
+    tree2av = dict(AppVersion.objects.values_list("tree__code","code"))
+    locale = request.GET.get('locale', None)
+    lsd = _signoffs(av_or_m, getlist=True, locale=locale)
     items = defaultdict(list)
     values = dict(Action._meta.get_field('flag').flatchoices)
-    for loc, sol in lsd.iteritems():
-        items[loc] = [values[so] for so in sol]
+    for k, sol in lsd.iteritems():
+        items[k] = [values[so] for so in sol]
     # get shipped-in data, latest milestone of all appversions for now
     shipped_in = defaultdict(list)
     for _av in appvers:
@@ -306,14 +331,24 @@ def signoff_json(request):
             _ms = _av.milestone_set.filter(status=2).order_by('-pk')[0]
         except IndexError:
             continue
-        for loc in _ms.signoffs.values_list('locale__code', flat=True):
-            shipped_in[loc].append(_ms.code)
+        tree = _ms.appver.tree.code
+        _sos = _ms.signoffs
+        if locale is not None:
+            _sos = _sos.filter(locale__code=locale)
+        for loc in _sos.values_list('locale__code', flat=True):
+            shipped_in[(tree, loc)].append(_ms.code)
     # make a list now
-    items = [{"type": "SignOff", "label": locale, 'signoff': list(values)}
-             for locale, values in items.iteritems()]
-    items += [{"type": "Shippings", "label": locale, 'shipped': stones}
-              for locale, stones in shipped_in.iteritems()]
-    return HttpResponse(simplejson.dumps({'items': items}, indent=2))
+    items = [{"type": "SignOff",
+              "label": "%s/%s" % (tree,locale),
+              "appversion": tree2av[tree],
+              "signoff": list(values)}
+             for (tree, locale), values in items.iteritems()]
+    items += [{"type": "Shippings",
+               "label": "%s/%s" % (tree,locale),
+               "shipped": stones}
+              for (tree, locale), stones in shipped_in.iteritems()]
+    return HttpResponse(simplejson.dumps({'items': items}, indent=2),
+                        mimetype="text/plain")
 
 
 def pushes_json(request):
@@ -448,7 +483,7 @@ def confirm_ship_mstone(request):
     statuses = _signoffs(mstone, getlist=True)
     pending_locs = []
     good = 0
-    for loc, flags in statuses.iteritems():
+    for (tree, loc), flags in statuses.iteritems():
         if 0 in flags:
             # pending
             pending_locs.append(loc)
@@ -661,33 +696,37 @@ def _get_accepted_signoff(locale, ms=None, av=None):
     return _signoffs(ms is None and av or ms, locale=locale.code)
 
 
-def _signoffs(appver_or_ms, status=1, getlist=False, locale=None):
+def _signoffs(appver_or_ms=None, status=1, getlist=False, locale=None):
     '''Get the signoffs for a milestone, or for the appversion as
     queryset (or manager).
     By default, returns the accepted ones, which can be overwritten to
     get any (status=None) or a particular status.
 
     If the locale argument is given, return the latest signoff with the
-    requested status, or None.
+    requested status, or None. Requires appver_or_ms to be given.
 
-    If getlist=True is specified, returns a dictionary mapping locale
-    codes to a list of statuses, all that are newer than the
+    If getlist=True is specified, returns a dictionary mapping 
+    tree-locale typles to a list of statuses, all that are newer than the
     latest obsolete action or accepted signoff (the latter is included).
     '''
     if isinstance(appver_or_ms, Milestone):
         ms = appver_or_ms
         if ms.status==2:
             assert not getlist
+            if locale is not None:
+                return ms.signoffs.get(locale__code=locale)
             return ms.signoffs
         appver = ms.appver
     else:
         appver = appver_or_ms
 
-    sos = Signoff.objects.filter(appversion=appver)
+    sos = Signoff.objects
+    if appver is not None:
+        sos = sos.filter(appversion=appver)
     if locale is not None:
         sos = sos.filter(locale__code=locale)
     sos = sos.annotate(latest_action=Max('action__id'))
-    sos_vals = list(sos.values('locale__code','id','latest_action'))
+    sos_vals = list(sos.values('locale__code','id','latest_action', 'appversion__tree__code'))
     actions = Action.objects
     actionflags=dict(actions.filter(id__in=map(lambda d: d['latest_action'],
                                                sos_vals)).values_list('id','flag'))
@@ -698,34 +737,35 @@ def _signoffs(appver_or_ms, status=1, getlist=False, locale=None):
         lf = dict()
     for d in sos_vals:
         loc = d['locale__code']
+        tree = d['appversion__tree__code']
         flag = actionflags[d['latest_action'] or 0]
         if flag == 4 and status != 4:
             # obsoleted, drop previous signoffs
-            lf.pop(loc, None)
+            lf.pop((tree,loc), None)
         else:
             if getlist:
                 if flag == 1:
                     # approved, forget previous
-                    lf[loc] = [flag]
+                    lf[(tree,loc)] = [flag]
                 else:
-                    lf[loc].append(flag)
+                    lf[(tree,loc)].append(flag)
             else:
                 if status is not None:
                     if flag == status:
-                        lf[loc] = d['id']
+                        lf[(tree,loc)] = d['id']
                 else:
-                    lf[loc] = d['id']
+                    lf[(tree,loc)] = d['id']
 
     if getlist:
         if locale is not None:
-            try:
-                return lf[locale]
-            except KeyError:
-                return []
+            for tree, loc in lf.iterkeys():
+                if loc != locale:
+                    lf.pop((tree,loc))
         return lf
     if locale is not None:
+        assert appver
         try:
-            return sos.get(id=lf[locale])
+            return sos.get(id=lf[(appver.tree.code,locale)])
         except KeyError:
             return None
     return sos.filter(id__in=lf.values())
