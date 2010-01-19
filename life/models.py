@@ -145,7 +145,11 @@ class Push(models.Model):
 
     @property
     def tip(self):
-        return self.changesets.order_by('-pk')[0]
+        if hasattr(self, '_tip'):
+            return getattr(self, '_tip')
+        tip = self.changesets.order_by('-pk')[0]
+        setattr(self, '_tip', tip)
+        return tip
 
     def __unicode__(self):
         tip = self.tip.shortrev
