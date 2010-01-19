@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title_matter %}Mozilla Localization Team {{name}}{% endblock %}
 {% block head_matter %}
+  <script type="text/javascript" src="{% url static path="jquery.js" %}"></script>
 {% endblock %}
 {% block content %}
 <small>&lt; Back to <a href="{% url homepage.views.teams %}">all teams</a></small>
@@ -8,5 +9,5 @@
 <p>Contact the team on it's page on <a href="https://wiki.mozilla.org/L10n:Teams:{{locale.code}}">wikimo</a>.</p>
 <p>{{ l10nstats }}</p>
 <p>{{ shipping }}</p>
-
+<p>{{ bugs }}</p>
 {% endblock %}

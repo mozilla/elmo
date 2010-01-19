@@ -97,4 +97,5 @@ INSTALLED_APPS = (
     'l10nstats',
     'tinder',
     'shipping',
+    'bugsy',
 )

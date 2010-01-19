@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% load simile %}
+{% block title_matter %}L10n Bug helper{% endblock %}
+{% block head_matter %}
+<link rel="exhibit/data" type="x-bugzilla-components"
+      href="https://api-dev.bugzilla.mozilla.org/0.4.1/configuration">
+<style type="text/css">
+div.buglink {
+  float: left;
+  padding: 2px;
+}
+</style>
+{% exhibit %}
+<script type="text/javascript">
+BugComponentImporter = {
+};
+Exhibit.importers["x-bugzilla-components"] = BugComponentImporter;
+BugComponentImporter.load = function(link, database, cont) {
+    var url = typeof link == "string" ? link : link.href;
+    url = Exhibit.Persistence.resolveURL(url);
+
+    var callback = function(json, statusText) {
+      Exhibit.UI.hideBusyIndicator();
+      if (statusText != 'success') {
+        Exhibit.UI.showHelp(Exhibit.l10n.failedToLoadDataFileMessage(url));
+        if (cont) cont();
+        return;
+      }
+      try {
+        var items = [], o = {items:items};
+        function getComponent(comp) {
+          if (!/ \/ /.test(comp)) {return;}
+          var loc = comp.split(' / ')[0];
+          var item = {'id': loc,
+                      'label': comp,
+                      'product': 'Mozilla Localizations',
+                      'component': comp,
+                      'type': 'Component'};
+          items.push(item);
+        }
+        $.each(json.product['Mozilla Localizations'].component, getComponent);
+        if (o != null) {
+          database.loadData(o, Exhibit.Persistence.getBaseURL(url));
+        }
+      } catch (e) {
+        SimileAjax.Debug.exception(e, "Error loading Bugzilla JSON data from " + url);
+      } finally {
+        if (cont) cont();
+      }
+    };
+
+    Exhibit.UI.showBusyIndicator();
+    $.getJSON(url, callback);
+
+};
+
+$(document).ready(function() {
+ document.forms.bugdata.short_desc.focus();
+});
+
+function getFormData() {
+  var elems = document.forms.bugdata.elements;
+  var out = {};
+  for (var i = 0; i < elems.length; ++i) {
+    var elem = elems[i];
+    if (elem.name == '') continue;
+    out[elem.name] = elem.value;
+  }
+  return out;
+};
+
+function getBugURL(params) {
+  var url = 'https://bugzilla.mozilla.org/enter_bug.cgi?';
+  url += $.param(params);
+  return url;
+};
+
+function displayBugLinks(data) {
+  var locs = [];
+  $.each(data, function(loc, val) {locs.push(loc);});
+  locs.sort();
+  $.each(locs, function() {
+    var loc = this+''; // get string
+    var props = data[loc];
+    var comp = database.getObject(loc, 'component');
+    if (comp != null) {
+      props.component = comp;
+    }
+    var url = getBugURL(data[loc]);
+    var link = $("<a>").attr("href",  url).attr("target","_blank").text(loc);
+    $("#linkpane").append(link).append(" ");
+  });
+}
+
+function getBugLinks() {
+  $("#linkpane").html('');
+  var set = exhibit.getUIContext().getCollection().getRestrictedItems();
+  var params = getFormData();
+  params.locales = set.toArray();
+  $.getJSON("{% url bugsy.views.get_bug_links %}", params, displayBugLinks);
+};
+</script>
+{% endblock %}
+{% block content %}
+<div id="blds" ex:role="exhibit-collection" ex:itemTypes="Component"></div>
+  <table width="100%">
+      <tr valign="top">
+         <td>
+           <form name="bugdata">
+           <input type="hidden" name="product" value="Mozilla Localizations">
+           <input type="hidden" name="component" value="Other">
+           <input type="hidden" name="op_sys" value="All">
+           <input type="hidden" name="rep_platform" value="All">
+           <table>
+             <tr>
+               <td class="b_desc"><u>S</u>ummary:</td>
+               <td><input name="short_desc" size="80" accesskey="s"
+                 value="[{% templatetag openvariable %} loc }}] "></td>
+             </tr>
+             <tr>
+               <td class="b_desc">C<u>o</u>mment:</td>
+               <td>
+                 <textarea name="comment" cols="80" rows="10"
+                           accesskey="o"></textarea>
+               </td>
+             </tr>
+             <tr>
+               <td class="b_desc"><u>C</u>C:</td>
+               <td><input name="cc" size="80" accesskey="c"></td>
+             </tr>
+             <tr>
+               <td class="b_desc">Blocks:</td>
+               <td><input name="blocked" size="80"></td>
+             </tr>
+             <tr>
+               <td class="b_desc">Depends:</td>
+               <td><input name="dependson" size="80"></td>
+             </tr>
+             <tr>
+               <td class="b_desc">Url:</td>
+               <td><input name="bug_file_loc" size="80" value="http://"></td>
+             </tr>
+             <tr>
+               <td></td>
+               <td>
+                  <input type="button" value="one bug per l10n"
+                         style="float:right;"
+                         onclick="return getBugLinks();">
+               </td>
+             </tr>
+           </table>
+           </form>
+           <p id="linkpane"></p>
+          </td>
+          <td width="25%">
+        <div ex:role="facet" ex:expression=".label"
+          ex:facetLabel="Components"></div>
+        <div ex:role="facet" ex:facetClass="TextSearch"
+          ex:expressions=".label"
+          ex:facetLabel="Search"></div>
+         </td>
+       </tr>
+  </table>
+{% endblock %}

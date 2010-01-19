@@ -1,0 +1,16 @@
+There are <a
+href="https://bugzilla.mozilla.org/buglist.cgi?quicksearch=component:{{ locale.code }}"><span id="bugcount">?</span> open bugs</a>.
+<script type="application/javascript">
+(function() {
+  var bzapi = 'https://api-dev.bugzilla.mozilla.org/0.4.1/';
+  var query = {
+    'field0-0-0':'component',
+    'type0-0-0':'contains',
+    'value0-0-0': "{{ locale.code }} / ",
+    'resolution': '---'
+  };
+  $.getJSON(bzapi + 'count', query, function(json){
+    $('#bugcount').text(json.data);
+  });
+})();
+</script>

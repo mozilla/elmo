@@ -1084,7 +1084,7 @@ if(g.username){j.open(m,g.url,g.async,g.username,g.password);
 }else{j.open(m,g.url,g.async);
 }try{if(g.data){j.setRequestHeader("Content-Type",g.contentType);
 }if(g.ifModified){j.setRequestHeader("If-Modified-Since",T.lastModified[g.url]||"Thu, 01 Jan 1970 00:00:00 GMT");
-}j.setRequestHeader("X-Requested-With","XMLHttpRequest");
+}//j.setRequestHeader("X-Requested-With","XMLHttpRequest");
 j.setRequestHeader("Accept",g.dataType&&g.accepts[g.dataType]?g.accepts[g.dataType]+", */*":g.accepts._default);
 }catch(a){}if(g.beforeSend&&g.beforeSend(j,g)===false){if(g.global&&!--T.active){T.event.trigger("ajaxStop");
 }j.abort();
