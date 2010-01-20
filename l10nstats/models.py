@@ -45,8 +45,6 @@ class Run(models.Model):
     def activate(self):
         previous = Active.objects.filter(run__tree = self.tree, run__locale = self.locale)
         previousl = list(previous)
-        if self.cleanupUnchanged:
-            UnchangedInFile.objects.filter(run__in=previous).delete()
         if len(previousl) == 1:
             previousl[0].run = self
             previousl[0].save()
@@ -54,6 +52,8 @@ class Run(models.Model):
             if previousl:
                 previous.delete()
             Active.objects.create(run=self)
+        if self.cleanupUnchanged:
+            UnchangedInFile.objects.filter(run__active__isnull=True).distinct().delete()
 
 
 class UnchangedInFile(models.Model):
