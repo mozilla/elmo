@@ -396,7 +396,7 @@ def stones_data(request):
     avl = AppVersion.objects.all().order_by('-pk')
     stones = []
     for av in avl:
-        stones += Milestone.objects.filter(appver=av).order_by('-pk').select_related(depth=1)[:5]
+        stones += Milestone.objects.filter(appver=av).order_by('-pk').select_related('appver__app')[:5]
     items = [{'label': str(stone),
               'appver': str(stone.appver),
               'status': stone.status,
