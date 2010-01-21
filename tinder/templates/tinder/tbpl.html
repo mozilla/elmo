@@ -7,13 +7,21 @@
 var delay = 5*60*1000;
 var random = 0;
 var maxrows = 50;
+$.ajaxSettings.traditional=true; // no idea what jquery1.4 does natively
+var params = {
+{% for k, v in params %}
+  "{{k|escapejs}}" : [{% for vv in v %}"{{vv|escapejs}}"{% if not forloop.last %}, {% endif %}{% endfor %}]{% if not forloop.last %},{%endif%}
+{% endfor %}
+};
 function onTimeout() {
   var last_id = $('#buildrows>tbody>tr:not([class*=pending])').attr('id');
   last_id = last_id.match('stamp_([0-9]+)')[1];
   random += 1;
-  $.get('{% url tinder_update_tbpl %}', {after: last_id, random: random},
+  params['after'] = last_id;
+  params['random'] = random;
+  $.get('{% url tinder_update_tbpl %}', params,
         function(data, res) {
-          if (res == 'success') {
+          if (res == 'success' && data) {
             $('#buildrows>tbody>tr[class*=pending]').remove()
             $("#buildrows").children('tbody').prepend(data);
             var rows = $("#buildrows tr");
@@ -29,7 +37,6 @@ $(document).ready(function() {
   _timeout = window.setTimeout(onTimeout, delay);
   document.body.addEventListener("offline",
     function(){
-      console.log('offline');
       if (_timeout) {
         window.clearTimeout(_timeout);
         _timeout = null;

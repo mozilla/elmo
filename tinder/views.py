@@ -17,7 +17,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 import calendar
 from mbdb.models import *
-from life.models import Push
+from life.models import Push, Repository
 from tinder.models import MasterMap
 
 
@@ -45,51 +45,77 @@ def pmap(props, bld_ids):
     if not args['bs']:
         # no builds, return empty dict
         return {}
-    for prop in props:
-        lps = dict((p.id, p) for p in 
-                   Property.objects.filter(name=prop,builds__id__in=bld_ids).distinct())
-        args['ps'] = ','.join(map(str, lps.keys()))
-        if not args['ps']:
-            # no properties for this prop, continue
-            continue
-        cursor.execute(pattern % args)
-        for bid, pid in cursor.fetchall():
-            rv[bid][prop] = lps[pid].value
+    pq = Property.objects.filter(name__in=props)
+    # optimize, if bld_ids is a dense list, use just min and max,
+    # otherwise, use explicit ids. Starting to use explicit ids at
+    # 50% density, otherwise just getting more data in favour of
+    # a more expensive query. That could be tuned still.
+    bid_min = min(bld_ids)
+    bid_max = max(bld_ids)
+    if (bid_max - bid_min) < len(bld_ids)*2:
+        pq = pq.filter(builds__id__gte=bid_min, builds__id__lte=bid_max)
+    else:
+        pq = pq.filter(builds__id__in=bld_ids)
+    lps = dict((p.id, p) for p in pq.distinct())
+    args['ps'] = ','.join(map(str, lps.keys()))
+    cursor.execute(pattern % args)
+    for bid, pid in cursor.fetchall():
+        rv[bid][lps[pid].name] = lps[pid].value
     return rv
 
 def tbpl_inner(request):
+    '''Inner method used by both tbpl and tbpl_rows to do the actual work.
+    The callers only differ in that tbpl generates the complete webpage
+    including the reload logic, and tbpl_rows only returns the table rows,
+    likely those that are newer than 'after' in request.GET.
+    You can pass in a 'random' parameter to bypass caching.
+
+    Any params other than 'after' and 'random' are taken to be querying
+    build properties, where multiple properties of the same name are
+    ORed together, and differently named properties restrict further.
+
+    Example query would be
+    tbpl_rows?after=54321&random=foo&locale=de&locale=pl&tree=fx35x
+    which would get all fx35x builds for sourcestamps after 54321 for
+    German and Polish.
+    '''
     ss = SourceStamp.objects.filter(builds__isnull=False).order_by('-pk')
+    props = []
     if request is not None:
-        props = []
-        params = request.GET.copy()
-        params.pop('random', None)
-        if "after" in params:
-            try:
-                id = params.pop("after")[-1]
-                ss = ss.filter(id__gt=int(id))
-            except:
-                pass
-        for prop, val in params.iteritems():
-            try:
-                props.append(Property.objects.filter(name=prop, value=val)[0])
-            except:
-                props.append(None)
-        if props:
-            ss = ss.filter(builds__properties__in=props)
+        for key, values in request.GET.iterlists():
+            if key == "random":
+                continue
+            if key == "after":
+                try:
+                    id = values[-1]
+                    ss = ss.filter(id__gt=int(id))
+                except:
+                    pass
+                continue
+            q = Q()
+            for val in values:
+                q = q|Q(name=key, value=val)
+            if q:
+                props.append(list(Property.objects.filter(q).values_list('id', flat=True)))
+    for _p in props:
+        ss = ss.filter(builds__properties__in=_p)
     ss = ss.distinct()
     ss = list(ss[:10])
-    blds = Build.objects
-    if props:
-        blds = blds.filter(properties__in=props)
+    blds = Build.objects.filter(sourcestamp__in=ss)
+    for _p in props:
+        blds = blds.filter(properties__in=_p)
     nc = NumberedChange.objects.filter(sourcestamp__in=ss)
+    changetags = defaultdict(list)
+    for ct in Change_Tags.objects.filter(change__stamps__in=ss).select_related('tag'):
+        changetags[ct.change_id].append(ct.tag.value)
+    reponames = dict((id, '/'.join([b]+changetags[id])) for id, b in Change.objects.filter(stamps__in=ss).distinct().values_list('id','branch'))
+    repourls = dict(Repository.objects.filter(name__in=set(reponames.values())).values_list('name','url'))
     def changer(c):
         branch = c.branch
-        reponame = '/'.join([c.branch] + 
-                            list(c.tags.values_list('value', flat=True)))
+        reponame = '/'.join([c.branch] + changetags[c.id])
         try:
-            url = str(Push.objects.get(repository__name=reponame,
-                                       changesets__revision__startswith=c.revision))
             rev = c.revision[:12]
+            url = repourls[reponames[c.id]]+'pushloghtml?changeset='+rev
         except:
             url = 'about:blank'
             rev = 12*'0'
@@ -102,16 +128,27 @@ def tbpl_inner(request):
                 'repo': reponame}
 
     changes_for_source = defaultdict(list)
-    for c, s in nc.values_list('change', 'sourcestamp'):
-        changes_for_source[s].append(c)
+    for _nc in nc.select_related('change'):
+        changes_for_source[_nc.sourcestamp_id].append(_nc.change)
+    for _cs in changes_for_source.values():
+        _cs.sort(key=lambda c:c.id, reverse=True)
     bprops = pmap(('locale','tree','slavename'),
-                  blds.values_list('id', flat=True))
+                  list(blds.values_list('id', flat=True)))
+    builds_for_source = defaultdict(list)
+    for b in blds.filter(sourcestamp__in=ss).select_related('builder'):
+        builds_for_source[b.sourcestamp_id].append(b)
+    for _b in builds_for_source.values():
+        _b.sort(key=lambda b:b.id)
+    pending = defaultdict(int)
+    for s in BuildRequest.objects.filter(builds__isnull=True,
+                                         sourcestamp__in=ss).values_list('sourcestamp', flat=True):
+        pending[s] += 1
+
     def chunks(ss):
         for s in ss:
             chunk = {}
-            cs = Change.objects.filter(id__in=changes_for_source[s.id]).order_by('-pk')
             
-            chunk['changes'] = map(changer, cs)
+            chunk['changes'] = map(changer, changes_for_source[s.id])
             chunk['builds'] = [{'id': b.id,
                                 'result': b.result,
                                 'props': bprops[b.id],
@@ -120,17 +157,18 @@ def tbpl_inner(request):
                                 'number': b.buildnumber,
                                 'builder': b.builder.name,
                                 'build': b} 
-                               for b in blds.filter(sourcestamp=s).order_by('id')]
+                               for b in builds_for_source[s.id]]
             chunk['id'] = s.id
             chunk['is_running'] = any(map(lambda c: c['end'] is None, chunk['builds']))
-            chunk['pending'] = BuildRequest.objects.filter(builds__isnull=True,sourcestamp=s).count()
+            chunk['pending'] = pending[s.id]
             yield chunk
     return chunks(ss)
 
 
 def tbpl(request):
     return render_to_response('tinder/tbpl.html',
-                              {'stamps': tbpl_inner(request)})
+                              {'stamps': tbpl_inner(request),
+                               'params': request.GET.iterlists()})
 
 
 def tbpl_rows(request):

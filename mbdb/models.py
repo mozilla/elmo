@@ -59,6 +59,19 @@ class Change(models.Model):
             rv += u' (%s)' % ', '.join(map(unicode, self.tags.all()))
         return rv
 
+class Change_Tags(models.Model):
+    """Helper model for change.tags queries.
+
+    This model maps the ManyToManyField between Tag and Change,
+    and does not create any database entries itself, thanks to
+    Meta.managed = False.
+    """
+    change = models.ForeignKey(Change)
+    tag = models.ForeignKey(Tag)
+    class Meta:
+        unique_together = (('change','tag'),)
+        managed = False
+
 
 class SourceStamp(models.Model):
     changes = models.ManyToManyField(Change, through='NumberedChange',
