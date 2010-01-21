@@ -45,7 +45,7 @@ $(document).ready(function(){
   })
 
   pushes = jQuery.AjaxArray({
-    'json_url': '{% url shipping.views.pushes_json %}?locale={{locale.code}}&{% if mstone %}mstone={{mstone.code}}{% else %}av={{appver.code}}{% endif %}&from=$1&to=$2',
+    'json_url': '{% url shipping.views.pushes_json %}?locale={{locale.code}}&{% if mstone %}mstone={{mstone.code}}{% else %}av={{appver.code}}{% endif %}&from=$1&to=$2{% if branches %}&branches={{branches}}{% endif %}',
     'length': {{max_pushes}},
   }, [items,{{pushes.1}},{{pushes.2}}])
   

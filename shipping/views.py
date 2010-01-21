@@ -144,6 +144,9 @@ def pushes(request):
         offset = _get_push_offset(repo_url, request.GET['offset'])
     else:
         offset = 0
+
+    branches = re.split(r', *', request.GET['branches']) if request.GET.has_key('branches') else None
+
     return render_to_response('shipping/pushes.html', {
         'mstone': mstone,
         'appver': appver,
@@ -154,9 +157,10 @@ def pushes(request):
         'accepted': accepted,
         'user': user,
         'user_type': 0 if user.is_anonymous() else 2 if user.is_staff else 1,
-        'pushes': (simplejson.dumps(_get_api_items(locale, appver, current, offset=offset+20)), 0, min(max_pushes,offset+10)),
+        'pushes': (simplejson.dumps(_get_api_items(locale, appver, current, offset=offset+20, branches=branches)), 0, min(max_pushes,offset+10)),
         'max_pushes': max_pushes,
         'offset': offset,
+        'branches': request.GET.get('branches', None),
         'current_js': simplejson.dumps(_get_signoff_js(current)),
     })
 
@@ -357,6 +361,7 @@ def pushes_json(request):
     appver = request.GET.get('av', None)
     start = int(request.GET.get('from', 0))
     to = int(request.GET.get('to', 20))
+    branches = re.split(r', *', request.GET['branches']) if request.GET.has_key('branches') else None
     
     locale = None
     mstone = None
@@ -371,7 +376,7 @@ def pushes_json(request):
     if loc and ms:
         cur = _get_current_signoff(locale, mstone)
     
-    pushes = _get_api_items(locale, appver, cur, start=start, offset=start+to)
+    pushes = _get_api_items(locale, appver, cur, start=start, offset=start+to, branches=branches)
     return HttpResponse(simplejson.dumps({'items': pushes}, indent=2))
 
 
@@ -600,13 +605,19 @@ def _get_compare_locales_result(rev, tree):
         except:
             return None
 
-def _get_api_items(locale, appver=None, current=None, start=0, offset=10):
+def _get_api_items(locale, appver=None, current=None, start=0, offset=10, branches=None):
+    if branches is None:
+        pushobjs = Push.objects.filter(changesets__branch__id=1).distinct()
+    elif 'all' not in branches:
+        pushobjs = Push.objects.filter(changesets__branch__name__in=branches).distinct()
+    else:
+        pushobjs = Push.objects
     if appver:
         forest = appver.tree.l10n
         repo_url = '%s%s/' % (forest.url, locale.code) 
-        pushobjs = Push.objects.filter(repository__url=repo_url).order_by('-push_date')[start:start+offset]
+        pushobjs = pushobjs.filter(repository__url=repo_url).order_by('-push_date')[start:start+offset]
     else:
-        pushobjs = Push.objects.order_by('-push_date')[start:start+offset]
+        pushobjs = pushobjs.order_by('-push_date')[start:start+offset]
     
     pushes = []
     for pushobj in pushobjs:
