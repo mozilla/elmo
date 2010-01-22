@@ -134,18 +134,18 @@ def pushes(request):
         accepted = _signoffs(mstone is None and appver or mstone, status=4,
                              locale=locale.code)
 
-    max_pushes = _get_total_pushes(locale, mstone)
+    branches = re.split(r', *', request.GET['branches']) if request.GET.has_key('branches') else None
+
+    max_pushes = _get_total_pushes(locale, mstone, branches)
     if max_pushes > 50:
         max_pushes = 50
 
     if request.GET.has_key('center'):
-        offset = _get_push_offset(repo_url, request.GET['center'],-5)
+        offset = _get_push_offset(repo_url, request.GET['center'], -5, branches=branches)
     elif request.GET.has_key('offset'):
-        offset = _get_push_offset(repo_url, request.GET['offset'])
+        offset = _get_push_offset(repo_url, request.GET['offset'], branches=branches)
     else:
         offset = 0
-
-    branches = re.split(r', *', request.GET['branches']) if request.GET.has_key('branches') else None
 
     return render_to_response('shipping/pushes.html', {
         'mstone': mstone,
@@ -580,6 +580,14 @@ def drill_mstone(request):
 #  Internal functions
 #
 
+def _get_pushes(branches=None):
+    if branches is None:
+        return Push.objects.filter(changesets__branch__id=1).distinct()
+    elif 'all' in branches:
+        return Push.objects
+    else:
+        return Push.objects.filter(changesets__branch__name__in=branches).distinct()
+
 def _get_current_signoff(locale, ms=None, av=None):
     if av:
         sos = Signoff.objects.filter(locale=locale, appversion=av)
@@ -590,13 +598,14 @@ def _get_current_signoff(locale, ms=None, av=None):
     except IndexError:
         return None
 
-def _get_total_pushes(locale=None, mstone=None):
+def _get_total_pushes(locale=None, mstone=None, branches=None):
+    pushobjs = _get_pushes(branches)
     if mstone:
         forest = mstone.appver.tree.l10n
         repo_url = '%s%s/' % (forest.url, locale.code) 
-        return Push.objects.filter(repository__url=repo_url).count()
+        return pushobjs.filter(repository__url=repo_url).count()
     else:
-        return Push.objects.count()
+        return pushobjs.count()
 
 def _get_compare_locales_result(rev, tree):
         try:
@@ -606,12 +615,7 @@ def _get_compare_locales_result(rev, tree):
             return None
 
 def _get_api_items(locale, appver=None, current=None, start=0, offset=10, branches=None):
-    if branches is None:
-        pushobjs = Push.objects.filter(changesets__branch__id=1).distinct()
-    elif 'all' not in branches:
-        pushobjs = Push.objects.filter(changesets__branch__name__in=branches).distinct()
-    else:
-        pushobjs = Push.objects
+    pushobjs = _get_pushes(branches)
     if appver:
         forest = appver.tree.l10n
         repo_url = '%s%s/' % (forest.url, locale.code) 
@@ -689,12 +693,13 @@ def _get_notes(session):
             del notes[i]
     return notes
 
-def _get_push_offset(repo_url, id, shift=0):
+def _get_push_offset(repo_url, id, shift=0, branches=None):
     """returns an offset of the push for signoff slider"""
+    pushobjs = _get_pushes(branches)
     if not id:
         return 0
-    push = Push.objects.get(changesets__revision__startswith=id, repository__url=repo_url)
-    num = Push.objects.filter(pk__gt=push.pk, repository__url=repo_url).count()
+    push = pushobjs.get(changesets__revision__startswith=id, repository__url=repo_url)
+    num = pushobjs.filter(pk__gt=push.pk, repository__url=repo_url).count()
     if num+shift<0:
         return 0
     return num+shift
