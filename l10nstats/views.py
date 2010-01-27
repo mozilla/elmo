@@ -24,6 +24,7 @@ def getRunsBefore(tree, stamp, locales):
         q = Run.objects.filter(tree=tree, locale__in=locales,
                                srctime__lt=stamp)
         q = q.order_by('-srctime')[:len(locales)*2]
+        q = q.select_related('locale')
         if q.count() == 0:
             return runs
         for r in q:
@@ -272,6 +273,7 @@ def tree_progress(request, tree):
     q = q.filter(locale__in=locales)
     q2 = q.filter(srctime__lte=endtime,
                   srctime__gte=starttime).order_by('srctime')
+    q2 = q2.select_related('locale')
 
     initial_runs = getRunsBefore(tree, starttime,
                                  locales)

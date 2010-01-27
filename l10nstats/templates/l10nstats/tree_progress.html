@@ -162,7 +162,7 @@ function onDblClickPlot(evt) {
 
 function onClickPlot(evt) {
   var target = evt.currentTarget;
-  if (evt.originalTarget.nodeName.toLowerCase() == 'div') return; // only show timeplot stuff
+  if (evt.originalTarget.nodeName.toLowerCase() == 'div') //return; // only show timeplot stuff
   var elem = $(target).find('.timeplot-canvas')[0];
   var offsetX = elem.offsetLeft;
   while (elem.offsetParent) {
@@ -279,8 +279,11 @@ $(function() {
     values: [{{ startTime|date:"U" }}, {{ endTime|date:"U" }}],
     slide: function(event, ui) {
       1+1;
+    },
+    change: function(event, ui) {
+      document.location.search = '?starttime=' + ui.values[0] + '&endtime=' + ui.values[1];
     }
-  });
+    });
 });
 
 </script>
