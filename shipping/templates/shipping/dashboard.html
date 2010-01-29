@@ -6,12 +6,14 @@
 {% block extra_labels %}, Sign-off{% endblock %}
 {% block extra_columns %}, .locale.signoff{% endblock %}
 {% block extra_cells %}<td>
-  <a ex:href-subcontent="{% url shipping.views.pushes %}?locale={&#123;.locale}}&av={&#123;.appversion}}">
+  <span ex:if="exists(.tree.appversion)">
+  <a ex:href-subcontent="{% url shipping.views.pushes %}?locale={&#123;.locale}}&av={&#123;.tree.appversion}}">
     <span ex:if="exists(.signoff )">
       <span ex:content=".signoff"></span>
       <span>no sign-offs</span>
     </span>
   </a>
+  </span>
 </td>{% endblock %}
 {% block extra_facets %}
 <div ex:role="facet" ex:expression=".signoff"

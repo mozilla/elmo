@@ -345,13 +345,17 @@ def signoff_json(request):
     # make a list now
     items = [{"type": "SignOff",
               "label": "%s/%s" % (tree,locale),
-              "appversion": tree2av[tree],
+              "tree": tree,
               "signoff": list(values)}
              for (tree, locale), values in items.iteritems()]
     items += [{"type": "Shippings",
                "label": "%s/%s" % (tree,locale),
                "shipped": stones}
               for (tree, locale), stones in shipped_in.iteritems()]
+    items += [{"type": "AppVer4Tree",
+               "label": tree,
+               "appversion": av}
+              for tree, av in tree2av.iteritems()]
     return HttpResponse(simplejson.dumps({'items': items}, indent=2),
                         mimetype="text/plain")
 
