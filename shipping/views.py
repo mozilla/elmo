@@ -46,9 +46,10 @@ def index(request):
     })
 
 def homesnippet(request):
-    miles = Milestone.objects.filter(status=1).order_by('code')
+    q = AppVersion.objects.filter(milestone__status=1).select_related('app')
+    q = q.order_by('app__name','-version')
     return render_to_string('shipping/snippet.html', {
-            'miles': miles,
+            'appvers': q,
             })
 
 
