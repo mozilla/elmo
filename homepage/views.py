@@ -26,7 +26,7 @@ def index(request):
             })
 
 def teams(request):
-    locs = Locale.objects.order_by('code')
+    locs = Locale.objects.order_by('name')
 
     return render_to_response('homepage/teams.html', {
             'locales': locs,
