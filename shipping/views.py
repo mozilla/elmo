@@ -78,7 +78,7 @@ def pushes(request):
         current = _get_accepted_signoff(locale, ms=mstone, av=appver)
     user = request.user
     anonymous = user.is_anonymous()
-    staff = user.is_staff
+    staff = 'drivers' in user.groups.values_list('name', flat=True)
     if request.method == 'POST': # we're going to process forms
         offset_id = request.POST['first_row']
         if not enabled: # ... but we're not logged in. Panic!
@@ -157,7 +157,7 @@ def pushes(request):
         'current': current,
         'accepted': accepted,
         'user': user,
-        'user_type': 0 if user.is_anonymous() else 2 if user.is_staff else 1,
+        'user_type': 0 if anonymous else 2 if staff else 1,
         'pushes': (simplejson.dumps(_get_api_items(locale, appver, current, offset=offset+20, branches=branches)), 0, min(max_pushes,offset+10)),
         'max_pushes': max_pushes,
         'offset': offset,
