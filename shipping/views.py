@@ -8,6 +8,7 @@ from l10nstats.models import Run
 from django import forms
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.views.decorators.cache import cache_control
 from django.utils import simplejson
 from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
@@ -272,6 +273,7 @@ def dashboard(request):
             'args': mark_safe(urlencode(args)),
             })
 
+@cache_control(max_age=60)
 def l10n_changesets(request):
     if request.GET.has_key('ms'):
         av_or_m = Milestone.objects.get(code=request.GET['ms'])
@@ -289,6 +291,7 @@ def l10n_changesets(request):
     r['Content-Disposition'] = 'inline; filename=l10n-changesets'
     return r
 
+@cache_control(max_age=60)
 def shipped_locales(request):
     if request.GET.has_key('ms'):
         av_or_m = Milestone.objects.get(code=request.GET['ms'])
@@ -311,6 +314,7 @@ def shipped_locales(request):
     r['Content-Disposition'] = 'inline; filename=shipped-locales'
     return r
 
+@cache_control(max_age=60)
 def signoff_json(request):
     appvers = AppVersion.objects
     if request.GET.has_key('ms'):
@@ -360,6 +364,7 @@ def signoff_json(request):
                         mimetype="text/plain")
 
 
+@cache_control(max_age=60)
 def pushes_json(request):
     loc = request.GET.get('locale', None)
     ms = request.GET.get('mstone', None)
@@ -395,6 +400,7 @@ def milestones(request):
                               {},
                               context_instance=RequestContext(request))
 
+@cache_control(max_age=60)
 def stones_data(request):
     """JSON data to be used by milestones
     """

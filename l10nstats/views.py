@@ -6,6 +6,7 @@ from django.shortcuts import render_to_response
 from django.template.loader import render_to_string
 from django.http import HttpResponse, HttpResponseNotFound,\
     HttpResponseNotModified
+from django.views.decorators.cache import cache_control
 from django.utils import simplejson
 from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
@@ -86,6 +87,7 @@ schema = {
         }
     }
 
+@cache_control(max_age=5*60)
 def status_json(request):
     """The json output for the builds.
     
