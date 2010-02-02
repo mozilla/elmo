@@ -297,13 +297,6 @@ def tree_progress(request, tree):
                                'data': data})
 
 
-def exhibit_empty_iframe(request):
-    """Exhibit and other Simile widgets load __history__.html into an
-    iframe for back and forth, return an empty page for those.
-    """
-    return HttpResponse()
-
-
 def grid(request):
     """View to show which runs are against which revisions.
 

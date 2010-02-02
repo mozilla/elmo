@@ -19,6 +19,7 @@ admin.autodiscover()
 urlpatterns = patterns('',
     # Example:
     # (r'^dashboard/', include('dashboard.foo.urls')),
+                       (r'.*/__history__.html$', lambda r: HttpResponse()),
                        (r'^builds/',
                         include('tinder.urls')),
                        (r'^pushes/(?:(?P<repo_name>.*)/)?$',
