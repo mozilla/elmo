@@ -4,7 +4,7 @@ from django.template.loader import render_to_string
 from django.http import HttpResponseRedirect, HttpResponse
 from life.models import Locale, Push, Changeset, Tree
 from shipping.models import Milestone, Signoff, Snapshot, AppVersion, Action, SignoffForm, ActionForm
-from l10nstats.models import Run
+from l10nstats.models import Run, Run_Revisions
 from django import forms
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -635,27 +635,40 @@ def _get_api_items(locale, appver=None, current=None, start=0, offset=10, branch
         pushobjs = pushobjs.order_by('-push_date')[start:start+offset]
     
     pushes = []
-    for pushobj in pushobjs:
+    if current:
+        current_push = current.push.id
+    else:
+        current_push = None
+    current_accepted = current.accepted
+    tipmap = dict(pushobjs.annotate(tip_id=Max('changesets')).values_list('id','tip_id'))
+    revmap = dict((id, (rev[:12], desc)) for id, rev, desc in Changeset.objects.filter(id__in=tipmap.values()).values_list('id','revision', 'description'))
+    rq = Run_Revisions.objects.filter(changeset__in=tipmap.values())
+    if appver:
+        rq = rq.filter(run__tree=appver.tree)
+    rq = rq.order_by('run__build__id')
+    runs = {}
+    for d in rq.values('run__build__id','changeset', 'run__tree','run__missing','run__missingInFiles', 'run__errors','run__obsolete', 'run__completion'):
+        runs[(d['run__tree'],d['changeset'])] = d
+    for pushobj in pushobjs.select_related('repository'):
         if appver:
             signoff_trees = [appver.tree]
         else:
             signoff_trees = Tree.objects.filter(l10n__repositories=pushobj.repository, appversion__milestone__isnull=False)
         name = '%s on [%s]' % (pushobj.user, pushobj.push_date)
         date = pushobj.push_date.strftime("%Y-%m-%d")
-        cur = current and current.push.id == pushobj.id
+        cur = current_push and current_push == pushobj.id
 
         # check compare-locales
-        runs2 = Run.objects.filter(revisions=pushobj.tip)
         for tree in signoff_trees:
             try:
-                lastrun = runs2.filter(tree=tree).order_by('-build__id')[0]
-                missing = lastrun.missing + lastrun.missingInFiles
+                lastrun = runs[(tree.id,tipmap[pushobj.id])]
+                missing = lastrun['run__missing'] + lastrun['run__missingInFiles']
                 cmp_segs = []
-                if lastrun.errors:
+                if lastrun['run__errors']:
                     cmp_segs.append('%d error(s)' % lastrun.errors)
                 if missing:
                     cmp_segs.append('%d missing' % missing)
-                if lastrun.obsolete:
+                if lastrun['run__obsolete']:
                     cmp_segs.append('%d obsolete' % lastrun.obsolete)
                 if cmp_segs:
                     compare = ', '.join(cmp_segs)
@@ -664,18 +677,19 @@ def _get_api_items(locale, appver=None, current=None, start=0, offset=10, branch
             except:
                 compare = 'no build'
 
+            tiprev, tipdesc = revmap[tipmap[pushobj.id]]
             pushes.append({'name': name,
                            'date': date,
                            'time': pushobj.push_date.strftime("%H:%M:%S"),
                            'id': pushobj.id,
                            'user': pushobj.user,
-                           'revision': pushobj.tip.shortrev,
-                           'revdesc': pushobj.tip.description,
+                           'revision': tiprev,
+                           'revdesc': tipdesc,
                            'status': 'green',
                            'compare': compare,
                            'signoff': cur,
-                           'url': '%spushloghtml?changeset=%s' % (pushobj.repository.url, pushobj.tip.shortrev),
-                           'accepted': current.accepted if cur else None})
+                           'url': '%spushloghtml?changeset=%s' % (pushobj.repository.url, tiprev),
+                           'accepted': current_accepted if cur else None})
     return pushes
 
 def _get_signoff_js(so):

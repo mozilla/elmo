@@ -375,6 +375,7 @@ def _waterfall(request):
     def ievents(builds, changes, max_builds=None):
         starts = []
         c_iter = changes.order_by('-when', '-pk').iterator()
+        builds = builds.select_related('builder','slave','sourcestamp')
         try:
             c = c_iter.next()
         except StopIteration:
