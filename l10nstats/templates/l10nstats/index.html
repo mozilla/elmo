@@ -11,6 +11,7 @@
             var fDone = function() {
                var params = SimileAjax.parseURLParameters();
                var options = ["tree", "result", "locale", "shipping"];
+               {% block extra_query_options %}{% endblock %}
                 for ( var i in options ) {
                   var option = options[i];
                   if (option in params) {
