@@ -639,7 +639,6 @@ def _get_api_items(locale, appver=None, current=None, start=0, offset=10, branch
         current_push = current.push.id
     else:
         current_push = None
-    current_accepted = current.accepted
     tipmap = dict(pushobjs.annotate(tip_id=Max('changesets')).values_list('id','tip_id'))
     revmap = dict((id, (rev[:12], desc)) for id, rev, desc in Changeset.objects.filter(id__in=tipmap.values()).values_list('id','revision', 'description'))
     rq = Run_Revisions.objects.filter(changeset__in=tipmap.values())
@@ -689,7 +688,7 @@ def _get_api_items(locale, appver=None, current=None, start=0, offset=10, branch
                            'compare': compare,
                            'signoff': cur,
                            'url': '%spushloghtml?changeset=%s' % (pushobj.repository.url, tiprev),
-                           'accepted': current_accepted if cur else None})
+                           'accepted': current.accepted if current else None})
     return pushes
 
 def _get_signoff_js(so):
