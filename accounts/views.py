@@ -8,6 +8,8 @@ def index(request):
         return profile(request)
 
 def profile(request):
+    staff = 'drivers' in request.user.groups.values_list('name', flat=True)
     return render_to_response('accounts/profile.html', {
         'user': request.user,
+        'staff': staff,
     })
