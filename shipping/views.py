@@ -665,16 +665,16 @@ def _get_api_items(locale, appver=None, current=None, start=0, offset=10, branch
                 missing = lastrun['run__missing'] + lastrun['run__missingInFiles']
                 cmp_segs = []
                 if lastrun['run__errors']:
-                    cmp_segs.append('%d error(s)' % lastrun.errors)
+                    cmp_segs.append('%d error(s)' % lastrun['run__errors'])
                 if missing:
                     cmp_segs.append('%d missing' % missing)
                 if lastrun['run__obsolete']:
-                    cmp_segs.append('%d obsolete' % lastrun.obsolete)
+                    cmp_segs.append('%d obsolete' % lastrun['run__obsolete'])
                 if cmp_segs:
                     compare = ', '.join(cmp_segs)
                 else:
-                    compare = 'green (%d%%)' % lastrun.completion
-            except:
+                    compare = 'green (%d%%)' % lastrun['run__completion']
+            except Exception, e:
                 compare = 'no build'
 
             tiprev, tipdesc = revmap[tipmap[pushobj.id]]
