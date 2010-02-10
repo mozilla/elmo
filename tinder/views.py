@@ -106,7 +106,7 @@ def tbpl_inner(request):
         blds = blds.filter(properties__in=_p)
     nc = NumberedChange.objects.filter(sourcestamp__in=ss)
     changetags = defaultdict(list)
-    for ct in Change_Tags.objects.filter(change__stamps__in=ss).select_related('tag'):
+    for ct in Change_Tags.objects.filter(change__stamps__in=ss).distinct().select_related('tag'):
         changetags[ct.change_id].append(ct.tag.value)
     reponames = dict((id, '/'.join([b]+changetags[id])) for id, b in Change.objects.filter(stamps__in=ss).distinct().values_list('id','branch'))
     repourls = dict(Repository.objects.filter(name__in=set(reponames.values())).values_list('name','url'))
