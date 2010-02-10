@@ -190,7 +190,7 @@ function customizeRow(table, attr, t, push) {
 }
 
 function getFirstRevision() {
-  return $('#pushes tr.revision > td:first > a').text() 
+  return $('#pushes tr.revision > td:first > a').attr('title');
 }
 
 function onAccept() {
