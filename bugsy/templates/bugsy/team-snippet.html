@@ -5,8 +5,8 @@ href="https://bugzilla.mozilla.org/buglist.cgi?field0-0-0=component;type0-0-0=su
   var bzapi = 'https://api-dev.bugzilla.mozilla.org/0.4.1/';
   var query = {
     'field0-0-0':'component',
-    'type0-0-0':'contains',
-    'value0-0-0': "{{ locale.code }} / ",
+    'type0-0-0':'regexp',
+    'value0-0-0': "^{{ locale.code }} / ",
     'resolution': '---'
   };
   $.getJSON(bzapi + 'count', query, function(json){
