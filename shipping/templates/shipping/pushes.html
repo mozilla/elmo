@@ -91,7 +91,7 @@ function stylePushes() {
 var user = {{user_type}}
 
 function handleReload(u) {
-  if (msstatus==2)u=0;
+  if (msstatus!=1)u=0;
   switch (u) {
     case 0:
       $('.signoff_button').hide()

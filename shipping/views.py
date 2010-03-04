@@ -72,7 +72,7 @@ def pushes(request):
             mstone = Milestone.objects.filter(appver__code=request.GET['av']).order_by('-pk')[0]
         except:
             mstone = None
-    enabled = mstone is None or mstone.status<2
+    enabled = mstone is not None and mstone.status==1
     if enabled:
         current = _get_current_signoff(locale, ms=mstone, av=appver)
     else:
