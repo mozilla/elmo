@@ -756,7 +756,10 @@ def _signoffs(appver_or_ms=None, status=1, getlist=False, locale=None):
         if ms.status==2:
             assert not getlist
             if locale is not None:
-                return ms.signoffs.get(locale__code=locale)
+                try:
+                    return ms.signoffs.get(locale__code=locale)
+                except Signoff.DoesNotExist:
+                    return None
             return ms.signoffs
         appver = ms.appver
     else:
