@@ -192,11 +192,21 @@ def diff_app(request):
             continue
         data1 = ctx1.filectx(path).data()
         data2 = ctx2.filectx(path).data()
-        p.readContents(data1)
-        a_entities, a_map = p.parse()
-        p.readContents(data2)
-        c_entities, c_map = p.parse()
-        del p
+        try:
+            # parsing errors or such can break this, catch those and fail
+            # gracefully
+            p.readContents(data1)
+            a_entities, a_map = p.parse()
+            p.readContents(data2)
+            c_entities, c_map = p.parse()
+            del p
+        except:
+            diffs[path].update({'path': path,
+                                'lines': [{'class': 'issue',
+                                           'oldval': '',
+                                           'newval': '',
+                                           'entity': 'cannot parse ' + path}]})
+            continue            
         a_list = sorted(a_map.keys())
         c_list = sorted(c_map.keys())
         ar = AddRemove()
