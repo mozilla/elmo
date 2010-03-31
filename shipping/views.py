@@ -179,6 +179,18 @@ def diff_app(request):
     match = None # maybe get something from l10n.ini and cmdutil
     changed, added, removed = repo.status(ctx1, ctx2, match=match)[:3]
     diffs = DataTree(dict)
+    for path in added:
+        diffs[path].update({'path': path,
+                            'isFile': True,
+                            'rev': request.GET['to'],
+                            'desc': ' (File added)',
+                            'class': 'added'})
+    for path in removed:
+        diffs[path].update({'path': path,
+                            'isFile': True,
+                            'rev': request.GET['from'],
+                            'desc': ' (File removed)',
+                            'class': 'removed'})
     for path in changed:
         lines = []
         try:
@@ -247,8 +259,6 @@ def diff_app(request):
     diffs = diffs.toJSON().get('children', [])
     return render_to_response('shipping/diff.html',
                               {'locale': request.GET['locale'],
-                               'added': added,
-                               'removed': removed,
                                'repo_url': request.GET['url'],
                                'old_rev': request.GET['from'],
                                'new_rev': request.GET['to'],

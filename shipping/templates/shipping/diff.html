@@ -30,10 +30,10 @@ $(document).ready(function(){
 .diff {
   padding-left: 2ex;
 }
-.line-added {
+.line-added, .file-added {
   color: green;
 }
-.line-removed {
+.line-removed, .file-removed {
   color: red;
 }
 .empty-diff {
@@ -50,22 +50,15 @@ $(document).ready(function(){
 }
 {% endblock %}
 {% block content %}
-{% if added %}
-Added files:
-{% for path in added %}
-<div><a href="{{repo_url}}file/{{new_rev}}/{{path}}" target="_blank">{{path}}</a></div>
-{% endfor %}
-{% endif %}
-{% if removed %}
-Removed files:
-{% for path in removed %}
-<div><a href="{{repo_url}}file/{{old_rev}}/{{path}}" target="_blank">{{path}}</a></div>
-{% endfor %}
-{% endif %}
 {% if diffs %}
 Changed files:
 {% recurse_children %}
 {% for fragment, diff in diffs %}
+{% if diff.value and diff.value.isFile %}
+<div class="diff file-{{diff.value.class}}">
+  <a href="{{repo_url}}file/{{diff.value.rev}}/{{diff.value.path}}" target="_blank">{{fragment}}</a>{{diff.value.desc}}
+</div>
+{% else %}
 <div class="diff-container {{diff.value.class}} ui-accordion
   ui-widget ui-helper-reset"><div title="{{diff.value.path}}"
     class="ui-accordion-header ui-helper-reset"><span class="ui-icon ui-icon-triangle-1-s"></span><a>{{fragment}}</a></div>
@@ -88,6 +81,7 @@ Changed files:
   </div>
   {% endif %}
 </div>
+{% endif %}
 {% endfor %}
 {% endrecurse %}
 {% endif %}
