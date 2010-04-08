@@ -167,6 +167,10 @@ def pushes(request):
     })
 
 
+def __universal_le(content):
+    "CompareLocales reads files with universal line endings, fake that"
+    return content.replace('\r\n','\n').replace('\r','\n')
+
 def diff_app(request):
     reponame = request.GET['repo']
     repopath = settings.REPOSITORY_BASE + '/' + reponame
@@ -207,9 +211,10 @@ def diff_app(request):
         try:
             # parsing errors or such can break this, catch those and fail
             # gracefully
-            p.readContents(data1)
+            # fake reading with universal line endings, too
+            p.readContents(__universal_le(data1))
             a_entities, a_map = p.parse()
-            p.readContents(data2)
+            p.readContents(__universal_le(data2))
             c_entities, c_map = p.parse()
             del p
         except:
