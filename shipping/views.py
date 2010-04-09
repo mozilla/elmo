@@ -598,8 +598,6 @@ def drill_mstone(request):
         'base' in request.POST and
         request.user.has_perm('shipping.can_ship')):
         try:
-            import pdb
-            pdb.set_trace()
             mstone = Milestone.objects.get(code=request.POST['ms'])
             base = Milestone.objects.get(code=request.POST['base'])
             so_ids = list(base.signoffs.values_list('id', flat=True))
