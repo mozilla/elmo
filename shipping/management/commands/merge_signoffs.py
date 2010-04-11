@@ -21,10 +21,13 @@ Only recreates those sign-offs that don't exist on the target appver.'''
             raise CommandError, "Fork and target appversion don't share l10n"
         fsos = _signoffs(fork)
         tsos = _signoffs(target)
-        known_push_ids = tsos.values_list('push__id', flat=True)
-        sos = fsos.exclude(push__id__in=known_push_ids)
+        known_push_ids = dict(tsos.values_list('locale__code','push__id'))
+        sos = fsos.exclude(push__id__in=known_push_ids.values())
         
-        for so in sos:
+        for so in sos.order_by('locale__code').select_related('locale'):
+            if so.push_id <= known_push_ids[so.locale.code]:
+                print "not merging %s, target newer" % so.locale.code
+                continue
             print "merging " + so.locale.code
             _so = target.signoffs.create(push = so.push,
                                       author = so.author,
