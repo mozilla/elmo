@@ -83,13 +83,13 @@ def pushes(request):
     if request.method == 'POST': # we're going to process forms
         offset_id = request.POST['first_row']
         if not enabled: # ... but we're not logged in. Panic!
-            request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s</span> could not be added - <strong>Milestone is not open for edits</strong>' % (mstone, locale)
+            request.session['signoff_error'] = u'<span style="font-style: italic">Signoff for %s %s</span> could not be added - <strong>Milestone is not open for edits</strong>' % (mstone, locale)
         elif anonymous: # ... but we're not logged in. Panic!
-            request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s</span> could not be added - <strong>User not logged in</strong>' % (appver, locale)
+            request.session['signoff_error'] = u'<span style="font-style: italic">Signoff for %s %s</span> could not be added - <strong>User not logged in</strong>' % (appver, locale)
         else:
             if request.POST.has_key('accepted'): # we're in AcceptedForm mode
                 if not staff: # ... but we have no privileges for that!
-                    request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s</span> could not be accepted/rejected - <strong>User has not enough privileges</strong>' % (mstone or appver, locale)
+                    request.session['signoff_error'] = u'<span style="font-style: italic">Signoff for %s %s</span> could not be accepted/rejected - <strong>User has not enough privileges</strong>' % (mstone or appver, locale)
                 else:
                     # hack around AcceptForm not taking strings, fixed in
                     # django 1.1
@@ -102,7 +102,7 @@ def pushes(request):
                         else:
                             request.session['signoff_info'] = '<span style="font-style: italic">Accepted'
                     else:
-                        request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> could not be added' % (mstone or appver, locale, user.username)
+                        request.session['signoff_error'] = u'<span style="font-style: italic">Signoff for %s %s by %s</span> could not be added' % (mstone or appver, locale, user.username)
             else:
                 instance = Signoff(appversion=appver, locale=locale, author=user)
                 form = SignoffForm(request.POST, instance=instance)
@@ -116,9 +116,9 @@ def pushes(request):
                         Snapshot.objects.create(signoff_id=form.instance.id, test=Run, tid=lastrun.id)
                     Action.objects.create(signoff_id=form.instance.id, flag=0, author=user)
 
-                    request.session['signoff_info'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone or appver, locale, user.username)
+                    request.session['signoff_info'] = u'<span style="font-style: italic">Signoff for %s %s by %s</span> added' % (mstone or appver, locale, user.username)
                 else:
-                    request.session['signoff_error'] = '<span style="font-style: italic">Signoff for %s %s by %s</span> could not be added' % (mstone or appver, locale, user.username)
+                    request.session['signoff_error'] = u'<span style="font-style: italic">Signoff for %s %s by %s</span> could not be added' % (mstone or appver, locale, user.username)
         if request.GET.has_key('av'):
             return HttpResponseRedirect('%s?locale=%s&av=%s&offset=%s' % (reverse('shipping.views.pushes'), locale.code ,appver.code, offset_id))
         else:
