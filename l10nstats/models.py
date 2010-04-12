@@ -55,6 +55,42 @@ class Run(models.Model):
         if self.cleanupUnchanged:
             UnchangedInFile.objects.filter(run__active__isnull=True).distinct().delete()
 
+    # fields and class method to convert a query over runs to a brief text
+    dfields = ['errors', 'missing', 'missingInFiles',
+               'obsolete',
+               'completion']
+    @classmethod
+    def to_class_string(cls, iterable, prefix = ''):
+        '''Convert an iterable list of dictionaries to brief output, and result.
+
+        The input can be a values() query ending up on Run objects, and needs
+        all the fields in dfields. The given prefix can be used if the
+        Runs are not the primary manager.
+
+        Yields triples of the input dictionary, the short text, and a
+        classification, any of "error", "warnings", or "success".
+        '''
+        for d in iterable:
+            cmp_segs = []
+            cls = None
+            if d[prefix + 'errors']:
+                cmp_segs.append('%d error(s)' % d[prefix + 'errors'])
+                cls = 'failure'
+            missing = d[prefix + 'missing'] + d[prefix + 'missingInFiles']
+            if missing:
+                cmp_segs.append('%d missing' % missing)
+                cls = 'failure'
+            if d[prefix + 'obsolete']:
+                cmp_segs.append('%d obsolete' % d[prefix + 'obsolete'])
+                cls = cls is None and 'warnings' or cls
+            if cmp_segs:
+                compare = ', '.join(cmp_segs)
+            else:
+                compare = 'green (%d%%)' % d[prefix + 'completion']
+                cls = 'success'
+            yield (d, cls, compare)
+
+
 class Run_Revisions(models.Model):
     """Helper model for queries on run.revisions.
 

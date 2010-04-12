@@ -1,0 +1,69 @@
+{% extends "shipping/base.html" %}
+{% load simile %}
+
+{% block title %}About {{ms}}{% endblock %}
+
+{% block js_include %}
+{% exhibit %}
+<link href="{% url shipping.views.milestone.stati ms.code %}{% if previous %}?previous={{ previous }}{% endif %}" type="application/json" rel="exhibit/data" />
+{% endblock %}
+
+{% block content %}
+<h1>About {{ms}}</h1>
+
+ <table width="100%">
+   <tr valign="top">
+     <td ex:role="viewPanel">
+       <div ex:role="view" ex:showAll="true" ex:ViewClass="Tabular"
+         ex:columnLabels="Locale, Revision, Latest, Snapshot {% ifnotequal ms.status  2 %}, Active{% endifnotequal %}{% if previous %},Updated{% endif %}"
+         ex:columns=".label,.revision, .latest_class,.snapshot_class {% ifnotequal ms.status 2 %}, .active_class{% endifnotequal %}{% if previous %},.updatedFrom{% endif %}">
+         <table>
+           <tr>
+             <td>
+               <span ex:content=".label"></span>
+            </td>
+            <td>
+              <a target="_blank" ex:content=".revision" ex:href-subcontent="{{foresturl}}{&#123;.label}}/pushloghtml?changeset={&#123;.revision}}"></a>
+            </td>
+             <td>
+               <span ex:content=".latest"></span>
+            </td>
+             <td>
+               <span ex:content=".snapshot"></span>
+            </td>
+{% ifnotequal ms.status 2 %}
+            <td>
+              <span ex:content=".active" ex:class=".active_class"></span>
+            </td>
+{% endifnotequal %}
+{% if previous %}
+            <td><span ex:if-exists=".updatedFrom"><span>
+              <a target="_blank" ex:content=".updatedFrom" ex:href-subcontent="{{foresturl}}{&#123;.label}}/pushloghtml?changeset={&#123;.updatedFrom}}"></a>,
+              <a target="_blank" ex:href-subcontent="{% url shipping.views.diff_app %}?locale={&#123;.label}}&repo={{forestname}}/{&#123;.label}}&url={{foresturl}}{&#123;.label}}/&from={&#123;.updatedFrom}}&to={&#123;.revision}}">diff</a></span><span></span></span>
+            </td>
+{% endif %}
+           </tr>
+         </table>
+       </div>
+     </td>
+     <td width="25%">
+       <div ex:role="facet" ex:expression=".latest_class" ex:facetLabel="Latest"
+         id="latest-facet"
+         ex:fixedOrder="success;warnings;failure;exception"></div>
+       <div ex:role="facet" ex:expression=".snapshot_class" ex:facetLabel="Snapshot"
+         id="snapshot-facet"
+         ex:fixedOrder="success;warnings;failure;exception"></div>
+{% ifnotequal ms.status 2 %}
+       <div ex:role="facet" ex:expression=".active_class" ex:facetLabel="Active"
+         id="active-facet"
+         ex:fixedOrder="success;warnings;failure;exception"></div>
+{% endifnotequal %}
+{% if previous %}
+       <div ex:role="facet" ex:expression="exists(.updatedFrom)"
+   ex:facetLabel="Updated"
+         id="updated-facet"></div>
+{% endif %}
+     </td>
+   </tr>
+ </table>
+{% endblock %}

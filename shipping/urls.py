@@ -18,3 +18,8 @@ urlpatterns = patterns('shipping.views',
     (r'^\/drill$', 'drill_mstone'),
     (r'^\/ship$', 'ship_mstone'),
 )
+
+urlpatterns += patterns('shipping.views.milestone',
+    (r'^\/about-milestone/(.*)', 'about'),
+    (r'^\/milestone-stati/(.*)', 'stati'),
+)
