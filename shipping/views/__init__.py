@@ -441,15 +441,21 @@ def milestones(request):
 def stones_data(request):
     """JSON data to be used by milestones
     """
-    avl = AppVersion.objects.all().order_by('-pk')
-    stones = []
-    for av in avl:
-        stones += Milestone.objects.filter(appver=av).order_by('-pk').select_related('appver__app')[:5]
-    items = [{'label': str(stone),
-              'appver': str(stone.appver),
-              'status': stone.status,
-              'code': stone.code}
-             for stone in stones]
+    latest = defaultdict(int)
+    items = []
+    stones = Milestone.objects.order_by('-pk').select_related('appver__app')
+    maxage = 5
+    for stone in stones:
+        age = latest[stone.appver.id]
+        if age >= maxage:
+            continue
+        latest[stone.appver.id] += 1
+        items.append({'label': str(stone),
+                      'appver': str(stone.appver),
+                      'status': stone.status,
+                      'code': stone.code,
+                      'age': age})
+
     return HttpResponse(simplejson.dumps({'items': items}, indent=2))
 
 def open_mstone(request):

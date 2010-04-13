@@ -30,6 +30,9 @@ function doForm(action, ms) {
 {% block content %}
 <h1>Milestones</h1>
 
+ <table width="100%">
+   <tr valign="top">
+     <td ex:role="viewPanel">
 <div ex:role="view" ex:showAll="true" ex:ViewClass="Tabular"
   ex:columnLabels="Milestone"
   ex:columns=".label">
@@ -71,6 +74,15 @@ function doForm(action, ms) {
     </tr>
   </table>
 </div>
+     </td>
+     <td width="25%">
+       <div ex:role="facet" ex:expression=".age"
+         ex:facetLabel="Latest"
+         ex:selection="0"
+         id="age-facet"></div>
+    </td>
+   </tr>
+ </table>
 <div style="display:none">
   <form id="clear_ms" action="{% url shipping.views.clear_mstone %}"
   method="POST">
