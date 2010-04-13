@@ -21,6 +21,7 @@ from ConfigParser import ConfigParser
 import datetime
 from difflib import SequenceMatcher
 import re
+import urllib
 
 from Mozilla.Parser import getParser, Junk
 from Mozilla.CompareLocales import AddRemove, Tree as DataTree
@@ -421,9 +422,20 @@ def milestones(request):
     Opens an exhibit that offers the actions below depending on 
     milestone status and user permissions.
     """
-    return render_to_response('shipping/milestones.html',
-                              {},
-                              context_instance=RequestContext(request))
+    # we need to use {% url %} with an exhibit {{.foo}} as param,
+    # fake { and } to be safe in urllib.quote, which is what reverse
+    # calls down the line.
+    if '{' not in urllib.always_safe:
+        always_safe = urllib.always_safe
+        urllib.always_safe = always_safe + '{}'
+    else:
+        always_safe = None
+    r =  render_to_response('shipping/milestones.html',
+                            {},
+                            context_instance=RequestContext(request))
+    if always_safe is not None:
+        urllib.always_safe = always_safe
+    return r
 
 @cache_control(max_age=60)
 def stones_data(request):

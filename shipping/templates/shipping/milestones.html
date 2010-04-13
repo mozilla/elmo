@@ -37,7 +37,7 @@ function doForm(action, ms) {
     <tr>
       <td>
         <a ex:content=".label"
-        ex:href-subcontent="{% url shipping.views.dashboard %}?ms={&#123;.code}}"></a>
+        ex:href-subcontent="{% url shipping.views.milestone.about  "{&#123;.code}}" %}"></a>
       </td>
       <td>
         <span ex:if=".status = 2">
