@@ -4,7 +4,7 @@ from django.shortcuts import render_to_response
 from django.utils import simplejson
 
 from life.models import Locale, Push, Changeset, Tree
-from shipping.models import Milestone, Signoff, Snapshot, AppVersion, Action
+from shipping.models import Milestone, Signoff, Milestone_Signoffs, Snapshot
 from l10nstats.models import Run, Run_Revisions
 
 from shipping.views import _signoffs
@@ -27,16 +27,6 @@ def about(req, ms_code):
     except:
         return HttpResponse('no milestone found for %s' % ms_code)
 
-    # is there a previously shipped one?
-    try:
-        previous = Milestone.objects.filter(appver__milestone=ms,
-                                            id__lt=ms.id,
-                                            status=2)
-        previous = previous.order_by('-pk')
-        previous = previous[0].code
-    except IndexError:
-        previous = None
-
     mss = Milestone.objects.filter(id=ms.id)
     tree, forestname, foresturl = \
         mss.values_list('appver__tree__code','appver__tree__l10n__name',
@@ -47,10 +37,9 @@ def about(req, ms_code):
                                'tree': tree,
                                'forestname': forestname,
                                'foresturl': foresturl,
-                               'previous': previous,
                                })
 
-def stati(req, ms_code):
+def statuses(req, ms_code):
     '''JSON work horse for the about() view.
 
     @see: about
@@ -81,13 +70,26 @@ def stati(req, ms_code):
 
     # if we have a previously shipped milestone, check the diffs
     previous = {}
-    if 'previous' in req.GET:
-        so_ids = dict((d[2], d[0]) for d in sos_vals)
-        pso = Signoff.objects.filter(shipped_in__code=req.GET['previous'])
-        for loc, id, pid in pso.values_list('locale__code', 'id', 'push__id'):
-            if so_ids[loc] > id:
-                previous[loc] = pid
-                allpushes.append(pid)
+    so_ids = dict((d[2], d[0]) for d in sos_vals) # current signoff ids
+    pso = Milestone_Signoffs.objects.filter(milestone__id__lt=ms.id,
+                                            milestone__appver__milestone=ms.id)
+    pso = pso.order_by('milestone__id')
+    for loc, sid, pid, mcode in pso.values_list('signoff__locale__code',
+                                                'signoff__id',
+                                                'signoff__push__id',
+                                                'milestone__code'):
+        previous[loc] = {'signoff': sid, 'push': pid, 'stone': mcode}
+    # whatever is in so_ids but not in previous is added
+    added = [loc for loc in so_ids.iterkeys() if loc not in previous]
+    removed = [] # not yet used
+    # drop those from previous that we're shipping in the same rev
+    for loc, details in previous.items():
+        if loc in so_ids:
+            if so_ids[loc] <= details['signoff']:
+                previous.pop(loc)
+        else:
+            removed.append(loc)
+    allpushes += [d['push'] for d in  previous.itervalues()]
 
     # get the most recent result for the signed off stamps
     cs = Changeset.objects.filter(pushes__id__in=sos.values())
@@ -121,7 +123,10 @@ def stati(req, ms_code):
                 d['snapshot'] = snapshots[loc]['val']
                 d['snapshot_class'] = snapshots[loc]['class']
             if loc in previous:
-                d['updatedFrom'] = revmap[tips[previous[loc]]][:12]
+                d['updatedFromRev'] = revmap[tips[previous[loc]['push']]][:12]
+                d['updatedFrom'] = previous[loc]['stone']
+            elif loc in added:
+                d['added'] = 'added'
             yield d
 
     return HttpResponse(simplejson.dumps({'items': list(items())}, indent=2),

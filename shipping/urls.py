@@ -21,5 +21,9 @@ urlpatterns = patterns('shipping.views',
 
 urlpatterns += patterns('shipping.views.milestone',
     (r'^\/about-milestone/(.*)', 'about'),
-    (r'^\/milestone-stati/(.*)', 'stati'),
+    (r'^\/milestone-statuses/(.*)', 'statuses'),
+)
+
+urlpatterns += patterns('shipping.views.app',
+    (r'^\/app/locale-changes/(.*)', 'changes'),
 )

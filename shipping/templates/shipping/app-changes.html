@@ -1,0 +1,38 @@
+{% extends "shipping/base.html" %}
+
+{% block title %}Locale changes for {{av}}{% endblock %}
+
+{% block js_include %}
+{% endblock %}
+
+{% block style_include %}
+{% endblock %}
+
+{% block javascript %}
+{% endblock %}
+
+{% block style %}
+.dropped {
+color: red;
+}
+.added {
+color: green;
+}
+.milestone {
+white-space: nowrap;
+}
+{% endblock %}
+
+{% block content %}
+<h1>Locale changes for {{av}}</h1>
+<table>
+{% for row in rows %}
+<tr>
+  <td class="milestone"><a href="{% url shipping.views.milestone.about row.code %}" target="_blank">{{row.name}}</a></td>
+  <td>
+    {% for loc, cls in row.changes %}<span class="{{cls}}">{{loc}}</span> {% endfor %}
+  </td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

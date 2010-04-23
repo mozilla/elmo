@@ -143,6 +143,20 @@ class Milestone(models.Model):
         else:
             return self.code
 
+
+class Milestone_Signoffs(models.Model):
+    """Helper model to query milestone.signoffs.
+
+    The model doesn't alter the schema and is set up such that it
+    can be used to create rich queries on Milestone/Signoff mappings.
+    """
+    milestone = models.ForeignKey(Milestone)
+    signoff = models.ForeignKey(Signoff)
+    class Meta:
+        unique_together = (('milestone','signoff'),)
+        managed = False
+
+
 TYPE_CHOICES = (
     (0, 'signoff start'),
     (1, 'signoff end'),
