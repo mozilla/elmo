@@ -120,6 +120,6 @@ class MozLdapBackend(RemoteUserBackend):
             self.ldo = ldap.initialize(self.host)
             self.ldo.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
             self.ldo.simple_bind_s(self.dn, self.password)
-            self.localizers = self.ldo.search_s("ou=groups,dc=mozilla", ldap.SCOPE_SUBTREE, "cn=hg_l10n")
+            self.localizers = self.ldo.search_s("ou=groups,dc=mozilla", ldap.SCOPE_SUBTREE, "cn=scm_l10n")
             self.ldo.unbind_s()
         return username in self.localizers[0][1]['memberUid']
