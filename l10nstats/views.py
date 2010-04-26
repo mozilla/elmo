@@ -406,6 +406,8 @@ def compare(request):
     json = simplejson.loads(json)
     nodes = JSONAdaptor.adaptChildren(json['details'].get('children', []))
     summary = json['summary']
+    if 'keys' not in summary:
+        summary['keys'] = 0
     # create table widths for the progress bar
     _width = 300
     widths = {}
@@ -415,4 +417,4 @@ def compare(request):
                               {'run': run,
                                'nodes': nodes,
                                'widths': widths,
-                               'summary': json['summary']})
+                               'summary': summary})
