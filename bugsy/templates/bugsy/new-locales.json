@@ -12,7 +12,7 @@
     "blocked": "fx36-l10n-tracker"
   }, 
   {
-    "comment": "We need a bugzilla component for the {{ loc }} Localization.\n\nProduct: Mozilla Localizations\nComponent: {{ loc }} / {{ language }}\nDescription: {{ language }} Localization (...)\n\nAssignee: nobody\nQA Contact: {{ loc }}@localization.bugs\n\n{{ name }}, could you provide a utf-8 encoded translation of '{{ language }} Localization' to include in the component description?", 
+    "comment": "We need a bugzilla component for the {{ loc }} Localization.  We'll start off with the current scheme and then migrate the existing bugs once we change over to the new scheme.\n\n\nProduct: Mozilla Localizations\nComponent: {{ loc }} / {{ language }}\nDescription: {{ language }} Localization (...)\n\nAssignee: nobody\nQA Contact: {{ loc }}@localization.bugs\n\n{{ name }}, could you provide a utf-8 encoded translation of '{{ language }} Localization' to include in the component description? In preparation of the new scheme, fill out the descriptions for Firefox on https://localize.mozilla.org/{{ loc }}/bugzilla_components/, too? You'll be able to log in with your ldap credentials once you have them (along with your hg access), or create an account there. Either way, I'll need to grant you permissions on the server, so poke me with your account details for that.", 
     "product": "mozilla.org", 
     "title": "bugzilla", 
     "cc": "{{ bugmail }},l10n@mozilla.com", 
@@ -50,7 +50,7 @@
     "title": "search", 
     "cc": "l10n@mozilla.com,stas@moz,{{ bugmail }},sethb@moz", 
     "rep_platform": "All", 
-    "short_desc": "[{{ loc }}] Search engine setup for Firefox 3.5 for {{ language }}.", 
+    "short_desc": "[{{ loc }}] Search engine setup for Firefox 3.6 for {{ language }}.", 
     "component": "{{ component }}", 
     "bug_file_loc": "https://wiki.mozilla.org/L10n:Firefox/Productization", 
     "keywords": "productization", 
