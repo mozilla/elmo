@@ -13,6 +13,17 @@ src="{% url static path="jquery.js" %}"></script>
 <style type="text/css">
 table.ui-widget {padding: 0px;}
 </style>
+<style type="text/css" title="diffstuff">
+.diff_active {
+  display: none;
+}
+.hidediff .diff_active {
+  display: none;
+}
+.diff_tofrom {
+  display: none;
+}
+</style>
 <script type="application/javascript">
 function log(msg) {
   if (window.console && console.log) {
@@ -119,6 +130,44 @@ function addSearch(select) {
   }
 };
 
+var diffstuff = false;
+function show_to() {
+  if (diffstuff) return;
+  var styles=document.styleSheets;
+  for (var i=0, ii=styles.length; i<ii; ++i) {
+    if (styles[i].title == 'diffstuff') {
+      diffstuff = styles[i];
+      diffstuff.deleteRule(0);
+      return
+    }
+  }
+}
+
+function show_diffs(reponame, input) {
+  show_to();
+  var tos = $('.diff_tofrom');
+  tos.removeClass('diff_tofrom');
+  tos = $('td.diff_active>input[rev=' + input.value +']');
+  tos.addClass('diff_tofrom');
+  $('tr[repo]').each(function(i, r) {
+    if (r.getAttribute('repo') == reponame) {
+      $(r).removeClass('hidediff');
+    }
+    else {
+      $(r).addClass('hidediff');
+    }
+  });
+}
+
+function doDiff(button) {
+  var params = {};
+  $('input[type=radio]').each(function(i,r){
+      if (r.checked){params.from = r.value;}
+    });
+  params.to = button.getAttribute('rev');
+  params.repo = $(button).parents('tr').first().attr('repo');
+  window.open('{% url shipping.views.diff_app %}?'+$.param(params, true));
+}
 </script>
 {% endblock %}
 {% block content %}
@@ -165,11 +214,13 @@ function addSearch(select) {
 	  <th>Repository</th>
 	  <th>Changeset</th>
 	  <th>Author &mdash; Description</th>
+          <th id="difffrom">Diff<span class="diff_active"> from</span></th>
+          <th id="diffto" class="diff_active">to</td>
 	</tr>
 	</thead>
 	<tbody>
 	  {% for push in pushes %}
-	  <tr class="{{push.class}}">
+	  <tr class="{{push.class}}" repo="{{push.push.repository.name}}">
 	    <td rowspan="{{push.span}}"><cite>{{push.push.user}}<br /><span class="date">{{push.push.push_date}}</span></cite></td>
 	    <td rowspan="{{push.span}}"><a href="{% url pushlog %}{{push.push.repository.name}}/">{{push.push.repository.name}}</a></td>
 	    <td class="age">
@@ -182,9 +233,16 @@ function addSearch(select) {
 	    <strong>{{push.tip.user}} &mdash;
 	      {{push.tip.description}}</strong>
 	    </td>
+            <td><input type="radio" name="from"
+              onchange="show_diffs('{{push.push.repository.name}}',this);"
+              value="{{push.tip.revision|slice:":12"}}"></td>
+            <td class="diff_active">
+              <input type="button" name="to" value="diff"
+              onclick="doDiff(this)"
+              rev="{{push.tip.revision|slice:":12"}}"></td>
 	  </tr>
 	  {% for change in push.changesets %}
-	  <tr class="{{push.class}}">	  
+	  <tr class="{{push.class}}" repo="{{push.push.repository.name}}">	  
 	    <td class="age">
 	      <a href="{{push.push.repository.url}}rev/{{change.revision|slice:":12"}}"
 	      target="_blank">
@@ -195,7 +253,14 @@ function addSearch(select) {
 	    <strong>{{change.user}} &mdash;
 	      {{change.description}}</strong>
 	    </td>
-	  </tr>
+            <td><input type="radio" name="from"
+              onchange="show_diffs('{{push.push.repository.name}}', this);"
+              value="{{change.revision|slice:":12"}}"></td>
+            <td class="diff_active">
+              <input type="button" name="to" value="diff"
+              onclick="doDiff(this)"
+              rev="{{change.revision|slice:":12"}}"></td>
+          </tr>
 	  {% endfor %}
 	  {% endfor %}
 	</tbody>

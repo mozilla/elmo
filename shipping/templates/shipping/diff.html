@@ -1,7 +1,7 @@
 {% extends "shipping/base.html" %}
 {% load recurse %}
 
-{% block title %}Diff for {{locale}}{% endblock %}
+{% block title %}{% if given_title %}{{given_title}}{% else %}{{repo}} from {{old_rev}} to {{new_rev}}{% endif %}{% endblock %}
 
 {% block js_include %}
 <script type="application/javascript"

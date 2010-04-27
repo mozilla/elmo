@@ -2,7 +2,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.http import HttpResponseRedirect, HttpResponse
-from life.models import Locale, Push, Changeset, Tree
+from life.models import Repository, Locale, Push, Changeset, Tree
 from shipping.models import Milestone, Signoff, Snapshot, AppVersion, Action, SignoffForm, ActionForm
 from l10nstats.models import Run, Run_Revisions
 from django import forms
@@ -173,8 +173,10 @@ def __universal_le(content):
     return content.replace('\r\n','\n').replace('\r','\n')
 
 def diff_app(request):
+    # XXX TODO: error handling
     reponame = request.GET['repo']
     repopath = settings.REPOSITORY_BASE + '/' + reponame
+    repo_url = Repository.objects.filter(name=reponame).values_list('url', flat=True)[0]
     from mercurial.ui import ui as _ui
     from mercurial.hg import repository
     ui = _ui()
@@ -264,8 +266,9 @@ def diff_app(request):
                             'lines': lines})
     diffs = diffs.toJSON().get('children', [])
     return render_to_response('shipping/diff.html',
-                              {'locale': request.GET['locale'],
-                               'repo_url': request.GET['url'],
+                              {'given_title': request.GET.get('title', None),
+                               'repo': reponame,
+                               'repo_url': repo_url,
                                'old_rev': request.GET['from'],
                                'new_rev': request.GET['to'],
                                'diffs': diffs})
