@@ -21,6 +21,7 @@ and
 <form id="ship" method="POST"
   action="{% url shipping.views.ship_mstone %}">
 <input type="hidden" name="ms" value="{{ mstone.code }}" />
-<input type="submit" value="Ship it" />
+<input type="submit" {% if not perms.shipping.can_ship %}
+          disabled="disabled"{% endif %} value="Ship it" />
 </form>
 {% endblock %}

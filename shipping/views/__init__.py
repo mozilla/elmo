@@ -533,8 +533,7 @@ def confirm_ship_mstone(request):
     Ends up in ship_mstone if everything is fine.
     Redirects to milestones() in case of trouble.
     """
-    if not ("ms" in request.GET and
-            request.user.has_perm('shipping.can_ship')):
+    if not ("ms" in request.GET):
         return HttpResponseRedirect(reverse('shipping.views.milestones'))
     try:
         mstone = Milestone.objects.get(code=request.GET['ms'])
