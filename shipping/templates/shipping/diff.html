@@ -3,11 +3,6 @@
 
 {% block title %}{% if given_title %}{{given_title}}{% else %}{{repo}} from {{old_rev}} to {{new_rev}}{% endif %}{% endblock %}
 
-{% block js_include %}
-<script type="application/javascript"
-src="{% url static path="jquery.js" %}"></script>
-{% endblock %}
-
 {% block style_include %}
 <link rel="stylesheet" type="text/css"
 href="{% url static path="jquery.ui/themes/base/ui.all.css" %}">

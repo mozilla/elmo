@@ -1,8 +1,5 @@
 {% extends "base.html" %}
 {% block title_matter %}Mozilla Localization Team {{name}}{% endblock %}
-{% block head_matter %}
-  <script type="text/javascript" src="{% url static path="jquery.js" %}"></script>
-{% endblock %}
 {% block content %}
 <small>&lt; Back to <a href="{% url homepage.views.teams %}">all teams</a></small>
 <h1>Mozilla Localization Team {{name}}</h1>
