@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title_matter %}Privacy Policy{% endblock %}
+{% block head_matter %}
+<style type="text/css">
+.notice {
+  color: red;
+}
+#policy {
+  margin-left: 1em;
+}
+#policy p {
+  margin:1em 0;
+}
+#policy p.intro {
+  font-style: italic;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% if policy %}
+{% if not policy.active %}
+<p class="notice">This is not an active Privacy Policy for this
+site.</p>
+{% endif %}
+<div id="policy">{{ policy.text|safe }}</div>
+<p>{%if activation %}Active since {{activation|date}}. {% endif %}Check <a
+href="{% url privacy.views.versions %}">version history</a>.</p>
+{% else %}
+<p class="notice">No policy found.</p>
+{% endif %}
+{% endblock %}

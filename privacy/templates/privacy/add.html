@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title_matter %}Add new Privacy Policy{% endblock %}
+{% block head_matter %}
+<script type="application/javascript"
+src="{% url static path="jquery.js" %}"></script>
+<link rel="stylesheet" type="text/css" href="{% url privacy.views.policy_css %}">
+<style type="text/css">
+td {
+  width: 50%;
+  vertical-align: top;
+}
+#policy {
+  border: solid grey;
+  padding: .5em;
+  overflow: auto;
+}
+#preview {
+  height: 2em;
+}
+.pending {
+  opacity: 0.7;
+}
+</style>
+<script type="application/javascript">
+var _idle = 0, _pending = false;
+var _policy, _comment, _submit;
+function onPolicyChanged(event) {
+  if (!_pending) {
+    $("#policy").addClass("pending");
+    _pending = true;
+  }
+  _submit.attr('disabled', true);
+  _idle = 0;
+}
+
+function onCommentChanged(event) {
+  _submit.attr('disabled', true);
+  _idle = 0;
+}
+
+function onTimer() {
+  if (_idle < 1000) {
+    _idle += 200;
+    return;
+  }
+  if (_pending) {
+    var p = $("#policy");
+    p.html(_policy.val());
+    p.removeClass("pending");
+    _pending = false;
+  }
+  if (_idle < 2000) {
+    // we're just stepping out of idle, check disabled
+    _submit.attr('disabled', !_policy.val() || _policy.val() == _policy.text() || !_comment.val());
+    _idle = 2000;
+  }
+}
+
+$(document).ready(function() {
+  _policy = $("textarea[name=content]");
+  _comment = $("textarea[name=comment]");
+  _submit = $("input[type=submit]");
+  _policy.keypress(onPolicyChanged);
+  _comment.keypress(onCommentChanged);
+  $("#policy").html(_policy.text());
+  window.setInterval(onTimer, 200);
+});
+</script>
+{% endblock %}
+
+{% block content %}
+
+{% if perms.privacy.add_policy %}
+<p>Editing new privacy policy:</p>
+<p><em>Use HTML markup with &lt;h2>, &lt;p> &lt;p class="intro"> and
+&lt;a></em></p>
+<form name="editor" action="#" method="post">
+<table>
+  <tbody>
+    <tr>
+      <td rowspan="2">
+        <textarea name="content" rows="30"
+        cols="80">{{current}}</textarea>
+        <p>Comment: <em>(required, HTML markup with &lt;p> and &lt;a>)</em></p>
+        <textarea name="comment" rows="5" cols="80"></textarea>
+      </td>
+      <td id="preview">
+        Preview: <em>Updates after 1 sec</em>
+     </td>
+    </tr>
+    <tr>
+      <td id="policy"></td>
+    </tr>
+    <tr>
+      <td colspan="2" style="text-align:right">
+        <input type="submit" value="Submit Policy" disabled>
+      </td>
+    </tr>
+  </tbody>
+</table>
+</form>
+{% else %}
+Only priviledged users can create new privacy policies for this
+site. Please <a href="{% url accounts.views.index %}">log in</a> with your LDAP credentials.
+{% endif %}
+{% endblock %}

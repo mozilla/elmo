@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title_matter %}Revision history of Privacy Policies{% endblock %}
+{% block head_matter %}
+<script type="application/javascript"
+src="{% url static path="jquery.js" %}"></script>
+<script type="application/javascript" src="{% url static path="jquery.ui/ui/ui.core.js" %}"></script>
+<script type="application/javascript" src="{% url static path="jquery.ui/ui/ui.dialog.js" %}"></script>
+<link rel="stylesheet" href="{% url static path="jquery.ui/themes/base/ui.all.css" %}" type="text/css" >
+
+<style type="text/css">
+table#policy_versions {
+  border: solid black 1px;
+  border-spacing: 0px;
+  border-collapse: collapse;
+  empty-cells: show;
+}
+table#policy_versions th, table#policy_versions td {
+  border: solid black 1px;
+  padding: 2px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Revision history of Privacy Policies</h1>
+{% if perms.privacy.activate_policy %}
+<form action="{% url privacy.views.activate_policy %}" method="post">
+{% endif %}
+<table id="policy_versions">
+  <thead>
+    <tr>
+      <th>Revision</th>
+      <th>Creation time</th>
+      <th>Active?</th>
+      <th>Active time</th>{% if perms.privacy.add_comment %}
+      <th></th>{% endif %}
+      <th>Comments</th>
+    </tr>
+  </thead>
+  <tbody>
+{% for policy in policies %}
+   <tr>
+      <td rowspan="{{ policy.noc }}"><a href="{% url privacy.views.show_policy id=policy.id %}">{{ policy.id }}</a></td>
+      <td rowspan="{{ policy.noc }}">{{ policy.created|date }}</td>
+{% if perms.privacy.activate_policy %}
+      <td rowspan="{{ policy.noc }}"><input name="active" type="radio" value="{{ policy.id }}"{{ policy.active|yesno:" checked," }}></td>
+{% else %}
+      <td rowspan="{{ policy.noc }}">{{ policy.active|yesno:"Active," }}</td>
+{% endif %}
+      <td rowspan="{{ policy.noc }}">
+  {% for span in policy.active_time %}
+        <span>{{ span.0|date }}</span>{% if span.1 %}
+        - <span>{{ span.1|date }}</span>{% endif %}{% if not forloop.last %}, {% endif %}
+  {% endfor %}
+      </td>
+  {% if perms.privacy.add_comment %}<td rowspan="{{ policy.noc }}">
+    <input type="button" value="comment&hellip;" onclick="return onComment({{policy.id}})">
+  </td>{% endif %}
+  {% for comment in policy.comments.all %}
+      <td title="{{comment.who}}">{{ comment.text|safe }}</td>
+    </tr>
+    {% if not forloop.last %}
+    <tr>
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+  </tbody>
+</table>
+{% if perms.privacy.add_policy %}
+<p><input type="submit" value=" activate policy"></p>
+</form>
+<p id="add_policy">Create a <a href="{% url privacy.views.add_policy %}">new privacy policy</a>.</p>
+{% endif %}
+{% if perms.privacy.add_comment %}
+<div id="add-comment" title="Comment on policy">
+  <p>Enter a comment on policy <span id="policy-id"></span> with HTML markup.</p>
+  <form name="post_comment" action="{% url privacy.views.add_comment %}" method="POST">
+  <textarea name="comment" rows="10" cols="40"></textarea>
+  <input type="hidden" name="policy">
+  </form>
+</div>
+<script type="application/javascript">
+$("#add-comment").dialog({
+  autoOpen:false, modal:true, width:600,
+  buttons: {
+    "Cancel": function() {
+      $(this).dialog('close');
+    },
+    "OK": function() {
+      $('form', this).submit();
+    }
+  }
+});
+function onComment(policy) {
+  $("policy").text(policy);
+  document.forms.post_comment.elements.policy.value=1;
+  $("#add-comment").dialog("open");
+}
+</script>
+{% endif %}
+{% endblock %}

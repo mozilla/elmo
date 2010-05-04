@@ -1,0 +1,6 @@
+#policy p {
+  margin:1em 0;
+}
+#policy p.intro {
+  font-style: italic;
+}
