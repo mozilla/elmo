@@ -27,6 +27,15 @@
   #auth {
     float: right;
   }
+  #page_footer {
+    margin-top: 2em;
+    padding: 10px;
+    font-size: small;
+    font-style: italic;
+    line-height: 1em;
+    background-color: #eee;
+    -moz-border-radius: .5em;
+  }
 </style>
 <script type="application/javascript" src="{% url static path="jquery.js" %}"></script>
 <script type="application/javascript">
@@ -84,5 +93,5 @@ function doLoad(url, p) {
 </div>
 <h1></h1>
 {% block content %}{% endblock %}
-<div class="privacy"><a href="{% url privacy.views.show_policy %}">Privacy policy</a></div>
+<div id="page_footer"><a href="{% url privacy.views.show_policy %}">Privacy policy</a></div>
 </body> </html>

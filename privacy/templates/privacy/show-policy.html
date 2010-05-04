@@ -3,7 +3,12 @@
 {% block head_matter %}
 <style type="text/css">
 .notice {
-  color: red;
+  padding: 2em;
+}
+.notice > span {
+  border: solid red;
+  -moz-border-radius: 2em;
+  padding: 2em;
 }
 #policy {
   margin-left: 1em;
@@ -27,6 +32,7 @@ site.</p>
 <p>{%if activation %}Active since {{activation|date}}. {% endif %}Check <a
 href="{% url privacy.views.versions %}">version history</a>.</p>
 {% else %}
-<p class="notice">No policy found.</p>
+<p class="notice"><span>Policy not found, you may want to to check the <a
+href="{% url privacy.views.versions %}">version history</a>.</span></p>
 {% endif %}
 {% endblock %}
