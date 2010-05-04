@@ -136,10 +136,13 @@ class Milestone(models.Model):
 
     def __unicode__(self):
         if self.name is not None:
-            frags = [self.appver.app.name, self.appver.version]
+            rv = '%s %s' % (self.appver.app.name, self.appver.version)
             if self.name:
-                frags.append(self.name)
-            return ' '.join(frags)
+                if self.name.startswith('.'):
+                    rv += self.name
+                else:
+                    rv += ' ' + self.name
+            return rv
         else:
             return self.code
 
