@@ -165,6 +165,8 @@ def pushes(request):
         'offset': offset,
         'branches': request.GET.get('branches', None),
         'current_js': simplejson.dumps(_get_signoff_js(current)),
+        'login_form_needs_reload': True,
+        'request': request,
     })
 
 
@@ -434,7 +436,9 @@ def milestones(request):
     else:
         always_safe = None
     r =  render_to_response('shipping/milestones.html',
-                            {},
+                            {'login_form_needs_reload': True,
+                             'request': request,
+                             },
                             context_instance=RequestContext(request))
     if always_safe is not None:
         urllib.always_safe = always_safe
@@ -555,7 +559,10 @@ def confirm_ship_mstone(request):
     return render_to_response('shipping/confirm-ship.html',
                               {'mstone': mstone,
                                'pending_locs': pending_locs,
-                               'good': good},
+                               'good': good,
+                               'login_form_needs_reload': True,
+                               'request': request,
+                             },
                               context_instance=RequestContext(request))
         
 def ship_mstone(request):
@@ -604,6 +611,8 @@ def confirm_drill_mstone(request):
                               {'mstone': mstone,
                                'older': drill_base[:3],
                                'proposed': proposed,
+                               'login_form_needs_reload': True,
+                               'request': request,
                                },
                               context_instance=RequestContext(request))
 

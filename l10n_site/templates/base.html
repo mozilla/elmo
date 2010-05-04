@@ -1,11 +1,87 @@
 <html> <head>
 <link rel="shortcut icon" href="{% url favicon %}" type="image/x-icon">
 <link rel="icon" href="{% url favicon %}" type="image/x-icon">
+<style>
+  #menu {
+    margin: 0 0 2em;
+    padding: 10px;
+    font-size: small;
+    font-style: italic;
+    line-height: 1em;
+    background-color: #eee;
+    -moz-border-radius: .5em;
+  }
+  #menu ul {
+    list-style: none;
+    float: left;
+    margin: 0;
+    padding: 0;
+  }
+  #menu li {
+    float: left;
+    margin: 0 10px;
+  }
+  #menu br {
+    clear: both;
+  }
+  #auth {
+    float: right;
+  }
+</style>
+<script type="application/javascript" src="{% url static path="jquery.js" %}"></script>
+<script type="application/javascript">
+function submit_site_login() {
+  var p={};
+  $.each($("#site_login").serializeArray(),
+         function(i, o){
+           p[o.name]=o.value;}
+         );
+  return doLoad("{% url django.contrib.auth.views.login %}", p);
+};
+function submit_site_logout() {
+  var p={};
+  if (doLoad("{% url accounts.views.logout %}", p)) {
+    // only true if we're needing a reload
+    $('#site_login').submit()
+  }
+  return false;
+};
+{% if login_form_needs_reload and request %}
+function doLoad(url, p) {
+  $('input[name=next]').val("{{ request.get_full_path }}");
+  return true;
+  };
+{% else %}
+function doLoad(url, p) {
+  p.next = "{% url accounts.views.user_html %}";
+  var auth = $("#auth").empty().html('<img src="{% url static path="loading.gif" %}" />');
+  auth.load(url, p);
+  return false;
+};
+{% endif %}
+</script>
 <title>{% block title_matter %}{% endblock %}</title>
 {% block head_matter %}{% endblock %}
 </head>
 
 <body>
+<div id="menu">
+ <div id="auth">
+   <script type="application/javascript">
+   document.write('<img src="{% url static path="loading.gif" %}" />');
+   </script>
+   <noscript>Not logged in</noscript>
+ </div>
+ <script type="application/javascript">
+ $("#auth").load("{% url accounts.views.user_html %}");
+ </script>
+ <ul>
+   <li>Mozilla Localization</li>
+   <li><a href="{% url homepage.views.index %}">Home</a></li>
+   <li><a href="https://wiki.mozilla.org/L10n">Documentation</a></li>
+ </ul>
+ <br>
+</div>
 <h1></h1>
 {% block content %}{% endblock %}
 </body> </html>
