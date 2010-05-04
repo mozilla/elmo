@@ -65,7 +65,6 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
 )
 
 if ldap_loaded:
@@ -89,8 +88,6 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.admin',
-    #'django.contrib.syndication',
-    'debug_toolbar',
     'accounts',
     'homepage',
     'privacy',
@@ -102,13 +99,4 @@ INSTALLED_APPS = (
     'tinder',
     'shipping',
     'bugsy',
-    'todo',
-    'todo.proto',
 )
-
-# DEBUG TOOLBAR 
-INTERNAL_IPS = ('127.0.0.1',)
-
-DEBUG_TOOLBAR_CONFIG = {
-    'INTERCEPT_REDIRECTS' : False,
-    }

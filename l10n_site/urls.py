@@ -65,8 +65,6 @@ urlpatterns = patterns('',
                             include('accounts.urls')),
                        (r'^',
                         include('homepage.urls')),
-                       (r'^todo/',
-                            include('todo.urls')), 
                        (r'^robots\.txt$', lambda r: HttpResponse("User-agent: *\nDisallow: /*",
                                                                  mimetype="text/plain")),
 

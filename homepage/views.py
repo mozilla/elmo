@@ -12,20 +12,17 @@ def index(request):
     from pushes.views import homesnippet as pushes_snippet
     from l10nstats.views import homesnippet as stats_snippet
     from bugsy.views import homesnippet as bugs_snippet
-    from todo.views import homesnippet as todo_snippet
 
     shipping_div = mark_safe(shipping_snippet(request))
     pushes_div = mark_safe(pushes_snippet(request))
     l10nstats_div = mark_safe(stats_snippet(request))
     bugs_div = mark_safe(bugs_snippet(request))
-    todo_div = mark_safe(todo_snippet(request))
 
     return render_to_response('homepage/index.html', {
             'shipping': shipping_div,
             'pushes': pushes_div,
             'l10nstats': l10nstats_div,
             'bugs': bugs_div,
-            'todos': todo_div,
             })
 
 def teams(request):
@@ -50,9 +47,6 @@ def locale_team(request, code):
     from bugsy.views import teamsnippet as bug_snippet
     bug_div = mark_safe(bug_snippet(request, loc))
 
-    from todo.views import teamsnippet as todo_snippet
-    todo_div = mark_safe(todo_snippet(request, loc))
-
     name = loc.name or loc.code
 
     return render_to_response('homepage/locale-team.html', {
@@ -61,5 +55,4 @@ def locale_team(request, code):
             'l10nstats': l10nstats_div,
             'shipping': ship_div,
             'bugs': bug_div,
-            'todos': todo_div,
             })
