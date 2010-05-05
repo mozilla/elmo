@@ -1,9 +1,10 @@
+'''Template tags to include locally hosted Simile widgets into dashboards.
+'''
+
 from django import template
 from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
 
-"""Template tags to include locally hosted Simile widgets into dashboards.
-"""
 
 register = template.Library()
 

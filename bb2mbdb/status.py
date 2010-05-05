@@ -35,6 +35,9 @@
 #
 # ***** END LICENSE BLOCK *****
 
+'''Status plugin to be used in buildbot masters serving the l10n dashboard.
+'''
+
 import os
 
 from buildbot.status.base import StatusReceiverMultiService, StatusReceiver
