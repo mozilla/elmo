@@ -212,13 +212,13 @@ def history_plot(request):
                            'obsolete': p.obsolete,
                            'unchanged': p.unchanged}
                 yield {'srctime': r.srctime,
-                       'missing': r.missing + r.missingInFiles + p.report,
+                       'missing': r.missing + r.missingInFiles + r.report,
                        'obsolete': r.obsolete,
                        'unchanged': r.unchanged}
                 p = r
             if r is not None:
                 yield {'srctime': endtime,
-                       'missing': r.missing + r.missingInFiles + p.report,
+                       'missing': r.missing + r.missingInFiles + r.report,
                        'obsolete': r.obsolete,
                        'unchanged': r.unchanged}
         stamps = {}
