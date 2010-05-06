@@ -72,6 +72,12 @@ schema = {
         "missing": {
             "valueType": "number"
             },
+        "report": {
+            "valueType": "number"
+            },
+        "warnings": {
+            "valueType": "number"
+            },
         "errors": {
             "valueType": "number"
             },
@@ -101,7 +107,7 @@ def status_json(request):
     if 'locale' in request.GET:
         q = q.filter(locale__code__in=request.GET.getlist('locale'))
     leafs = ['tree__code', 'locale__code', 'id',
-             'missing', 'missingInFiles',
+             'missing', 'missingInFiles', 'report', 'warnings',
              'errors', 'unchanged', 'total', 'obsolete', 'changed',
              'completion']
     def toExhibit(d):
@@ -121,6 +127,8 @@ def status_json(request):
                 'type': 'Build',
                 'result': result,
                 'missing': missing,
+                'report': d['report'],
+                'warnings': d['warnings'],
                 'changed': d['changed'],
                 'unchanged': d['unchanged'],
                 'total': d['total'],
@@ -193,24 +201,24 @@ def history_plot(request):
         def runs(_q, p):
             if p is not None:
                 yield {'srctime': starttime,
-                       'missing': p.missing + p.missingInFiles,
+                       'missing': p.missing + p.missingInFiles + p.report,
                        'obsolete': p.obsolete,
                        'unchanged': p.unchanged}
             r = None
             for r in _q:
                 if p is not None:
                     yield {'srctime': r.srctime - second,
-                           'missing': p.missing + p.missingInFiles,
+                           'missing': p.missing + p.missingInFiles + p.report,
                            'obsolete': p.obsolete,
                            'unchanged': p.unchanged}
                 yield {'srctime': r.srctime,
-                       'missing': r.missing + r.missingInFiles,
+                       'missing': r.missing + r.missingInFiles + p.report,
                        'obsolete': r.obsolete,
                        'unchanged': r.unchanged}
                 p = r
             if r is not None:
                 yield {'srctime': endtime,
-                       'missing': r.missing + r.missingInFiles,
+                       'missing': r.missing + r.missingInFiles + p.report,
                        'obsolete': r.obsolete,
                        'unchanged': r.unchanged}
         stamps = {}
@@ -282,9 +290,9 @@ def tree_progress(request, tree):
     results = {}
     datadict = defaultdict(dict)
     for loc, r in initial_runs.iteritems():
-        datadict[starttime][loc] = r.missing + r.missingInFiles
+        datadict[starttime][loc] = r.missing + r.missingInFiles + r.report
     for r in q2:
-        datadict[r.srctime][r.locale.code] = r.missing + r.missingInFiles
+        datadict[r.srctime][r.locale.code] = r.missing + r.missingInFiles + r.report
     data = [{'srctime': t, 'locales': simplejson.dumps(datadict[t])}
             for t in sorted(datadict.keys())]
 
@@ -411,7 +419,7 @@ def compare(request):
     # create table widths for the progress bar
     _width = 300
     widths = {}
-    for k in ('changed', 'missing', 'missingInFiles', 'unchanged'):
+    for k in ('changed', 'missing', 'missingInFiles', 'report', 'unchanged'):
         widths[k] = summary[k]*300/summary['total']
     return render_to_response('l10nstats/compare.html',
                               {'run': run,
