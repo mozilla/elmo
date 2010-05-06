@@ -420,7 +420,7 @@ def compare(request):
     _width = 300
     widths = {}
     for k in ('changed', 'missing', 'missingInFiles', 'report', 'unchanged'):
-        widths[k] = summary[k]*300/summary['total']
+        widths[k] = summary[k]*300/summary.get('total', 0)
     return render_to_response('l10nstats/compare.html',
                               {'run': run,
                                'nodes': nodes,
