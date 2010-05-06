@@ -40,8 +40,8 @@ class Run(models.Model):
     unchanged = models.IntegerField(default=0)
     keys = models.IntegerField(default=0)
     errors = models.IntegerField(default=0)
-    report = models.IntegerField(default=0)
-    warnings = models.IntegerField(default=0)
+    report = models.IntegerField(default=0) 
+    warnings = models.IntegerField(default=0) 
     completion = models.SmallIntegerField(default=0)
 
     def activate(self):
