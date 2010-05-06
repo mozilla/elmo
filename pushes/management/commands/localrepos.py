@@ -39,8 +39,18 @@ class Command(BaseCommand):
 
         for name, url in repos.values_list('name','url'):
             repopath = str(resolve(name))
-            if not os.path.isdir(repopath):
+            if not os.path.isdir(os.path.join(repopath, '.hg')):
                 # new repo, need to clone
+                if os.path.isdir(repopath):
+                    print "\n\nCannot clone %s, existing directory in the way\n\n" % name
+                    continue
+                _parent = os.path.dirname(repopath)
+                if not os.path.isdir(_parent):
+                    try:
+                        os.makedirs(_parent)
+                    except Exception, e:
+                        print "\n\nFailed to prepare for clone, %s\n\n" % str(e)
+                        continue
                 hgdispatch(['clone', str(url), repopath])
             else:
                 hgdispatch(['pull', '-R', repopath] + pull_args)
