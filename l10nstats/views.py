@@ -124,6 +124,9 @@ schema = {
         "obsolete": {
             "valueType": "number"
             },
+        "unchanged": {
+            "valueType": "number"
+            },
         "starttime": {
             "valueType": "date"
             },
