@@ -106,6 +106,9 @@ schema = {
             }
         },
     "properties": {
+        "completion": {
+            "valueType": "number"
+            },
         "changed": {
             "valueType": "number"
             },
