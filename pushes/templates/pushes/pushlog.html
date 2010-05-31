@@ -257,7 +257,7 @@ function doDiff(button) {
 	  {% for push in pushes %}
 	  <tr class="{{push.class}}" repo="{{push.push.repository.name}}">
 	    <td rowspan="{{push.span}}"><cite>{{push.push.user}}<br /><span class="date">{{push.push.push_date}}</span></cite></td>
-	    <td rowspan="{{push.span}}"><a href="{% url pushlog %}{{push.push.repository.name}}/">{{push.push.repository.name}}</a></td>
+	    <td rowspan="{{push.span}}"><a href="{% url pushlog %}{{push.push.repository.name}}">{{push.push.repository.name}}</a></td>
 	    <td class="age">
 	      <a href="{{push.push.repository.url}}rev/{{push.tip.revision|slice:":12"}}"
 	      target="_blank">

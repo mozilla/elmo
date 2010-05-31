@@ -82,7 +82,7 @@ def pushlog(request, repo_name):
         q = q.filter(push_date__lte = endTime)
         search['until'] = endTime
     if repo_name is not None:
-        q = q.filter(repository__name = repo_name)
+        q = q.filter(repository__name__startswith = repo_name)
     elif repo_parts:
         repo_parts = map(lambda s:Q(repository__name__contains = s), repo_parts)
         if len(repo_parts) == 1:
@@ -98,7 +98,7 @@ def pushlog(request, repo_name):
         search['path'] = paths
     pushes = q.distinct().order_by('-push_date')[start:]
     if limit is not None:
-        pushes = pushes[:(start+limit-1)]
+        pushes = pushes[:(start+limit)]
     pushrows = [{'push': p,
                  'tip': p.changesets.order_by('-pk')[0],
                  'changesets': p.changesets.order_by('-pk')[1:],
