@@ -41,6 +41,7 @@
 {% block head_matter %}
   <!-- <link href="schema.json" type="application/json" rel="exhibit/data" /> -->
   <link href="{% url l10nstats.views.status_json %}?{{ args }}" type="application/json" rel="exhibit/data" />
+  <link href="{% url webdashboard path="json/?tag=URGENT" %}" type="application/json" rel="exhibit/data" />
 {% block extra_data %}{% endblock %}
 {% exhibit autoCreate=false %}
   <script type="text/javascript">
