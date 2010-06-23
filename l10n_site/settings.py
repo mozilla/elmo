@@ -1,11 +1,11 @@
 # Django settings for dashboard project.
 from local_settings import *
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
-    ('Axel Hecht', 'l10n@mozilla.com')
+    ('Axel Hecht', 'l10n@mozilla.com'),
 )
 
 MANAGERS = ADMINS

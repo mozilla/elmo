@@ -9,3 +9,8 @@ DATABASE_PASSWORD = ''         # Not used with sqlite3.
 DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.
 DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
 REPOSITORY_BASE = ''
+
+# The default setting is "root@localhost" but many mail servers will reject any mail
+# coming from this address and require a fully-qualified address instead. Set this
+# to something meaningful in an existing domain.
+SERVER_EMAIL = ""
