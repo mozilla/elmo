@@ -345,6 +345,8 @@ def tree_progress(request, tree):
 
     return render_to_response('l10nstats/tree_progress.html',
                               {'tree': tree.code,
+                               'bound': request.GET.get('bound', 0),
+                               'showBad': 'hideBad' not in request.GET,
                                'startTime': starttime,
                                'endTime': endtime,
                                'allStart': allStart,

@@ -65,6 +65,7 @@ var loc_data = [
   ];
 var locales = [];
 var localesSource, changesSource;
+var badPlot, goodPlot;
 function onLoad() {
   var theme = Timeline.ClassicTheme.create();
   theme.event.bubble.width = 50;
@@ -91,19 +92,19 @@ function onLoad() {
       bubbleWidth: 250,
       bubbleHeight: 100,
       theme: theme
-    }),
-    Timeplot.createPlotInfo({
-      id: "bad",
+    })];
+  goodPlot = Timeplot.createPlotInfo({
+      id: "good",
       dataSource: new Timeplot.ColumnSource(localesSource,1),
       valueGeometry: valueGeometry,
       timeGeometry: timeGeometry,      
       lineColor: "#000000",
-      fillColor: "#808080",
+      fillColor: {% if showBad %}"#808080"{% else %}"#339900"{% endif %},
       flat: true,
       showValues: true
-    }),
-    Timeplot.createPlotInfo({
-      id: "good",
+    });
+   badPlot = Timeplot.createPlotInfo({
+      id: "bad",
       dataSource: new Timeplot.ColumnSource(localesSource,2),
       valueGeometry: valueGeometry,
       timeGeometry: timeGeometry,      
@@ -111,8 +112,9 @@ function onLoad() {
       fillColor: "rgba(204, 128, 128, .5)",
       flat: true,
       showValues: true
-    })
-  ];
+    });
+  plotInfo.push(goodPlot);{% if showBad %}
+  plotInfo.push(badPlot);{% endif %}
             
   timeplot = Timeplot.create(document.getElementById("my-timeplot"), plotInfo);
   var i=0;
@@ -121,7 +123,7 @@ function onLoad() {
   var _data = {};
   for (var loc in loc_data[i].locales) {
     locales.push(loc);
-    latest[loc] = loc_data[i].locales[loc] ? false : true;
+    latest[loc] = loc_data[i].locales[loc] > {{ bound }} ? false : true;
     _data[loc] = loc_data[i].locales[loc];
     if (latest[loc]) {
       good += 1;
@@ -137,7 +139,7 @@ function onLoad() {
     var loclist = [];
     for (var loc in loc_data[i].locales) {
       _data[loc] = loc_data[i].locales[loc];
-      isGood = loc_data[i].locales[loc] ? false : true;
+      isGood = loc_data[i].locales[loc] > {{ bound }} ? false : true;
       if (isGood != latest[loc]) {
         if (loc in latest) {
           good += isGood ? 1 : -1;
@@ -325,12 +327,12 @@ $(function() {
 {% endblock %}
 {% block content %}
 <h1>Statistics for {{ tree }}</h1>
-<p>Green locales vs red over time</p>
+<p>Green locales {% if showBad %}vs red {% endif%}over time{% if bound %}, ignoring {{bound}} missing strings{% endif %}</p>
 <div id="my-timeplot" style="height: 350px;"></div>
 <div id="time-slider"></div>
-<div class="legend" style="float:right">
+<div class="legend" style="float:right">{% if showBad %}
   red area: locales with missing strings<br>
-  black area: good locales
+  black{% else %}green{% endif %} area: good locales
 </div>
 <div id="histogram" style="height:100px">
 </div>
