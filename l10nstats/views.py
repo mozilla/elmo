@@ -46,6 +46,7 @@ from django.shortcuts import render_to_response
 from django.template.loader import render_to_string
 from django.http import HttpResponse, HttpResponseNotFound,\
     HttpResponseNotModified
+from django.db.models import Min, Max
 from django.views.decorators.cache import cache_control
 from django.utils import simplejson
 from django.utils.http import urlencode
@@ -298,8 +299,8 @@ def tree_progress(request, tree):
     if not locales:
         return HttpResponse("no statistics for %s" % str(tree))
     q = Run.objects.filter(tree=tree)
-    allStart = q.order_by('srctime').values_list('srctime', flat=True)[0]
-    allEnd = q.order_by('-srctime').values_list('srctime', flat=True)[0]
+    _d = q.aggregate(allStart=Min('srctime'), allEnd=Max('srctime'))
+    allStart, allEnd = (_d[k] for k in ('allStart', 'allEnd'))
     displayEnd = allEnd + timedelta(.5)
 
     endtime = datetime.utcnow().replace(microsecond=0)
