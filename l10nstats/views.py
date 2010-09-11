@@ -349,6 +349,8 @@ def tree_progress(request, tree):
                                'showBad': 'hideBad' not in request.GET,
                                'startTime': starttime,
                                'endTime': endtime,
+                               'explicitEnd': 'endtime' in request.GET,
+                               'explicitStart': 'starttime' in request.GET,
                                'allStart': allStart,
                                'allEnd': displayEnd,
                                'data': data})

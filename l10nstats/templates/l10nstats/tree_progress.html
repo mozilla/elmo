@@ -56,6 +56,77 @@ border-bottom-width: 0px;}
 <link rel="stylesheet" href="{% url static path="jquery.ui/themes/base/ui.all.css" %}" type="text/css" >
 <script type="text/javascript" src="{% url static path="clusterer.js" %}"></script>
 <script type="text/javascript">
+/* Special Source to work on dicts */
+Timeplot.DictSource = function(eventSource, leaf) {
+  Timeplot.ColumnSource.apply(this, [eventSource, 1]);
+  this.leaf = leaf;
+}
+Object.extend(Timeplot.DictSource.prototype,Timeplot.ColumnSource.prototype);
+
+Timeplot.DictSource.prototype._getValue = function(event) {
+  return parseFloat(event.getValues()[this.leaf]);
+};
+
+function Data(stacked, nonstacked) {
+  this.stacked = stacked;
+  this.nonstacked = nonstacked;
+  this._data = {};
+  var _d = this._data;
+  if (this.stacked)
+    $.each(this.stacked, function(i, n){_d[n] = 0});
+  if (this.nonstacked)
+    $.each(this.nonstacked, function(i, n){_d[n] = 0});
+}
+Data.prototype = {
+  update: function(from, to) {
+    if (from) {
+      this._data[from] -= 1;
+    }
+    this._data[to] += 1;
+  },
+  data: function() {
+    var v = 0, rv={}, _d = this._data;
+    if (this.stacked) 
+      $.each(this.stacked, function(i, n) {
+        v += _d[n];
+        rv[n] = v;
+      });
+    if (this.unstacked) 
+      $.each(this.unstacked, function(i, n) {
+        rv = _d[n];
+      });
+    return rv;
+  }
+}
+
+var showBad = {{ showBad|yesno:"true,false" }};
+var bound = {{ bound }};
+var params = {
+  bound: bound,
+  showBad: showBad,
+{% if explicitStart %}  earliestDate: new Date("{{ startTime.isoformat }}Z"),
+{% endif %}
+{% if explicitEnd %}  latestDate: new Date("{{ endTime.isoformat }}Z"),
+{% endif %}
+  clone: function() {
+    var rv = {bound: this.bound, showBad: this.showBad, clone: this.clone}
+    if ('earliestDate' in this) rv.earliestDate = this.earliestDate;
+    if ('latestDate' in this) rv.latestDate = this.latestDate;
+    return rv;
+  }
+};
+function paramToSearch(p) {
+  var _p = [];
+  if (p.bound) _p.push('bound=' + p.bound);
+  if (!p.showBad) _p.push('hideBad');
+  if ('earliestDate' in p) _p.push('starttime='+p.earliestDate.getTime()/1000);
+  if ('latestDate' in p) _p.push('endtime='+p.latestDate.getTime()/1000);
+  if (_p.length) {
+    return '?' + _p.join('&');
+  }
+  return '';
+}
+
 var timeplot, timeGeometry;
 var loc_data = [
 {% for item in data %}
@@ -63,28 +134,30 @@ var loc_data = [
      locales: {{ item.locales|safe }}
     },{% endfor %}
   ];
+var dataRange = [new Date("{{ startTime.isoformat }}Z"),new Date("{{ endTime.isoformat }}Z")];
 var locales = [];
 var localesSource, changesSource;
-var badPlot, goodPlot;
+var checkinPlot, badPlot, shadyPlot, goodPlot;
 function onLoad() {
   var theme = Timeline.ClassicTheme.create();
   theme.event.bubble.width = 50;
   theme.event.bubble.height = 50; 
   localesSource = new Timeplot.DefaultEventSource();
   changesSource = new Timeplot.DefaultEventSource();
-  timeGeometry = new Timeplot.MagnifyingTimeGeometry({
+  var tgParams = {
     gridColor: new Timeplot.Color("#000000"),
-    axisLabelsPlacement: "top",
-    min: "{{ startTime.isoformat }}Z",
-    max: "{{ endTime.isoformat }}Z"
-  });
+    axisLabelsPlacement: "top"
+  };
+  if ('earliestDate' in params) tgParams.min = params.earliestDate;
+  if ('latestDate' in params) tgParams.min = params.latestDate;
+  timeGeometry = new Timeplot.MagnifyingTimeGeometry(tgParams);
 
   var valueGeometry = new Timeplot.DefaultValueGeometry({
     gridColor: "#000000",
     min: 0
   });
-  var plotInfo = [
-    Timeplot.createPlotInfo({
+  var plotInfo = [];
+  var checkinPlot = Timeplot.createPlotInfo({
       id: "checkins",
       timeGeometry: timeGeometry,
       eventSource: changesSource,
@@ -92,61 +165,75 @@ function onLoad() {
       bubbleWidth: 250,
       bubbleHeight: 100,
       theme: theme
-    })];
+    });
   goodPlot = Timeplot.createPlotInfo({
       id: "good",
-      dataSource: new Timeplot.ColumnSource(localesSource,1),
+      dataSource: new Timeplot.DictSource(localesSource,'good'),
       valueGeometry: valueGeometry,
       timeGeometry: timeGeometry,      
       lineColor: "#000000",
-      fillColor: {% if showBad %}"#808080"{% else %}"#339900"{% endif %},
+      fillColor: "#339900",
+      fillGradient: false,
+      flat: true,
+      showValues: true
+    });
+  shadyPlot = Timeplot.createPlotInfo({
+      id: "shady",
+      dataSource: new Timeplot.DictSource(localesSource,'shady'),
+      valueGeometry: valueGeometry,
+      timeGeometry: timeGeometry,      
+      lineColor: "#000000",
+      fillColor: "#666666",
+      //fillGradient: false,
       flat: true,
       showValues: true
     });
    badPlot = Timeplot.createPlotInfo({
       id: "bad",
-      dataSource: new Timeplot.ColumnSource(localesSource,2),
+      dataSource: new Timeplot.DictSource(localesSource,'bad'),
       valueGeometry: valueGeometry,
       timeGeometry: timeGeometry,      
       lineColor: "#ff0000",
-      fillColor: "rgba(204, 128, 128, .5)",
+      fillColor: "rgba(153,0,0,.8)", //"#990000"
+      fillGradient: false,
       flat: true,
       showValues: true
     });
-  plotInfo.push(goodPlot);{% if showBad %}
-  plotInfo.push(badPlot);{% endif %}
-            
+  if (params.showBad)
+    plotInfo.push(badPlot);
+  if (params.bound)
+    plotInfo.push(shadyPlot);
+  plotInfo.push(goodPlot);
+  plotInfo.push(checkinPlot);
+
   timeplot = Timeplot.create(document.getElementById("my-timeplot"), plotInfo);
   var i=0;
-  var good = bad = 0;
+  var state=new Data(['good','shady','bad']);
   var latest = {};
   var _data = {};
+  function _getState(_count) {
+    if (_count == 0) return 'good';
+    if (_count > params.bound) return 'bad';
+    return 'shady';
+  }
   for (var loc in loc_data[i].locales) {
     locales.push(loc);
-    latest[loc] = loc_data[i].locales[loc] > {{ bound }} ? false : true;
+    latest[loc] = _getState(loc_data[i].locales[loc]);
     _data[loc] = loc_data[i].locales[loc];
-    if (latest[loc]) {
-      good += 1;
-    } else {
-      bad += 1;
-    }
+    // no breaks on purpose, to stack data
+    state.update(undefined, latest[loc]);
   }
   var NE = Timeplot.DefaultEventSource.NumericEvent;
   var E = Timeline.DefaultEventSource.Event;
-  var locEvents = [new NE(loc_data[i].time,[good, bad])];
+  var locEvents = [new NE(loc_data[i].time,state.data())];
   var changeEvents = [];
   for (var i=1; i<loc_data.length; ++i) {
     var loclist = [];
     for (var loc in loc_data[i].locales) {
       _data[loc] = loc_data[i].locales[loc];
-      isGood = loc_data[i].locales[loc] > {{ bound }} ? false : true;
+      isGood = _getState(loc_data[i].locales[loc]);
       if (isGood != latest[loc]) {
-        if (loc in latest) {
-          good += isGood ? 1 : -1;
-          bad += isGood ? -1 : 1;
-        } else {
-          if (isGood) good += 1; else bad += 1;
-        }
+        state.update(latest[loc], isGood)
         loclist.push(loc);
         latest[loc] = isGood;
       }
@@ -157,16 +244,36 @@ function onLoad() {
                               description: loclist.join(" "),
                                instant: false}));
     }
-    locEvents.push(new NE(loc_data[i].time,[good, bad]));
+    locEvents.push(new NE(loc_data[i].time,state.data()));
   }
-  locEvents.push(new NE(SimileAjax.DateTime.parseIso8601DateTime("{{ endTime.isoformat }}Z"), [good, bad]));
+  locEvents.push(new NE(SimileAjax.DateTime.parseIso8601DateTime("{{ endTime.isoformat }}Z"), state.data()));
   localesSource.addMany(locEvents);
   changesSource.addMany(changeEvents);
   timeplot.repaint();
   paintHistogram(_data);
   $('#my-timeplot').click(onClickPlot).dblclick(onDblClickPlot);
+  $('#boundField').attr('value',params.bound);
+  if (params.showBad)
+    $('#showBadField').attr('checked','checked');
+  else
+    $('#showBadField').removeAttr('checked');
+  /* this doesn't work yet, it triggers change events on the slider
+  var _d;
+  _d = ('earliestDate' in params) ? params.earliestDate : dataRange[1];
+  $("#time-slider").slider('values', 0, _d.getTime());
+  _d = ('latestDate' in params) ? params.latestDate : dataRange[0];
+  $("#time-slider").slider('values', 1, _d.getTime());
+  */
 }
 
+function update(args) {
+  var oldP = params, nextP = params.clone();
+  $.each(args, function(k,v){nextP[k] = v});
+  SimileAjax.History.addLengthyAction(
+    function(){params=nextP;onLoad();},
+    function(){params=oldP;onLoad();},
+    '');
+}
 var resizeTimerID = null;
 function onResize() {
     if (resizeTimerID == null) {
@@ -189,17 +296,20 @@ function onDblClickPlot(evt) {
   }
   var t = timeGeometry.fromScreen(evt.pageX - offsetX);
   var time_window = timeGeometry.getPeriod()/8;
-  var starttime = t - time_window;
-  var endtime = t + time_window;
-  var href = document.location;
-  var q = "?starttime=" + Math.floor(starttime/1000)
-  q += "&endtime=" + Math.floor(endtime/1000);
-  document.location.search = q;
+  var latestDate = new Date(t + time_window);
+  // check for end-of-query, no explicit endDate, and end>dataRange
+  if (latestDate > dataRange[1] && !('latestDate' in params)) {
+    var earliestDate = new Date(dataRange[1].getTime() - time_window);
+    update({earliestDate: earliestDate});
+    return
+  }
+  var earliestDate = new Date(t - time_window);
+  update({earliestDate: earliestDate, latestDate: latestDate});
 }
 
 function onClickPlot(evt) {
   var target = evt.currentTarget;
-  if (evt.originalTarget.nodeName.toLowerCase() == 'div') //return; // only show timeplot stuff
+  //if (evt.originalTarget.nodeName.toLowerCase() == 'div') return; // only show timeplot stuff
   var elem = $(target).find('.timeplot-canvas')[0];
   var offsetX = elem.offsetLeft;
   while (elem.offsetParent) {
@@ -318,7 +428,15 @@ $(function() {
       1+1;
     },
     change: function(event, ui) {
-      document.location.search = '?starttime=' + ui.values[0] + '&endtime=' + ui.values[1];
+      var v = ui.value, key='latestDate', vd = new Date(v*1000);
+      if (v == ui.values[0]) key = 'earliestDate';
+      if (vd >= dataRange[0] && vd <= dataRange[1]) {
+        var ud = {}; ud[key] = vd;
+        update(ud);
+        return;
+      }
+      params[key] = vd;
+      document.location.search = paramToSearch(params);
     }
     });
 });
@@ -327,13 +445,15 @@ $(function() {
 {% endblock %}
 {% block content %}
 <h1>Statistics for {{ tree }}</h1>
-<p>Green locales {% if showBad %}vs red {% endif%}over time{% if bound %}, ignoring {{bound}} missing strings{% endif %}</p>
+<p>String completeness for {{ tree }} localizations over time.</p>
 <div id="my-timeplot" style="height: 350px;"></div>
 <div id="time-slider"></div>
-<div class="legend" style="float:right">{% if showBad %}
-  red area: locales with missing strings<br>
-  black{% else %}green{% endif %} area: good locales
+<div class="legend" style="float:right">
+  <input type="checkbox" onchange="update({showBad:event.target.checked});" id="showBadField">red area: locales with missing strings<br>
+  shaded area: locales with <input type="text" size="3" id="boundField" onchange="update({bound:Number(event.target.value)})"> missing strings<br>
+  green area: good locales
 </div>
+<p>Move sliders on the history of the tree to change the displayed time window, or double click on the plot to drill into a time window.</p>
 <div id="histogram" style="height:100px">
 </div>
 {% endblock %}
