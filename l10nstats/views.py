@@ -425,16 +425,19 @@ class JSONAdaptor(object):
                 self.fileIs = 'missing'
             elif ('missingEntity' in self.value or 
                   'obsoleteEntity' in self.value or
+                  'warning' in self.value or
                   'error' in self.value):
                 errors = [{'key': e, 'class': 'error'}
                           for e in self.value.get('error', [])]
+                warnings = [{'key': e, 'class': 'warning'}
+                          for e in self.value.get('warning', [])]
                 entities = \
                     [{'key': e, 'class': 'missing'}
                      for e in self.value.get('missingEntity', [])] + \
                      [{'key': e, 'class': 'obsolete'}
                      for e in self.value.get('obsoleteEntity', [])]
                 entities.sort(key=lambda d: d['key'])
-                self.entities = errors + entities
+                self.entities = errors + warnings + entities
     @classmethod
     def adaptChildren(cls, _lst, base=''):
         for node in _lst:

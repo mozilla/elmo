@@ -137,8 +137,8 @@ div.thumbnail {border: solid black 1px; margin: 2px;}
        </span>
     <div ex:role="view" ex:viewClass="Tabular"
       ex:collectionID="buids"
-      ex:columnLabels="Locale, Tree, %, Errors, Missing, Reported, Obsolete, Unchanged, Web bugs, Stats, Status{% block extra_labels %}{% endblock %}"
-      ex:columns=".locale, .tree, .completion, .errors, .missing, .report, .obsolete,  .unchanged, .locale.missing_webbugs, .locale, .changed{% block extra_columns %}{% endblock %}"
+      ex:columnLabels="Locale, Tree, %, Errors, Missing, Warnings, Reported, Obsolete, Unchanged, Web bugs, Stats, Status{% block extra_labels %}{% endblock %}"
+      ex:columns=".locale, .tree, .completion, .errors, .missing, .warnings, .report, .obsolete,  .unchanged, .locale.missing_webbugs, .locale, .changed{% block extra_columns %}{% endblock %}"
       ex:cellSpacing="0">
       <table>
     <tr>
@@ -148,6 +148,7 @@ div.thumbnail {border: solid black 1px; margin: 2px;}
       <td class="completion_cell" ex:content=".completion"></td>
       <td class="coverage_cell" ex:content=".errors"></td>
       <td class="coverage_cell" ex:content=".missing"></td>
+      <td class="coverage_cell" ex:content=".warnings"></td>
       <td class="coverage_cell" ex:content=".report"></td>
       <td class="coverage_cell" ex:content=".obsolete"></td>
       <td class="coverage_cell" ex:content=".unchanged"></td>
@@ -174,6 +175,10 @@ div.thumbnail {border: solid black 1px; margin: 2px;}
          ex:fixedOrder="success;warnings;failure;exception"></div>
        <div ex:role="facet" ex:facetLabel="Missing"
          ex:expression=".missing"
+         ex:facetClass="Slider">
+       </div>
+       <div ex:role="facet" ex:facetLabel="Warnings"
+         ex:expression=".warnings"
          ex:facetClass="Slider">
        </div>
        <div ex:role="facet" ex:facetLabel="Reported"
