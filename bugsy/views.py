@@ -47,6 +47,7 @@ from django.utils import simplejson
 import re
 
 from bugsy.models import *
+from life.models import Locale
 
 
 def index(request):
@@ -66,12 +67,17 @@ def file_bugs(request):
             })
 
 def get_bug_links(request):
-    locales = request.GET.getlist('locales')
+    locale_codes = request.GET.getlist('locales')
+    locales = Locale.objects.filter(code__in=locale_codes)
+    locale_names = dict(locales.values_list('code', 'name'))
     opts = dict((k, Template(v)) for k, v in request.GET.iteritems())
     opts.pop('locales')
     bugs = {}
-    for loc in locales:
-        c = Context({'loc': loc})
+    for loc in locale_codes:
+        c = Context({
+            'loc': loc,
+            'locale': locale_names.get(loc, '[%s]' % loc),
+        })
         item = dict((k, t.render(c)) for k, t in opts.iteritems())
         bugs[loc] = item
     return HttpResponse(simplejson.dumps(bugs, indent=2),
