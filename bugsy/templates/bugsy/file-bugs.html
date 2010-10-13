@@ -46,6 +46,17 @@ div.buglink {
   float: left;
   padding: 2px;
 }
+#show-extra-fields small {
+  color: blue;
+  padding: 2px 3px;
+  background-color: #eee;
+}
+#show-extra-fields small:hover {
+  cursor: pointer;
+}
+.extra-field {
+  display: none;
+}
 </style>
 {% exhibit %}
 <script type="text/javascript">
@@ -93,7 +104,11 @@ BugComponentImporter.load = function(link, database, cont) {
 };
 
 $(document).ready(function() {
- document.forms.bugdata.short_desc.focus();
+  document.forms.bugdata.short_desc.focus();
+  $('#show-extra-fields').click(function(){
+    $(this).hide();
+    $('.extra-field').fadeIn();
+  });
 });
 
 function getFormData() {
@@ -162,19 +177,34 @@ function getBugLinks() {
                            accesskey="o"></textarea>
                </td>
              </tr>
-             <tr>
+             <tr id="show-extra-fields">
+               <td colspan="2"><small>&darr; show additional fields</small></td>
+             </tr>
+             <tr class="extra-field">
                <td class="b_desc"><u>C</u>C:</td>
                <td><input name="cc" size="80" accesskey="c"></td>
              </tr>
-             <tr>
+             <tr class="extra-field">
                <td class="b_desc">Blocks:</td>
                <td><input name="blocked" size="80"></td>
              </tr>
-             <tr>
+             <tr class="extra-field">
                <td class="b_desc">Depends:</td>
                <td><input name="dependson" size="80"></td>
              </tr>
-             <tr>
+             <tr class="extra-field">
+               <td class="b_desc">Keywords:</td>
+               <td><input name="keywords" size="80"></td>
+             </tr>
+             <tr class="extra-field">
+               <td class="b_desc">Whiteboard:</td>
+               <td><input name="status_whiteboard" size="80"></td>
+             </tr>
+             <tr class="extra-field">
+               <td class="b_desc">Alias:</td>
+               <td><input name="alias" size="80"></td>
+             </tr>
+             <tr class="extra-field">
                <td class="b_desc">Url:</td>
                <td><input name="bug_file_loc" size="80" value="http://"></td>
              </tr>
