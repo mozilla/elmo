@@ -49,7 +49,8 @@ var params = {
   "{{k|escapejs}}" : [{% for vv in v %}"{{vv|escapejs}}"{% if not forloop.last %}, {% endif %}{% endfor %}]{% if not forloop.last %},{%endif%}
 {% endfor %}
 };
-function onTimeout() {
+var onTimeout;
+function updateOnTimeout() {
   var last_id = $('#buildrows>tbody>tr:not([class*=pending])').attr('id');
   last_id = last_id.match('stamp_([0-9]+)')[1];
   random += 1;
@@ -67,6 +68,12 @@ function onTimeout() {
           }
           window.setTimeout(onTimeout, delay);
         });
+}
+if ('before' in params) {
+  onTimeout = function(){};
+}
+else {
+  onTimeout = updateOnTimeout;
 }
 var _timeout;
 $(document).ready(function() {

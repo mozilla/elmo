@@ -102,13 +102,15 @@ def pmap(props, bld_ids):
     return rv
 
 def tbpl_inner(request):
-    '''Inner method used by both tbpl and tbpl_rows to do the actual work.
+    """Inner method used by both tbpl and tbpl_rows to do the actual work.
     The callers only differ in that tbpl generates the complete webpage
     including the reload logic, and tbpl_rows only returns the table rows,
     likely those that are newer than 'after' in request.GET.
     You can pass in a 'random' parameter to bypass caching.
+    Pass in 'before' and you'll only get those sourcestamps with id matching
+    or before the specified number.
 
-    Any params other than 'after' and 'random' are taken to be querying
+    Any params other than 'after', 'before', and 'random' are taken to be querying
     build properties, where multiple properties of the same name are
     ORed together, and differently named properties restrict further.
 
@@ -116,9 +118,10 @@ def tbpl_inner(request):
     tbpl_rows?after=54321&random=foo&locale=de&locale=pl&tree=fx35x
     which would get all fx35x builds for sourcestamps after 54321 for
     German and Polish.
-    '''
+    """
     ss = SourceStamp.objects.filter(builds__isnull=False).order_by('-pk')
     props = []
+    doUpdate = True
     if request is not None:
         for key, values in request.GET.iterlists():
             if key == "random":
@@ -127,6 +130,14 @@ def tbpl_inner(request):
                 try:
                     id = values[-1]
                     ss = ss.filter(id__gt=int(id))
+                except:
+                    pass
+                continue
+            if key == "before":
+                try:
+                    id = values[-1]
+                    ss = ss.filter(id__lte=int(id))
+                    doUpdate = False
                 except:
                     pass
                 continue
