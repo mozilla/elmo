@@ -61,6 +61,7 @@ urlpatterns = patterns('shipping.views',
 urlpatterns += patterns('shipping.views.milestone',
     (r'^\/about-milestone/(.*)', 'about'),
     (r'^\/milestone-statuses/(.*)', 'statuses'),
+    (r'^\/json-changesets$', 'json_changesets'),
 )
 
 urlpatterns += patterns('shipping.views.app',

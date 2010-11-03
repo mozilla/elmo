@@ -39,6 +39,21 @@
 
 {% block title %}Shipping {{ mstone }}{% endblock %}
 
+{% block javascript %}
+function addMulti() {
+  var platform = $("#nextmulti")[0].value;
+  var row = $('<tr>' +
+    '<td><input type="text" name="multi_' + platform + '_repo"'+
+      ' value="mobile-browser"></td>'+
+    '<td><input type="text" name="multi_' + platform + '_rev"'+
+      ' value="default"></td>'+
+    '<td><input type="text" name="multi_' + platform + '_path"'+
+      ' value="locales/maemo-locales"></td>'+
+    '</tr>');
+  $('#multis').append(row);
+}
+{% endblock %}
+
 {% block content %}
 <h1>Shipping {{ mstone }}</h1>
 {% if pending_locs %}
@@ -55,6 +70,25 @@ There are no pending sign-offs.
 and
 <a href="{% url shipping.views.l10n_changesets %}?ms={{ mstone.code }}" target="_blank">l10n-changesets</a>.
 </p>
+<p>Alternatively, fill out the l10n-changesets.json form:</p>
+<p>
+<form id="changes.json" method="GET" action="{% url shipping.views.milestone.json_changesets %}">
+<input type="hidden" name="ms" value="{{ mstone.code }}" />
+Platforms, comma separated:
+<input type="text" name="platforms" value="maemo"></br>
+<input type="button" value="Add" onclick="addMulti()"> a multi-locale
+file for <input id="nextmulti"
+type="text" value="maemo-multilocale">
+<table>
+  <tbody id="multis">
+    <tr><th>repo</th><th>branch</th><th>path</th></tr>
+  </tbody>
+</table>
+<input type="submit" value="Generate it" />
+</form>
+</p>
+<p>Don't forget to actually trigger the ship-it form below, too. Just
+downloading l10n-changesets doesn't keep track of the generated data.</p>
 <form id="ship" method="POST"
   action="{% url shipping.views.ship_mstone %}">
 <input type="hidden" name="ms" value="{{ mstone.code }}" />

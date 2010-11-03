@@ -34,13 +34,19 @@
 #
 # ***** END LICENSE BLOCK *****
 
-'''Views around Milestone data.
-'''
+"""Views around Milestone data.
+"""
 
+from django.conf import settings
 from django.db.models import Max
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.utils import simplejson
+from django.views.decorators.cache import cache_control
+
+from collections import defaultdict
+import re
+import os.path
 
 from life.models import Locale, Push, Changeset, Tree
 from shipping.models import Milestone, Signoff, Milestone_Signoffs, Snapshot
@@ -50,7 +56,7 @@ from shipping.views import _signoffs
 
 
 def about(req, ms_code):
-    '''View showing which locales are in which changeset on the given
+    """View showing which locales are in which changeset on the given
     milestone. Also compare which are changed from the previously shipped
     milestone.
 
@@ -60,7 +66,7 @@ def about(req, ms_code):
 
     The stati function in this module is the work horse delivering the
     json for this exhibit.
-    '''
+    """
     try:
         ms = Milestone.objects.get(code=ms_code)
     except:
@@ -79,10 +85,10 @@ def about(req, ms_code):
                                })
 
 def statuses(req, ms_code):
-    '''JSON work horse for the about() view.
+    """JSON work horse for the about() view.
 
     @see: about
-    '''
+    """
     try:
         ms = Milestone.objects.get(code=ms_code)
     except:
@@ -170,3 +176,70 @@ def statuses(req, ms_code):
 
     return HttpResponse(simplejson.dumps({'items': list(items())}, indent=2),
                         mimetype="text/plain")
+
+
+@cache_control(max_age=60)
+def json_changesets(request):
+    """Create a json l10n-changesets.
+    This takes optional arguments of triples to link to files in repos
+    specifying a special platform build. Used for multi-locale builds
+    for fennec so far.
+      multi_PLATFORM_repo: repository to load maemo-locales from
+      multi_PLATFORM_rev: revision of file to load (default is usually fine)
+      multi_PLATFORM_path: path inside the repo, say locales/maemo-locales
+
+    XXX: For use in Firefox, this needs to learn about Japanese, still.
+    """
+    if request.GET.has_key('ms'):
+        av_or_m = Milestone.objects.get(code=request.GET['ms'])
+    elif request.GET.has_key('av'):
+        av_or_m = AppVersion.objects.get(code=request.GET['av'])
+    else:
+        return HttpResponse('No milestone or appversion given')
+
+    sos = _signoffs(av_or_m).annotate(tip=Max('push__changesets__id'))
+    tips = dict(sos.values_list('locale__code', 'tip'))
+    revmap = dict(Changeset.objects.filter(id__in=tips.values()).values_list('id', 'revision'))
+    platforms = re.split('[ ,]+', request.GET['platforms'])
+    multis = defaultdict(dict)
+    for k, v in request.GET.iteritems():
+        if not k.startswith('multi_'):
+            continue
+        plat, prop = k.split('_')[1:3]
+        multis[plat][prop] = v
+    extra_plats = defaultdict(list)
+    try:
+        from mercurial.hg import repository
+        from mercurial.ui import ui as _ui
+    except:
+        _ui = None
+    if _ui is not None:
+        for plat in sorted(multis.keys()):
+            try:
+                props = multis[plat]
+                path = os.path.join(settings.REPOSITORY_BASE, props['repo'])
+                repo = repository(_ui(), path)
+                ctx = repo[props['rev']]
+                fctx = ctx.filectx(props['path'])
+                locales = fctx.data().split()
+                for loc in locales:
+                    extra_plats[loc].append(plat)
+            except:
+                pass
+
+    tmpl = '''  "%(loc)s": {
+    "revision": "%(rev)s",
+    "platforms": ["%(plats)s"]
+  }'''
+    content = ('{\n' +
+               ',\n'.join(tmpl % {'loc': l,
+                                  'rev': revmap[tips[l]][:12],
+                                  'plats': '", "'.join(platforms+extra_plats[l])
+                                  }
+                          for l in sorted(tips.keys())
+                          ) +
+               '\n}\n')
+    r = HttpResponse(content,
+                     content_type='text/plain; charset=utf-8')
+    r['Content-Disposition'] = 'inline; filename=l10n-changesets.json'
+    return r
