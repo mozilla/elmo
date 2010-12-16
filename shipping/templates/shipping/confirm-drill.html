@@ -75,7 +75,7 @@ $(document).ready(function() {
 
 {% block content %}
 <h1>Shipping {{ mstone }}</h1>
-This fire-drill release will not make any l10n-changes and take the
+This chem-spill release will not make any l10n-changes and take the
 shipping information from 
 <form id="ship" method="POST"
   action="{% url shipping.views.drill_mstone %}">
@@ -85,17 +85,6 @@ shipping information from
     {{ base }}
   </option>
 {% endfor %}</select>
-<p>
-<div id="new_milestone"><h3><a href="#">Creating new milestone&hellip;</a></h3>
-  <div id="milestone_content">
-    <p>Suffix of the Milestone:<input value="{{proposed.name}}" name="new_name"><br>
-    Code of the Milestone: <input value="{{proposed.code}}" name="new_code"><br>
-    Code of application version: <input value="{{proposed.appver}}" name="new_app">
-    <input type="hidden" name="create_new" value="yes">
-    </p>
-  </div>
-</div>
-</p>
 <p id="controls">
 <input type="submit" value="Ship it" />
 </p>
