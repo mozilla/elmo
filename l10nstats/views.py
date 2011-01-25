@@ -343,9 +343,15 @@ def tree_progress(request, tree):
     data = [{'srctime': t, 'locales': simplejson.dumps(datadict[t])}
             for t in sorted(datadict.keys())]
 
+    bound = request.GET.get("bound", "0")
+    try:
+        bound = int(bound)
+    except:
+        bound = 0
+
     return render_to_response('l10nstats/tree_progress.html',
                               {'tree': tree.code,
-                               'bound': request.GET.get('bound', 0),
+                               'bound': bound,
                                'showBad': 'hideBad' not in request.GET,
                                'startTime': starttime,
                                'endTime': endtime,
