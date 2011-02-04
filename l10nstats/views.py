@@ -162,7 +162,7 @@ def status_json(request):
         result = 'success'
         tree = d['tree__code']
         locale = d['locale__code']
-        if missing:
+        if missing or ('errors' in d and d['errors']):
             result = 'failure'
         elif d['obsolete']:
             result = 'warnings'
