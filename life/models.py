@@ -45,8 +45,8 @@ class Locale(models.Model):
     """stores list of locales and their names
     
     Fields:
-    code -- locale code
-    name -- english name of the locale
+    code   -- locale code
+    name   -- english name of the locale
     native -- native name in locale's script
     """
     code = models.CharField(max_length = 30, unique = True)
