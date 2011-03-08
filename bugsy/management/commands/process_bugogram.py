@@ -47,6 +47,7 @@ try:
     import json
 except ImportError:
     import simplejson as json
+import bugsy
 
 basebug = {
     "rep_platform":"All",
@@ -74,7 +75,7 @@ The Original Code is l10n django site.
 
 The Initial Developer of the Original Code is
 Mozilla Foundation.
-Portions created by the Initial Developer are Copyright (C) 2010
+Portions created by the Initial Developer are Copyright (C) 2011
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
@@ -100,7 +101,7 @@ class Command(BaseCommand):
         make_option('-q', '--quiet', dest = 'quiet', action = 'store_true',
                     help = 'Run quietly'),
         )
-    help = 'TEMPORARY Download bugogram for new locales from wikimo'
+    help = 'TEMPORARY Download bugograms for new locales from wikimo'
 
     sectioner = re.compile('===? (.*?) ===?\n(.*?)(?===)', re.M|re.S)
     props = re.compile('^; (.*?) : (.*?)$', re.M|re.S)
@@ -109,26 +110,29 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         quiet = options.get('quiet', False)
 
-        page = urlopen('http://wiki.mozilla.org/index.php?title=L10n:Bugogram&action=raw').read()
+        for alias, pn in (('fx','L10n:Bugogram'), ('fennec', 'L10n:Mobile/Bugogram')):
+
+            page = urlopen('http://wiki.mozilla.org/index.php?title=%s&action=raw'%pn).read()
         
-        allbugs = []
-        
-        for section in self.sectioner.finditer(page):
-          title = section.group(1)
-          content = self.params.sub(lambda m: '{{ %s }}' % m.group(1),
-                                  section.group(2))
-          offset = 0
-          props = {}
-          for m in self.props.finditer(content):
-              offset = m.end(2)
-              props[m.group(1)] = m.group(2)
-          if not props:
-              continue
-          properties = basebug.copy()
-          properties.update(props)
-          properties['comment'] = content[offset:].strip()
-          properties['title'] = title
-        
-          allbugs.append(properties)
-        
-        print json_license + json.dumps(allbugs, indent=2)
+            allbugs = []
+            
+            for section in self.sectioner.finditer(page):
+              title = section.group(1)
+              content = self.params.sub(lambda m: '{{ %s }}' % m.group(1),
+                                      section.group(2))
+              offset = 0
+              props = {}
+              for m in self.props.finditer(content):
+                  offset = m.end(2)
+                  props[m.group(1)] = m.group(2)
+              if not props:
+                  continue
+              properties = basebug.copy()
+              properties.update(props)
+              properties['comment'] = content[offset:].strip()
+              properties['title'] = title
+            
+              allbugs.append(properties)
+
+            fname = os.path.join(*(bugsy.__path__+['templates','bugsy','new-%s-locales.json'%alias]))
+            open(fname, 'w').write(json_license + json.dumps(allbugs, indent=2) + "\n")
