@@ -99,4 +99,5 @@ INSTALLED_APPS = (
     'tinder',
     'shipping',
     'bugsy',
+    'webby',
 )
