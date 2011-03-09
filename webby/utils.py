@@ -68,13 +68,13 @@ exclude_codes = ('templates', 'en-US')
 
 def _get_locale_mapping():
     config = ConfigParser.ConfigParser()
-    config.readfp(open(os.path.join(PROJECT_PATH, 'verbatim_mapping.cfg')))
+    config.readfp(open(os.path.join(PROJECT_PATH, 'mapping.cfg')))
     for item in config.items("mapping"):
         locale_mapping[item[0]] = item[1]
 
 def _extract_locales_from_verbatim(source):
     locales = []
-    if len(locale_mapping)==0:
+    if not locale_mapping:
         _get_locale_mapping()
 
     matches = patterns['verbatim'].findall(source)
@@ -139,7 +139,7 @@ def update_verbatim_all(project):
 
 def _extract_locales_from_svn(source):
     locales = []
-    if len(locale_mapping)==0:
+    if not locale_mapping:
         _get_locale_mapping()
 
     matches = patterns['svn'].findall(source)
