@@ -35,12 +35,12 @@
 #
 # ***** END LICENSE BLOCK *****
 
-from webby.models import Project, ProjectType
+from webby.models import Project, ProjectType, Weblocale
 from django.contrib import admin
 
 
 class WeblocaleInline(admin.TabularInline):
-    model = Project.locales.through
+    model = Weblocale
 
 
 class ProjectAdmin(admin.ModelAdmin):
