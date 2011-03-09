@@ -42,6 +42,10 @@ import re
 import ConfigParser
 import os
 
+PROJECT_PATH = os.path.dirname(os.path.abspath(__file__))
+locale_mapping = {}
+
+
 def intersect(a, b):
     """ returns what's in both a and b """
     return list(set(a) & set(b))
@@ -62,22 +66,23 @@ patterns = {
 
 exclude_codes = ('templates', 'en-US')
 
-
-def _extract_locales_from_verbatim(source):
-    locales = []
-    verbatim_locale_mapping = {}
-    PROJECT_PATH = os.path.dirname(os.path.abspath(__file__))
-
+def _get_locale_mapping():
     config = ConfigParser.ConfigParser()
     config.readfp(open(os.path.join(PROJECT_PATH, 'verbatim_mapping.cfg')))
     for item in config.items("mapping"):
-        verbatim_locale_mapping[item[0]] = item[1]
+        locale_mapping[item[0]] = item[1]
+
+def _extract_locales_from_verbatim(source):
+    locales = []
+    if len(locale_mapping)==0:
+        _get_locale_mapping()
+
     matches = patterns['verbatim'].findall(source)
     for match in matches:
         url = match[0]
         code = url[1:url.index('/', 1)]
-        code = (verbatim_locale_mapping[code.lower()]
-                if code.lower() in verbatim_locale_mapping else code)
+        code = (locale_mapping[code.lower()]
+                if code.lower() in locale_mapping else code)
         if code not in exclude_codes:
             locales.append(unicode(code))
     return locales
@@ -134,9 +139,14 @@ def update_verbatim_all(project):
 
 def _extract_locales_from_svn(source):
     locales = []
+    if len(locale_mapping)==0:
+        _get_locale_mapping()
+
     matches = patterns['svn'].findall(source)
     for match in matches:
         code = match[0]
+        code = (locale_mapping[code.lower()]
+                if code.lower() in locale_mapping else code)
         if code not in exclude_codes:
             locales.append(unicode(code))
     return locales
