@@ -47,5 +47,16 @@ class ProjectAdmin(admin.ModelAdmin):
     inlines = [WeblocaleInline, ]
 
 
+class WeblocaleAdmin(admin.ModelAdmin):
+    list_display = ['__unicode__', 'requestee', 'in_verbatim', 'in_vcs',
+                    'is_on_stage', 'is_on_prod']
+    list_display_links = ['__unicode__']
+    list_editable = ['in_verbatim', 'in_vcs', 'is_on_stage', 'is_on_prod']
+    list_filter = ['project']
+    search_fields = ['project__name', 'project__slug', 'locale__code',
+                     'locale__name']
+
+
 admin.site.register(ProjectType)
 admin.site.register(Project, ProjectAdmin)
+admin.site.register(Weblocale, WeblocaleAdmin)
