@@ -79,7 +79,7 @@ class Weblocale(models.Model):
     requestee = models.ForeignKey(User, blank=True, null=True)
     in_verbatim = models.BooleanField(default=False)
     in_vcs = models.BooleanField(default=False)
-    in_on_stage = models.BooleanField(default=False)
+    is_on_stage = models.BooleanField(default=False)
     is_on_prod = models.BooleanField(default=False)
 
     def __unicode__(self):
