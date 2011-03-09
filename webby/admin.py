@@ -44,6 +44,7 @@ class WeblocaleInline(admin.TabularInline):
 
 
 class ProjectAdmin(admin.ModelAdmin):
+    prepopulated_fields = {"slug": ("name",)}
     inlines = [WeblocaleInline, ]
 
 
