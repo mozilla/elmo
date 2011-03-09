@@ -60,7 +60,7 @@ patterns = {
 }
 
 
-exclude_codes = ('templates',)
+exclude_codes = ('templates', 'en-US')
 
 
 def _extract_locales_from_verbatim(source):
@@ -76,8 +76,8 @@ def _extract_locales_from_verbatim(source):
     for match in matches:
         url = match[0]
         code = url[1:url.index('/', 1)]
-        code = (verbatim_locale_mapping[code]
-                if code in verbatim_locale_mapping else code)
+        code = (verbatim_locale_mapping[code.lower()]
+                if code.lower() in verbatim_locale_mapping else code)
         if code not in exclude_codes:
             locales.append(unicode(code))
     return locales
