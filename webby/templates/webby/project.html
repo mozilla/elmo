@@ -110,6 +110,15 @@
 Project: <b>{{ project.name }}</b>
 <br/>
 <br/>
+<form action="{% url webby.views.project slug=project.slug %}" method="post">{% csrf_token %}
+<select name="locale" id="id_locale">
+  <option value="">----</option>
+{% for locale in new_locales %}
+  <option value="{{ locale.code }}">{{ locale.name }} ({{ locale.code }})</option>
+{% endfor %}
+</select>
+<button>Opt in</button>
+</form>
 <table id="webby_table">
   <tr>
     <th>locale</th>
@@ -148,13 +157,4 @@ Project: <b>{{ project.name }}</b>
   </tr>
   {% endfor %}
 </table>
-<form action="{% url webby.views.project slug=project.slug %}" method="post">{% csrf_token %}
-<select name="locale" id="id_locale">
-  <option value="">----</option>
-{% for locale in new_locales %}
-  <option value="{{ locale.code }}">{{ locale.name }} ({{ locale.code }})</option>
-{% endfor %}
-</select>
-<button>Opt in</button>
-</form>
 {% endblock %}
