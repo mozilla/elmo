@@ -60,7 +60,7 @@ def _read_webpage(url):
 
 patterns = {
   'verbatim': re.compile('<td class="stats-name">\s+<a href="([^"]+)">([^<]+)</a>'),
-  'svn': re.compile('<li><a href="([^"]+)/">([^<]+)/</a></li>')
+  'svn': re.compile('<li><a href="([^"/]+)/?">([^</]+)/?</a></li>')
 }
 
 

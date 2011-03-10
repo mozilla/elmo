@@ -80,7 +80,7 @@ def project(request, slug):
         form = AddLocaleForm()
 
     locales = Weblocale.objects.filter(project=project) \
-                               .order_by('locale__code')
+                               .order_by('locale__name')
     new_locales = Locale.objects \
                         .exclude(id__in=project.locales.values_list('id')) \
                         .order_by('code')
