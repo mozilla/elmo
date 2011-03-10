@@ -109,7 +109,8 @@
 </div>
 Project: <b>{{ project.name }}</b>
 <br/>
-<br/>
+<p>{{ project.description }}</p>
+{% if user.is_authenticated %}
 <form action="{% url webby.views.project slug=project.slug %}" method="post">{% csrf_token %}
 <select name="locale" id="id_locale">
   <option value="">----</option>
@@ -119,13 +120,12 @@ Project: <b>{{ project.name }}</b>
 </select>
 <button>Opt in</button>
 </form>
+{% endif %}
 <table id="webby_table">
   <tr>
     <th>locale</th>
     <th>in Verbatim</th>
     <th>in SVN</th>
-    <th>on stage</th>
-    <th>on prod</th>
     <th>requestee</th>
   </tr>
   {% for locale in locales %}
@@ -139,16 +139,6 @@ Project: <b>{{ project.name }}</b>
     <td class="flag false">✘</td>
     {% endif %}
     {% if locale.in_vcs %}
-      <td class="flag true">✔</td>
-    {% else %}
-      <td class="flag false">✘</td>
-    {% endif %}
-    {% if locale.in_on_stage %}
-      <td class="flag true">✔</td>
-    {% else %}
-      <td class="flag false">✘</td>
-    {% endif %}
-    {% if locale.in_on_prod %}
       <td class="flag true">✔</td>
     {% else %}
       <td class="flag false">✘</td>
