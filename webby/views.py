@@ -44,6 +44,8 @@ from django import forms
 from django.contrib.admin.models import LogEntry, ADDITION
 from django.contrib.contenttypes.models import ContentType
 
+from itertools import groupby
+
 
 class AddLocaleForm(forms.Form):
     locale = forms.CharField()
@@ -51,8 +53,23 @@ class AddLocaleForm(forms.Form):
 
 def projects(request):
     projects = Project.objects.all().order_by('name')
+    if request.user.is_staff:
+        weblocales = Weblocale.objects.order_by('project')
+        pending_optins = weblocales.filter(requestee__isnull=False,
+                                           in_verbatim=False,
+                                           in_vcs=False)
+        # group pending_optins by the id of the project they're related to
+        project_optins = {}
+        for pid, p_optins in groupby(pending_optins, lambda x: x.project_id):
+            project_optins[pid] = list(p_optins)
+        for project in projects:
+            try:
+                project.pending_count = len(project_optins[project.id])
+            except KeyError:
+                project.pending_count = 0
     return render_to_response('webby/projects.html',
-                              {'projects': projects})
+                              {'projects': projects},
+                              context_instance=RequestContext(request))
 
 
 def project(request, slug):
