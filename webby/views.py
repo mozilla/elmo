@@ -53,7 +53,7 @@ class AddLocaleForm(forms.Form):
 
 def projects(request):
     projects = Project.objects.all().order_by('name')
-    if request.user.is_staff:
+    if request.user.has_perm('webby.change_weblocale'):
         weblocales = Weblocale.objects.order_by('project')
         pending_optins = weblocales.filter(requestee__isnull=False,
                                            in_verbatim=False,
@@ -76,7 +76,7 @@ def project(request, slug):
     project = get_object_or_404(Project, slug=slug)
     if request.method == 'POST':
         form = AddLocaleForm(request.POST)
-        if form.is_valid() and request.user.is_authenticated():
+        if form.is_valid() and request.user.has_perm('webby.add_weblocale'):
             lcode = form.cleaned_data['locale']
             locale = Locale.objects.get(code=lcode)
             wlobj = Weblocale(locale=locale,

@@ -110,7 +110,7 @@
 Project: <b>{{ project.name }}</b>
 <br/>
 <p>{{ project.description }}</p>
-{% if user.is_authenticated %}
+{% if perms.webby.add_weblocale %}
 <form action="{% url webby.views.project slug=project.slug %}" method="post">{% csrf_token %}
 <select name="locale" id="id_locale">
   <option value="">----</option>

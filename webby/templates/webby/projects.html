@@ -81,7 +81,7 @@
   <th>project</th>
   <th>description</th>
   <th>string count</th>
-{% if user.is_staff %}
+{% if perms.webby.change_weblocale %}
   <th>pending</th>
 {% endif %}
 </tr>
@@ -90,7 +90,7 @@
   <td><a href="{% url webby.views.project slug=project.slug%}">{{ project.name  }}</td>
   <td>{{ project.description }}</td>
   <td>{{ project.string_count }}</td>
-{% if user.is_staff %}
+{% if perms.webby.change_weblocale %}
   <td>{{ project.pending_count }}</td>
 {% endif %}
 </tr>
