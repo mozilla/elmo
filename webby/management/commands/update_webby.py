@@ -45,19 +45,19 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         projects = Project.objects.all()
         for project in projects:
-            self.stdout.write('Updating project [%s]: \n' % project.slug)
+            print('Updating project [%s]: \n' % project.slug)
             try:
-                self.stdout.write('  Verbatim:')
+                print('  Verbatim:')
                 update_verbatim_all(project)
-                self.stdout.write(' OK\n')
+                print(' OK\n')
             except:
-                self.stdout.write(' Failed\n')
+                print(' Failed\n')
             try:
-                self.stdout.write('  SVN: ')
+                print('  SVN: ')
                 update_svn_all(project)
-                self.stdout.write(' OK\n')
+                print(' OK\n')
             except:
-                self.stdout.write(' Failed\n')
+                print(' Failed\n')
 
-        self.stdout.write('Webby updated\n')
+        print('Webby updated\n')
 
