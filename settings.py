@@ -113,7 +113,6 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 
 TEMPLATE_DIRS = (
     path('templates'),
-    #path('apps'),
 )
 
 def JINJA_CONFIG():
@@ -153,7 +152,11 @@ MINIFY_BUNDLES = {
 ## Middlewares, apps, URL configs.
 
 MIDDLEWARE_CLASSES = (
-    'commons.middleware.LocaleURLMiddleware',
+    # Commented out because at the moment elmo doesn't localize templates
+    # and middleware don't work when views use render_to_reponse() without
+    # a RequestContext(request) passed along.
+    #'commons.middleware.LocaleURLMiddleware',
+
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

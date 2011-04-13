@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <!-- {% comment %}
    - ***** BEGIN LICENSE BLOCK *****
    - Version: MPL 1.1/GPL 2.0/LGPL 2.1
@@ -35,47 +36,49 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
-<html> <head>
-<link rel="shortcut icon" href="{% url favicon %}" type="image/x-icon">
-<link rel="icon" href="{% url favicon %}" type="image/x-icon">
-<style>
-  #menu {
-    margin: 0 0 2em;
-    padding: 10px;
-    font-size: small;
-    font-style: italic;
-    line-height: 1em;
-    background-color: #eee;
-    -moz-border-radius: .5em;
-  }
-  #menu ul {
-    list-style: none;
-    float: left;
-    margin: 0;
-    padding: 0;
-  }
-  #menu li {
-    float: left;
-    margin: 0 10px;
-  }
-  #menu br {
-    clear: both;
-  }
-  #auth {
-    float: right;
-  }
-  #page_footer {
-    margin-top: 2em;
-    padding: 10px;
-    font-size: small;
-    font-style: italic;
-    line-height: 1em;
-    background-color: #eee;
-    -moz-border-radius: .5em;
-  }
-</style>
-<script type="application/javascript" src="{% url static path="jquery.js" %}"></script>
-<script type="application/javascript">
+<html LANG="{{ LANG }}" dir="{{ DIR }}">
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+    <link rel="shortcut icon" href="{% url static path="img/favicon.ico" %}" type="image/x-icon">
+    <link rel="icon" href="{% url static path="img/favicon.ico" %}" type="image/x-icon">
+    <style type="text/css">
+#menu {
+  margin: 0 0 2em;
+  padding: 10px;
+  font-size: small;
+  font-style: italic;
+  line-height: 1em;
+  background-color: #eee;
+  -moz-border-radius: .5em;
+}
+#menu ul {
+  list-style: none;
+  float: left;
+  margin: 0;
+  padding: 0;
+}
+#menu li {
+  float: left;
+  margin: 0 10px;
+}
+#menu br {
+  clear: both;
+}
+#auth {
+  float: right;
+}
+#page_footer {
+  margin-top: 2em;
+  padding: 10px;
+  font-size: small;
+  font-style: italic;
+  line-height: 1em;
+  background-color: #eee;
+  -moz-border-radius: .5em;
+}
+    </style>
+    <script type="application/javascript" src="{% url static path="js/jquery.js" %}"></script>
+    <script type="application/javascript">
 function submit_site_login() {
   var p={};
   $.each($("#site_login").serializeArray(),
@@ -100,7 +103,7 @@ function doLoad(url, p) {
 {% else %}
 function doLoad(url, p) {
   p.next = "{% url accounts.views.user_html %}";
-  var auth = $("#auth").empty().html('<img src="{% url static path="loading.gif" %}" />');
+  var auth = $("#auth").empty().html('<img src="{% url static path="img/loading.gif" %}" />');
   auth.load(url, p);
   return false;
 };
@@ -114,7 +117,7 @@ function doLoad(url, p) {
 <div id="menu">
  <div id="auth">
    <script type="application/javascript">
-   document.write('<img src="{% url static path="loading.gif" %}" />');
+   document.write('<img src="{% url static path="img/loading.gif" %}" />');
    </script>
    <noscript>Not logged in</noscript>
  </div>
@@ -133,4 +136,6 @@ function doLoad(url, p) {
 <h1></h1>
 {% block content %}{% endblock %}
 <div id="page_footer"><a href="{% url privacy.views.show_policy %}">Privacy policy</a></div>
-</body> </html>
+
+</body> 
+</html>

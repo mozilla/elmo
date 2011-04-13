@@ -38,8 +38,6 @@
 {% endcomment %} -->
 {% block title_matter %}Revision history of Privacy Policies{% endblock %}
 {% block head_matter %}
-<script type="application/javascript"
-src="{% url static path="jquery.js" %}"></script>
 <script type="application/javascript" src="{% url static path="jquery.ui/ui/ui.core.js" %}"></script>
 <script type="application/javascript" src="{% url static path="jquery.ui/ui/ui.dialog.js" %}"></script>
 <link rel="stylesheet" href="{% url static path="jquery.ui/themes/base/ui.all.css" %}" type="text/css" >
@@ -60,6 +58,8 @@ table#policy_versions th, table#policy_versions td {
 
 {% block content %}
 <h1>Revision history of Privacy Policies</h1>
+
+
 {% if perms.privacy.activate_policy %}
 <form action="{% url privacy.views.activate_policy %}" method="post">
 {% endif %}
@@ -111,9 +111,9 @@ table#policy_versions th, table#policy_versions td {
 {% if perms.privacy.add_comment %}
 <div id="add-comment" title="Comment on policy">
   <p>Enter a comment on policy <span id="policy-id"></span> with HTML markup.</p>
-  <form name="post_comment" action="{% url privacy.views.add_comment %}" method="POST">
+  <form name="post_comment" action="{% url privacy.views.add_comment %}" method="post">{% csrf_token %}
   <textarea name="comment" rows="10" cols="40"></textarea>
-  <input type="hidden" name="policy">
+  <div style="display:none"><input type="hidden" name="policy"></div>
   </form>
 </div>
 <script type="application/javascript">

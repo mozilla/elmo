@@ -39,6 +39,7 @@
 
 from django.shortcuts import render_to_response, redirect
 from django.utils.safestring import mark_safe
+from django.template import RequestContext
 
 from life.models import Locale
 
@@ -53,20 +54,18 @@ def index(request):
     pushes_div = mark_safe(pushes_snippet(request))
     l10nstats_div = mark_safe(stats_snippet(request))
     bugs_div = mark_safe(bugs_snippet(request))
-
     return render_to_response('homepage/index.html', {
             'shipping': shipping_div,
             'pushes': pushes_div,
             'l10nstats': l10nstats_div,
             'bugs': bugs_div,
-            })
+            }, context_instance=RequestContext(request))
 
 def teams(request):
     locs = Locale.objects.order_by('name')
-
     return render_to_response('homepage/teams.html', {
             'locales': locs,
-            })
+            }, context_instance=RequestContext(request))
 
 def locale_team(request, code):
     try:
@@ -91,4 +90,4 @@ def locale_team(request, code):
             'l10nstats': l10nstats_div,
             'shipping': ship_div,
             'bugs': bug_div,
-            })
+            }, context_instance=RequestContext(request))
