@@ -1,0 +1,136 @@
+<!-- {% comment %}
+   - ***** BEGIN LICENSE BLOCK *****
+   - Version: MPL 1.1/GPL 2.0/LGPL 2.1
+   -
+   - The contents of this file are subject to the Mozilla Public License Version
+   - 1.1 (the "License"); you may not use this file except in compliance with
+   - the License. You may obtain a copy of the License at
+   - http://www.mozilla.org/MPL/
+   -
+   - Software distributed under the License is distributed on an "AS IS" basis,
+   - WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+   - for the specific language governing rights and limitations under the
+   - License.
+   -
+   - The Original Code is l10n django site.
+   -
+   - The Initial Developer of the Original Code is
+   - Mozilla Foundation.
+   - Portions created by the Initial Developer are Copyright (C) 2010
+   - the Initial Developer. All Rights Reserved.
+   -
+   - Contributor(s):
+   -
+   - Alternatively, the contents of this file may be used under the terms of
+   - either the GNU General Public License Version 2 or later (the "GPL"), or
+   - the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+   - in which case the provisions of the GPL or the LGPL are applicable instead
+   - of those above. If you wish to allow use of your version of this file only
+   - under the terms of either the GPL or the LGPL, and not to allow others to
+   - use your version of this file under the terms of the MPL, indicate your
+   - decision by deleting the provisions above and replace them with the notice
+   - and other provisions required by the LGPL or the GPL. If you do not delete
+   - the provisions above, a recipient may use your version of this file under
+   - the terms of any one of the MPL, the GPL or the LGPL.
+   -
+   - ***** END LICENSE BLOCK *****
+{% endcomment %} -->
+<html> <head>
+<link rel="shortcut icon" href="{% url favicon %}" type="image/x-icon">
+<link rel="icon" href="{% url favicon %}" type="image/x-icon">
+<style>
+  #menu {
+    margin: 0 0 2em;
+    padding: 10px;
+    font-size: small;
+    font-style: italic;
+    line-height: 1em;
+    background-color: #eee;
+    -moz-border-radius: .5em;
+  }
+  #menu ul {
+    list-style: none;
+    float: left;
+    margin: 0;
+    padding: 0;
+  }
+  #menu li {
+    float: left;
+    margin: 0 10px;
+  }
+  #menu br {
+    clear: both;
+  }
+  #auth {
+    float: right;
+  }
+  #page_footer {
+    margin-top: 2em;
+    padding: 10px;
+    font-size: small;
+    font-style: italic;
+    line-height: 1em;
+    background-color: #eee;
+    -moz-border-radius: .5em;
+  }
+</style>
+<script type="application/javascript" src="{% url static path="jquery.js" %}"></script>
+<script type="application/javascript">
+function submit_site_login() {
+  var p={};
+  $.each($("#site_login").serializeArray(),
+         function(i, o){
+           p[o.name]=o.value;}
+         );
+  return doLoad("{% url django.contrib.auth.views.login %}", p);
+};
+function submit_site_logout() {
+  var p={};
+  if (doLoad("{% url accounts.views.logout %}", p)) {
+    // only true if we're needing a reload
+    $('#site_login').submit()
+  }
+  return false;
+};
+{% if login_form_needs_reload and request %}
+function doLoad(url, p) {
+  $('input[name=next]').val("{{ request.get_full_path }}");
+  return true;
+  };
+{% else %}
+function doLoad(url, p) {
+  p.next = "{% url accounts.views.user_html %}";
+  var auth = $("#auth").empty().html('<img src="{% url static path="loading.gif" %}" />');
+  auth.load(url, p);
+  return false;
+};
+{% endif %}
+</script>
+<title>{% block title_matter %}{% endblock %}</title>
+{% block head_matter %}{% endblock %}
+</head>
+
+<body>
+<div id="menu">
+ <div id="auth">
+   <script type="application/javascript">
+   document.write('<img src="{% url static path="loading.gif" %}" />');
+   </script>
+   <noscript>Not logged in</noscript>
+ </div>
+ <script type="application/javascript">
+ $("#auth").load("{% url accounts.views.user_html %}");
+ </script>
+ <ul>
+   <li>Mozilla Localization</li>
+   <li><a href="{% url homepage.views.index %}">Home</a></li>
+   <li><a href="{% url homepage.views.teams %}">Teams</a></li>
+   <li><a href="https://wiki.mozilla.org/L10n">Documentation</a></li>
+   {% block extra_nav_list_items %}{% endblock %}
+ </ul>
+ <br>
+</div>
+<h1></h1>
+{% block content %}{% endblock %}
+<div id="page_footer"><a href="{% url privacy.views.show_policy %}">Privacy policy</a></div>
+</body> </html>
