@@ -249,7 +249,9 @@ HMAC_KEYS = {
 }
 
 ## Tests
-TEST_RUNNER = 'test_utils.runner.RadicalTestSuiteRunner'
+#TEST_RUNNER = 'test_utils.runner.RadicalTestSuiteRunner'
+#TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
+TEST_RUNNER = 'test_runner.PatchedNoseTestSuiteRunner'
 
 ## Celery
 BROKER_HOST = 'localhost'
