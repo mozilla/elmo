@@ -3,15 +3,12 @@ import django_nose
 class PatchedNoseTestSuiteRunner(django_nose.NoseTestSuiteRunner):
 
     def run_tests(self, test_labels, extra_tests=None):
-        #print "TEST_LABELS"
-        #print test_labels
         django_test_labels = [x.replace('apps/','').replace('/','.')
                               for x in test_labels]
-        #print django_test_labels
-        #print "\n"
 
-        self.build_suite(tuple(django_test_labels), extra_tests)
-        #self.build_suite(None, None)
+        django_test_labels = tuple(django_test_labels)
+
+        self.build_suite(django_test_labels, extra_tests)
 
         # Due to this hack of calling build_suite (which is necessary) what
         # happens is that the related objects for some models are incorrectly
