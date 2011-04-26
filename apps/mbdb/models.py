@@ -125,6 +125,15 @@ class NumberedChange(models.Model):
     number = models.IntegerField(db_index = True)
 
 
+
+# this is needed inside the Meta class of the Property class but because we're
+# not allowed to creat variables inside the class itself, we figure out what
+# database engine we're using *before* defining the Property class.
+try:
+    database_engine = settings.DATABASES['default']['ENGINE']
+except KeyError:
+    database_engine = settings.DATABASE_ENGINE
+
 class Property(models.Model):
     """Helper model for build properties.
 
@@ -133,19 +142,12 @@ class Property(models.Model):
     name            = models.CharField(max_length = 20, db_index = True)
     source          = models.CharField(max_length = 20, db_index = True)
     value           = fields.PickledObjectField(null = True, blank = True,
-    # `db_index` commented out because the PickledObjectField is a BLOB/TEXT
-    # field and will cause this error if you try to create it with Mysql
-    # (1170, "BLOB/TEXT column 'value' used in key specification without a key length")
-    # See http://stackoverflow.com/questions/1827063/mysql-error-key-specification-without-a-key-length/1827099#1827099
-                                                #db_index = True,
+                                                db_index = True,
                                                 )
     class Meta:
-        if settings.DATABASE_ENGINE != 'mysql':
+        if not database_engine.endswith('mysql'):
             # hack around mysql, that doesn't do unique of unconstrained texts
-
-            # peterbe: Commented out because I couldn't syncdb Mysql with this
-            # see comment above about db_index=True on the value field
-            pass#unique_together = (('name', 'source', 'value'),)
+            unique_together = (('name', 'source', 'value'),)
 
 
     def __unicode__(self):
