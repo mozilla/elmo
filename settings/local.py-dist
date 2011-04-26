@@ -1,0 +1,35 @@
+# This is an example settings/local.py file.
+# Copy it and add your local settings here.
+
+from base import *
+
+
+#INSTALLED_APPS = list(INSTALLED_APPS) + ['django_extensions','debug_toolbar']
+#INSTALLED_APPS = tuple(INSTALLED_APPS)
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'elmo',
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
+        'OPTIONS': {
+            'init_command': 'SET storage_engine=InnoDB',
+            'charset' : 'utf8',
+            'use_unicode' : True,
+        },
+        'TEST_CHARSET': 'utf8',
+        'TEST_COLLATION': 'utf8_general_ci',
+    },
+}
+
+ADMINS = (
+    # ('Your Name', 'your_email@domain.com'),
+)
+
+MANAGERS = ADMINS
+DEBUG = TEMPLATE_DEBUG = True
+#TEMPLATE_STRING_IF_INVALID = '!{ %s }'
+#REPOSITORY_BASE = '/home/peterbe/dev/MOZILLA/ELMO/repos'

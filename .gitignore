@@ -1,1 +1,4 @@
 settings_local.py
+vendor-local/src/compare-locales/.hg
+settings/local.py
+settings/test.py

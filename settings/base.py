@@ -5,11 +5,10 @@ import os
 from django.utils.functional import lazy
 
 # Make file paths relative to settings.
-ROOT = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 path = lambda *a: os.path.join(ROOT, *a)
 
 ROOT_PACKAGE = os.path.basename(ROOT)
-
 
 DEBUG = False
 TEMPLATE_DEBUG = DEBUG
@@ -17,7 +16,7 @@ TEMPLATE_DEBUG = DEBUG
 ADMINS = ()
 MANAGERS = ADMINS
 
-DATABASES = {}  # See settings_local.
+DATABASES = {}  # See settings/local.py
 
 # Site ID is used by Django's Sites framework.
 SITE_ID = 1
