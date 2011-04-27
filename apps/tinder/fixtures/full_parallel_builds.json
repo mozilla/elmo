@@ -15,14 +15,8 @@
  }, 
  {
    "pk": 1,
-     "model": "mbdb.change",
+     "model": "mbdb.sourcestamp",
      "fields": {
-     "files": [],
-       "tags": [],
-       "who": "John Doe <who@am.i>",
-       "when": "2009-01-01 00:00:00",
-       "comments": null,
-       "master": 1, 
        "branch": "default",
        "revision": null
        }
@@ -66,9 +60,7 @@
        "result": 0, 
        "starttime": "2009-01-01 00:00:00", 
        "endtime":  "2009-01-01 00:00:05", 
-       "changes": [
-		   1
-		   ], 
+       "sourcestamp": 1, 
        "properties": [
 		      1, 
 		      2
@@ -99,9 +91,7 @@
        "result": 0, 
        "starttime": "2009-01-01 00:00:01", 
        "endtime":  "2009-01-01 00:00:06", 
-       "changes": [
-		   1
-		   ], 
+       "sourcestamp": 1, 
        "properties": [
 		      1, 
 		      2
@@ -132,9 +122,7 @@
        "result": 0, 
        "starttime": "2009-01-01 00:01:00", 
        "endtime":  null, 
-       "changes": [
-		   1
-		   ], 
+       "sourcestamp": 1, 
        "properties": [
 		      1, 
 		      2
@@ -165,9 +153,7 @@
        "result": 0, 
        "starttime": "2009-01-01 00:01:01", 
        "endtime":  null, 
-       "changes": [
-		   1
-		   ], 
+       "sourcestamp": 1, 
        "properties": [
 		      1, 
 		      2
