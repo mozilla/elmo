@@ -266,7 +266,7 @@ CELERY_IGNORE_RESULT = True
 
 try:
     import ldap
-    import ldap_settings
+    from ldap_settings import *
     ldap_loaded = True
 except:
     ldap_loaded = False

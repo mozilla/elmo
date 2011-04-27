@@ -3,9 +3,12 @@ import ldap
 from django.conf import settings
 from django.contrib.auth.models import User, Group, check_password
 from django.contrib.auth.backends import RemoteUserBackend
-from django.forms.fields import email_re
-import l10n_site.ldap_settings as ldap_settings
+from django.core.validators import email_re
 import os
+
+LDAP_HOST = settings.LDAP_HOST
+LDAP_DN = settings.LDAP_DN
+LDAP_PASS = settings.LDAP_PASS
 
 class MozLdapBackend(RemoteUserBackend):
     """Creates the connvection to the server, and binds anonymously"""
@@ -16,9 +19,9 @@ class MozLdapBackend(RemoteUserBackend):
     ldo = None
 
     def __init__(self):
-        self.host = ldap_settings.LDAP_HOST
-        self.dn = ldap_settings.LDAP_DN
-        self.password = ldap_settings.LDAP_PASS
+        self.host = LDAP_HOST
+        self.dn = LDAP_DN
+        self.password = LDAP_PASS
         self.localizers = None
 
     #
@@ -35,11 +38,11 @@ class MozLdapBackend(RemoteUserBackend):
     #  never be authenticated locally
     def authenticate(self,username=None,password=None):
         try: # Let's see if we have such user
-            if email_re.search(username):
+            if email_re.match(username):
                 local_user = User.objects.get(email=username)
             else:
                 local_user = User.objects.get(username=username)
-                
+
             if local_user.has_usable_password():
                 if local_user.check_password(password):
                     return local_user
