@@ -12,3 +12,4 @@ py-bcrypt==0.2
 # Original elmo stuff
 Twisted
 mercurial
+python-ldap
