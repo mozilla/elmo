@@ -39,8 +39,9 @@ import os
 import sys
 import site
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 path = lambda *a: os.path.join(ROOT, *a)
+
 
 # the path to the virtual env relative to ROOT
 ENV_PATH = '../env'
@@ -50,17 +51,17 @@ LOCALDIRS = (
     path(ENV_PATH, 'lib', 'python' + sys.version[:3], 'site-packages'),
 )
 
-prev_sys_path = list(sys.path) 
+prev_sys_path = list(sys.path)
 for directory in LOCALDIRS:
-  site.addsitedir(directory)
+    site.addsitedir(directory)
 # Reorder sys.path so that the new directories are at the front.
-new_sys_path = [] 
-for item in list(sys.path): 
-    if item not in prev_sys_path: 
-        new_sys_path.append(item) 
-        sys.path.remove(item) 
-sys.path[:0] = new_sys_path 
+new_sys_path = []
+for item in sys.path:
+    if item not in prev_sys_path:
+        new_sys_path.append(item)
+        sys.path.remove(item)
+sys.path[:0] = new_sys_path
 
 import django.core.handlers.wsgi
-os.environ['DJANGO_SETTINGS_MODULE'] = 'l10n_site.settings'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 application = django.core.handlers.wsgi.WSGIHandler()
