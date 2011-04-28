@@ -58,8 +58,13 @@ class Project(models.Model):
     verbatim_url = models.CharField(max_length=150, blank=True, null=True)
     l10n_repo_url = models.CharField(max_length=150, blank=True, null=True)
     code_repo_url = models.CharField(max_length=150, blank=True, null=True)
-    stage_url = models.URLField(blank=True, null=True)
-    final_url = models.URLField(blank=True, null=True)
+    stage_url = models.URLField(blank=True, null=True, verify_exists=False)
+    final_url = models.URLField(blank=True, null=True, verify_exists=False)
+    # stage_auth_url can't be a URLField, because Django doesn't accept the 
+    # //<user>:<password>@<host>:<port>/<url-path> syntax as valid
+    stage_auth_url = models.CharField(max_length=250, blank=True, null=True)
+    stage_login = models.CharField(max_length=80, blank=True, null=True)
+    stage_passwd = models.CharField(max_length=80, blank=True, null=True)
     locales = models.ManyToManyField(Locale, blank=True, through='Weblocale')
     string_count = models.IntegerField(default=0)
     word_count = models.IntegerField(default=0)
