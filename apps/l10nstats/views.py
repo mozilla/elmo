@@ -41,6 +41,8 @@ and progress graphs.
 from collections import defaultdict
 from datetime import datetime, timedelta
 import time
+from urllib2 import urlopen
+from urlparse import urljoin
 
 from django.shortcuts import render_to_response
 from django.template.loader import render_to_string
@@ -96,6 +98,20 @@ def index(request):
             args += [('tree', t) for t in trees]
     return render_to_response('l10nstats/index.html',
                               {'args': mark_safe(urlencode(args))})
+
+
+def proxy(request, path=None, base=None):
+    """Proxy to files from different domains.
+
+    Proxy the files served from different domains which don't allow cross 
+    origin resource sharing explicitly.
+
+    """
+    u = "%s?%s" % (urljoin(base, path), request.GET.urlencode())
+    r = urlopen(u)
+    ct = r.info().getheaders('Content-Type')[0]
+    return HttpResponse(r.read(), mimetype=ct)
+
 
 schema = {
     "types": {
