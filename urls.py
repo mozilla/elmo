@@ -66,6 +66,6 @@ urlpatterns += patterns('',
 # Proxy the webdashboard
 urlpatterns += patterns('',
                         (r'^webdashboard/(?P<path>.*)$',
-                         'l10n_site.views.proxy',
+                         'l10nstats.views.proxy',
                          {'base': 'http://l10n.mozilla.org/webdashboard/'}, 'webdashboard'),
                         )
