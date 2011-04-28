@@ -99,7 +99,14 @@
     <li><a href="{{project.verbatim_url}}">Verbatim</a></li>
     <li><a href="{{project.l10n_repo_url}}">L10n repository</a></li>
     <li><a href="{{project.code_repo_url}}">Project repository</a></li>
-    <li><a href="{{project.stage_url}}">Stage</a></li>
+    <li>
+      {% if perms.webby.add_weblocale and project.stage_auth_url %}
+        <a href="{{project.stage_auth_url}}">Stage</a>
+        ({{project.stage_login}} / {{project.stage_passwd}})
+      {% else %}
+        <a href="{{project.stage_url}}">Stage</a>
+      {% endif %}
+    </li>
     <li><a href="{{project.final_url}}">Production url</a></li>
     <li>String count: {{project.string_count }}</li>
     <li>Word count: {{project.word_count}}</li>
