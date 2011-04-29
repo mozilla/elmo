@@ -83,6 +83,15 @@ class Run(models.Model):
     warnings = models.IntegerField(default=0) 
     completion = models.SmallIntegerField(default=0)
 
+    @property
+    def allmissing(self):
+        """property adding missing and missingInFiles to be used in templates etc.
+
+        We keep track of missing strings in existing files and in new files
+        separetely, add the two for the most stats here.
+        """
+        return self.missing + self.missingInFiles
+
     def activate(self):
         previous = Active.objects.filter(run__tree = self.tree, run__locale = self.locale)
         previousl = list(previous)

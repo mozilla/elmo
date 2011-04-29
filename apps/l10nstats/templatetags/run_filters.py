@@ -15,10 +15,11 @@
 #
 # The Initial Developer of the Original Code is
 # Mozilla Foundation.
-# Portions created by the Initial Developer are Copyright (C) 2010
+# Portions created by the Initial Developer are Copyright (C) 2011
 # the Initial Developer. All Rights Reserved.
 #
 # Contributor(s):
+#  Axel Hecht <l10n@mozilla.com>
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -34,43 +35,46 @@
 #
 # ***** END LICENSE BLOCK *****
 
-'''URL mappings for the shipping app.
+'''Django template filters to be used to display compare-locales runs.
 '''
 
-from django.conf.urls.defaults import *
+from django import template
+from django.utils.safestring import mark_safe
+from django.utils.html import conditional_escape
+from django.core.urlresolvers import reverse
 
-urlpatterns = patterns('shipping.views',
-    (r'^\/?$', 'index'),
-    (r'^\/pushes\/?$', 'pushes'),
-    (r'^\/dashboard\/?$', 'dashboard'),
-    (r'^\/l10n-changesets$', 'l10n_changesets'),
-    (r'^\/shipped-locales$', 'shipped_locales'),
-    (r'^\/api\/pushes$', 'pushes_json'),
-    (r'^\/api\/signoffs$', 'signoff_json'),
-    (r'^\/diff$', 'diff_app'),
-    (r'^\/milestones$', 'milestones'),
-    (r'^\/stones-data$', 'stones_data'),
-    (r'^\/open-mstone$', 'open_mstone'),
-    (r'^\/clear-mstone$', 'clear_mstone'),
-    (r'^\/confirm-ship$', 'confirm_ship_mstone'),
-    (r'^\/confirm-drill$', 'confirm_drill_mstone'),
-    (r'^\/drill$', 'drill_mstone'),
-    (r'^\/ship$', 'ship_mstone'),
-)
+from l10nstats.models import Run
 
-urlpatterns += patterns('shipping.views.milestone',
-    (r'^\/about-milestone/(.*)', 'about'),
-    (r'^\/milestone-statuses/(.*)', 'statuses'),
-    (r'^\/json-changesets$', 'json_changesets'),
-)
+register = template.Library()
 
-urlpatterns += patterns('shipping.views.app',
-    (r'^\/app/locale-changes/(.*)', 'changes'),
-)
+@register.filter
+def showrun(run, autoescape=None):
+    """Display a l10nstats.models.Run object in a template in a consistent manner.
+    """
+    if autoescape:
+        esc = conditional_escape
+    else:
+        esc = lambda x: x
+    if not isinstance(run, Run):
+        return mark_safe("&nbsp;")
+    fmt = '<a %%s href="%s?run=%%d">%%s</a>' % reverse('l10nstats.views.compare')
+    missing = run.missing + run.missingInFiles
+    data = {'missing': missing}
+    for k in ('errors', 'total'):
+        data[k] = getattr(run, k)
+    datastr = ' '.join('data-%s="%d"' % (k,v) for k,v in data.iteritems())
+    cmp_segs = []
+    if run.errors:
+        cmp_segs.append('%d error(s)' % run.errors)
+    if missing:
+        cmp_segs.append('%d missing' % missing)
+    if run.obsolete:
+        cmp_segs.append('%d obsolete' % run.obsolete)
+    if not cmp_segs:
+        cmp_segs.append('green')
+    cmp_segs.append('(%d%%)' % run.completion)
+    compare = ', '.join(cmp_segs)
 
-urlpatterns += patterns('shipping.views.signoff',
-    (r'^\/signoffs\/(.*?)\/(.*)', 'signoff'),
-    (r'^\/signoffs-details\/(.*?)\/(.*)', 'signoff_details'),
-    (r'^\/add-signoff\/(.*?)\/(.*)', 'add_signoff'), # POST only
-    (r'^\/review-signoff\/(.*?)\/(.*)', 'review_signoff'), # POST only
-)
+    return mark_safe(fmt % (datastr, run.id, compare))
+
+showrun.needs_autoescape = True

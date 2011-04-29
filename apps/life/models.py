@@ -196,6 +196,16 @@ class Push(models.Model):
         return self.repository.url + 'pushloghtml?changeset=' + tip
         #return 'Push to %s by %s [%s]' % (self.repository.name, self.user, self.push_date)
 
+class Push_Changesets(models.Model):
+    """helper model for queries over the ManyToMany between Push and Changeset.
+    Non-managed, thus doesn't affect the db.
+    """
+    push = models.ForeignKey(Push)
+    changeset = models.ForeignKey(Changeset)
+    class Meta:
+        unique_together = (('push','changeset'),)
+        managed = False
+
 
 class Tree(models.Model):
     """stores unique repositories combination

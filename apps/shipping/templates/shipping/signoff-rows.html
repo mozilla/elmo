@@ -1,0 +1,114 @@
+<!-- {% comment %}
+   - ***** BEGIN LICENSE BLOCK *****
+   - Version: MPL 1.1/GPL 2.0/LGPL 2.1
+   -
+   - The contents of this file are subject to the Mozilla Public License Version
+   - 1.1 (the "License"); you may not use this file except in compliance with
+   - the License. You may obtain a copy of the License at
+   - http://www.mozilla.org/MPL/
+   -
+   - Software distributed under the License is distributed on an "AS IS" basis,
+   - WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+   - for the specific language governing rights and limitations under the
+   - License.
+   -
+   - The Original Code is l10n django site.
+   -
+   - The Initial Developer of the Original Code is
+   - Mozilla Foundation.
+   - Portions created by the Initial Developer are Copyright (C) 2011
+   - the Initial Developer. All Rights Reserved.
+   -
+   - Contributor(s):
+   -  Axel Hecht <l10n@mozilla.com>
+   -
+   - Alternatively, the contents of this file may be used under the terms of
+   - either the GNU General Public License Version 2 or later (the "GPL"), or
+   - the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+   - in which case the provisions of the GPL or the LGPL are applicable instead
+   - of those above. If you wish to allow use of your version of this file only
+   - under the terms of either the GPL or the LGPL, and not to allow others to
+   - use your version of this file under the terms of the MPL, indicate your
+   - decision by deleting the provisions above and replace them with the notice
+   - and other provisions required by the LGPL or the GPL. If you do not delete
+   - the provisions above, a recipient may use your version of this file under
+   - the terms of any one of the MPL, the GPL or the LGPL.
+   -
+   - ***** END LICENSE BLOCK *****
+{% endcomment %} -->
+{% load run_filters %}
+{% for push in pushes %}
+  <tr class="pushrow" id="{{push.id}}" data-push="{{push.id}}">
+    <td class="push{% if forloop.first %} top{% endif %}{% if forloop.last %}  bottom {% endif %}" rowspan="{{push.rows}}">{{push.when|date}}<br><span class="csuser">{{push.who}}</span></td>
+   <td rowspan="{{push.changerows}}">{{push.run|showrun}}<br>
+     <span class="csuser">{{push.run.build.starttime|date}}</span></td>
+    {% for cs in push.changes %}
+    <td class="rev_td">
+      {% if forloop.first %}
+        {% if not push.signoffs|length %}
+          <div class="do_signoff">
+            <input type="button" id="so_{{push.id}}" value="sign off&hellip;" onclick="return false;"
+            {% if push.run %}
+              data-run="{{push.run.id}}"
+            {% endif %}
+            class="do_signoff {% ifequal suggested_signoff push.id %}suggested{% else %}hidden{% endifequal %}"
+            {%if not perms.shipping.add_signoff %} disabled {%endif%}>
+          </div>
+        {% endif %}
+      {% endif %}
+      <div class="rev">{{cs.description}}<br>
+        <span class="csuser">{{cs.user}}</span>
+        <a href="{{push.url}}/rev/{{cs.shortrev}}" class="csuser">rev
+        <span class="shortrev">{{cs.shortrev}}</span></a>
+      </div>
+    </td>
+    <td class="diff">{% for _i in cs.diffbases %}<div class="diffanchor"></div>{% endfor %}</td>
+    {% if not forloop.last %}</tr>
+  <tr class="pushrow" data-push="{{push.id}}">
+    {% endif %}
+    {% endfor %}
+    {% if push.signoffs|length %}
+      {% for so in push.signoffs %}
+        {% with so.action.get_flag_display as flag %}
+          <tr class="signoffrow" data-push="{{push.id}}">
+            <td class="run {{flag}}">{{so.run|showrun}}</td>
+            <td class="signoff {{flag}}">
+              <input class="review_action" data-signoff="{{so.signoff.id}}"
+              data-state="{{flag}}"
+              type="button" value="review&hellip;"
+              {% if not perms.shipping.review_signoff %}disabled{% endif %}>
+              <div class="so_what">
+              {% ifequal flag "rejected" %}
+              {{so.action.author.get_full_name}}
+              rejected sign-off by {{so.signoff.author.get_full_name}} on
+              {{so.action.when|date}}:</div>
+              <div class="so_msg">{{so.action.comment|safe}}
+              {% endifequal %}
+              {% ifequal flag "pending" %}
+                {{so.signoff.author.get_full_name}} signed off on
+                {{so.signoff.when|date}}; review pending
+              {% endifequal %}
+              {% ifequal flag "canceled" %}
+                {{so.action.author.get_full_name}}
+      	  canceled sign-off by {{so.signoff.author.get_full_name}} on
+                {{so.action.when|date}}
+              {% endifequal %}
+              {% ifequal flag "accepted" %}
+                {{so.action.author.get_full_name}}
+                accepted sign-off by {{so.signoff.author.get_full_name}} on
+                {{so.action.when|date}}
+              {% endifequal %}
+                <span class="shortrev hidden">{{push.changes.0.shortrev}}</span>
+              </div>
+            </td>
+            <td class="diff {{flag}}">{% if so.diffbases %}<div class="diffanchor"></div>{% endif %}</td>
+          </tr>
+        {% endwith %}
+      {% endfor %}
+    {% else %}
+    <tr class="signoffrow hidden" data-push="{{push.id}}">
+      <td class="run"></td><td class="signoff"></td><td class="diff"></td>
+    </tr>
+    {% endif %}
+  </tr>
+{% endfor %}

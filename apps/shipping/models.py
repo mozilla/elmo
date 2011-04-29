@@ -79,6 +79,8 @@ class Signoff(models.Model):
     author = models.ForeignKey(User)
     when = models.DateTimeField('signoff timestamp', default=datetime.now)
     locale = models.ForeignKey(Locale)
+    class Meta:
+        permissions = (('review_signoff', 'Can review a Sign-off'),)
 
     @property
     def accepted(self):
@@ -99,15 +101,18 @@ class Signoff(models.Model):
     def __unicode__(self):
         return 'Signoff for %s %s by %s [%s]' % (self.appversion, self.locale.code, self.author, self.when)
 
-FLAG_CHOICES = (
-    (0, 'pending'),
-    (1, 'accepted'),
-    (2, 'rejected'),
-    (3, 'revoked'),
-    (4, 'obsoleted'),
-)
 
 class Action(models.Model):
+    """Action implements status changes for sign-offs.
+    """
+    PENDING, ACCEPTED, REJECTED, CANCELED, OBSOLETED = range(5)
+    FLAG_CHOICES = (
+        (PENDING, 'pending'),
+        (ACCEPTED, 'accepted'),
+        (REJECTED, 'rejected'),
+        (CANCELED, 'canceled'),
+        (OBSOLETED, 'obsoleted'),
+    )
     signoff = models.ForeignKey(Signoff)
     flag = models.IntegerField(choices=FLAG_CHOICES)
     author = models.ForeignKey(User)
