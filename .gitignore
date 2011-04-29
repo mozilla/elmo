@@ -1,6 +1,4 @@
-settings_local.py
-vendor-local/src/compare-locales/.hg
-settings/local.py
-settings/test.py
+settings/local*.py
 settings/ldap_settings.py
 migrations/settings.py
+*.pyc
