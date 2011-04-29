@@ -70,10 +70,6 @@ def projects(request):
     return render_to_response('webby/projects.html',
                               {'projects': projects,
                                'login_form_needs_reload': True,
-                               # request needs to be passed explicitly because 
-                               # django.core.context_processors.request is not 
-                               # enabled by default.  See bug 556270.
-                               'request': request,
                               },
                               context_instance=RequestContext(request))
 
@@ -113,9 +109,5 @@ def project(request, slug):
                                'new_locales': new_locales,
                                'form': form,
                                'login_form_needs_reload': True,
-                               # request needs to be passed explicitly because 
-                               # django.core.context_processors.request is not 
-                               # enabled by default.  See bug 556270.
-                               'request': request,
                               },
                               context_instance=RequestContext(request))
