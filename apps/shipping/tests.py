@@ -20,6 +20,7 @@
 #
 # Contributor(s):
 #    Peter Bengtsson <peterbe@mozilla.com>
+#    Axel Hecht <l10n@mozilla.com>
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -35,10 +36,13 @@
 #
 # ***** END LICENSE BLOCK *****
 
+'''Tests for the shipping.
+'''
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.conf import settings
-from shipping.models import Milestone, Application, AppVersion
+from shipping.models import Milestone, Application, AppVersion, Signoff, Action
+from shipping.views import _signoffs
 from life.models import Tree, Forest, Locale
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
@@ -236,3 +240,34 @@ class ShippingTestCase(TestCase):
 
         milestone = Milestone.objects.get(code=milestone.code)
         self.assertEqual(milestone.status, 2)
+
+
+class SignOffTest(TestCase):
+    fixtures = ["test_repos.json", "test_pushes.json", "signoffs.json"]
+
+    def setUp(self):
+        self.av = AppVersion.objects.get(code="fx1.0")
+
+    def test_count(self):
+        """Test that we have the right amount of Signoffs and Actions"""
+        self.assertEqual(Signoff.objects.count(), 2)
+        self.assertEqual(Action.objects.count(), 3)
+
+    def test_accepted(self):
+        """Test for the german accepted signoff"""
+        so = _signoffs(self.av, locale="de")
+        self.assertEqual(so.push.tip.shortrev, "l10n de 0002")
+        self.assertEqual(so.locale.code, "de")
+        self.assertEqual(so.action_set.count(), 2)
+
+    def test_pending(self):
+        """Test for the pending polish signoff"""
+        so = _signoffs(self.av, status=0, locale="pl")
+        self.assertEqual(so.push.tip.shortrev, "l10n pl 0003")
+        self.assertEqual(so.locale.code, "pl")
+        self.assertEqual(so.action_set.count(), 1)
+
+    def test_getlist(self):
+        """Test that the list returns on accepted and one pending signoff."""
+        sos = _signoffs(self.av, getlist=True)
+        self.assertEqual(sos, {("fx", "pl"): [0], ("fx", "de"): [1]})

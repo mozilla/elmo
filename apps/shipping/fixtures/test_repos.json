@@ -1,0 +1,146 @@
+[
+  {
+    "pk": 1,
+    "model": "life.locale",
+    "fields": {
+      "code": "de"
+    }
+  },
+  {
+    "pk": 2,
+    "model": "life.locale",
+    "fields": {
+      "code": "pl"
+    }
+  },
+  {
+    "pk": 2,
+    "model": "life.changeset",
+    "fields": {
+      "revision": "mozilla 0002",
+      "user": "mozilla coder",
+      "description": "first commit",
+      "files": [],
+      "parents": [1]
+    }
+  },
+  {
+    "pk": 3,
+    "model": "life.changeset",
+    "fields": {
+      "revision": "l10n de 0002",
+      "user": "german localizer",
+      "description": "first de commit",
+      "files": [],
+      "parents": [1]
+    }
+  },
+  {
+    "pk": 4,
+    "model": "life.changeset",
+    "fields": {
+      "revision": "mozilla 0003",
+      "user": "other mozilla coder",
+      "description": "second commit",
+      "files": [],
+      "parents": [["mozilla 0002"]]
+    }
+  },
+  {
+    "pk": 5,
+    "model": "life.changeset",
+    "fields": {
+      "revision": "l10n de 0003",
+      "user": "german localizer",
+      "description": "second de commit",
+      "files": [],
+      "parents": [["l10n de 0002"]]
+    }
+  },
+  {
+    "pk": 6,
+    "model": "life.changeset",
+    "fields": {
+      "revision": "l10n pl 0002",
+      "user": "polish localizer",
+      "description": "first pl commit",
+      "files": [],
+      "parents": [["000000000000"]]
+    }
+  },
+  {
+    "pk": 7,
+    "model": "life.changeset",
+    "fields": {
+      "revision": "l10n pl 0003",
+      "user": "polish localizer",
+      "description": "second pl commit",
+      "files": [],
+      "parents": [["l10n pl 0002"]]
+    }
+  },
+  {
+    "pk": 8,
+    "model": "life.changeset",
+    "fields": {
+      "revision": "mozilla 0004",
+      "user": "other mozilla coder",
+      "description": "second commit",
+      "files": [],
+      "parents": [["mozilla 0003"]]
+    }
+  },
+  {
+    "pk": 1, 
+    "model": "life.forest", 
+    "fields": {
+      "url": "http://localhost:8001/l10n/", 
+      "name": "l10n"
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "life.repository", 
+    "fields": {
+      "url": "http://localhost:8001/mozilla/", 
+      "locale": null, 
+      "changesets": [
+        ["000000000000"],
+	["mozilla 0002"],
+	["mozilla 0003"]
+      ], 
+      "name": "mozilla", 
+      "forest": null
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "life.repository", 
+    "fields": {
+      "url": "http://localhost:8001/l10n/de/", 
+      "locale": ["de"], 
+      "changesets": [
+        ["000000000000"],
+	["l10n de 0002"],
+	["l10n de 0003"]
+      ], 
+      "name": "l10n/de", 
+      "forest": ["l10n"]
+    }
+  }, 
+  {
+    "pk": 3, 
+    "model": "life.repository", 
+    "fields": {
+      "url": "http://localhost:8001/l10n/pl/", 
+      "locale": ["pl"], 
+      "changesets": [
+        ["000000000000"],
+	["l10n pl 0002"],
+	["l10n pl 0003"]
+      ], 
+      "name": "l10n/pl", 
+      "forest": ["l10n"]
+    }
+  }
+]
