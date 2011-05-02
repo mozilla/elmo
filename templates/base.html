@@ -88,7 +88,11 @@ function submit_site_login() {
   return doLoad("{% url django.contrib.auth.views.login %}", p);
 };
 function submit_site_logout() {
-  var p={};
+  var p = {};
+  $.each($("#site_login").serializeArray(),
+         function(i, o){
+           p[o.name] = o.value;
+	   });
   if (doLoad("{% url accounts.views.logout %}", p)) {
     // only true if we're needing a reload
     $('#site_login').submit()
