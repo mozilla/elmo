@@ -61,7 +61,7 @@ table#policy_versions th, table#policy_versions td {
 
 
 {% if perms.privacy.activate_policy %}
-<form action="{% url privacy.views.activate_policy %}" method="post">
+<form action="{% url privacy.views.activate_policy %}" method="post">{% csrf_token %}
 {% endif %}
 <table id="policy_versions">
   <thead>

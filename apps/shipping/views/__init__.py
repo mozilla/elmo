@@ -79,7 +79,7 @@ def index(request):
         elif 2 in statuses:
             i.status = 'shipped'
         else:
-            i.status = 'unknown' 
+            i.status = 'unknown'
 
     return render_to_response('shipping/index.html', {
         'locales': locales,
@@ -148,7 +148,7 @@ def pushes(request):
                 form = SignoffForm(request.POST, instance=instance)
                 if form.is_valid():
                     form.save()
-                    
+
                     #add a snapshot of the current test results
                     pushobj = Push.objects.get(id=request.POST['push'])
                     lastrun = _get_compare_locales_result(pushobj.tip, appver.tree)
@@ -165,13 +165,13 @@ def pushes(request):
             return HttpResponseRedirect('%s?locale=%s&ms=%s&offset=%s' % (reverse('shipping.views.pushes'), locale.code ,mstone.code, offset_id))
 
     form = SignoffForm()
-    
+
     forest = appver.tree.l10n
     repo_url = '%s%s/' % (forest.url, locale.code)
     notes = _get_notes(request.session)
     accepted = _get_accepted_signoff(locale, ms=mstone, av=appver)
     if accepted is None:
-        # no accepted signoff to diff against, let's try the latest 
+        # no accepted signoff to diff against, let's try the latest
         # obsolete one
         accepted = _signoffs(mstone is None and appver or mstone, status=4,
                              locale=locale.code)
@@ -206,7 +206,7 @@ def pushes(request):
         'current_js': simplejson.dumps(_get_signoff_js(current)),
         'login_form_needs_reload': True,
         'request': request,
-    })
+    }, context_instance=RequestContext(request))
 
 
 def __universal_le(content):
@@ -267,7 +267,7 @@ def diff_app(request):
                                            'oldval': '',
                                            'newval': '',
                                            'entity': 'cannot parse ' + path}]})
-            continue            
+            continue
         a_list = sorted(a_map.keys())
         c_list = sorted(c_map.keys())
         ar = AddRemove()
@@ -378,7 +378,7 @@ def shipped_locales(request):
         if loc == 'ja-JP-mac':
             return 'ja-JP-mac osx\n'
         return loc + '\n'
-    
+
     r = HttpResponse(map(withPlatforms, sorted(locales)),
                       content_type='text/plain; charset=utf-8')
     r['Content-Disposition'] = 'inline; filename=shipped-locales'
@@ -442,7 +442,7 @@ def pushes_json(request):
     start = int(request.GET.get('from', 0))
     to = int(request.GET.get('to', 20))
     branches = re.split(r', *', request.GET['branches']) if request.GET.has_key('branches') else None
-    
+
     locale = None
     mstone = None
     cur = None
@@ -455,7 +455,7 @@ def pushes_json(request):
         appver = AppVersion.objects.get(code=appver)
     if loc and ms:
         cur = _get_current_signoff(locale, mstone)
-    
+
     pushes = _get_api_items(locale, appver, cur, start=start, offset=start+to, branches=branches)
     return HttpResponse(simplejson.dumps({'items': pushes}, indent=2))
 
@@ -463,7 +463,7 @@ def pushes_json(request):
 def milestones(request):
     """Administrate milestones.
 
-    Opens an exhibit that offers the actions below depending on 
+    Opens an exhibit that offers the actions below depending on
     milestone status and user permissions.
     """
     # we need to use {% url %} with an exhibit {{.foo}} as param,
@@ -603,7 +603,7 @@ def confirm_ship_mstone(request):
                                'request': request,
                              },
                               context_instance=RequestContext(request))
-        
+
 def ship_mstone(request):
     """The actual worker method to ship a milestone.
 
@@ -704,7 +704,7 @@ def _get_total_pushes(locale=None, mstone=None, branches=None):
     pushobjs = _get_pushes(branches)
     if mstone:
         forest = mstone.appver.tree.l10n
-        repo_url = '%s%s/' % (forest.url, locale.code) 
+        repo_url = '%s%s/' % (forest.url, locale.code)
         return pushobjs.filter(repository__url=repo_url).count()
     else:
         return pushobjs.count()
@@ -720,11 +720,11 @@ def _get_api_items(locale, appver=None, current=None, start=0, offset=10, branch
     pushobjs = _get_pushes(branches)
     if appver:
         forest = appver.tree.l10n
-        repo_url = '%s%s/' % (forest.url, locale.code) 
+        repo_url = '%s%s/' % (forest.url, locale.code)
         pushobjs = pushobjs.filter(repository__url=repo_url).order_by('-push_date')[start:start+offset]
     else:
         pushobjs = pushobjs.order_by('-push_date')[start:start+offset]
-    
+
     pushes = []
     if current:
         current_push = current.push.id
@@ -838,7 +838,7 @@ def _signoffs(appver_or_ms=None, status=1, getlist=False, locale=None):
     If the locale argument is given, return the latest signoff with the
     requested status, or None. Requires appver_or_ms to be given.
 
-    If getlist=True is specified, returns a dictionary mapping 
+    If getlist=True is specified, returns a dictionary mapping
     tree-locale typles to a list of statuses, all that are newer than the
     latest obsolete action or accepted signoff (the latter is included).
     '''

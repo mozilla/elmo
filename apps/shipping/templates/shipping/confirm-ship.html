@@ -84,15 +84,14 @@ type="text" value="maemo-multilocale">
     <tr><th>repo</th><th>branch</th><th>path</th></tr>
   </tbody>
 </table>
-<input type="submit" value="Generate it" />
+<input type="submit" value="Generate it">
 </form>
 </p>
 <p>Don't forget to actually trigger the ship-it form below, too. Just
 downloading l10n-changesets doesn't keep track of the generated data.</p>
-<form id="ship" method="POST"
-  action="{% url shipping.views.ship_mstone %}">
+<form id="ship" method="post" action="{% url shipping.views.ship_mstone %}">{% csrf_token %}
 <input type="hidden" name="ms" value="{{ mstone.code }}" />
 <input type="submit" {% if not perms.shipping.can_ship %}
-          disabled="disabled"{% endif %} value="Ship it" />
+          disabled="disabled"{% endif %} value="Ship it">
 </form>
 {% endblock %}

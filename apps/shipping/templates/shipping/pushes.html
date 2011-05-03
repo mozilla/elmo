@@ -84,10 +84,10 @@ $(document).ready(function(){
     'json_url': '{% url shipping.views.pushes_json %}?locale={{locale.code}}&{% if mstone %}mstone={{mstone.code}}{% else %}av={{appver.code}}{% endif %}&from=$1&to=$2{% if branches %}&branches={{branches}}{% endif %}',
     'length': {{max_pushes}},
   }, [items,{{pushes.1}},{{pushes.2}}])
-  
+
   vpt = jQuery.vpTable($('#pushes').get(), {'items':pushes})
   vpt.draw({{offset}}, customizeRow)
-  
+
 
   {% for note in notes %}
   {% ifnotequal note "error" %}
@@ -411,12 +411,12 @@ function onSignoff() {
 {% ifequal mstone.status 0%}(upcoming){% endifequal %}
 {% ifequal mstone.status 1%}(open){% endifequal %}
 {% ifequal mstone.status 2%}(shipped){% endifequal %}</h3>
-<form action="" method="post" id="form_accept">
+<form action="" method="post" id="form_accept">{% csrf_token %}
   <input type="hidden" id="id_comment" name="comment" />
   <input type="hidden" id="id_accepted" name="accepted" />
   <input type="hidden" id="id_first_row2" name="first_row" />
 </form>
-<form action="" method="post" id="form_signoff">
+<form action="" method="post" id="form_signoff">{% csrf_token %}
   <input type="hidden" id="id_push" name="push" />
   <input type="hidden" id="id_first_row" name="first_row" />
 </form>

@@ -109,7 +109,7 @@ $(document).ready(function() {
 <p>Editing new privacy policy:</p>
 <p><em>Use HTML markup with &lt;h2>, &lt;p> &lt;p class="intro"> and
 &lt;a></em></p>
-<form name="editor" action="#" method="post">
+<form name="editor" action="#" method="post">{% csrf_token %}
 <table>
   <tbody>
     <tr>

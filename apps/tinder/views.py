@@ -40,7 +40,7 @@
 from django.db.models import Q
 from django.db import connection
 from django.shortcuts import render_to_response
-from django.template import Context, loader
+from django.template import Context, loader, RequestContext
 from django.http import HttpResponse, HttpResponseNotFound
 from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 from django.contrib.syndication.views import feed
@@ -196,7 +196,7 @@ def tbpl_inner(request):
     def chunks(ss):
         for s in ss:
             chunk = {}
-            
+
             chunk['changes'] = map(changer, changes_for_source[s.id])
             chunk['builds'] = [{'id': b.id,
                                 'result': b.result,
@@ -205,7 +205,7 @@ def tbpl_inner(request):
                                 'end': b.endtime,
                                 'number': b.buildnumber,
                                 'builder': b.builder.name,
-                                'build': b} 
+                                'build': b}
                                for b in builds_for_source[s.id]]
             chunk['id'] = s.id
             chunk['is_running'] = any(map(lambda c: c['end'] is None, chunk['builds']))
@@ -217,7 +217,8 @@ def tbpl_inner(request):
 def tbpl(request):
     return render_to_response('tinder/tbpl.html',
                               {'stamps': tbpl_inner(request),
-                               'params': request.GET.iterlists()})
+                               'params': request.GET.iterlists(),
+                               }, context_instance=RequestContext(request))
 
 
 def tbpl_rows(request):
@@ -411,7 +412,7 @@ def _waterfall(request):
     if time_d.days:
         hours += time_d.days * 24
 
-    q_buildsdone = Build.objects.filter(Q(endtime__gt = start_t) | 
+    q_buildsdone = Build.objects.filter(Q(endtime__gt = start_t) |
                                         Q(endtime__isnull = True),
                                         Q(starttime__lte = end_t))
     if buildf:
@@ -452,8 +453,8 @@ def _waterfall(request):
         if starts:
             b = starts.pop()
         while e or b or c:
-            if (e is not None and 
-                (b is None or e.endtime >= b.starttime) and 
+            if (e is not None and
+                (b is None or e.endtime >= b.starttime) and
                 (c is None or e.endtime >= c.when)):
                 yield (e.endtime, 'end build', e)
                 starts.insert(0, e)
@@ -556,7 +557,7 @@ def waterfall(request):
     rows = []
     rows = [reduce(operator.add, t, [])
             for t in zip(*map(lambda b: b.rows(), builders))]
-    return render_to_response('tinder/waterfall.html', 
+    return render_to_response('tinder/waterfall.html',
                               {'times': times, 'filters': filters,
                                'heads': head,
                                'rows': rows})
@@ -588,7 +589,7 @@ def builds_for_change(request):
                                    repository__name__startswith=change.branch))
     except:
         url=None
-    
+
     return render_to_response('tinder/builds_for.html',
                               {'done_builds': done,
                                'pending': pending,
@@ -679,7 +680,7 @@ def generateLog(master, filename):
     """Generic generator to read buildbot step logs.
     """
     base = mastermaps.get(master__name=master).logmount
-    head=re.compile('(\d+):(\d)')
+    head = re.compile('(\d+):(\d)')
     f = None
     filename = os.path.join(base, filename)
     try:

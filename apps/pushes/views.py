@@ -44,6 +44,7 @@ import os.path
 from time import mktime
 
 from django.http import HttpResponse
+from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.shortcuts import render_to_response, get_object_or_404
 from django.db.models import Q, Max
@@ -115,7 +116,8 @@ def pushlog(request, repo_name):
                               {'pushes': pushrows,
                                'limit': limit,
                                'search': search,
-                               'timespan': timespan})
+                               'timespan': timespan,
+                               }, context_instance=RequestContext(request))
 
 def homesnippet(request):
     repos = Repository.objects.filter(forest__isnull=False)
