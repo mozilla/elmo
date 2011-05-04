@@ -1,8 +1,8 @@
 # Hudson build script for running tests
-# 
+#
 # peterbe@mozilla.com
 #
-# Inspired by Zamboni 
+# Inspired by Zamboni
 # https://github.com/mozilla/zamboni/blob/master/scripts/build.sh
 
 
@@ -11,7 +11,7 @@ find . -name '*.pyc' -delete;
 virtualenv --no-site-packages elmo_env
 source elmo_env/bin/activate
 
-git submodule update --init --recursive 
+git submodule update --init --recursive
 echo "
 from base import *
 DATABASES = {
@@ -44,4 +44,4 @@ pip install -q hmac==20101005
 pip install -q hashlib==20081119
 pip install -q py-bcrypt==0.2
 
-python manage.py test --noinput dashtags mbdb tinder
+python manage.py test --noinput dashtags mbdb tinder homepage

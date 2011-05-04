@@ -187,7 +187,7 @@ INSTALLED_APPS = (
     'django_sha2',  # Load after auth to monkey-patch it.
 
     'django.contrib.contenttypes',
-    # 'django.contrib.sessions',
+    'django.contrib.sessions',
     # 'django.contrib.sites',
     # 'django.contrib.messages',
     # Uncomment the next line to enable the admin:
@@ -247,20 +247,23 @@ HMAC_KEYS = {
     '2011-04-12': 'anything?',
 }
 
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+
 ## Tests
 #TEST_RUNNER = 'test_utils.runner.RadicalTestSuiteRunner'
 #TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
 TEST_RUNNER = 'test_runner.PatchedNoseTestSuiteRunner'
-
 ## Celery
-BROKER_HOST = 'localhost'
-BROKER_PORT = 5672
-BROKER_USER = 'playdoh'
-BROKER_PASSWORD = 'playdoh'
-BROKER_VHOST = 'playdoh'
-BROKER_CONNECTION_TIMEOUT = 0.1
-CELERY_RESULT_BACKEND = 'amqp'
-CELERY_IGNORE_RESULT = True
+# commented out because it's not being used
+#BROKER_HOST = 'localhost'
+#BROKER_PORT = 5672
+#BROKER_USER = 'playdoh'
+#BROKER_PASSWORD = 'playdoh'
+#BROKER_VHOST = 'playdoh'
+#BROKER_CONNECTION_TIMEOUT = 0.1
+#CELERY_RESULT_BACKEND = 'amqp'
+#CELERY_IGNORE_RESULT = True
 
 
 

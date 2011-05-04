@@ -3,7 +3,7 @@
 
 from base import *
 
-
+# example of overriding installed apps
 #INSTALLED_APPS = list(INSTALLED_APPS) + ['django_extensions','debug_toolbar']
 #INSTALLED_APPS = tuple(INSTALLED_APPS)
 
@@ -28,8 +28,10 @@ DATABASES = {
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
 )
-
 MANAGERS = ADMINS
+
+# these are appropriate settings only for local development
 DEBUG = TEMPLATE_DEBUG = True
 #TEMPLATE_STRING_IF_INVALID = '!{ %s }'
 #REPOSITORY_BASE = '/home/peterbe/dev/MOZILLA/ELMO/repos'
+SESSION_COOKIE_SECURE = False 
