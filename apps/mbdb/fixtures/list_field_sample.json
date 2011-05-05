@@ -1,23 +1,67 @@
 [
- {
-   "pk": 1,
-     "model": "mbdb.list",
-     "fields": {
-     "items": "one string"
-       }
- },
- {
-   "pk": 2,
-     "model": "mbdb.list",
-     "fields": {
-     "items": ["Array", "of", "strings"]
-       }
- },
- {
-   "pk": 3,
-     "model": "mbdb.list",
-     "fields": {
-     "items": "Joined\u0000list\u0000of\u0000strings"
-       }
- }
+  {
+    "pk": 1,
+    "model": "mbdb.master",
+    "fields": {
+      "name": "head"
+    }
+  },
+  {
+    "pk": 1,
+    "model": "mbdb.slave",
+    "fields": {
+      "name": "slave 1"
+    }
+  },
+  {
+    "pk": 1,
+    "model": "mbdb.builder",
+    "fields": {
+      "category": null,
+      "bigState": null,
+      "master": 1,
+      "name": "builder1"
+    }
+  },
+  {
+    "pk": 1,
+    "model": "mbdb.build",
+    "fields": {
+      "slave": 1,
+      "builder": 1,
+      "buildnumber": 1,
+      "reason": null,
+      "result": 1,
+      "starttime": "2011-05-04 10:04:37",
+      "sourcestamp": null,
+      "endtime": "2011-05-04 10:04:37",
+      "properties": []
+    }
+  },
+  {
+    "pk": 1,
+    "model": "mbdb.step",
+    "fields": {
+      "name": "step 1",
+      "text": ["Peter", "Be"],
+      "text2": [],
+      "result": null,
+      "starttime": null,
+      "endtime": null,
+      "build": 1
+    }
+  },
+  {
+    "pk": 2,
+    "model": "mbdb.step",
+    "fields": {
+      "name": "step 2",
+      "text": "Joined\u0000list\u0000of\u0000strings",
+      "text2": null,
+      "result": null,
+      "starttime": null,
+      "endtime": null,
+      "build": 1
+    }
+  }
 ]

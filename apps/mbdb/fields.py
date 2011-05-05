@@ -39,6 +39,7 @@
 
 from django.db import models
 from django.conf import settings
+database_engine = settings.DATABASES['default']['ENGINE'].split('.')[-1]
 
 try:
     import cPickle as pickle
@@ -53,7 +54,7 @@ class PickledObject(str):
 
 class PickledObjectField(models.Field):
     __metaclass__ = models.SubfieldBase
-    
+
     def to_python(self, value):
         if value is None:
             return value
@@ -67,53 +68,65 @@ class PickledObjectField(models.Field):
             except:
                 # If an error was raised, just return the plain value
                 return value
-    
-    def get_db_prep_save(self, value):
+
+    def get_db_prep_save(self, value, connection):
         if value is not None and not isinstance(value, PickledObject):
             if isinstance(value, str):
                 # normalize all strings to unicode, like django does
                 value = unicode(value)
             value = PickledObject(pickle.dumps(value))
         return value
-    
-    def get_internal_type(self): 
+
+    def get_internal_type(self):
         return 'TextField'
-    
-    def get_db_prep_lookup(self, lookup_type, value):
-        if lookup_type in ['exact', 'isnull']:
-            value = self.get_db_prep_save(value)
-            return super(PickledObjectField, self).get_db_prep_lookup(lookup_type, value)
+
+    def get_db_prep_lookup(self, lookup_type, value, connection, prepared=False):
+        if lookup_type in ['exact','isnull']:
+            if lookup_type != 'isnull':
+                value = self.get_db_prep_save(value, connection=connection)
         elif lookup_type == 'in':
-            value = [self.get_db_prep_save(v) for v in value]
-            return super(PickledObjectField, self).get_db_prep_lookup(lookup_type, value)
+            value = [self.get_db_prep_save(v, connection=connection)
+                     for v in value]
         else:
             raise TypeError('Lookup type %s is not supported.' % lookup_type)
+        return super(PickledObjectField, self).get_db_prep_lookup(lookup_type,
+                                                                  value,
+                                                                  connection=connection,
+                                                                  prepared=True)
+
 
 class ListField(models.Field):
     __metaclass__ = models.SubfieldBase
-    
+
     def to_python(self, value):
-        if hasattr(value, 'split'):
-            if settings.DATABASE_ENGINE != 'mysql':
-                value = value.decode('unicode-escape')
-            return value.split('\0')
+        if value is not None:
+            if not value:
+                return []
+            if hasattr(value, 'split'):
+                if database_engine != 'mysql':
+                    value = value.decode('unicode-escape')
+                return value.split('\0')
         return value
-    
-    def get_db_prep_save(self, value):
-        rv = '\0'.join(value)
-        if settings.DATABASE_ENGINE != 'mysql':
-            rv = rv.encode('unicode-escape')
-        return rv
-    
-    def get_internal_type(self): 
+
+    def get_db_prep_save(self, value, connection):
+        if value is not None:
+            value = '\0'.join(value)
+            if database_engine != 'mysql':
+                value = value.encode('unicode-escape')
+        return value
+
+    def get_internal_type(self):
         return 'TextField'
-    
-    def get_db_prep_lookup(self, lookup_type, value):
-        if lookup_type in ['exact', 'isnull']:
-            value = self.get_db_prep_save(value)
-            return super(ListField, self).get_db_prep_lookup(lookup_type, value)
+
+    def get_db_prep_lookup(self, lookup_type, value, connection, prepared=False):
+        if lookup_type in ['exact']:
+            value = self.get_db_prep_save(value, connection=connection)
+        elif lookup_type == 'isnull':
+            pass
         elif lookup_type == 'in':
-            value = [self.get_db_prep_save(v) for v in value]
-            return super(ListField, self).get_db_prep_lookup(lookup_type, value)
+            value = [self.get_db_prep_save(v, connection=connection) for v in value]
         else:
             raise TypeError('Lookup type %s is not supported.' % lookup_type)
+        return super(ListField, self).get_db_prep_lookup(lookup_type, value,
+                                                         connection=connection,
+                                                         prepared=True)
