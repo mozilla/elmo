@@ -37,88 +37,148 @@
 
 '''Unit testing for this module.
 '''
-
+import datetime
 from django.test import TestCase
-from django.db import models
-from django.core.management.commands.dumpdata import Command as Dumpdata
-from fields import PickledObjectField, ListField
+from django.core.management.commands.dumpdata import Command
+from apps.mbdb.models import Property, Step, Build, Builder, Master, Slave
+import json
 
-class TestingModel(models.Model):
-    pickle_field = PickledObjectField()
-
-class List(models.Model):
-    items = ListField()
 
 class TestCustomDataType(str):
     pass
 
-class PickledObjectFieldTests(TestCase):
+
+class ModelsTest(TestCase):
+
     def setUp(self):
         self.testing_data = (
-            {1:1, 2:4, 3:6, 4:8, 5:10},
+            {1: 1, 2: 4, 3: 6, 4: 8, 5: 10},
             'Hello World',
             (1, 2, 3, 4, 5),
             [1, 2, 3, 4, 5],
             TestCustomDataType('Hello World'),
         )
-        return super(PickledObjectFieldTests, self).setUp()
-    
-    def testDataIntegriry(self):
-        """Tests that data remains the same when saved to and fetched from
-        the database.
-        """
+        return super(ModelsTest, self).setUp()
+
+    def testPropertyModel(self):
+        """test saving a Property instance with a big fat tuple of various
+        types of python data"""
+        # proves that 'value' can be null
+        prop = Property.objects.create(name='peter', source='foo_bar')
+        prop.save()
+        self.assertEqual(prop.value, None)
+        self.assertEqual(Property.objects.filter(value__isnull=True).count(), 1)
+
+        prop.value = self.testing_data
+        prop.save()
+
+        self.assertEqual(Property.objects.filter(value__isnull=True).count(), 0)
+
+        prop = Property.objects.get(name='peter')
+        self.assertEqual(prop.value, self.testing_data)
+
+    def testPropertyModelDifferentPickledata(self):
+        """test setting the value to be various types of data"""
         for value in self.testing_data:
-            model_test = TestingModel(pickle_field=value)
-            model_test.save()
-            model_test = TestingModel.objects.get(id__exact=model_test.id)
-            self.assertEquals(value, model_test.pickle_field)
-            model_test.delete()
-    
-    def testLookups(self):
-        """Tests that lookups can be performed on data once stored
-        in the database.
-        """
-        for value in self.testing_data:
-            model_test = TestingModel(pickle_field=value)
-            model_test.save()
-            self.assertEquals(value, TestingModel.objects.get(pickle_field__exact=value).pickle_field)
-            model_test.delete()
+            # save and...
+            prop = Property.objects.create(name='peter', source='foo',
+                                           value=value)
+            # get back out to ensure it doesn't cache the python object only
+            prop = Property.objects.get(value__exact=value)
+            self.assertEquals(value, prop.value)
+            prop.delete()
 
-    def testFixture(self):
-        """Tests that values can be serialized to a fixture.
+    def testPropertyDataDump(self):
+        for i, value in enumerate(self.testing_data):
+            prop = Property.objects.create(name='name %s' % i,
+                                           source='foo',
+                                           value=value)
+            dumpdata = Command()
+            jsondata = dumpdata.handle('mbdb')
+            data = json.loads(jsondata)
+            value_data = data[0]['fields']['value']
+            # dump data will always dump the pickled data stringified
+            self.assertEqual(unicode(value), value_data)
+            prop.delete()
 
-        XXX BROKEN, see django http://code.djangoproject.com/ticket/9522
+    def testStepModel(self):
+        # pre-requisites
+        master = Master.objects.create(
+         name='head',
+        )
 
-        """
-        for value in self.testing_data:
-            model_test = TestingModel(pickle_field=value)
-            model_test.save()
-        dumpdata = Dumpdata()
-        json = dumpdata.handle('mbdb')
-        pass
+        builder = Builder.objects.create(
+          name='builder1',
+          master=master,
+        )
 
-class PickleFixtureLoad(TestCase):
+        slave = Slave.objects.create(
+          name='slave 1',
+        )
+
+        build = Build.objects.create(
+          buildnumber=1,
+          builder=builder,
+          slave=slave,
+          starttime=datetime.datetime.now(),
+          endtime=datetime.datetime.now(),
+          result=1,
+        )
+
+        step = Step.objects.create(
+          name='step 1',
+          build=build
+        )
+        # this proves that custom fields `text` and `text2` are optional
+        test_list = ['Peter', u'\xa3pounds']
+        self.assertEqual(step.text, None)
+        self.assertEqual(step.text2, None)
+        step.text = test_list
+        step.text2 = []
+        step.save()
+
+        self.assertTrue(Step.objects.get(text__isnull=False))
+        self.assertTrue(Step.objects.get(text=test_list))
+        self.assertEqual(Step.objects.filter(text=test_list).count(), 1)
+        self.assertEqual(Step.objects.filter(text__isnull=False).count(), 1)
+        self.assertEqual(Step.objects.filter(text__isnull=True).count(), 0)
+
+        step = Step.objects.get(name='step 1')
+        self.assertEqual(step.text, test_list)
+        self.assertEqual(step.text2, [])
+
+        # it must also be possible to go back to null (see model definition)
+        step.text = None
+        step.save()
+
+        self.assertEqual(Step.objects.filter(text__isnull=False).count(), 0)
+        self.assertEqual(Step.objects.filter(text__isnull=True).count(), 1)
+
+        step = Step.objects.get(name='step 1')
+        self.assertEqual(step.text, None)
+        self.assertEqual(Step.objects.filter(text=test_list).count(), 0)
+
+
+class ModelsWithPickleFixtureTest(TestCase):
     fixtures = ['pickle_sample.json']
 
-    def testUnpickle(self):
-        self.failUnlessEqual(TestingModel.objects.count(), 3)
-        v = TestingModel.objects.get(pk=1).pickle_field
-        self.assertEquals(v, u"one string")
-        self.assert_(isinstance(v, unicode))
-        v = TestingModel.objects.get(pk=2).pickle_field
-        self.assert_(isinstance(v, unicode))
-        self.assertEquals(v, u"one pickled string")
-        v = TestingModel.objects.get(pk=3).pickle_field
-        self.assertEquals(v, ['pickled', 'array'])
+    def testPropertyModel(self):
+        prop = Property.objects.get(name='one')
+        self.assertEqual(prop.value, u'one string')
+        prop = Property.objects.get(name='two')
+        self.assertEqual(prop.value, u'one pickled string')
+        prop = Property.objects.get(name='three')
+        self.assertEqual(prop.value, ['pickled', 'array'])
 
-class ListFixtureLoad(TestCase):
+
+class ModelsWithListFixtureTest(TestCase):
     fixtures = ['list_field_sample.json']
 
-    def testUnpickle(self):
-        self.failUnlessEqual(List.objects.count(), 3)
-        v = List.objects.get(pk=1).items
-        self.assertEquals(v, [u"one string"])
-        v = List.objects.get(pk=2).items
-        self.assertEquals(v, [u'Array',u'of',u'strings'])
-        v = List.objects.get(pk=3).items
-        self.assertEquals(v, [u'Joined', u'list', u'of', u'strings'])
+    def testStepModel(self):
+        step = Step.objects.get(name='step 1')
+        self.assertEqual(step.text, [u'Peter', u'Be'])
+        self.assertEqual(step.text2, [])
+
+        step = Step.objects.get(name='step 2')
+        self.assertEqual(step.text, [u'Joined', u'list', u'of', u'strings'])
+        self.assertEqual(step.text2, None)

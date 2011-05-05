@@ -1,23 +1,29 @@
 [
  {
    "pk": 1,
-     "model": "mbdb.testingmodel",
+     "model": "mbdb.property",
      "fields": {
-     "pickle_field": "one string"
+     "name":"one",
+     "source":"s",
+     "value": "one string"
        }
  },
  {
    "pk": 2,
-     "model": "mbdb.testingmodel",
+     "model": "mbdb.property",
      "fields": {
-     "pickle_field": "Vone pickled string\np0\n."
+     "name":"two",
+     "source":"s",
+     "value": "Vone pickled string\np0\n."
        }
  },
  {
    "pk": 3,
-     "model": "mbdb.testingmodel",
+     "model": "mbdb.property",
      "fields": {
-     "pickle_field": "(lp0\nS'pickled'\np1\naS'array'\np2\na."
+     "name":"three",
+     "source":"s",
+     "value": "(lp0\nS'pickled'\np1\naS'array'\np2\na."
        }
  }
 ]

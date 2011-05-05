@@ -251,9 +251,9 @@ SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 
 ## Tests
-#TEST_RUNNER = 'test_utils.runner.RadicalTestSuiteRunner'
 #TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
-TEST_RUNNER = 'test_runner.PatchedNoseTestSuiteRunner'
+TEST_RUNNER = 'test_utils.runner.RadicalTestSuiteRunner' # same as playdoh
+
 ## Celery
 # commented out because it's not being used
 #BROKER_HOST = 'localhost'
