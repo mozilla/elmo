@@ -37,12 +37,14 @@
 '''Views for managing sign-offs and shipping metrics.
 '''
 
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.template.loader import render_to_string
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import (HttpResponseRedirect, HttpResponse, Http404,
+                         HttpResponseNotAllowed)
 from life.models import Repository, Locale, Push, Changeset, Tree
-from shipping.models import Milestone, Signoff, Snapshot, AppVersion, Action, SignoffForm, ActionForm
+from shipping.models import (Milestone, Signoff, Snapshot, AppVersion, Action,
+                             SignoffForm, ActionForm)
 from l10nstats.models import Run, Run_Revisions
 from django import forms
 from django.conf import settings
@@ -79,7 +81,7 @@ def index(request):
         elif 2 in statuses:
             i.status = 'shipped'
         else:
-            i.status = 'unknown' 
+            i.status = 'unknown'
 
     return render_to_response('shipping/index.html', {
         'locales': locales,
@@ -148,7 +150,7 @@ def pushes(request):
                 form = SignoffForm(request.POST, instance=instance)
                 if form.is_valid():
                     form.save()
-                    
+
                     #add a snapshot of the current test results
                     pushobj = Push.objects.get(id=request.POST['push'])
                     lastrun = _get_compare_locales_result(pushobj.tip, appver.tree)
@@ -165,13 +167,13 @@ def pushes(request):
             return HttpResponseRedirect('%s?locale=%s&ms=%s&offset=%s' % (reverse('shipping.views.pushes'), locale.code ,mstone.code, offset_id))
 
     form = SignoffForm()
-    
+
     forest = appver.tree.l10n
     repo_url = '%s%s/' % (forest.url, locale.code)
     notes = _get_notes(request.session)
     accepted = _get_accepted_signoff(locale, ms=mstone, av=appver)
     if accepted is None:
-        # no accepted signoff to diff against, let's try the latest 
+        # no accepted signoff to diff against, let's try the latest
         # obsolete one
         accepted = _signoffs(mstone is None and appver or mstone, status=4,
                              locale=locale.code)
@@ -267,7 +269,7 @@ def diff_app(request):
                                            'oldval': '',
                                            'newval': '',
                                            'entity': 'cannot parse ' + path}]})
-            continue            
+            continue
         a_list = sorted(a_map.keys())
         c_list = sorted(c_map.keys())
         ar = AddRemove()
@@ -320,12 +322,12 @@ def dashboard(request):
     query = [] # params to pass to shipping json
     subtitles = []
     if 'ms' in request.GET:
-        mstone = Milestone.objects.get(code=request.GET['ms'])
+        mstone = get_object_or_404(Milestone, code=request.GET['ms'])
         args.append(('tree', mstone.appver.tree.code))
         subtitles.append(str(mstone))
         query.append(('ms', mstone.code))
     elif 'av' in request.GET:
-        appver = AppVersion.objects.get(code=request.GET['av'])
+        appver = get_object_or_404(AppVersion, code=request.GET['av'])
         args.append(('tree', appver.tree.code))
         subtitles.append(str(appver))
         query.append(('av', appver.code))
@@ -341,14 +343,14 @@ def dashboard(request):
             'subtitles': subtitles,
             'query': mark_safe(urlencode(query)),
             'args': mark_safe(urlencode(args)),
-            })
+            }, context_instance=RequestContext(request))
 
 @cache_control(max_age=60)
 def l10n_changesets(request):
     if request.GET.has_key('ms'):
-        av_or_m = Milestone.objects.get(code=request.GET['ms'])
+        av_or_m = get_object_or_404(Milestone, code=request.GET['ms'])
     elif request.GET.has_key('av'):
-        av_or_m = AppVersion.objects.get(code=request.GET['av'])
+        av_or_m = get_object_or_404(AppVersion, code=request.GET['av'])
     else:
         return HttpResponse('No milestone or appversion given')
 
@@ -364,9 +366,9 @@ def l10n_changesets(request):
 @cache_control(max_age=60)
 def shipped_locales(request):
     if request.GET.has_key('ms'):
-        av_or_m = Milestone.objects.get(code=request.GET['ms'])
+        av_or_m = get_object_or_404(Milestone, code=request.GET['ms'])
     elif request.GET.has_key('av'):
-        av_or_m = AppVersion.objects.get(code=request.GET['av'])
+        av_or_m = get_object_or_404(AppVersion, code=request.GET['av'])
     else:
         return HttpResponse('No milestone or appversion given')
 
@@ -378,7 +380,7 @@ def shipped_locales(request):
         if loc == 'ja-JP-mac':
             return 'ja-JP-mac osx\n'
         return loc + '\n'
-    
+
     r = HttpResponse(map(withPlatforms, sorted(locales)),
                       content_type='text/plain; charset=utf-8')
     r['Content-Disposition'] = 'inline; filename=shipped-locales'
@@ -388,10 +390,10 @@ def shipped_locales(request):
 def signoff_json(request):
     appvers = AppVersion.objects
     if request.GET.has_key('ms'):
-        av_or_m = Milestone.objects.get(code=request.GET['ms'])
+        av_or_m = get_object_or_404(Milestone, code=request.GET['ms'])
         appvers = appvers.filter(app=av_or_m.appver.app)
     elif request.GET.has_key('av'):
-        av_or_m = AppVersion.objects.get(code=request.GET['av'])
+        av_or_m = get_object_or_404(AppVersion, code=request.GET['av'])
         appvers = appvers.filter(app=av_or_m.app)
     else:
         av_or_m = None
@@ -436,26 +438,33 @@ def signoff_json(request):
 
 @cache_control(max_age=60)
 def pushes_json(request):
-    loc = request.GET.get('locale', None)
-    ms = request.GET.get('mstone', None)
-    appver = request.GET.get('av', None)
-    start = int(request.GET.get('from', 0))
-    to = int(request.GET.get('to', 20))
-    branches = re.split(r', *', request.GET['branches']) if request.GET.has_key('branches') else None
-    
+    loc = request.GET.get('locale')
+    ms = request.GET.get('mstone')
+    appver = request.GET.get('av')
+    try:
+        start = int(request.GET.get('from', 0))
+        to = int(request.GET.get('to', 20))
+        # XXX: should we also assert that the numbers are >= 0?
+    except ValueError:
+        raise Http404('invalid number')
+    if 'branches' in request.GET:
+        branches = re.split(r', *', request.GET['branches'])
+    else:
+        branches = None
+
     locale = None
     mstone = None
     cur = None
     if loc:
-        locale = Locale.objects.get(code=loc)
+        locale = get_object_or_404(Locale, code=loc)
     if ms:
-        mstone = Milestone.objects.get(code=ms)
+        mstone = get_object_or_404(Milestone, code=ms)
         appver = mstone.appver
     elif appver:
-        appver = AppVersion.objects.get(code=appver)
+        appver = get_object_or_404(AppVersion, code=appver)
     if loc and ms:
         cur = _get_current_signoff(locale, mstone)
-    
+
     pushes = _get_api_items(locale, appver, cur, start=start, offset=start+to, branches=branches)
     return HttpResponse(simplejson.dumps({'items': pushes}, indent=2))
 
@@ -463,7 +472,7 @@ def pushes_json(request):
 def milestones(request):
     """Administrate milestones.
 
-    Opens an exhibit that offers the actions below depending on 
+    Opens an exhibit that offers the actions below depending on
     milestone status and user permissions.
     """
     # we need to use {% url %} with an exhibit {{.foo}} as param,
@@ -580,6 +589,8 @@ def confirm_ship_mstone(request):
         return HttpResponseRedirect(reverse('shipping.views.milestones'))
     try:
         mstone = Milestone.objects.get(code=request.GET['ms'])
+    except Milestone.DoesNotExist:
+        raise Http404("milestone does not exist")
     except:
         return HttpResponseRedirect(reverse('shipping.views.milestones'))
     if mstone.status != 1:
@@ -603,26 +614,27 @@ def confirm_ship_mstone(request):
                                'request': request,
                              },
                               context_instance=RequestContext(request))
-        
+
 def ship_mstone(request):
     """The actual worker method to ship a milestone.
 
-    Only avaible to POST.
     Redirects to milestones().
     """
-    if (request.method == "POST" and
-        'ms' in request.POST and
-        request.user.has_perm('shipping.can_ship')):
-        try:
-            mstone = Milestone.objects.get(code=request.POST['ms'])
-            # get current signoffs
-            cs = _signoffs(mstone).values_list('id', flat=True)
-            mstone.signoffs.add(*list(cs))  # add them
-            mstone.status = 2
-            # XXX create event
-            mstone.save()
-        except:
-            pass
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    if not request.user.has_perm('shipping.can_ship'):
+        # XXX: personally I'd prefer if this was a raised 4xx error (peter)
+        # then I can guarantee better test coverage
+        return HttpResponseRedirect(reverse('shipping.views.milestones'))
+
+    mstone = get_object_or_404(Milestone, code=request.POST['ms'])
+    # get current signoffs
+    cs = _signoffs(mstone).values_list('id', flat=True)
+    mstone.signoffs.add(*list(cs))  # add them
+    mstone.status = 2
+    # XXX create event
+    mstone.save()
+
     return HttpResponseRedirect(reverse('shipping.views.milestones'))
 
 
@@ -704,7 +716,7 @@ def _get_total_pushes(locale=None, mstone=None, branches=None):
     pushobjs = _get_pushes(branches)
     if mstone:
         forest = mstone.appver.tree.l10n
-        repo_url = '%s%s/' % (forest.url, locale.code) 
+        repo_url = '%s%s/' % (forest.url, locale.code)
         return pushobjs.filter(repository__url=repo_url).count()
     else:
         return pushobjs.count()
@@ -720,11 +732,11 @@ def _get_api_items(locale, appver=None, current=None, start=0, offset=10, branch
     pushobjs = _get_pushes(branches)
     if appver:
         forest = appver.tree.l10n
-        repo_url = '%s%s/' % (forest.url, locale.code) 
+        repo_url = '%s%s/' % (forest.url, locale.code)
         pushobjs = pushobjs.filter(repository__url=repo_url).order_by('-push_date')[start:start+offset]
     else:
         pushobjs = pushobjs.order_by('-push_date')[start:start+offset]
-    
+
     pushes = []
     if current:
         current_push = current.push.id
@@ -838,7 +850,7 @@ def _signoffs(appver_or_ms=None, status=1, getlist=False, locale=None):
     If the locale argument is given, return the latest signoff with the
     requested status, or None. Requires appver_or_ms to be given.
 
-    If getlist=True is specified, returns a dictionary mapping 
+    If getlist=True is specified, returns a dictionary mapping
     tree-locale typles to a list of statuses, all that are newer than the
     latest obsolete action or accepted signoff (the latter is included).
     '''
