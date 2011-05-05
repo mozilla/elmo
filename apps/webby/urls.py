@@ -36,8 +36,11 @@
 # ***** END LICENSE BLOCK *****
 
 from django.conf.urls.defaults import *
+from webby.feeds import AllOptinsFeed, PendingOptinsFeed
 
 urlpatterns = patterns('webby.views',
     (r'^$', 'projects'),
-    (r'^(?P<slug>[a-z]+)$', 'project'),
+    url(r'^(?P<slug>[a-z]+)$', 'project', name="webby-project"),
+    (r'^feed/all$', AllOptinsFeed()),
+    (r'^feed/pending$', PendingOptinsFeed()),
 )
