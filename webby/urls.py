@@ -41,6 +41,14 @@ from webby.feeds import AllOptinsFeed, PendingOptinsFeed
 urlpatterns = patterns('webby.views',
     (r'^$', 'projects'),
     url(r'^(?P<slug>[a-z]+)$', 'project', name="webby-project"),
-    (r'^feed/all$', AllOptinsFeed()),
-    (r'^feed/pending$', PendingOptinsFeed()),
+)
+
+feeds = {
+    'all': AllOptinsFeed,
+    'pending': PendingOptinsFeed,
+}
+
+urlpatterns += patterns('',
+    (r'^feed/(?P<url>.*)/$', 'django.contrib.syndication.views.feed',
+     {'feed_dict': feeds}),
 )
