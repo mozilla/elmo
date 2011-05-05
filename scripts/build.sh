@@ -44,4 +44,8 @@ pip install -q hmac==20101005
 pip install -q hashlib==20081119
 pip install -q py-bcrypt==0.2
 
-python manage.py test --noinput dashtags mbdb tinder homepage
+# dependencies for dependencies
+pip install -q mock
+pip install -q jinja2
+
+python manage.py test --noinput apps
