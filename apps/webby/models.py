@@ -39,6 +39,10 @@ from django.db import models
 from life.models import Locale
 from django.contrib.auth.models import User
 
+class ProjectManager(models.Manager):
+    def active(self):
+        return self.filter(is_archived=False)
+
 
 class ProjectType(models.Model):
     """ stores type of the project (PHP, Django, etc.)
@@ -55,6 +59,7 @@ class Project(models.Model):
     name = models.CharField(max_length=80)
     slug = models.SlugField(max_length=80)
     description = models.TextField()
+    is_archived = models.BooleanField(default=False)
     verbatim_url = models.CharField(max_length=150, blank=True, null=True)
     l10n_repo_url = models.CharField(max_length=150, blank=True, null=True)
     code_repo_url = models.CharField(max_length=150, blank=True, null=True)
@@ -69,6 +74,8 @@ class Project(models.Model):
     string_count = models.IntegerField(default=0)
     word_count = models.IntegerField(default=0)
     type = models.ForeignKey(ProjectType)
+
+    objects = ProjectManager()
 
     def __unicode__(self):
         return self.name

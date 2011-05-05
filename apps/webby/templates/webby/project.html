@@ -39,6 +39,12 @@
 {% endcomment %} -->
 {% block head_matter %}
 <style type="text/css">
+#notification {
+    margin: 10px;
+    padding: 10px;
+    border: 2px solid #333;
+    background-color: #ff9;
+}
 #webby_table {
     border-collapse: collapse;
     margin: 5px;
@@ -94,6 +100,14 @@
 {% endblock %}
 
 {% block content %}
+{% if project.is_archived %}
+<div id="notification">
+    <p>You are viewing an <strong>archived project</strong>.  The opt-ins are now closed.</p>
+    {% if project.final_url %}
+        <p>You can see the project live at <a href="{{project.final_url}}">{{project.final_url}}</a>.</p>
+    {% endif %}
+</div>
+{% endif %}
 <div id="data">
   <ul>
     <li><a href="{{project.verbatim_url}}">Verbatim</a></li>
@@ -117,7 +131,7 @@
 Project: <b>{{ project.name }}</b>
 <br/>
 <p>{{ project.description }}</p>
-{% if perms.webby.add_weblocale %}
+{% if not project.is_archived and perms.webby.add_weblocale %}
 <form action="{% url webby.views.project slug=project.slug %}" method="post">{% csrf_token %}
 <select name="locale" id="id_locale">
   <option value="">----</option>
