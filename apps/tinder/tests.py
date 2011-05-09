@@ -38,16 +38,15 @@
 '''Tests for the build progress displays.
 '''
 
-import unittest
 import os
 import datetime
 from tempfile import gettempdir
-from collections import defaultdict
 from nose.tools import eq_, ok_
 from django.test import TestCase
 
 from django.core.urlresolvers import reverse
-from mbdb.models import Build, Change, Master, Log
+from mbdb.models import (Build, Change, Master, Log, Property, SourceStamp,
+                         Builder, Slave)
 from tinder.views import _waterfall, waterfall
 from tinder.templatetags import build_extras
 from tinder.models import MasterMap, WebHead
@@ -208,7 +207,7 @@ class ViewsTestCase(TestCase):
 
     def test_pmap(self):
         from views import pmap
-        from mbdb.models import Build, Property, SourceStamp, Builder, Slave, Change
+
 
         prop1 = Property.objects.create(
           name='gender',

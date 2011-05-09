@@ -37,22 +37,15 @@
 """Views centric around AppVersion data.
 """
 
-from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response
-
+from django.shortcuts import render_to_response, get_object_or_404
+from django.template import RequestContext
 from shipping.models import *
 
-
-def changes(req, app_code):
+def changes(request, app_code):
     """Show which milestones on the given appversion took changes for which
     locale
     """
-    try:
-        av = AppVersion.objects.get(code=app_code)
-    except AppVersion.DoesNotExist:
-        # TODO: Hook up to a view that links to this
-        return HttpResponseRedirect('/')
-
+    av = get_object_or_404(AppVersion, code=app_code)
     ms_names = {}
     ms_codes = {}
     for ms in Milestone.objects.filter(appver=av).select_related('appver__app'):
@@ -95,4 +88,5 @@ def changes(req, app_code):
     return render_to_response('shipping/app-changes.html',
                               {'appver': av,
                                'rows': rows,
-                               })
+                               },
+                               context_instance=RequestContext(request))

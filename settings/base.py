@@ -76,7 +76,7 @@ SUPPORTED_NONLOCALES = []
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = path('media')
+MEDIA_ROOT = path('static')
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
@@ -104,10 +104,9 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.media',
     'django.core.context_processors.request',
     'django.core.context_processors.csrf',
+    'django.core.context_processors.static',
     'django.contrib.messages.context_processors.messages',
-
     'commons.context_processors.i18n',
-    #'jingo_minify.helpers.build_ids',
 )
 
 TEMPLATE_DIRS = (
@@ -132,21 +131,15 @@ def JINJA_CONFIG():
 #        config['bytecode_cache'] = bc
     return config
 
-# Bundles is a dictionary of two dictionaries, css and js, which list css files
-# and js files that can be bundled together by the minify app.
-MINIFY_BUNDLES = {
-    'css': {
-        'example_css': (
-            'css/examples/main.css',
-        ),
-    },
-    'js': {
-        'example_js': (
-            'js/libs/jquery-1.4.4.min.js',
-        ),
-    }
-}
+# This is the common prefix displayed in front of ALL static files
+STATIC_URL = '/static/'
 
+# the location where all collected files end up.
+# the reason for repeated the word 'static' inside 'collected/'
+# is so we, in nginx/apache, can set up the root to be
+# <base path>/collected
+# then a URL like http://domain/static/js/jquery.js just works
+STATIC_ROOT = path('collected', 'static')
 
 ## Middlewares, apps, URL configs.
 
@@ -171,7 +164,6 @@ ROOT_URLCONF = '%s.urls' % ROOT_PACKAGE
 INSTALLED_APPS = (
     # Local apps
     'commons',  # Content common to most playdoh-based apps.
-    'jingo_minify',
     'tower',  # for ./manage.py extract (L10n)
     'nashvegas',
 
@@ -190,12 +182,8 @@ INSTALLED_APPS = (
 
     'django.contrib.contenttypes',
     'django.contrib.sessions',
-    # 'django.contrib.sites',
-    # 'django.contrib.messages',
-    # Uncomment the next line to enable the admin:
+    'django.contrib.staticfiles',
     'django.contrib.admin',
-    # Uncomment the next line to enable admin documentation:
-    # 'django.contrib.admindocs',
 
     # L10n
     'product_details',

@@ -29,6 +29,7 @@ GIT_PULL = "git pull -q origin %(branch)s"
 GIT_SUBMODULE = "git submodule update --init --recursive"
 NASHVEGAS_LIST = "./manage.py upgradedb --path migrations --list"
 NASHVEGAS_EXEC = "./manage.py upgradedb --path migrations --execute"
+STATICFILES_COLLECT_EXEC = "./manage.py collectstatic --noinput"
 
 EXEC = 'exec'
 CHDIR = 'chdir'
@@ -51,6 +52,11 @@ def update_site(env, debug):
         (CHDIR, here),
         (CONFIRM, NASHVEGAS_LIST),
         (EXEC, NASHVEGAS_EXEC),
+    ]
+
+    commands += [
+        (CHDIR, here),
+        (EXEC, STATICFILES_COLLECT_EXEC),
     ]
 
     for cmd, cmd_args in commands:

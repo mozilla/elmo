@@ -17,10 +17,11 @@
    -
    - The Initial Developer of the Original Code is
    - Mozilla Foundation.
-   - Portions created by the Initial Developer are Copyright (C) 2010
+   - Portions created by the Initial Developer are Copyright (C) 2011
    - the Initial Developer. All Rights Reserved.
    -
    - Contributor(s):
+   -   Peter Bengtsson <peterbe@mozilla.com>
    -
    - Alternatively, the contents of this file may be used under the terms of
    - either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -38,49 +39,17 @@
 {% endcomment %} -->
 {% load recurse %}
 
-{% block title %}{% if given_title %}{{given_title}}{% else %}{{repo}} from {{old_rev}} to {{new_rev}}{% endif %}{% endblock %}
+{% block title_matter %}{% if given_title %}{{given_title}}{% else %}{{repo}} from {{old_rev}} to {{new_rev}}{% endif %}{% endblock %}
 
-{% block style_include %}
-<link rel="stylesheet" type="text/css"
-href="{% url static path="jquery.ui/themes/base/ui.all.css" %}">
+{% block head_matter %}
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.all.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/diff.css" type="text/css">
 {% endblock %}
 
-{% block javascript %}
-$(document).ready(function(){
-  $('.ui-accordion-header').click(function(e) {
-    $(this).each(function(i){
-      $(this).children('.ui-icon').toggleClass('ui-icon-triangle-1-s') .toggleClass('ui-icon-triangle-1-e')
-    }).next().toggle()
-  })
-});
+{% block javascript_matter %}
+<script src="{{ STATIC_URL }}shipping/js/diff.js"></script>
 {% endblock %}
 
-{% block style %}
-.children {
-  padding-left:1em;
-}
-.diff {
-  padding-left: 2ex;
-}
-.line-added, .file-added {
-  color: green;
-}
-.line-removed, .file-removed {
-  color: red;
-}
-.empty-diff {
-  font-size: small;
-}
-.replace {
-  background-color: orange;
-}
-.delete {
-  background-color: red;
-}
-.insert {
-  background-color: #66ff00;
-}
-{% endblock %}
 {% block content %}
 {% if diffs %}
 Changed files:

@@ -37,9 +37,10 @@
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
 
-{% block title %}Shipping {{ mstone }}{% endblock %}
+{% block title_matter %}Shipping {{ mstone }}{% endblock %}
 
-{% block javascript %}
+{% block javascript_matter %}
+<script>
 function addMulti() {
   var platform = $("#nextmulti")[0].value;
   var row = $('<tr>' +
@@ -52,6 +53,7 @@ function addMulti() {
     '</tr>');
   $('#multis').append(row);
 }
+</script>
 {% endblock %}
 
 {% block content %}

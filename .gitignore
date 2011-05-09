@@ -4,3 +4,4 @@ env
 *.pyc
 .coverage
 cover/
+collected/

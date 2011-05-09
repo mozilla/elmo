@@ -38,25 +38,7 @@
 {% endcomment %} -->
 {% block title_matter %}Privacy Policy{% endblock %}
 {% block head_matter %}
-<style type="text/css">
-.notice {
-  padding: 2em;
-}
-.notice > span {
-  border: solid red;
-  -moz-border-radius: 2em;
-  padding: 2em;
-}
-#policy {
-  margin-left: 1em;
-}
-#policy p {
-  margin:1em 0;
-}
-#policy p.intro {
-  font-style: italic;
-}
-</style>
+<link rel="stylesheet" href="{{ STATIC_URL }}privacy/css/privacy.css" type="text/css">
 {% endblock %}
 
 {% block content %}

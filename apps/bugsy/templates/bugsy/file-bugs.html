@@ -41,118 +41,18 @@
 {% block head_matter %}
 <link rel="exhibit/data" type="x-bugzilla-components"
       href="https://api-dev.bugzilla.mozilla.org/0.9/configuration?flags=0&cached_ok=1">
-<style type="text/css">
-div.buglink {
-  float: left;
-  padding: 2px;
-}
-#show-extra-fields small {
-  color: blue;
-  padding: 2px 3px;
-  background-color: #eee;
-}
-#show-extra-fields small:hover {
-  cursor: pointer;
-}
-.extra-field {
-  display: none;
-}
-</style>
+<link rel="stylesheet" href="{{ STATIC_URL }}bugsy/css/file_bugs.css" type="text/css">
+
+{# must be loaded in the head :( #}
 {% exhibit %}
-<script type="text/javascript">
-$.ajaxSettings.traditional=true; // hack around params default in jquery
-BugComponentImporter = {
-};
-Exhibit.importers["x-bugzilla-components"] = BugComponentImporter;
-BugComponentImporter.load = function(link, database, cont) {
-    var url = typeof link == "string" ? link : link.href;
-    url = Exhibit.Persistence.resolveURL(url);
 
-    var callback = function(json, statusText) {
-      Exhibit.UI.hideBusyIndicator();
-      if (statusText != 'success') {
-        Exhibit.UI.showHelp(Exhibit.l10n.failedToLoadDataFileMessage(url));
-        if (cont) cont();
-        return;
-      }
-      try {
-        var items = [], o = {items:items};
-        function getComponent(comp) {
-          if (!/ \/ /.test(comp)) {return;}
-          var loc = comp.split(' / ')[0];
-          var item = {'id': loc,
-                      'label': comp,
-                      'product': 'Mozilla Localizations',
-                      'component': comp,
-                      'type': 'Component'};
-          items.push(item);
-        }
-        $.each(json.product['Mozilla Localizations'].component, getComponent);
-        if (o != null) {
-          database.loadData(o, Exhibit.Persistence.getBaseURL(url));
-        }
-      } catch (e) {
-        SimileAjax.Debug.exception(e, "Error loading Bugzilla JSON data from " + url);
-      } finally {
-        if (cont) cont();
-      }
-    };
+{% endblock %}
 
-    Exhibit.UI.showBusyIndicator();
-    $.getJSON(url, callback);
-
-};
-
-$(document).ready(function() {
-  document.forms.bugdata.short_desc.focus();
-  $('#show-extra-fields').click(function(){
-    $(this).hide();
-    $('.extra-field').fadeIn();
-  });
-});
-
-function getFormData() {
-  var elems = document.forms.bugdata.elements;
-  var out = {};
-  for (var i = 0; i < elems.length; ++i) {
-    var elem = elems[i];
-    if (elem.name == '') continue;
-    out[elem.name] = elem.value;
-  }
-  return out;
-};
-
-function getBugURL(params) {
-  var url = 'https://bugzilla.mozilla.org/enter_bug.cgi?';
-  url += $.param(params);
-  return url;
-};
-
-function displayBugLinks(data) {
-  var locs = [];
-  $.each(data, function(loc, val) {locs.push(loc);});
-  locs.sort();
-  $.each(locs, function() {
-    var loc = this+''; // get string
-    var props = data[loc];
-    var comp = database.getObject(loc, 'component');
-    if (comp != null) {
-      props.component = comp;
-    }
-    var url = getBugURL(data[loc]);
-    var link = $("<a>").attr("href",  url).attr("target","_blank").text(loc);
-    $("#linkpane").append(link).append(" ");
-  });
-}
-
-function getBugLinks() {
-  $("#linkpane").html('');
-  var set = exhibit.getUIContext().getCollection().getRestrictedItems();
-  var params = getFormData();
-  params.locales = set.toArray();
-  $.getJSON("{% url bugsy.views.get_bug_links %}", params, displayBugLinks);
-};
+{% block javascript_matter %}
+<script>
+var BUG_LINKS_URL = '{% url bugsy.views.get_bug_links %}';
 </script>
+<script src="{{ STATIC_URL }}bugsy/js/file_bug.js" %}"></script>
 {% endblock %}
 {% block content %}
 <div id="blds" ex:role="exhibit-collection" ex:itemTypes="Component"></div>

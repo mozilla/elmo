@@ -40,7 +40,7 @@
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect
 from django.utils.safestring import mark_safe
-from django.template import Context, Template
+from django.template import Context, Template, RequestContext
 from django.template.loader import render_to_string
 from django.utils import simplejson
 
@@ -52,19 +52,21 @@ from life.models import Locale
 
 def index(request):
     return render_to_response('bugsy/index.html', {
-            })
+            }, context_instance=RequestContext(request))
 
 
 def homesnippet(request):
-    return render_to_string('bugsy/snippet.html', {})
+    return render_to_string('bugsy/snippet.html', {
+            }, context_instance=RequestContext(request))
 
 def teamsnippet(request, locale):
-    return render_to_string('bugsy/team-snippet.html', {'locale': locale})
+    return render_to_string('bugsy/team-snippet.html', {'locale': locale}
+           , context_instance=RequestContext(request))
 
 
 def file_bugs(request):
     return render_to_response('bugsy/file-bugs.html', {
-            })
+            }, context_instance=RequestContext(request))
 
 def get_bug_links(request):
     locale_codes = request.GET.getlist('locales')
@@ -85,11 +87,13 @@ def get_bug_links(request):
 
 
 def new_locale(request):
-    return render_to_response('bugsy/new-locale.html')
+    return render_to_response('bugsy/new-locale.html', {
+            }, context_instance=RequestContext(request))
 
 
 def new_locale_bugs(request):
     alias = request.GET.get('app', 'fx')
     return render_to_response('bugsy/new-%s-locales.json' % alias,
                               request.GET,
-                              mimetype="application/javascript")
+                              mimetype="application/javascript",
+                              context_instance=RequestContext(request))

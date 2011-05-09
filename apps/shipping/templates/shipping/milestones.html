@@ -38,31 +38,15 @@
 {% endcomment %} -->
 {% load simile %}
 
-{% block title %}Milestones{% endblock %}
+{% block title_matter %}Milestones{% endblock %}
 
-{% block js_include %}
+{% block head_matter %}
+<link href="{% url shipping.views.stones_data %}" type="application/json" rel="exhibit/data">
 {% exhibit autoCreate=false %}
-<link href="{% url shipping.views.stones_data %}" type="application/json" rel="exhibit/data" />
 {% endblock %}
 
-{% block javascript %}
-var schema = {}
-
-$(document).ready(function() {
-  window.database = Exhibit.Database.create();
-  window.database.loadData(schema);
-  window.database.loadDataLinks(function(){
-    window.exhibit = Exhibit.create();
-    window.exhibit.configureFromDOM();
-  });
-});
-
-function doForm(action, ms) {
-  var frm = $('#' + action + '_ms');
-  $('input[name="ms"]', frm).val(ms);
-  frm.trigger('submit');
-  return false;
-}
+{% block javascript_matter %}
+<script src="{{ STATIC_URL }}shipping/js/milestones.js"></script>
 {% endblock %}
 
 {% block content %}

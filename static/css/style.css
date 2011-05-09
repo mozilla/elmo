@@ -1,0 +1,57 @@
+#menu {
+  margin: 0 0 2em;
+  padding: 10px;
+  font-size: small;
+  font-style: italic;
+  line-height: 1em;
+  background-color: #eee;
+  -moz-border-radius: .5em;
+}
+#menu ul {
+  list-style: none;
+  float: left;
+  margin: 0;
+  padding: 0;
+}
+#menu li {
+  float: left;
+  margin: 0 10px;
+}
+#menu br {
+  clear: both;
+}
+#auth {
+  float: right;
+}
+#page_footer {
+  margin-top: 2em;
+  padding: 10px;
+  font-size: small;
+  font-style: italic;
+  line-height: 1em;
+  background-color: #eee;
+  -moz-border-radius: .5em;
+}
+
+
+/* Teams page */
+#teams {
+  -moz-column-width: 35ex;
+  /* tried on google chrome and safari, looks like junk, borders don't work
+   -webkit-column-width: 35ex;
+   */
+}
+#teams > li {
+  list-style-type: none;
+  border-top: 1px solid grey;
+  border-bottom: 1px solid grey;
+  margin-bottom: -1px;
+  padding: 5px;
+  margin-right: 5ex;
+}
+/* end Teams page */
+
+
+.hidden {
+  display: none;
+}

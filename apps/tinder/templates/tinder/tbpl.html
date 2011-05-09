@@ -39,6 +39,9 @@
 {% load build_extras %}
 {% block title_matter %}Builds{% endblock %}
 {% block head_matter %}
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}tinder/css/tbpl.css">
+{% endblock %}
+{% block javascript_matter %}
 <script type="application/javascript">
 var delay = 5*60*1000;
 var random = 0;
@@ -92,19 +95,6 @@ $(document).ready(function() {
 });
 
 </script>
-<style type="text/css">
-.success {background-color: green;}
-.warning {background-color: orange;}
-.failure {background-color: red;}
-.skip {background-color: yellow;}
-.except {background-color: purple;}
-.buildbox {float: left; padding: 0.25em; margin: 0.25em;}
-.stamp {clear: left; }
-.changes {background-color: lightgrey; padding: 0.25em;}
-.who {background-color: lightgrey;  padding: 0.25em;}
-.top {-moz-border-radius-topleft: 10px}
-.bottom {-moz-border-radius-bottomleft: 10px}
-</style>
 {% endblock %}
 {% block content %}
 <h1>Builds</h1>

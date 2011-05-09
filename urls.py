@@ -1,4 +1,5 @@
 from django.conf.urls.defaults import *
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf import settings
 from django.http import HttpResponse
 import base64
@@ -47,13 +48,17 @@ urlpatterns = patterns('',
 # the references to /media/.
 
 # Remove leading and trailing slashes so the regex matches.
-media_url = settings.MEDIA_URL.lstrip('/').rstrip('/')
+# TODO: consider subclassing django.views.static.serve with something
+# that prints a warning message
+static_url = settings.STATIC_URL.lstrip('/').rstrip('/')
 urlpatterns += patterns('',
-    url(r'^%s/(?P<path>.*)$' % media_url, 'django.views.static.serve',
-     {'document_root': settings.MEDIA_ROOT},
+    url(r'^%s/(?P<path>.*)$' % static_url, 'django.views.static.serve',
+     {'document_root': settings.STATIC_ROOT},
      'static'),
 )
 
+#if settings.DEBUG:
+urlpatterns += staticfiles_urlpatterns()
 
 # Proxy the webdashboard
 urlpatterns += patterns('',

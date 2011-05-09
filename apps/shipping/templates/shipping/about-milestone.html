@@ -38,9 +38,9 @@
 {% endcomment %} -->
 {% load simile %}
 
-{% block title %}About {{ms}}{% endblock %}
+{% block title_matter %}About {{ms}}{% endblock %}
 
-{% block js_include %}
+{% block head_matter %}
 {% exhibit %}
 <link href="{% url shipping.views.milestone.statuses ms.code %}" type="application/json" rel="exhibit/data" />
 {% endblock %}

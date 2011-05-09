@@ -40,15 +40,16 @@
 '''
 from django.test import TestCase
 from django.core.urlresolvers import reverse
-from django.conf import settings
 from shipping.models import Milestone, Application, AppVersion, Signoff, Action
 from shipping.views import _signoffs
-from life.models import Tree, Forest, Locale
+from life.models import Tree, Forest
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
+from commons.tests.mixins import EmbedsTestCaseMixin
+from nose.tools import eq_, ok_
 
 
-class ShippingTestCase(TestCase):
+class ShippingTestCaseBase(TestCase, EmbedsTestCaseMixin):
 
     def _create_appver_milestone(self):
         app = Application.objects.create(
@@ -78,110 +79,204 @@ class ShippingTestCase(TestCase):
 
         return appver, milestone
 
+
+class ShippingTestCase(ShippingTestCaseBase):
+
+    def test_basic_render_app_changes(self):
+        """render shipping.views.app.changes"""
+        url = reverse('shipping.views.app.changes',
+                      args=['junk'])
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
+        appver, milestone = self._create_appver_milestone()
+        url = reverse('shipping.views.app.changes',
+                      args=[appver.code])
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        self.assert_all_embeds(response.content)
+        ok_('<title>Locale changes for %s' % appver in response.content)
+        ok_('<h1>Locale changes for %s' % appver in response.content)
+
+    def test_basic_render_confirm_drill_mstone(self):
+        """render shipping.views.confirm_drill_mstone"""
+        url = reverse('shipping.views.confirm_drill_mstone')
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+        appver, milestone = self._create_appver_milestone()
+        response = self.client.get(url, {'ms': milestone.code})
+        eq_(response.status_code, 302) # not permission to view
+
+        admin = User.objects.create_user(
+          username='admin',
+          email='admin@mozilla.com',
+          password='secret',
+        )
+        admin.user_permissions.add(
+          Permission.objects.get(codename='can_ship')
+        )
+        assert self.client.login(username='admin', password='secret')
+        response = self.client.get(url, {'ms': 'junk'})
+        eq_(response.status_code, 404)
+
+        response = self.client.get(url, {'ms': milestone.code})
+        eq_(response.status_code, 302)
+
+        milestone.status = 1
+        milestone.save()
+        response = self.client.get(url, {'ms': milestone.code})
+        eq_(response.status_code, 200)
+
+        self.assert_all_embeds(response.content)
+        ok_('<title>Shipping %s' % milestone in response.content)
+        ok_('<h1>Shipping %s' % milestone in response.content)
+
+    def test_basic_render_confirm_ship_mstone(self):
+        """render shipping.views.confirm_ship_mstone"""
+        url = reverse('shipping.views.confirm_ship_mstone')
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+        appver, milestone = self._create_appver_milestone()
+        response = self.client.get(url, {'ms': milestone.code})
+        eq_(response.status_code, 302) # not permission to view
+
+        # Note how confirm doesn't require the 'can_ship' permission even though
+        # the POST to actually ship does require the permission. The reason
+        # for this is because the confirmation page has been used to summorize
+        # what can be shipped and this URL is shared with people outside this
+        # permission.
+        # In fact, you don't even need to be logged in.
+
+        response = self.client.get(url, {'ms': 'junk'})
+        eq_(response.status_code, 404)
+
+        response = self.client.get(url, {'ms': milestone.code})
+        eq_(response.status_code, 302)
+
+        milestone.status = 1
+        milestone.save()
+        response = self.client.get(url, {'ms': milestone.code})
+        eq_(response.status_code, 200)
+
+        self.assert_all_embeds(response.content)
+        ok_('<title>Shipping %s' % milestone in response.content)
+        ok_('<h1>Shipping %s' % milestone in response.content)
+
     def test_dashboard_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
         url = reverse('shipping.views.dashboard')
         # Fail
         response = self.client.get(url, dict(av="junk"))
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
         response = self.client.get(url, dict(ms="junk"))
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
 
         # to succeed we need sample fixtures
         appver, milestone = self._create_appver_milestone()
 
         # Succeed
         response = self.client.get(url, dict(ms=milestone.code))
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
         response = self.client.get(url, dict(av=appver.code))
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
 
     def test_l10n_changesets_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
         url = reverse('shipping.views.l10n_changesets')
         # Fail
         response = self.client.get(url, dict(ms=""))
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
         response = self.client.get(url, dict(av=""))
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
 
         response = self.client.get(url, dict(ms="junk"))
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
         response = self.client.get(url, dict(av="junk"))
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
 
         # to succeed we need sample fixtures
         appver, milestone = self._create_appver_milestone()
         response = self.client.get(url, dict(ms=milestone.code))
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
         response = self.client.get(url, dict(av=appver.code))
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
 
     def test_shipped_locales_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
         url = reverse('shipping.views.shipped_locales')
         # Fail
         response = self.client.get(url, dict(ms=""))
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
         response = self.client.get(url, dict(av=""))
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
 
         response = self.client.get(url, dict(ms="junk"))
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
         response = self.client.get(url, dict(av="junk"))
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
 
         # to succeed we need sample fixtures
         appver, milestone = self._create_appver_milestone()
         response = self.client.get(url, dict(ms=milestone.code))
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
         response = self.client.get(url, dict(av=appver.code))
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
 
     def test_signoff_json_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
         url = reverse('shipping.views.signoff_json')
         # Fail
         response = self.client.get(url, dict(ms=""))
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
         response = self.client.get(url, dict(av=""))
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
 
         response = self.client.get(url, dict(ms="junk"))
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
         response = self.client.get(url, dict(av="junk"))
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
 
         # to succeed we need sample fixtures
         appver, milestone = self._create_appver_milestone()
         response = self.client.get(url, dict(ms=milestone.code))
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
         response = self.client.get(url, dict(av=appver.code))
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
 
     def test_confirm_ship_mstone_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
         url = reverse('shipping.views.confirm_ship_mstone')
+
+        admin = User.objects.create_user(
+          username='admin',
+          email='admin@mozilla.com',
+          password='secret',
+        )
+        admin.user_permissions.add(
+          Permission.objects.get(codename='can_ship')
+        )
+        assert self.client.login(username='admin', password='secret')
+
         # Fail
         response = self.client.get(url, dict(ms="junk"))
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
 
         # Succeed
         __, milestone = self._create_appver_milestone()
         milestone.status = 1
         milestone.save()
         response = self.client.get(url, dict(ms=milestone.code))
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
 
     def test_ship_mstone_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
         url = reverse('shipping.views.ship_mstone')
         # Fail
         response = self.client.get(url, dict(ms="junk"))
-        self.assertEqual(response.status_code, 405)
+        eq_(response.status_code, 405)
         response = self.client.post(url, dict(ms="junk"))
         # redirects because we're not logged and don't have the permission
-        self.assertEqual(response.status_code, 302)
+        eq_(response.status_code, 302)
 
         milestone_content_type, __ = ContentType.objects.get_or_create(
           name='milestone',
@@ -201,16 +296,37 @@ class ShippingTestCase(TestCase):
 
         __, milestone = self._create_appver_milestone()
         response = self.client.post(url, dict(ms="junk"))
-        self.assertEqual(response.status_code, 404)
+        eq_(response.status_code, 404)
 
         response = self.client.post(url, dict(ms=milestone.code))
-        self.assertEqual(response.status_code, 302)
+        eq_(response.status_code, 302)
 
         milestone = Milestone.objects.get(code=milestone.code)
-        self.assertEqual(milestone.status, 2)
+        eq_(milestone.status, 2)
+
+    def test_milestones_static_files(self):
+        """render the milestones page and check all static files"""
+        url = reverse('shipping.views.milestones')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        self.assert_all_embeds(response.content)
+
+    def test_about_milestone_static_files(self):
+        """render the about milestone page and check all static files"""
+        url = reverse('shipping.views.milestone.about',
+                      args=['junk'])
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
+        __, milestone = self._create_appver_milestone()
+        url = reverse('shipping.views.milestone.about',
+                      args=[milestone.code])
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        self.assert_all_embeds(response.content)
 
 
-class SignOffTest(TestCase):
+class SignOffTest(TestCase, EmbedsTestCaseMixin):
     fixtures = ["test_repos.json", "test_pushes.json", "signoffs.json"]
 
     def setUp(self):
@@ -218,24 +334,40 @@ class SignOffTest(TestCase):
 
     def test_count(self):
         """Test that we have the right amount of Signoffs and Actions"""
-        self.assertEqual(Signoff.objects.count(), 2)
-        self.assertEqual(Action.objects.count(), 3)
+        eq_(Signoff.objects.count(), 2)
+        eq_(Action.objects.count(), 3)
 
     def test_accepted(self):
         """Test for the german accepted signoff"""
         so = _signoffs(self.av, locale="de")
-        self.assertEqual(so.push.tip.shortrev, "l10n de 0002")
-        self.assertEqual(so.locale.code, "de")
-        self.assertEqual(so.action_set.count(), 2)
+        eq_(so.push.tip.shortrev, "l10n de 0002")
+        eq_(so.locale.code, "de")
+        eq_(so.action_set.count(), 2)
 
     def test_pending(self):
         """Test for the pending polish signoff"""
         so = _signoffs(self.av, status=0, locale="pl")
-        self.assertEqual(so.push.tip.shortrev, "l10n pl 0003")
-        self.assertEqual(so.locale.code, "pl")
-        self.assertEqual(so.action_set.count(), 1)
+        eq_(so.push.tip.shortrev, "l10n pl 0003")
+        eq_(so.locale.code, "pl")
+        eq_(so.action_set.count(), 1)
 
     def test_getlist(self):
         """Test that the list returns on accepted and one pending signoff."""
         sos = _signoffs(self.av, getlist=True)
-        self.assertEqual(sos, {("fx", "pl"): [0], ("fx", "de"): [1]})
+        eq_(sos, {("fx", "pl"): [0], ("fx", "de"): [1]})
+
+    def test_dashboard_static_files(self):
+        """render the shipping dashboard and check that all static files are
+        accessible"""
+        url = reverse('shipping.views.dashboard')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        self.assert_all_embeds(response.content)
+
+    def test_signoff_static_files(self):
+        """render the signoffs page and chek that all static files work"""
+        url = reverse('shipping.views.signoff.signoff',
+                      args=['de', self.av.code])
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        self.assert_all_embeds(response.content)

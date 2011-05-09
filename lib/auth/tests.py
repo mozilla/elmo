@@ -231,5 +231,7 @@ class MockLDAP:
         except KeyError:
             raise ldap.UNWILLING_TO_PERFORM
 
-    def void(self, *args, **kwargs):pass
+    def void(self, *args, **kwargs):
+        pass
+
     set_option = unbind_s = void

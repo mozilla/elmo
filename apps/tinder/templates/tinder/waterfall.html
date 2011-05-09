@@ -39,8 +39,7 @@
 {% load build_extras %}
 {% block title_matter %}Waterfall{% endblock %}
 {% block head_matter %}
-<link rel="stylesheet" type="text/css"
-href="{% url static path="css/waterfall.css" %}">
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}tinder/css/waterfall.css">
 {% endblock %}
 {% block content %}
 <h1>Waterfall</h1>
@@ -63,21 +62,21 @@ href="{% url static path="css/waterfall.css" %}">
       <th colspan="{{head.span}}">{{head.name}}</th>
       {% endfor %}
     </tr>
-    </thead>
-    <tbody>
-      {% for row in rows %}
-      <tr>
-	{% for cell in row %}
-	<td rowspan="{{cell.rowspan}}" class="{{cell.class}}">
-	  {{ cell.obj|showbuild }}
-	</td>
-	{% endfor %}
-      </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      {% for cell in row %}
+      <td rowspan="{{cell.rowspan}}" class="{{cell.class}}">
+        {{ cell.obj|showbuild }}
+      </td>
       {% endfor %}
-    </tbody>
-  </table>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
   <div class="next links">
-  Builds for the next 
+  Builds for the next
     {% for h in times.hourlist %}
     <a href="?{{ filters }}hours={{ h }}&endtime={{ times.start }}">{{ h }}</a>
     {% endfor %} hours.

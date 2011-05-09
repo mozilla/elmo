@@ -48,43 +48,12 @@
   border:1px solid black
 }
 </style>
-<script type="application/javascript">
-function getBugURL(params) {
-  var ps = [];
-  for (var k in params) {
-    if (k != 'title') {
-      ps.push(k + '=' + encodeURIComponent(params[k]));
-    }
-  }
-  var url = 'https://bugzilla.mozilla.org/enter_bug.cgi?';
-  url += ps.join('&');
-  return url;
-};
-
-function doBugs() {
-  var params = {};
-  function addParam() {
-    params[this.name] = this.value;
-  }
-  $.each(document.forms.bugdata.elements, addParam);
-  function handleLinkJSON(data, result) {
-    var out = $("#links");
-    if (result != "success") {
-      out.html("Failed to create bug links");
-      return;
-    }
-    out.html('');
-    $.each(data, function() {
-      var child = $('<a>').text(this.title);
-      child.attr('href',  getBugURL(this));
-      child.attr('target',  '_blank');
-      out.append(child);
-      out.append(" ");
-    })
-  }
-  $.getJSON("{% url bugsy.views.new_locale_bugs %}", params, handleLinkJSON);
-}
+{% endblock %}
+{% block javascript_matter %}
+<script>
+var NEW_LOCALE_URL = '{% url bugsy.views.new_locale_bugs %}';
 </script>
+<script src="{{ STATIC_URL }}bugsy/js/new_locale.js"></script>
 {% endblock %}
 {% block content %}
 <h1>File bugs for a new localization</h1>

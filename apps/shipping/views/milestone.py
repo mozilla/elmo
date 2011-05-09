@@ -40,7 +40,8 @@
 from django.conf import settings
 from django.db.models import Max
 from django.http import HttpResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404
+from django.template import RequestContext
 from django.utils import simplejson
 from django.views.decorators.cache import cache_control
 
@@ -55,7 +56,7 @@ from l10nstats.models import Run, Run_Revisions
 from shipping.views import _signoffs
 
 
-def about(req, ms_code):
+def about(request, ms_code):
     """View showing which locales are in which changeset on the given
     milestone. Also compare which are changed from the previously shipped
     milestone.
@@ -67,10 +68,7 @@ def about(req, ms_code):
     The stati function in this module is the work horse delivering the
     json for this exhibit.
     """
-    try:
-        ms = Milestone.objects.get(code=ms_code)
-    except:
-        return HttpResponse('no milestone found for %s' % ms_code)
+    ms = get_object_or_404(Milestone, code=ms_code)
 
     mss = Milestone.objects.filter(id=ms.id)
     try:
@@ -87,7 +85,8 @@ def about(req, ms_code):
                                'tree': tree,
                                'forestname': forestname,
                                'foresturl': foresturl,
-                               })
+                               },
+                               context_instance=RequestContext(request))
 
 def statuses(req, ms_code):
     """JSON work horse for the about() view.

@@ -40,34 +40,7 @@
 {% block title_matter %}Localization bugs{% endblock %}
 {% block head_matter %}
 {% exhibit %}
-<script type="application/javascript">
-var apibase = 'https://api-dev.bugzilla.mozilla.org/0.9/';
-$(document).ready(function() {
-  function countBugs(data) {
-    var count = 0, comps = data.data.length;
-    var o = {properties:{count:{valueType:"number"}}}, items = [];
-    for (var i=0; i < comps; ++i) {
-      var _comp = data.x_labels[i];
-      var _count = Number(data.data[i]);
-      items.push({id: _comp.split(" ")[0],label:_comp,count:_count});
-      count += _count;
-    }
-    $('#nob').text(count);
-    $('#noc').text(comps);
-    o.items = items;
-    window.database.loadData(o);
-  };
-  var params = {
-    product:"Mozilla Localizations",
-    "field0-0-0": "component",
-    "type0-0-0": "regexp",
-    "value0-0-0": "^[a-z]{2,3}[ \-]",
-    resolution: "---",
-    x_axis_field:"component"
-  };
-  $.getJSON(apibase+'count', params, countBugs);
-});
-</script>
+<script src="{{ STATIC_URL }}bugsy/js/index.js"></script>
 {% endblock %}
 {% block content %}
 <h1>Localization bugs</h1>
@@ -76,7 +49,7 @@ id="nob">?</span></a> open Mozilla Localization bugs in <span
 id="noc">?</span> components.</div>
 <div style="float:right;width:10em;">
   <em>Search:</em>
-  <div ex:role="facet" 
+  <div ex:role="facet"
    ex:facetClass="TextSearch"
    ex:expressions=".label">
  </div>
@@ -93,7 +66,7 @@ id="noc">?</span> components.</div>
         ex:content=".label"></a></td>
         <td ex:content=".count"></td>
     </tr>
-  </table>  
+  </table>
 </div>
 
 <div>You can file a suite of bugs for a set of localizations with the

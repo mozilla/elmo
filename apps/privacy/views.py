@@ -39,12 +39,12 @@
 
 from django.core.urlresolvers import reverse
 from django.db.models import Count
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import (HttpResponseRedirect, HttpResponse,
+                         HttpResponseForbidden, Http404)
 from django.utils.encoding import force_unicode
 from django.views.decorators import cache
-
 from privacy.models import Policy, Comment, LogEntry, ADDITION, CHANGE
 
 # We're not using the permission decorators from django.contrib.auth here
@@ -52,7 +52,7 @@ from privacy.models import Policy, Comment, LogEntry, ADDITION, CHANGE
 # us the flexibility to not use those.
 
 def show_policy(request, id=None):
-    """Display the currently active policy, or, if id is given, the 
+    """Display the currently active policy, or, if id is given, the
     specified policy.
     """
     try:
@@ -131,7 +131,7 @@ def add_policy(request):
 def post_policy(request):
     if not (request.user.has_perm('privacy.add_policy')
             and request.user.has_perm('privacy.add_comment')):
-        return HttpResponseRedirect(reverse('accounts.views.index'))
+        return HttpResponseForbidden("not sufficient permissions")
     p = Policy.objects.create(text = request.POST['content'])
     c = Comment.objects.create(text = request.POST['comment'],
                                policy = p,
@@ -142,8 +142,8 @@ def post_policy(request):
     LogEntry.objects.log_action(request.user.id,
                                 Comment.contenttype().id, c.id,
                                 force_unicode(c), ADDITION)
-                                
-                                
+
+
     return HttpResponseRedirect(reverse('privacy.views.show_policy', kwargs={'id':p.id}))
 
 def activate_policy(request):
@@ -151,28 +151,29 @@ def activate_policy(request):
     priviledges.
     """
     if not request.user.has_perm('privacy.activate_policy'):
-        return HttpResponseRedirect(reverse('accounts.views.versions'))
+        return HttpResponseRedirect(reverse('privacy.views.versions'))
     if request.method == "POST":
         try:
-            policy = Policy.objects.get(id=int(request.POST['active']))
-            if not policy.active:
-                # need to change active policy, first, deactivate existing
-                # actives, then set the new one active. And create LogEntries.
-                qa = Policy.objects.filter(active=True)
-                for _p in qa:
-                    LogEntry.objects.log_action(request.user.id,
-                                                Policy.contenttype().id, _p.id,
-                                                force_unicode(_p), CHANGE,
-                                                change_message="deactivate")
-                qa.update(active=False)
+            policy = get_object_or_404(Policy, id=request.POST['active'])
+        except ValueError:
+            # not a valid ID
+            raise Http404
+        if not policy.active:
+            # need to change active policy, first, deactivate existing
+            # actives, then set the new one active. And create LogEntries.
+            qa = Policy.objects.filter(active=True)
+            for _p in qa:
                 LogEntry.objects.log_action(request.user.id,
-                                            Policy.contenttype().id, policy.id,
-                                            force_unicode(policy), CHANGE,
-                                            change_message="activate")
-                policy.active=True
-                policy.save()
-        except:
-            pass
+                                            Policy.contenttype().id, _p.id,
+                                            force_unicode(_p), CHANGE,
+                                            change_message="deactivate")
+            qa.update(active=False)
+            LogEntry.objects.log_action(request.user.id,
+                                        Policy.contenttype().id, policy.id,
+                                        force_unicode(policy), CHANGE,
+                                        change_message="activate")
+            policy.active = True
+            policy.save()
     return HttpResponseRedirect(reverse('privacy.views.versions'))
 
 def add_comment(request):
@@ -180,25 +181,16 @@ def add_comment(request):
     priviledges.
     """
     if not request.user.has_perm('privacy.add_comment'):
-        return HttpResponseRedirect(reverse('accounts.views.versions'))
+        return HttpResponseForbidden("not sufficient permissions")
     if request.method == "POST":
         try:
-            p = Policy.objects.get(id = int(request.POST['policy']))
-            c = Comment.objects.create(text=request.POST['comment'],
-                                       policy=p,
-                                       who=request.user)
-            LogEntry.objects.log_action(request.user.id,
-                                        Comment.contenttype().id, c.id,
-                                        force_unicode(c), ADDITION)
-        except Exception, e:
-            import pdb
-            pdb.set_trace()
-            pass
+            p = get_object_or_404(Policy, id=request.POST['policy'])
+        except ValueError:
+            raise Http404
+        c = Comment.objects.create(text=request.POST['comment'],
+                                   policy=p,
+                                   who=request.user)
+        LogEntry.objects.log_action(request.user.id,
+                                    Comment.contenttype().id, c.id,
+                                    force_unicode(c), ADDITION)
     return HttpResponseRedirect(reverse('privacy.views.versions'))
-
-# XXX, bug 563732; use revision-based etag here.
-@cache.cache_control(max_age=5*60*60)
-def policy_css(request):
-    """Serve shared CSS file."""
-    return render_to_response("privacy/shared.css",
-                              mimetype="text/css")
