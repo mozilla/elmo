@@ -65,10 +65,10 @@ class AppVersion(models.Model):
     tree = models.ForeignKey(Tree)
 
 
-    def save(self):
+    def save(self, *args, **kwargs):
         if not self.code:
             self.code = '%s%s' % (self.app.code, self.version)
-        super(AppVersion, self).save()
+        super(AppVersion, self).save(*args, **kwargs)
 
     def __unicode__(self):
         return '%s %s' % (self.app.name, self.version)
