@@ -4,24 +4,27 @@ from django.conf import settings
 from django.contrib.auth.models import User, Group, check_password
 from django.contrib.auth.backends import RemoteUserBackend
 from django.core.validators import email_re
+from django.utils.encoding import force_unicode, DjangoUnicodeDecodeError
 import os
 
-LDAP_HOST = settings.LDAP_HOST
-LDAP_DN = settings.LDAP_DN
-LDAP_PASS = settings.LDAP_PASS
+HERE = os.path.abspath(os.path.dirname(__file__))
+
+assert settings.LDAP_HOST
+assert settings.LDAP_DN
+assert settings.LDAP_PASS
 
 class MozLdapBackend(RemoteUserBackend):
     """Creates the connvection to the server, and binds anonymously"""
     host = ""
     dn = ""
     password = ""
-    certfile = "./auth/cacert.pem"
+    certfile = os.path.join(HERE, "cacert.pem")
     ldo = None
 
     def __init__(self):
-        self.host = LDAP_HOST
-        self.dn = LDAP_DN
-        self.password = LDAP_PASS
+        self.host = settings.LDAP_HOST
+        self.dn = settings.LDAP_DN
+        self.password = settings.LDAP_PASS
         self.localizers = None
 
     #
@@ -52,17 +55,17 @@ class MozLdapBackend(RemoteUserBackend):
                 return self._authenticate_ldap(username, password, local_user)
         except User.DoesNotExist:
             return self._authenticate_ldap(username, password)
-        return # if we did not return anything yet, we're probably not authenticated
 
     def _authenticate_ldap(self, username, password, user=None):
         try:
             record = self.__getRecord(username)
-        except ldap.SERVER_DOWN, e:
+        except ldap.SERVER_DOWN, e: # pragma: no cover
             print "** debug: LDAP server is down"
             return
         if not record:
-            # wrong login/password
+            # wrong login
             return
+
         dn = record[0][0]
         #ldap.set_option(ldap.OPT_DEBUG_LEVEL,4095)
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
@@ -80,6 +83,8 @@ class MozLdapBackend(RemoteUserBackend):
             first_name =  record[0][1]['givenName'][0]
             last_name =  record[0][1]['sn'][0]
             email =  record[0][1]['mail'][0]
+            first_name = force_unicode(first_name)
+            last_name = force_unicode(last_name)
             if not user:
                 user = User(username=username,
                             first_name=first_name,
@@ -95,7 +100,7 @@ class MozLdapBackend(RemoteUserBackend):
                     user.first_name = first_name
                     changed = True
                 if user.last_name != last_name:
-                    user.las_tname = last_name
+                    user.last_name = last_name
                     changed = True
                 if user.email != email:
                     user.email = email
@@ -123,6 +128,9 @@ class MozLdapBackend(RemoteUserBackend):
             self.ldo = ldap.initialize(self.host)
             self.ldo.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
             self.ldo.simple_bind_s(self.dn, self.password)
-            self.localizers = self.ldo.search_s("ou=groups,dc=mozilla", ldap.SCOPE_SUBTREE, "cn=scm_l10n")
+            result = self.ldo.search_s("ou=groups,dc=mozilla",
+                                       ldap.SCOPE_SUBTREE,
+                                       "cn=scm_l10n")
+            self.localizers = result
             self.ldo.unbind_s()
         return username in self.localizers[0][1]['memberUid']

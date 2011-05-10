@@ -276,4 +276,4 @@ except:
 
 if ldap_loaded:
     MIDDLEWARE_CLASSES = MIDDLEWARE_CLASSES + ('django.contrib.auth.middleware.RemoteUserMiddleware',)
-    AUTHENTICATION_BACKENDS = ('apps.l10n_site.auth.backends.MozLdapBackend',)
+    AUTHENTICATION_BACKENDS = ('lib.auth.backends.MozLdapBackend',)
