@@ -48,4 +48,11 @@ pip install -q py-bcrypt==0.2
 pip install -q mock
 pip install -q jinja2
 
+# sadly, we're unable to start all tests like this:
+#  `python manage.py test --noinput`
+# (which would include lib/auth/tests.py)
+# because on jenkins we're currently unable to execute:
+# `pip install python-ldap` due to some crazyness with RHEL5
+# So, till then we specify explicitely the "apps/" directory
+# and there's no install of python-ldap
 python manage.py test --noinput apps
