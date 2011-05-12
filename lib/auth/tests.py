@@ -39,7 +39,12 @@ import os
 from django.test import TestCase
 from django.conf import settings
 from django.contrib.auth.models import User
+
+# lib.auth.backends expects the LDAP_* to be set up
+# fake that so we can import MozLdapBackend
+settings.LDAP_HOST = settings.LDAP_DN = settings.LDAP_PASS = 'test'
 from lib.auth.backends import MozLdapBackend
+
 from mock import Mock
 from nose.tools import eq_, ok_
 import ldap
@@ -67,8 +72,6 @@ class LDAPAuthTestCase(TestCase):
             'objectClass': ['posixGroup', 'top']
             })
         ]
-        settings.LDAP_DN = 'test_dn'
-
 
     def test_authenticate_without_ldap(self):
         assert not User.objects.all().exists()

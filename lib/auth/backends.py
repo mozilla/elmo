@@ -9,10 +9,6 @@ import os
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
-assert settings.LDAP_HOST
-assert settings.LDAP_DN
-assert settings.LDAP_PASS
-
 class MozLdapBackend(RemoteUserBackend):
     """Creates the connvection to the server, and binds anonymously"""
     host = ""
@@ -22,6 +18,8 @@ class MozLdapBackend(RemoteUserBackend):
     ldo = None
 
     def __init__(self):
+        # Note, any exceptions that happen here will be swallowed by Django's
+        # core handler for middleware classes. Ugly truth :)
         self.host = settings.LDAP_HOST
         self.dn = settings.LDAP_DN
         self.password = settings.LDAP_PASS

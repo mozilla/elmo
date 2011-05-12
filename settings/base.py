@@ -266,14 +266,19 @@ TEST_RUNNER = 'test_utils.runner.RadicalTestSuiteRunner' # same as playdoh
 #CELERY_IGNORE_RESULT = True
 
 
-
 try:
-    import ldap
-    from ldap_settings import *
-    ldap_loaded = True
-except:
-    ldap_loaded = False
+    import ldap_settings
+except ImportError:
+    pass
+else:
+    # all these must exist and be set to something
+    for each in 'LDAP_HOST', 'LDAP_DN', 'LDAP_PASS':
+        if not getattr(ldap_settings, each, None):
+            raise ValueError('%s must be set' % each)
 
-if ldap_loaded:
-    MIDDLEWARE_CLASSES = MIDDLEWARE_CLASSES + ('django.contrib.auth.middleware.RemoteUserMiddleware',)
+    from ldap_settings import *
+    # ImportErrors are not acceptable if ldap_loaded is True
+    import ldap
+    MIDDLEWARE_CLASSES = (MIDDLEWARE_CLASSES +
+      ('django.contrib.auth.middleware.RemoteUserMiddleware',))
     AUTHENTICATION_BACKENDS = ('lib.auth.backends.MozLdapBackend',)

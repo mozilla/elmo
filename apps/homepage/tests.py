@@ -41,12 +41,23 @@ from django.conf import settings
 
 class HomepageTestCase(TestCase):
     def setUp(self):
+        super(HomepageTestCase, self).setUp()
+
         # SESSION_COOKIE_SECURE has to be True for tests to work.
         # The reason this might be switched off is if you have set it to False
         # in your settings/local.py so you can use http://localhost:8000/
         settings.SESSION_COOKIE_SECURE = True
-        super(HomepageTestCase, self).setUp()
 
+        # side-step whatever authentication backend has been set up otherwise
+        # we might end up trying to go online for some sort of LDAP lookup
+        self._original_auth_backends = settings.AUTHENTICATION_BACKENDS
+        settings.AUTHENTICATION_BACKENDS = (
+          'django.contrib.auth.backends.ModelBackend',
+        )
+
+    def tearDown(self):
+        super(HomepageTestCase, self).tearDown()
+        settings.AUTHENTICATION_BACKENDS = self._original_auth_backends
 
     def testSecureSessionCookies(self):
         """secure session cookies should always be 'secure' and 'httponly'"""

@@ -8,8 +8,5 @@ hmac==20101005
 hashlib==20081119
 py-bcrypt==0.2
 
-
-# Original elmo stuff
-Twisted
 mercurial
 python-ldap
