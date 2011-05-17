@@ -58,9 +58,10 @@ $(document).ready(function() {
 });
 
 function doForm(action, ms) {
-  var frm = document.getElementById(action + '_ms');
-  frm.ms.value = ms;
-  frm.submit();
+  var frm = $('#' + action + '_ms');
+  $('input[name="ms"]', frm).val(ms);
+  frm.trigger('submit');
+  return false;
 }
 {% endblock %}
 
@@ -121,20 +122,16 @@ function doForm(action, ms) {
    </tr>
  </table>
 <div style="display:none">
-  <form id="clear_ms" action="{% url shipping.views.clear_mstone %}"
-  method="POST">
-  <input type="hidden" name="ms" />
+  <form id="clear_ms" action="{% url shipping.views.clear_mstone %}" method="post">{% csrf_token %}
+  <input type="hidden" name="ms">
   </form>
-  <form id="open_ms" action="{% url shipping.views.open_mstone %}"
-  method="POST">
-  <input type="hidden" name="ms" />
+  <form id="open_ms" action="{% url shipping.views.open_mstone %}" method="post">{% csrf_token %}
+  <input type="hidden" name="ms">
   </form>
-  <form id="ship_ms" action="{% url shipping.views.confirm_ship_mstone %}"
-  method="GET">
-  <input type="hidden" name="ms" />
+  <form id="ship_ms" action="{% url shipping.views.confirm_ship_mstone %}">
+  <input type="hidden" name="ms">
   </form>
-  <form id="drill_ms" action="{% url shipping.views.confirm_drill_mstone %}"
-  method="GET">
+  <form id="drill_ms" action="{% url shipping.views.confirm_drill_mstone %}">
   <input type="hidden" name="ms" />
   </form>
 </div>
