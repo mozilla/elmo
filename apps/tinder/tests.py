@@ -1,0 +1,187 @@
+# ***** BEGIN LICENSE BLOCK *****
+# Version: MPL 1.1/GPL 2.0/LGPL 2.1
+#
+# The contents of this file are subject to the Mozilla Public License Version
+# 1.1 (the "License"); you may not use this file except in compliance with
+# the License. You may obtain a copy of the License at
+# http://www.mozilla.org/MPL/
+#
+# Software distributed under the License is distributed on an "AS IS" basis,
+# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+# for the specific language governing rights and limitations under the
+# License.
+#
+# The Original Code is l10n django site.
+#
+# The Initial Developer of the Original Code is
+# Mozilla Foundation.
+# Portions created by the Initial Developer are Copyright (C) 2010
+# the Initial Developer. All Rights Reserved.
+#
+# Contributor(s):
+#
+# Alternatively, the contents of this file may be used under the terms of
+# either the GNU General Public License Version 2 or later (the "GPL"), or
+# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+# in which case the provisions of the GPL or the LGPL are applicable instead
+# of those above. If you wish to allow use of your version of this file only
+# under the terms of either the GPL or the LGPL, and not to allow others to
+# use your version of this file under the terms of the MPL, indicate your
+# decision by deleting the provisions above and replace them with the notice
+# and other provisions required by the GPL or the LGPL. If you do not delete
+# the provisions above, a recipient may use your version of this file under
+# the terms of any one of the MPL, the GPL or the LGPL.
+#
+# ***** END LICENSE BLOCK *****
+
+'''Tests for the build progress displays.
+'''
+
+import unittest
+import os
+import datetime
+from django.test import TestCase
+
+from mbdb.models import Build, Change
+from tinder.views import _waterfall, waterfall
+from tinder.templatetags import build_extras
+
+
+class WaterfallStarted(TestCase):
+    fixtures = ['one_started_l10n_build.json']
+
+    def testInner(self):
+        '''Basic tests of _waterfall'''
+        blame, buildercolumns, filters, times = _waterfall(None)
+        self.assertEqual(blame.width, 1,
+                         'Width of blame column is not 1')
+        self.assertEqual(len(buildercolumns), 1,
+                         'Not one builder found')
+        name, builder = buildercolumns.items()[0]
+        self.assertEqual(name, 'dummy')
+        self.assertEqual(builder.width, 1,
+                         'Width of builder column is not 1')
+        blame_rows = list(blame.rows())
+        self.assertEqual(len(blame_rows), 3,
+                         'Expecting 3 rows for table, got %d' % len(blame_rows))
+        self.assertNotEqual(blame_rows[0], [],
+                            'First row should not be empty')
+        self.assertEqual(blame_rows[1], [])
+        self.assertEqual(blame_rows[2], [])
+        build_rows = list(builder.rows())
+        self.assertEqual(build_rows[0][0]['obj'].buildnumber, 1)
+        self.assertEqual(build_rows[1][0]['obj'].buildnumber, 0)
+        self.assertEqual(build_rows[2][0]['obj'], None)
+
+    def testHtml(self):
+        resp = waterfall(None)
+        self.assertTrue(resp.status_code, 200)        
+        self.assertTrue(len(resp.content) > 0, 'Html content should be there')
+
+class WaterfallParallel(TestCase):
+    fixtures = ['parallel_builds.json']
+
+    def testInner(self):
+        '''Testing parallel builds in _waterfall'''
+        blame, buildercolumns, filters, times = _waterfall(None)
+
+    def testHtml(self):
+        '''Testing parallel builds in _waterfall'''
+        resp = waterfall(None)
+        self.assertTrue(resp.status_code, 200)        
+        self.assertTrue(len(resp.content) > 0, 'Html content should be there')
+
+class FullBuilds(TestCase):
+    fixtures = ['full_parallel_builds.json']
+
+    def testInner(self):
+        '''Testing full build list in _waterfall'''
+        blame, buildercolumns, filters, times = _waterfall(None)
+
+    def testForBuild(self):
+        pass
+
+from django.test.client import Client
+class Mix:
+    def waterfall_to_file(self):
+        """Debugging helpers for waterfalls, dump the waterfall for all 
+        fixtures used into html files in the working dir, so that you can see 
+        what you're testing."""
+        c = Client()
+        response = c.get('/builds/waterfall')
+        leaf = self.fixtures[0].replace(".json",".html")
+        open(leaf, "w").write(response.content)
+class OneStartedL10nBuild(TestCase, Mix):
+    fixtures = ['one_started_l10n_build.json']
+class ParallelBuilds(TestCase, Mix):
+    fixtures = ['parallel_builds.json']
+class FullParallelBuilds(TestCase, Mix):
+    fixtures = ['full_parallel_builds.json']
+
+class FakeBuildOrStep:
+    """Helper class to get around having to use fixtures or the like.
+
+    Mimicks the build and step properties that our filters use.
+    """
+    def __init__(self, result, starttime):
+        self.result = result
+        self.starttime = starttime
+
+class res2class(TestCase):
+    """Testing the res2class filter in build_extras.py"""
+    def _test(self, result, starttime, value):
+        b = FakeBuildOrStep(result, starttime)
+        self.assertEqual(build_extras.res2class(b), value)
+    def test_success(self):
+        self._test(0, None, "success")
+    def test_warning(self):
+        self._test(1, None, "warning")
+    def test_failure(self):
+        self._test(2, None, "failure")
+    def test_skip(self):
+        self._test(3, None, "skip")
+    def test_except(self):
+        self._test(4, None, "except")
+    def test_invalid(self):
+        self._test(5, None, "")
+    def test_empty(self):
+        self._test(None, None, "")
+    def test_running(self):
+        self._test(None, datetime.datetime.now(), "running")
+
+class showbuild(TestCase):
+    """Testing the showbuild filter in build_extras.py"""
+    fixtures = ["one_started_l10n_build.json"]
+    def test_success(self):
+        b = Build.objects.filter(result=0)[0]
+        out = build_extras.showbuild(b)
+        self.assertTrue(out.startswith('''<a href='''), "Not a link: " + out)
+    def test_running(self):
+        b = Build.objects.get(endtime__isnull=True)
+        out = build_extras.showbuild(b)
+        self.assertTrue('''class="step_text"''' in out, "No step info in " + out)
+        self.assertTrue('''class="running"''' in out, "No 'running' class in " + out)
+    def test_change(self):
+        c = Change.objects.all()[0]
+        out = build_extras.showbuild(c)
+        self.assertTrue("John Doe" in out, "User 'John Doe' was not in " + out)
+        self.assertTrue("builds_for?change=1" in out, "Not the right URL in " + out)
+
+class timedelta(TestCase):
+    """Testing the timedelta filter in build_extras.py"""
+    def test_empty(self):
+        now = datetime.datetime.now()
+        self.assertEqual(build_extras.timedelta(None, now), "-")
+        self.assertEqual(build_extras.timedelta(now, None), "-")
+    def test_days(self):
+        end = datetime.datetime.now()
+        start = end - datetime.timedelta(3)
+        self.assertEqual(build_extras.timedelta(start, end), "3 day(s)")
+    def test_minutes(self):
+        end = datetime.datetime.now()
+        start = end - datetime.timedelta(minutes=3)
+        self.assertEqual(build_extras.timedelta(start, end), "3 minute(s)")
+    def test_seconds(self):
+        end = datetime.datetime.now()
+        start = end - datetime.timedelta(seconds=3)
+        self.assertEqual(build_extras.timedelta(start, end), "3 second(s)")

@@ -1,0 +1,139 @@
+{% extends "shipping/base.html" %}
+<!-- {% comment %}
+   - ***** BEGIN LICENSE BLOCK *****
+   - Version: MPL 1.1/GPL 2.0/LGPL 2.1
+   -
+   - The contents of this file are subject to the Mozilla Public License Version
+   - 1.1 (the "License"); you may not use this file except in compliance with
+   - the License. You may obtain a copy of the License at
+   - http://www.mozilla.org/MPL/
+   -
+   - Software distributed under the License is distributed on an "AS IS" basis,
+   - WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+   - for the specific language governing rights and limitations under the
+   - License.
+   -
+   - The Original Code is l10n django site.
+   -
+   - The Initial Developer of the Original Code is
+   - Mozilla Foundation.
+   - Portions created by the Initial Developer are Copyright (C) 2010
+   - the Initial Developer. All Rights Reserved.
+   -
+   - Contributor(s):
+   -
+   - Alternatively, the contents of this file may be used under the terms of
+   - either the GNU General Public License Version 2 or later (the "GPL"), or
+   - the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+   - in which case the provisions of the GPL or the LGPL are applicable instead
+   - of those above. If you wish to allow use of your version of this file only
+   - under the terms of either the GPL or the LGPL, and not to allow others to
+   - use your version of this file under the terms of the MPL, indicate your
+   - decision by deleting the provisions above and replace them with the notice
+   - and other provisions required by the LGPL or the GPL. If you do not delete
+   - the provisions above, a recipient may use your version of this file under
+   - the terms of any one of the MPL, the GPL or the LGPL.
+   -
+   - ***** END LICENSE BLOCK *****
+{% endcomment %} -->
+{% load simile %}
+
+{% block title %}Milestones{% endblock %}
+
+{% block js_include %}
+{% exhibit autoCreate=false %}
+<link href="{% url shipping.views.stones_data %}" type="application/json" rel="exhibit/data" />
+{% endblock %}
+
+{% block javascript %}
+var schema = {}
+
+$(document).ready(function() {
+  window.database = Exhibit.Database.create();
+  window.database.loadData(schema);
+  window.database.loadDataLinks(function(){
+    window.exhibit = Exhibit.create();
+    window.exhibit.configureFromDOM();
+  });
+});
+
+function doForm(action, ms) {
+  var frm = $('#' + action + '_ms');
+  $('input[name="ms"]', frm).val(ms);
+  frm.trigger('submit');
+  return false;
+}
+{% endblock %}
+
+{% block content %}
+<h1>Milestones</h1>
+
+ <table width="100%">
+   <tr valign="top">
+     <td ex:role="viewPanel">
+<div ex:role="view" ex:showAll="true" ex:ViewClass="Tabular"
+  ex:columnLabels="Milestone"
+  ex:columns=".label">
+  <table>
+    <tr>
+      <td>
+        <a ex:content=".label"
+        ex:href-subcontent="{% url shipping.views.milestone.about  "{&#123;.code}}" %}"></a>
+      </td>
+      <td>
+        <span ex:if=".status = 2">
+          <input type="button" {% if not perms.shipping.can_ship %}
+          disabled="disabled"{% endif %}
+          value="tweak" />
+          <span>
+            <span ex:if=".status = 0">
+              <input type="button" {% if not perms.shipping.can_open %}
+              disabled="disabled"{% endif %}
+              ex:onclick-subcontent="doForm('open','{&#123;.code}}')"
+                value="open" />
+	<span>
+              <input type="button" {% if not perms.shipping.can_ship %}
+              disabled="disabled"{% endif %}
+              ex:onclick-subcontent="doForm('ship','{&#123;.code}}')"
+              value="ship" />
+              <input type="button" {% if not perms.shipping.can_ship %}
+              disabled="disabled"{% endif %}
+              ex:onclick-subcontent="doForm('drill','{&#123;.code}}')"
+              value="chem-spill" />
+	</span>
+            </span>
+            <input type="button" {% if not perms.shipping.can_open %}
+            disabled="disabled"{% endif %}
+            ex:onclick-subcontent="doForm('clear','{&#123;.code}}')"
+              value="clear" />
+          </span>
+       </span>
+      </td>
+    </tr>
+  </table>
+</div>
+     </td>
+     <td width="25%">
+       <div ex:role="facet" ex:expression=".age"
+         ex:facetLabel="Latest"
+         ex:selection="0"
+         id="age-facet"></div>
+    </td>
+   </tr>
+ </table>
+<div style="display:none">
+  <form id="clear_ms" action="{% url shipping.views.clear_mstone %}" method="post">{% csrf_token %}
+  <input type="hidden" name="ms">
+  </form>
+  <form id="open_ms" action="{% url shipping.views.open_mstone %}" method="post">{% csrf_token %}
+  <input type="hidden" name="ms">
+  </form>
+  <form id="ship_ms" action="{% url shipping.views.confirm_ship_mstone %}">
+  <input type="hidden" name="ms">
+  </form>
+  <form id="drill_ms" action="{% url shipping.views.confirm_drill_mstone %}">
+  <input type="hidden" name="ms" />
+  </form>
+</div>
+
+{% endblock %}

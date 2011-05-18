@@ -1,0 +1,122 @@
+[
+  {
+    "pk": 1, 
+    "model": "mbdb.master", 
+    "fields": {
+      "name": "test-master"
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "mbdb.slave", 
+    "fields": {
+      "name": "test-slave-1"
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "mbdb.slave", 
+    "fields": {
+      "name": "test-slave-2"
+    }
+  }, 
+ {
+   "pk": 1,
+     "model": "mbdb.sourcestamp",
+     "fields": {
+       "branch": "default",
+       "revision": null
+       }
+ },
+ {
+   "pk": 1,
+     "model": "mbdb.property",
+     "fields": {
+     "source": "Scheduler",
+       "name": "tree",
+       "value": "Vfx\np0\n."
+       }
+ },
+ {
+   "pk": 2,
+     "model": "mbdb.property",
+     "fields": {
+     "source": "Scheduler",
+       "name": "locale",
+       "value": "Vab-CD\np0\n."
+       }
+ },
+ {
+   "pk": 1, 
+     "model": "mbdb.builder", 
+     "fields": {
+     "category": null, 
+       "bigState": "idle", 
+       "master": 1, 
+       "name": "dummy"
+       }
+ }, 
+ {
+   "pk": 1,
+     "model": "mbdb.build",
+     "fields": {
+     "builder": 1,
+       "buildnumber": 0,
+       "slave": 1,
+       "reason": "fx_tree af", 
+       "result": 0, 
+       "starttime": "2009-01-01 00:00:00", 
+       "endtime":  "2009-01-01 00:00:05", 
+       "sourcestamp": 1, 
+       "properties": [
+		      1, 
+		      2
+		      ]
+       }
+ }, 
+ {
+   "pk": 1, 
+     "model": "mbdb.step", 
+     "fields": {
+     "name": "dummy", 
+       "text": "delay", 
+       "text2": "", 
+       "result": 0, 
+       "starttime": "2009-01-01 00:00:00", 
+       "endtime":  "2009-01-01 00:00:05", 
+       "build": 1
+       }
+ },
+ {
+   "pk": 2,
+     "model": "mbdb.build",
+     "fields": {
+     "builder": 1,
+       "buildnumber": 1,
+       "slave": 2,
+       "reason": "fx_tree af", 
+       "result": 0, 
+       "starttime": "2009-01-01 00:00:01", 
+       "endtime":  "2009-01-01 00:00:06", 
+       "sourcestamp": 1, 
+       "properties": [
+		      1, 
+		      2
+		      ]
+       }
+ }, 
+ {
+   "pk": 2, 
+     "model": "mbdb.step", 
+     "fields": {
+     "name": "dummy", 
+       "text": "delay", 
+       "text2": "", 
+       "result": 0, 
+       "starttime": "2009-01-01 00:00:01", 
+       "endtime":  "2009-01-01 00:00:06", 
+       "build": 2
+       }
+ }
+]
+
