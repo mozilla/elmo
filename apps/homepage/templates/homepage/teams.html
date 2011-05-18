@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+<!-- {% comment %}
+   - ***** BEGIN LICENSE BLOCK *****
+   - Version: MPL 1.1/GPL 2.0/LGPL 2.1
+   -
+   - The contents of this file are subject to the Mozilla Public License Version
+   - 1.1 (the "License"); you may not use this file except in compliance with
+   - the License. You may obtain a copy of the License at
+   - http://www.mozilla.org/MPL/
+   -
+   - Software distributed under the License is distributed on an "AS IS" basis,
+   - WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+   - for the specific language governing rights and limitations under the
+   - License.
+   -
+   - The Original Code is l10n django site.
+   -
+   - The Initial Developer of the Original Code is
+   - Mozilla Foundation.
+   - Portions created by the Initial Developer are Copyright (C) 2010
+   - the Initial Developer. All Rights Reserved.
+   -
+   - Contributor(s):
+   -
+   - Alternatively, the contents of this file may be used under the terms of
+   - either the GNU General Public License Version 2 or later (the "GPL"), or
+   - the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+   - in which case the provisions of the GPL or the LGPL are applicable instead
+   - of those above. If you wish to allow use of your version of this file only
+   - under the terms of either the GPL or the LGPL, and not to allow others to
+   - use your version of this file under the terms of the MPL, indicate your
+   - decision by deleting the provisions above and replace them with the notice
+   - and other provisions required by the LGPL or the GPL. If you do not delete
+   - the provisions above, a recipient may use your version of this file under
+   - the terms of any one of the MPL, the GPL or the LGPL.
+   -
+   - ***** END LICENSE BLOCK *****
+{% endcomment %} -->
+{% block title_matter %}Mozilla Localization Teams{% endblock %}
+{% block head_matter %}
+<style type="text/css">
+#teams {
+  -moz-column-width: 35ex;
+  % tried on google chrome and safari, looks like junk, borders don't work
+  % -webkit-column-width: 35ex; 
+}
+#teams > li {
+  list-style-type: none;
+  border-top: 1px solid grey;
+  border-bottom: 1px solid grey;
+  margin-bottom: -1px;
+  padding: 5px;
+  margin-right: 5ex;
+}
+</style>
+<script type="application/javascript">
+var styleRule = false;
+function searchFor(s) {
+  if (styleRule) {
+   document.styleSheets[0].deleteRule(0);
+   styleRule=false;
+  }
+  if (typeof(s)==='string' && s.length) {
+    var ruletxt = '#teams>li:not([class*=' + s.toLowerCase() + ']){display:none}';
+   try {
+      document.styleSheets[0].insertRule(ruletxt, 0);
+      styleRule=true;
+    } catch (e){
+      "catch";
+    };
+  }
+}
+</script>
+{% endblock %}
+{% block content %}
+<h1>Mozilla Localization Teams</h1>
+<p>Find the different localization teams and the projects they work on on the pages beneath.</p>
+<p class="highlight"><em>Don't find your Language?</em> You may want to check the list of 
+<a href="https://wiki.mozilla.org/L10n:Teams">existing and upcoming teams</a> on our wiki, or
+<a href="https://developer.mozilla.org/en/Create_a_new_localization">start a new localization</a>.</p>
+<p>Search for name or locale code: <input type="text" onkeyup="searchFor(event.target.value)"></p>
+<ul id="teams">{% for loc in locales %}
+  <li class="{{ loc.code|lower }} {{ loc.name|lower|default:"" }}"><a href="{% url homepage.views.locale_team loc.code %}">
+  {% if loc.name %}{{loc.name}}{% else %}{{loc.code}}{% endif %}</a>
+  </li>
+{% endfor %}
+</ul>
+{% endblock %}

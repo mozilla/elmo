@@ -1,0 +1,6 @@
+settings/local*.py
+settings/ldap_settings.py
+migrations/settings.py
+*.pyc
+.coverage
+cover/

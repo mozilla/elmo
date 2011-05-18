@@ -1,0 +1,4 @@
+# How to connect to the database
+db = 'mysql --silent -p blam -D pow'
+# The table where version info is stored.
+table = 'schema_version'

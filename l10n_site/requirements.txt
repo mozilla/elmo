@@ -1,4 +1,0 @@
-Django==1.1.3
-Twisted
-mercurial
--e hg+http://hg.mozilla.org/build/compare-locales/@default#egg=compare-locales
