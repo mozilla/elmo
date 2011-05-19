@@ -15,10 +15,11 @@
 #
 # The Initial Developer of the Original Code is
 # Mozilla Foundation.
-# Portions created by the Initial Developer are Copyright (C) 2010
+# Portions created by the Initial Developer are Copyright (C) 2011
 # the Initial Developer. All Rights Reserved.
 #
 # Contributor(s):
+#   Peter Bengtsson <peterbe@mozilla.com>
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -34,25 +35,34 @@
 #
 # ***** END LICENSE BLOCK *****
 
-'Url mappings for accounts app'
+from django.test import TestCase
+from django.core.urlresolvers import reverse
+from django.contrib.auth.models import User
+from django.conf import settings
+from nose.tools import eq_, ok_
 
-from django.conf.urls.defaults import *
-from django.contrib.auth.forms import AuthenticationForm
-from django import forms
+class AccountsTestCase(TestCase):
 
-class LongerUsernameAuthenticationForm(AuthenticationForm):
-    """override the authentication form because we use the email address as the
-    key to authentication."""
-    username = forms.CharField(label="Username", max_length=75)
+    def test_login_long_username(self):
+        url = reverse('django.contrib.auth.views.login')
+        data = dict(
+          username='some_with_a_really_long@emailaddress.com',
+          password='secret'
+        )
+        user = User(**dict(username='something_short',
+                           email=data['username'],
+                           first_name="Looong"))
+        user.set_password(data['password'])
+        user.save()
 
-    def __init__(self, *args, **kwargs):
-        super(LongerUsernameAuthenticationForm, self).__init__(*args, **kwargs)
-        self.fields['username'].widget.attrs['maxlength'] = 75
+        # first get the password wrong
+        response = self.client.post(url, dict(data, password='WRONG!'))
+        ok_(response.status_code, 200)
+        ok_('Please enter a correct' in response.content)
 
-urlpatterns = patterns('',
-    (r'^login', 'django.contrib.auth.views.login',
-     {'template_name': 'accounts/user.html',
-      'authentication_form': LongerUsernameAuthenticationForm}),
-    (r'^user.html$', 'accounts.views.user_html'),
-    (r'^logout$', 'accounts.views.logout'),
-)
+        response = self.client.post(url, data)
+        ok_(response.status_code, 302)
+        url = reverse('accounts.views.user_html')
+        response = self.client.get(url)
+        ok_(response.status_code, 200)
+        ok_('Looong' in response.content)

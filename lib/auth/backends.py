@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth.models import User, Group, check_password
 from django.contrib.auth.backends import RemoteUserBackend
 from django.core.validators import email_re
+from django.utils.hashcompat import md5_constructor
 from django.utils.encoding import force_unicode, DjangoUnicodeDecodeError
 import os
 
@@ -83,8 +84,21 @@ class MozLdapBackend(RemoteUserBackend):
             email =  record[0][1]['mail'][0]
             first_name = force_unicode(first_name)
             last_name = force_unicode(last_name)
+
+            # Because the username field on model User is capped to 30
+            # characters we need to assign a butchered username here.
+            # It's not a problem because the user can be found by email
+            # anyway.
+            # 30 is the default max length of the username field for
+            # django.contrib.auth.models.User
             if not user:
-                user = User(username=username,
+                django_username = username
+                if email_re.match(django_username):
+                    if isinstance(username, unicode):
+                        # md5 chokes on non-ascii characters
+                        django_username = username.encode('ascii', 'ignore')
+                    django_username = md5_constructor(django_username).hexdigest()[:30]
+                user = User(username=django_username,
                             first_name=first_name,
                             last_name=last_name,
                             email=email)
