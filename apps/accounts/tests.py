@@ -35,6 +35,7 @@
 #
 # ***** END LICENSE BLOCK *****
 
+import re
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
@@ -66,3 +67,15 @@ class AccountsTestCase(TestCase):
         response = self.client.get(url)
         ok_(response.status_code, 200)
         ok_('Looong' in response.content)
+
+    def test_login_form_allows_long_username(self):
+        url = reverse('accounts.views.user_html')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        input_regex = re.compile('<input ([^>]+)>', re.M)
+        for input_ in input_regex.findall(response.content):
+            for name in re.findall('name="(.*?)"', input_):
+                if name == 'username':
+                    maxlength = re.findall('maxlength="(\d+)"', input_)[0]
+                    ok_(maxlength.isdigit())
+                    ok_(int(maxlength) > 30)

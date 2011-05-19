@@ -37,22 +37,12 @@
 'Url mappings for accounts app'
 
 from django.conf.urls.defaults import *
-from django.contrib.auth.forms import AuthenticationForm
-from django import forms
-
-class LongerUsernameAuthenticationForm(AuthenticationForm):
-    """override the authentication form because we use the email address as the
-    key to authentication."""
-    username = forms.CharField(label="Username", max_length=75)
-
-    def __init__(self, *args, **kwargs):
-        super(LongerUsernameAuthenticationForm, self).__init__(*args, **kwargs)
-        self.fields['username'].widget.attrs['maxlength'] = 75
+from forms import AuthenticationForm
 
 urlpatterns = patterns('',
     (r'^login', 'django.contrib.auth.views.login',
      {'template_name': 'accounts/user.html',
-      'authentication_form': LongerUsernameAuthenticationForm}),
+      'authentication_form': AuthenticationForm}),
     (r'^user.html$', 'accounts.views.user_html'),
     (r'^logout$', 'accounts.views.logout'),
 )
