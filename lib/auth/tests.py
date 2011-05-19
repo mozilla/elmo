@@ -110,6 +110,39 @@ class LDAPAuthTestCase(TestCase):
         ok_(not user.has_usable_password())
         ok_(not user.check_password('secret'))
 
+    def test_authenticate_with_ldap_new_user_with_long_email(self):
+        assert not User.objects.all().exists()
+        ldap.open = Mock('ldap.open')
+        ldap.open.mock_returns = Mock('ldap_connection')
+        ldap.set_option = Mock(return_value=None)
+
+        long_email = 'peter.anders.bengt.bengtsson@mozilla-europe.org.com'
+        fake_user = [
+          ('mail=%s,...' % long_email,
+           {'cn': ['Peter Bengtsson'],
+            'givenName': ['Pet\xc3\xa3r'], # utf-8 encoded
+            'mail': [long_email],
+            'sn': ['Bengtss\xc2\xa2n'],
+            'uid': ['pbengtsson']
+            })
+        ]
+
+        ldap.initialize = Mock(return_value=MockLDAP({
+          'dc=mozilla': fake_user,
+          'ou=groups,dc=mozilla': self.fake_group
+        }))
+        backend = MozLdapBackend()
+
+        user = backend.authenticate(long_email, 'secret')
+        ok_(user)
+        ok_(User.objects.get(email=long_email))
+        ok_(len(User.objects.get(email=long_email).username) <= 30)
+        user = User.objects.get(first_name=u'Pet\xe3r')
+        eq_(user.last_name, u'Bengtss\xa2n')
+        ok_(not user.has_usable_password())
+        ok_(not user.check_password('secret'))
+
+
     def test_authenticate_with_ldap_existing_user(self):
         assert not User.objects.all().exists()
         user = User.objects.create(

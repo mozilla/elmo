@@ -4,14 +4,6 @@ from django.http import HttpResponse
 import base64
 import re
 
-from django.contrib.auth.forms import AuthenticationForm, UserChangeForm
-
-for form in (AuthenticationForm, UserChangeForm):
-    user = form.base_fields['username']
-    user.max_length = 75
-    user.regex = re.compile(r'^[a-zA-Z0-9.@_%-+]+$')
-    user.widget.attrs['maxlength'] = 75
-    user.help_text = user.help_text.replace('30','75')
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin

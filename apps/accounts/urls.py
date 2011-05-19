@@ -37,10 +37,12 @@
 'Url mappings for accounts app'
 
 from django.conf.urls.defaults import *
+from forms import AuthenticationForm
 
 urlpatterns = patterns('',
     (r'^login', 'django.contrib.auth.views.login',
-     {'template_name': 'accounts/user.html'}),
+     {'template_name': 'accounts/user.html',
+      'authentication_form': AuthenticationForm}),
     (r'^user.html$', 'accounts.views.user_html'),
     (r'^logout$', 'accounts.views.logout'),
 )

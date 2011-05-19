@@ -15,10 +15,11 @@
 #
 # The Initial Developer of the Original Code is
 # Mozilla Foundation.
-# Portions created by the Initial Developer are Copyright (C) 2010
+# Portions created by the Initial Developer are Copyright (C) 2011
 # the Initial Developer. All Rights Reserved.
 #
 # Contributor(s):
+#    Peter Bengtsson <peterbe@mozilla.com>
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -34,30 +35,10 @@
 #
 # ***** END LICENSE BLOCK *****
 
-'''Views for logging in and out of l10n_site.
-'''
+from django import forms
+import django.contrib.auth.forms
 
-
-from django.contrib.auth.views import REDIRECT_FIELD_NAME
-from django.shortcuts import render_to_response
-from django.http import HttpResponseRedirect, HttpResponse
-from django.template import RequestContext
-from django.views.decorators import cache
-from forms import AuthenticationForm
-
-
-@cache.cache_control(private=True)
-def user_html(request):
-    form = None
-    if not request.user.is_authenticated():
-        form = AuthenticationForm(request)
-    return render_to_response('accounts/user.html',
-                              {'form': form},
-                              context_instance=RequestContext(request))
-
-
-def logout(request, redirect_field_name=REDIRECT_FIELD_NAME):
-    from django.contrib.auth import logout
-    logout(request)
-    redirect_to = request.REQUEST.get(redirect_field_name, '')
-    return HttpResponseRedirect(redirect_to or '/')
+class AuthenticationForm(django.contrib.auth.forms.AuthenticationForm):
+    """override the authentication form because we use the email address as the
+    key to authentication."""
+    username = forms.CharField(label="Username", max_length=75)
