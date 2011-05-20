@@ -183,7 +183,7 @@ def signoff(request, locale_code, app_code):
     # merge data back into pushes list
     suggested_signoff = None
     # initial_diff and runs
-    if len(initial_diff) < 2:
+    if len(initial_diff) < 2 and pushes:
         pushes[0]['changes'][0].diffbases = [None] * (2 - len(initial_diff) )
     for p in pushes:
         # initial_diff
