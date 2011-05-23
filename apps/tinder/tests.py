@@ -19,6 +19,7 @@
 # the Initial Developer. All Rights Reserved.
 #
 # Contributor(s):
+#    Peter Bengtsson <peterbe@mozilla.com>
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -40,6 +41,8 @@
 import unittest
 import os
 import datetime
+from collections import defaultdict
+from nose.tools import eq_, ok_
 from django.test import TestCase
 
 from mbdb.models import Build, Change
@@ -75,7 +78,7 @@ class WaterfallStarted(TestCase):
 
     def testHtml(self):
         resp = waterfall(None)
-        self.assertTrue(resp.status_code, 200)        
+        self.assertTrue(resp.status_code, 200)
         self.assertTrue(len(resp.content) > 0, 'Html content should be there')
 
 class WaterfallParallel(TestCase):
@@ -88,7 +91,7 @@ class WaterfallParallel(TestCase):
     def testHtml(self):
         '''Testing parallel builds in _waterfall'''
         resp = waterfall(None)
-        self.assertTrue(resp.status_code, 200)        
+        self.assertTrue(resp.status_code, 200)
         self.assertTrue(len(resp.content) > 0, 'Html content should be there')
 
 class FullBuilds(TestCase):
@@ -104,8 +107,8 @@ class FullBuilds(TestCase):
 from django.test.client import Client
 class Mix:
     def waterfall_to_file(self):
-        """Debugging helpers for waterfalls, dump the waterfall for all 
-        fixtures used into html files in the working dir, so that you can see 
+        """Debugging helpers for waterfalls, dump the waterfall for all
+        fixtures used into html files in the working dir, so that you can see
         what you're testing."""
         c = Client()
         response = c.get('/builds/waterfall')
@@ -185,3 +188,89 @@ class timedelta(TestCase):
         end = datetime.datetime.now()
         start = end - datetime.timedelta(seconds=3)
         self.assertEqual(build_extras.timedelta(start, end), "3 second(s)")
+
+
+class ViewsTestCase(TestCase):
+    fixtures = ['one_started_l10n_build.json']
+
+    def test_pmap(self):
+        from views import pmap
+        from mbdb.models import Build, Property, SourceStamp, Builder, Slave, Change
+
+        prop1 = Property.objects.create(
+          name='gender',
+          source='internet',
+          value='male',
+        )
+        prop2 = Property.objects.create(
+          name='age',
+          source='books',
+          value=31,
+        )
+        prop3 = Property.objects.create(
+          name='avoid',
+          source='at all',
+          value=['costs'],
+        )
+
+        Property.objects.all()
+
+        # delete any excess builds from fixtures
+        Build.objects.all().delete()
+
+        # test that it works with no builds
+        props = ('gender', 'age')
+        result = pmap(props, [])
+        eq_(result, {})
+
+        ss = SourceStamp.objects.all()[0]
+        builder = Builder.objects.all()[0]
+        slave = Slave.objects.all()[0]
+        build1 = Build.objects.create(
+          buildnumber=1,
+          builder=builder,
+          slave=slave,
+          sourcestamp=ss,
+        )
+        build1.properties.add(prop1)
+
+        build2 = Build.objects.create(
+          buildnumber=2,
+          builder=builder,
+          slave=slave,
+          sourcestamp=ss,
+        )
+        build2.properties.add(prop2)
+        build2.properties.add(prop3)
+
+        build3 = Build.objects.create(
+          buildnumber=3,
+          builder=builder,
+          slave=slave,
+          sourcestamp=ss,
+        )
+        build3.properties.add(prop1)
+        build3.properties.add(prop3)
+
+        props = ('gender', 'age')
+        result = pmap(props, [build1.id, build2.id])
+        ok_(isinstance(result, dict))
+
+        # since we fed build1.id and build2.id expect these to be the keys
+        eq_(sorted(result.keys()), sorted((build1.id, build2.id)))
+        # for build1 we attached the first property (name)
+        eq_(result[build1.id], {u'gender': u'male'})
+        # for build2 we attached the second property and the third
+        # but the third is ignored as per the second argument to pmap()
+        eq_(result[build2.id], {u'age': 31})
+
+        result = pmap(('age',), [build1.id])
+        eq_(result, {})
+
+        result = pmap(('gender',), [build2.id])
+        eq_(result, {})
+
+        build2.properties.add(prop1)
+        result = pmap(('gender',), [build2.id])
+        eq_(result.keys(), [build2.id])
+        eq_(result[build2.id], {u'gender': u'male'})

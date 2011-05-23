@@ -40,12 +40,12 @@
 from django.db.models import Q
 from django.db import connection
 from django.shortcuts import render_to_response
-from django.template import Context, loader, RequestContext
-from django.http import HttpResponse, HttpResponseNotFound
-from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
-from django.contrib.syndication.views import feed
+from django.template import RequestContext
+from django.http import HttpResponseNotFound
+from django.contrib.syndication.feeds import Feed
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
+
 
 import operator
 from bz2 import BZ2File
@@ -61,44 +61,66 @@ from tinder.models import MasterMap
 
 resultclasses = ['success', 'warning', 'failure', 'skip', 'except']
 
+
 def debug_(*msg):
     if False:
         print ' '.join(msg)
 
 
 def pmap(props, bld_ids):
-    '''Create a map of build ids to dicts with the requested properties.
-    '''
+    """Create a map of build ids to dicts with the requested properties.
+
+    NOTE: this is a hack for optimization. Because there is no model for
+    build properties we have to use the OneToOne table used to "connect" the
+    Build and Property model in an efficient way which doens't cause massively
+    complex joins which require temporary tables.
+
+    NOTE 2: This function assumes that the list of `props` is reasonably limited
+    or else the `WHERE id IN (...)` is going to in efficient.
+    """
+    if not bld_ids:
+        return {}
+
+    # model Build is "connected" to model Property with a OneToOne foreign key
+    # reference which is not a model but is a database table.
+    # We're accessing this auxilliary table to avoid complex joins which force
+    # MySQL to use a temporary table.
     b2pf=Build._meta.get_field_by_name('properties')[0]
     args = {'t': b2pf.m2m_db_table(),
             'b': b2pf.m2m_column_name(),
             'p': b2pf.m2m_reverse_name()}
     pattern = '''SELECT `%(t)s`.`%(b)s`, `%(t)s`.`%(p)s`
       FROM `%(t)s` WHERE (
-        `%(t)s`.`%(b)s` IN (%(bs)s) AND
+        `%(t)s`.`%(b)s` >= %(bs_min)s AND
+        `%(t)s`.`%(b)s` <= %(bs_max)s AND
         `%(t)s`.`%(p)s` IN (%(ps)s));'''
-    args['bs'] = ','.join(map(str, bld_ids))
-    cursor = connection.cursor()
-    rv = defaultdict(dict)
-    if not args['bs']:
-        # no builds, return empty dict
-        return {}
+    args['bs_min'] = min(bld_ids)
+    args['bs_max'] = max(bld_ids)
+
+    # create a set of primary keys of ALL properties by these names which we'll
+    # use as a operator against the auxilliary table
     pq = Property.objects.filter(name__in=props)
-    # optimize, if bld_ids is a dense list, use just min and max,
-    # otherwise, use explicit ids. Starting to use explicit ids at
-    # 50% density, otherwise just getting more data in favour of
-    # a more expensive query. That could be tuned still.
-    bid_min = min(bld_ids)
-    bid_max = max(bld_ids)
-    if (bid_max - bid_min) < len(bld_ids)*2:
-        pq = pq.filter(builds__id__gte=bid_min, builds__id__lte=bid_max)
-    else:
-        pq = pq.filter(builds__id__in=bld_ids)
-    lps = dict((p.id, p) for p in pq.distinct())
-    args['ps'] = ','.join(map(str, lps.keys()))
+    property_ids = set(pq.values_list('id', flat=True))
+    args['ps'] = ','.join(map(str, property_ids))
+    cursor = connection.cursor()
     cursor.execute(pattern % args)
+    # master list of all properties (but not organized by build ids)
+    props = defaultdict(list)
+    # the subset of `property_ids` that is in the auxilliary table
+    all_pids = set()
     for bid, pid in cursor.fetchall():
-        rv[bid][lps[pid].name] = lps[pid].value
+        props[bid].append(pid)
+        all_pids.add(pid)
+    prop_map = {}
+    # build up a temporary dictionary of all properties to avoid multiple SQL
+    # calls in the loop belowe
+    for p in Property.objects.filter(id__in=all_pids):
+        prop_map[p.id] = (p.name, p.value)
+    rv = defaultdict(dict)
+    for bid, pids in props.items():
+        for p in pids:
+            name, value = prop_map[p]
+            rv[bid][name] = value
     return rv
 
 def tbpl_inner(request):
@@ -181,8 +203,9 @@ def tbpl_inner(request):
         changes_for_source[_nc.sourcestamp_id].append(_nc.change)
     for _cs in changes_for_source.values():
         _cs.sort(key=lambda c:c.id, reverse=True)
-    bprops = pmap(('locale','tree','slavename'),
-                  list(blds.values_list('id', flat=True)))
+    bld_ids=list(blds.values_list('id', flat=True))
+    bprops = pmap(('locale','tree','slavename'), bld_ids)
+
     builds_for_source = defaultdict(list)
     for b in blds.filter(sourcestamp__in=ss).select_related('builder'):
         builds_for_source[b.sourcestamp_id].append(b)
@@ -584,7 +607,7 @@ def builds_for_change(request):
                      or ''})
 
     try:
-        from life.models import Push
+
         url = str(Push.objects.get(changesets__revision__startswith=change.revision,
                                    repository__name__startswith=change.branch))
     except:
@@ -708,6 +731,7 @@ def generateLog(master, filename):
             yield {'channel': channel, 'data': chunk}
         buf = buf[offset:] + f.read(buflen)
         offset = 0
+
 
 def showlog(request, master, file):
     """Show a log file.

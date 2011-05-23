@@ -1,4 +1,3 @@
-{% extends "l10nstats/index.html" %}
 <!-- {% comment %}
    - ***** BEGIN LICENSE BLOCK *****
    - Version: MPL 1.1/GPL 2.0/LGPL 2.1
@@ -17,10 +16,11 @@
    -
    - The Initial Developer of the Original Code is
    - Mozilla Foundation.
-   - Portions created by the Initial Developer are Copyright (C) 2010
+   - Portions created by the Initial Developer are Copyright (C) 2011
    - the Initial Developer. All Rights Reserved.
    -
    - Contributor(s):
+   -  Axel Hecht <l10n@mozilla.com>
    -
    - Alternatively, the contents of this file may be used under the terms of
    - either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -36,32 +36,33 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
-{% block title_matter %}Signoffs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}
-{% block h1_matter %}Signoffs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}
-{% block extra_data %}<link href="{% url shipping.views.signoff_json %}?{{query}}" type="application/json" rel="exhibit/data"/>{% endblock %}
-{% block extra_query_options %}options.push("signoff");{% endblock %}
-
-{% block extra_labels %}, Sign-off{% endblock %}
-{% block extra_columns %}, .locale.signoff{% endblock %}
-{% block extra_cells %}<td>
-  <span ex:if="exists(.tree.appversion)">
-  <span>{% if not flags.old_signoff %}
-  <a ex:href-subcontent="{% url shipping.views.signoff.signoff "&#123;&#123;.locale&#125;&#125;" "&#123;&#123;.tree.appversion&#125;&#125;" %}">
-    <span ex:if="exists(.signoff )">
-      <span ex:content=".signoff"></span>
-      <span>no sign-offs</span>
-    </span>
-  </a>{% else %}
-  <a ex:href-subcontent="{% url shipping.views.pushes %}?locale={&#123;.locale}}&av={&#123;.tree.appversion}}">
-    <span ex:if="exists(.signoff )">
-      <span ex:content=".signoff"></span>
-      <span>no sign-offs</span>
-    </span>
-  </a>{% endif %}
-  </span>
-  </span>
-</td>{% endblock %}
-{% block extra_facets %}
-<div ex:role="facet" ex:expression=".signoff"
-  ex:facetLabel="Sign-off" id="signoff-facet"></div>
-{% endblock %}
+{% if good %}
+  <div class="good_signoff">
+  Technically, this looks good. You did test
+    yourself, right?</div>
+{% else %}
+  <div class="bad_signoff">
+  {% if doubled %}
+    <p>There is already a sign-off for this revision.</p>
+  {% endif %}
+  {% if newer|length %}
+    <p>There are {{newer|join:", "}} sign-off(s) for newer revisions.</p>
+  {% endif %}
+  {% if not run %}
+    <p>There is no source check for this
+      revision. This might not be a good revision to sign off on.</p>
+  {% else %}
+    {% if run.errors %}
+      <p>There are {{ run.errors }} errors in the
+        source check for this revision. This is not a good revision to sign
+        off on.</p>
+    {% endif %}
+    {% if run.missing %}
+      <p>There are {{ run.missing }}
+        missing strings. Depending on the amount, and the release, this may
+        be a reason for this sign-off to get rejected.</p>
+    {% endif %}
+  {% endif %}
+  <p>You may want to pick a different
+    revision.</p>
+{% endif %}

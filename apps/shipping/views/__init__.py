@@ -339,10 +339,14 @@ def dashboard(request):
     query += [("locale", loc) for loc in locales]
     subtitles += list(locales)
 
+    # XXX REMOVE, get option for links to old pushes view
+    flags = dict((k, request.GET.get(k, None) == "1") for k in ('old_signoff',))
+
     return render_to_response('shipping/dashboard.html', {
             'subtitles': subtitles,
             'query': mark_safe(urlencode(query)),
             'args': mark_safe(urlencode(args)),
+            'flags': flags,
             }, context_instance=RequestContext(request))
 
 @cache_control(max_age=60)

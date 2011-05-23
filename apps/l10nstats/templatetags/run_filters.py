@@ -15,10 +15,11 @@
 #
 # The Initial Developer of the Original Code is
 # Mozilla Foundation.
-# Portions created by the Initial Developer are Copyright (C) 2010
+# Portions created by the Initial Developer are Copyright (C) 2011
 # the Initial Developer. All Rights Reserved.
 #
 # Contributor(s):
+#  Axel Hecht <l10n@mozilla.com>
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -34,25 +35,46 @@
 #
 # ***** END LICENSE BLOCK *****
 
-'''URL mappings for the tinder app.
+'''Django template filters to be used to display compare-locales runs.
 '''
 
-from django.conf.urls.defaults import *
-from views import BuildsForChangeFeed
-from django.contrib.syndication.views import feed
+from django import template
+from django.utils.safestring import mark_safe
+from django.utils.html import conditional_escape
+from django.core.urlresolvers import reverse
 
-feeds = {
-    'builds_for_change': BuildsForChangeFeed,
-    }
+from l10nstats.models import Run
 
-urlpatterns = patterns('tinder.views',
-                       (r'^waterfall$', 'waterfall'),
-                       (r'^tbpl$', 'tbpl'),
-                       (r'^tbpl-rows$', 'tbpl_rows', {}, 'tinder_update_tbpl'),
-                       (r'^builds_for', 'builds_for_change'),
-                       (r'^builders/([^/]+)/(\d+)', 'showbuild',
-                        {}, 'tinder_show_build'),
-                       (r'^log/([^/]+)/(.+)', 'showlog', {}, 'showlog'),
-                       (r'^feeds/(?P<url>.*)/$', feed,
-                        {'feed_dict': feeds}),
-                       )
+register = template.Library()
+
+@register.filter
+def showrun(run, autoescape=None):
+    """Display a l10nstats.models.Run object in a template in a consistent manner.
+    """
+    if autoescape:
+        esc = conditional_escape
+    else:
+        esc = lambda x: x
+    if not isinstance(run, Run):
+        return mark_safe("&nbsp;")
+    fmt = '<a %%s href="%s?run=%%d">%%s</a>' % reverse('l10nstats.views.compare')
+    missing = run.missing + run.missingInFiles
+    data = {'missing': missing}
+    for k in ('errors', 'total'):
+        data[k] = getattr(run, k)
+    datastr = ' '.join('data-%s="%d"' % (k,v) for k,v in data.iteritems())
+    cmp_segs = []
+    if run.errors:
+        cmp_segs.append('%d error(s)' % run.errors)
+    if missing:
+        cmp_segs.append('%d missing' % missing)
+    if run.obsolete:
+        cmp_segs.append('%d obsolete' % run.obsolete)
+    if not cmp_segs:
+        cmp_segs.append('green')
+    cmp_segs.append('(%d%%)' % run.completion)
+    compare = ', '.join(cmp_segs)
+
+    return mark_safe(fmt % (datastr, run.id, compare))
+
+showrun.needs_autoescape = True

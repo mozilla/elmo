@@ -67,3 +67,10 @@ urlpatterns += patterns('shipping.views.milestone',
 urlpatterns += patterns('shipping.views.app',
     (r'^\/app/locale-changes/(.*)', 'changes'),
 )
+
+urlpatterns += patterns('shipping.views.signoff',
+    (r'^\/signoffs\/(.*?)\/(.*)', 'signoff'),
+    (r'^\/signoffs-details\/(.*?)\/(.*)', 'signoff_details'),
+    (r'^\/add-signoff\/(.*?)\/(.*)', 'add_signoff'), # POST only
+    (r'^\/review-signoff\/(.*?)\/(.*)', 'review_signoff'), # POST only
+)
