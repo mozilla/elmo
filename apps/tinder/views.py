@@ -61,6 +61,9 @@ from tinder.models import MasterMap
 
 resultclasses = ['success', 'warning', 'failure', 'skip', 'except']
 
+# this import is used by urls.py to make 'tinder.view.feed' a named
+# view even though this is not important for use in this file
+from django.contrib.syndication.views import feed
 
 def debug_(*msg):
     if False:
