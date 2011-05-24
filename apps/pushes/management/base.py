@@ -41,6 +41,7 @@
 from optparse import make_option
 import os.path
 import sys
+import logging
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
@@ -64,7 +65,15 @@ class RepositoryCommand(BaseCommand):
                 self.minimal("\n  Cannot process %s, there's no local clone\n\n" % name)
                 continue
             hgrepo = repository(ui, repopath)
-            self.handleRepo(dbrepo, hgrepo)
+            try:
+                self.handleRepo(dbrepo, hgrepo)
+            except StopIteration:
+                # allow subclass to stop our loop over repositories
+                break
+            except StandardError:
+                print
+                logging.error('%s\tError while processing' % dbrepo.name, exc_info=True)
+                self._needsNewline = False
         if self._needsNewline:
             print
 

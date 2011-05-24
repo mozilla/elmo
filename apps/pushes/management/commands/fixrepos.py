@@ -68,7 +68,7 @@ class Command(RepositoryCommand):
         """
         if dbcount >= hgcount:
             # nothing to be done
-            self.verbose("%s\tin good shape" % self.dbrepo)
+            self.verbose("%s\tin good shape" % dbrepo.name)
             return
         missing = hgcount - dbcount
         cnt = 0
@@ -93,6 +93,7 @@ class Command(RepositoryCommand):
                 vals = [(dbrepo.id, csid) for csid in csids]
                 connection.cursor().executemany(sqlinsert, vals)
                 transaction.set_dirty(using)
+                cnt += len(csids)
         self.normal("%s\tadded %d changesets" % (dbrepo.name, cnt))
         return
 
