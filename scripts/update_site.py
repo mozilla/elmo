@@ -18,14 +18,11 @@ from textwrap import dedent
 from optparse import  OptionParser
 
 # Constants
-PROJECT = 0
-VENDOR  = 1
 
 ENV_BRANCH = {
-    # 'environment': [PROJECT_BRANCH, VENDOR_BRANCH],
-    'dev':   ['develop',   'master'],
-    'stage': ['develop', 'master'],
-    'prod':  ['master',   'master'],
+    'dev': 'develop',
+    'stage': 'master',
+    'prod': 'master',
 }
 
 GIT_PULL = "git pull -q origin %(branch)s"
@@ -39,18 +36,11 @@ def update_site(env, debug):
     """Run through commands to update this site."""
     error_updating = False
     here = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    project_branch = {'branch': ENV_BRANCH[env][PROJECT]}
-    vendor_branch = {'branch': ENV_BRANCH[env][VENDOR]}
+    project_branch = {'branch': ENV_BRANCH[env]}
 
     commands = [
         (CHDIR, here),
         (EXEC,  GIT_PULL % project_branch),
-        (EXEC,  GIT_SUBMODULE),
-    ]
-
-    commands += [
-        (CHDIR, os.path.join(here, 'vendor')),
-        (EXEC,  GIT_PULL % vendor_branch),
         (EXEC,  GIT_SUBMODULE),
     ]
 
