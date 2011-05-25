@@ -27,9 +27,12 @@ ENV_BRANCH = {
 
 GIT_PULL = "git pull -q origin %(branch)s"
 GIT_SUBMODULE = "git submodule update --init --recursive"
+NASHVEGAS_LIST = "./manage.py upgradedb --path migrations --list"
+NASHVEGAS_EXEC = "./manage.py upgradedb --path migrations --execute"
 
 EXEC = 'exec'
 CHDIR = 'chdir'
+CONFIRM = 'confirm'
 
 
 def update_site(env, debug):
@@ -46,7 +49,8 @@ def update_site(env, debug):
 
     commands += [
         (CHDIR, here),
-        (EXEC, './vendor/src/schematic/schematic migrations/'),
+        (CONFIRM, NASHVEGAS_LIST),
+        (EXEC, NASHVEGAS_EXEC),
     ]
 
     for cmd, cmd_args in commands:
@@ -59,6 +63,17 @@ def update_site(env, debug):
                 sys.stdout.write("%s\n" % cmd_args)
             if not 0 == os.system(cmd_args):
                 error_updating = True
+                break
+        elif CONFIRM == cmd:
+            if debug:
+                sys.stdout.write("%s\n" % cmd_args)
+            if not 0 == os.system(cmd_args):
+                error_updating = True
+                break
+            confirm = raw_input("Does the above look right? [yn] > ")
+            if confirm not in ('y', 'yes'):
+                sys.stdout.write("You aborted the update.  The lastexecuted "
+                                 "command was:\n\t%s\n" % cmd_args)
                 break
         else:
             raise Exception("Unknown type of command %s" % cmd)
