@@ -41,14 +41,16 @@
 import unittest
 import os
 import datetime
+from tempfile import gettempdir
 from collections import defaultdict
 from nose.tools import eq_, ok_
 from django.test import TestCase
 
-from mbdb.models import Build, Change
+from django.core.urlresolvers import reverse
+from mbdb.models import Build, Change, Master, Log
 from tinder.views import _waterfall, waterfall
 from tinder.templatetags import build_extras
-
+from tinder.models import MasterMap, WebHead
 
 class WaterfallStarted(TestCase):
     fixtures = ['one_started_l10n_build.json']
@@ -193,6 +195,17 @@ class timedelta(TestCase):
 class ViewsTestCase(TestCase):
     fixtures = ['one_started_l10n_build.json']
 
+    def setUp(self):
+        super(ViewsTestCase, self).setUp()
+        self.temp_directory = os.path.join(gettempdir(), 'test-builds')
+        if not os.path.isdir(self.temp_directory):
+            os.mkdir(self.temp_directory)
+
+    def tearDown(self):
+        super(ViewsTestCase, self).tearDown()
+        import shutil
+        shutil.rmtree(self.temp_directory)
+
     def test_pmap(self):
         from views import pmap
         from mbdb.models import Build, Property, SourceStamp, Builder, Slave, Change
@@ -274,3 +287,40 @@ class ViewsTestCase(TestCase):
         result = pmap(('gender',), [build2.id])
         eq_(result.keys(), [build2.id])
         eq_(result[build2.id], {u'gender': u'male'})
+
+
+    def test_showlog(self):
+        """Test that showlog shows headers, stdout, stderr, with the right CSS classes,
+        but not data from other channels like json.
+        """
+        master = Master.objects.all()[0]
+
+        build = Build.objects.all()[0]
+        step = build.steps.all()[0]
+        log = Log.objects.create(
+          name='foo',
+          filename='foo.log',
+          step=step,
+        )
+        url = reverse('tinder.views.showlog',
+                      args=[master.name, log.filename])
+        with file(os.path.join(self.temp_directory, log.filename), 'w') as f:
+            f.write(SAMPLE_BUILD_LOG_PAYLOAD)
+        webhead = WebHead.objects.create(
+          name='head 1',
+        )
+        MasterMap.objects.create(
+          master=master,
+          webhead=webhead,
+          logmount=self.temp_directory,
+        )
+        response = self.client.get(url)
+        ok_('<span class="pre header">header content\n</span>' in response.content)
+        ok_('<span class="pre stdout">stdout content\n</span>' in response.content)
+        ok_('<span class="pre stderr">stderr content\n</span>' in response.content)
+        ok_('json' not in response.content)
+
+SAMPLE_BUILD_LOG_PAYLOAD = '''16:2header content
+,16:1stderr content
+,16:0stdout content
+,11:5{"json":1},'''
