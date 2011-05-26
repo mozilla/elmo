@@ -45,19 +45,13 @@
 {% block extra_columns %}, .locale.signoff{% endblock %}
 {% block extra_cells %}<td>
   <span ex:if="exists(.tree.appversion)">
-  <span>{% if not flags.old_signoff %}
+  <span>
   <a ex:href-subcontent="{% url shipping.views.signoff.signoff "&#123;&#123;.locale&#125;&#125;" "&#123;&#123;.tree.appversion&#125;&#125;" %}">
     <span ex:if="exists(.signoff )">
       <span ex:content=".signoff"></span>
       <span>no sign-offs</span>
     </span>
-  </a>{% else %}
-  <a ex:href-subcontent="{% url shipping.views.pushes %}?locale={&#123;.locale}}&av={&#123;.tree.appversion}}">
-    <span ex:if="exists(.signoff )">
-      <span ex:content=".signoff"></span>
-      <span>no sign-offs</span>
-    </span>
-  </a>{% endif %}
+  </a>
   </span>
   </span>
 </td>{% endblock %}
