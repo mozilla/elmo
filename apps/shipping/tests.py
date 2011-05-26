@@ -155,38 +155,6 @@ class ShippingTestCase(TestCase):
         response = self.client.get(url, dict(av=appver.code))
         self.assertEqual(response.status_code, 200)
 
-    def test_pushes_json_bad_urls(self):
-        """test that bad GET parameters raise 404 errors not 500s"""
-        url = reverse('shipping.views.pushes_json')
-        # Fail
-        response = self.client.get(url, dict(locale="junk"))
-        self.assertEqual(response.status_code, 404)
-        response = self.client.get(url, dict(mstone="junk"))
-        self.assertEqual(response.status_code, 404)
-        response = self.client.get(url, dict(av="junk"))
-        self.assertEqual(response.status_code, 404)
-        response = self.client.get(url, {'from': "junk"})
-        self.assertEqual(response.status_code, 404)
-        response = self.client.get(url, {'to': "junk"})
-        self.assertEqual(response.status_code, 404)
-
-        # to succeed we need sample fixtures
-        appver, milestone = self._create_appver_milestone()
-        locale = Locale.objects.create(
-          code='en-US',
-          name='English',
-        )
-        response = self.client.get(url, dict(locale=locale.code))
-        self.assertEqual(response.status_code, 200)
-        response = self.client.get(url, dict(ms=milestone.code))
-        self.assertEqual(response.status_code, 200)
-        response = self.client.get(url, dict(av=appver.code,
-                                             locale=locale.code))
-        self.assertEqual(response.status_code, 200)
-        response = self.client.get(url, dict(locale=locale.code,
-                                             ms=milestone.code))
-        self.assertEqual(response.status_code, 200)
-
     def test_confirm_ship_mstone_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
         url = reverse('shipping.views.confirm_ship_mstone')
