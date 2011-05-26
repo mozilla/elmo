@@ -1,5 +1,6 @@
 settings/local*.py
 settings/ldap_settings.py
+env
 *.pyc
 .coverage
 cover/

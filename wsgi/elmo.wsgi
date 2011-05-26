@@ -58,11 +58,8 @@ site.addsitedir(path('..', '..'))
 # 1. Add virtualenv to sys.path
 # =============================
 
-# the path to the virtual env relative to wsgidir
-ENV_PATH = '../../env'
-
 # the packages installed in the virtualenv
-site.addsitedir(path(ENV_PATH, 'lib', 'python' + sys.version[:3],
+site.addsitedir(path('..', 'env', 'lib', 'python' + sys.version[:3],
                      'site-packages'))
 
 # reorder sys.path so that the new directories are at the front
