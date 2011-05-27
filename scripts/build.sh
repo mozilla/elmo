@@ -8,8 +8,8 @@
 
 find . -name '*.pyc' -delete;
 
-virtualenv --no-site-packages elmo_env
-source elmo_env/bin/activate
+virtualenv --no-site-packages env
+source env/bin/activate
 
 git submodule update --init --recursive
 echo "
@@ -35,10 +35,13 @@ DATABASES = {
 # the file settings/ldap_settings.py must exist
 cp settings/ldap_settings.py-dist settings/ldap_settings.py
 
-pip install -r requirements/prod.txt
+## install dependencies
+# prod.txt is covered by vendor-local
+
+# compiled modules
 pip install -r requirements/compiled.txt
 
-# dependencies for dependencies
-pip install -q mock
+# dependencies for running the tests
+pip install -r requirements/dev.txt
 
 python manage.py test --noinput
