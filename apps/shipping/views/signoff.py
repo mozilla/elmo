@@ -45,7 +45,7 @@ from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 # TODO: from django.views.decorators.cache import cache_control
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, etag
 
 from life.models import Repository, Locale, Push, Changeset, Push_Changesets
 from shipping.models import AppVersion, Signoff, Action
@@ -101,8 +101,20 @@ class _RowCollector:
                                 'id': cs.shortrev})
             self.rowcount = 0
             self._prev = push.id
-        
 
+
+def etag_signoff(request, locale_code, app_code):
+    actions = Action.objects.filter(signoff__locale__code=locale_code,
+                                    signoff__appversion__code=app_code).order_by('-pk')
+    can_signoff = request.user.has_perm('shipping.add_signoff')
+    review_signoff = request.user.has_perm('shipping.review_signoff')
+    try:
+        _id = str(actions.values_list('id',flat=True)[0])
+    except IndexError:
+        _id = "no signoff"
+    return "%d|%d|%s" % (can_signoff, review_signoff, _id)
+
+@etag(etag_signoff)
 def signoff(request, locale_code, app_code):
     """View to show recent sign-offs and opportunities to sign off.
 
