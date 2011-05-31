@@ -1,0 +1,68 @@
+[
+  {
+    "pk": 1,
+    "model": "life.push",
+    "fields": {
+      "repository": ["mozilla"],
+      "changesets": [["mozilla 0002"]],
+      "user": "user@ldap.mozilla.tld",
+      "push_date": "2000-01-01 00:00",
+      "push_id": 1
+    }
+  },
+  {
+    "pk": 2,
+    "model": "life.push",
+    "fields": {
+      "repository": ["l10n/de"],
+      "changesets": [["l10n de 0002"]],
+      "user": "de@ldap.l10n.tld",
+      "push_date": "2000-01-01 01:00",
+      "push_id": 1
+    }
+  },
+  {
+    "pk": 3,
+    "model": "life.push",
+    "fields": {
+      "repository": ["mozilla"],
+      "changesets": [["mozilla 0003"]],
+      "user": "user@ldap.mozilla.tld",
+      "push_date": "2000-01-02 00:00",
+      "push_id": 2
+    }
+  },
+  {
+    "pk": 4,
+    "model": "life.push",
+    "fields": {
+      "repository": ["l10n/de"],
+      "changesets": [["l10n de 0003"]],
+      "user": "de@ldap.l10n.tld",
+      "push_date": "2000-01-02 01:00",
+      "push_id": 2
+    }
+  },
+  {
+    "pk": 5,
+    "model": "life.push",
+    "fields": {
+      "repository": ["l10n/pl"],
+      "changesets": [["l10n pl 0002"],["l10n pl 0003"]],
+      "user": "pl@ldap.l10n.tld",
+      "push_date": "2000-01-03 01:00",
+      "push_id": 1
+    }
+  },
+  {
+    "pk": 6,
+    "model": "life.push",
+    "fields": {
+      "repository": ["mozilla"],
+      "changesets": [["mozilla 0004"]],
+      "user": "user@ldap.mozilla.tld",
+      "push_date": "2000-01-04 00:00",
+      "push_id": 3
+    }
+  }
+]

@@ -172,6 +172,7 @@ INSTALLED_APPS = (
     'commons',  # Content common to most playdoh-based apps.
     'jingo_minify',
     'tower',  # for ./manage.py extract (L10n)
+    'nashvegas',
 
 
     # We need this so the jsi18n view will pick up our locale directory.

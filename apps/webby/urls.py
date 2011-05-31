@@ -40,7 +40,7 @@ from webby.feeds import AllOptinsFeed, PendingOptinsFeed
 
 urlpatterns = patterns('webby.views',
     (r'^$', 'projects'),
-    url(r'^(?P<slug>[a-z]+)$', 'project', name="webby-project"),
+    url(r'^(?P<slug>[\w-]+)$', 'project', name="webby-project"),
     (r'^feed/all$', AllOptinsFeed()),
     (r'^feed/pending$', PendingOptinsFeed()),
 )

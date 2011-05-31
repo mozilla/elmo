@@ -48,6 +48,6 @@
 {% block content %}
 <h1>{{ build.builder.name }} {{ file }}</h1>
 {% for chunk in chunks %}
-<span class="pre {{ chunk.class }}"> {{ chunk.data }} </span>
+<span class="pre {{ chunk.class }}">{{ chunk.data }}</span>
 {% endfor %}
 {% endblock %}

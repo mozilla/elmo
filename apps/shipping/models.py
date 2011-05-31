@@ -55,9 +55,14 @@ class Application(models.Model):
     def __unicode__(self):
         return self.name
 
+class AppVersionManager(models.Manager):
+    def get_by_natural_key(self, code):
+        return self.get(code=code)
+
 class AppVersion(models.Model):
     """ stores application versions
     """
+    objects = AppVersionManager()
     app = models.ForeignKey(Application)
     version = models.CharField(max_length = 10)
     code = models.CharField(max_length = 20, blank = True)
@@ -72,6 +77,10 @@ class AppVersion(models.Model):
 
     def __unicode__(self):
         return '%s %s' % (self.app.name, self.version)
+
+    def natural_key(self):
+        return (self.code,)
+
 
 class Signoff(models.Model):
     push = models.ForeignKey(Push)

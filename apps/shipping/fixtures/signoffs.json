@@ -1,0 +1,102 @@
+[
+  {
+    "pk": 1,
+    "model": "auth.user",
+    "fields": {
+      "username": "l10ndriver"
+    }
+  },
+  {
+    "pk": 2,
+    "model": "auth.user",
+    "fields": {
+      "username": "localizer_de"
+    }
+  },
+  {
+    "pk": 3,
+    "model": "auth.user",
+    "fields": {
+      "username": "localizer_pl"
+    }
+  },
+  {
+    "pk": 1,
+    "model": "life.tree",
+    "fields": {
+      "code": "fx",
+      "l10n": ["l10n"],
+      "repositories":[]
+    }
+  },
+  {
+    "pk": 1,
+    "model": "shipping.application",
+    "fields": {
+      "name": "Firefox",
+      "code": "fx"
+    }
+  },
+  {
+    "pk": 1,
+    "model": "shipping.appversion",
+    "fields": {
+      "app": 1,
+      "version": "1.0",
+      "code": "fx1.0",
+      "tree": 1
+    }
+  },
+  {
+    "pk": 1,
+    "model": "shipping.signoff",
+    "fields": {
+      "push": ["l10n/de", "l10n de 0002"],
+      "appversion": ["fx1.0"],
+      "author": 2,
+      "when": "2000-01-06 00:00",
+      "locale": ["de"]
+    }
+  },
+  {
+    "pk": 2,
+    "model": "shipping.signoff",
+    "fields": {
+      "push": ["l10n/pl", "l10n pl 0002"],
+      "appversion": ["fx1.0"],
+      "author": 3,
+      "when": "2000-01-06 12:00",
+      "locale": ["pl"]
+    }
+  },
+  {
+    "pk": 1,
+    "model": "shipping.action",
+    "fields": {
+      "signoff": 1,
+      "flag": 0,
+      "author": 2,
+      "when": "2000-01-06 00:00"
+    }
+  },
+  {
+    "pk": 2,
+    "model": "shipping.action",
+    "fields": {
+      "signoff": 2,
+      "flag": 0,
+      "author": 3,
+      "when": "2000-01-06 12:00"
+    }
+  },
+  {
+    "pk": 3,
+    "model": "shipping.action",
+    "fields": {
+      "signoff": 1,
+      "flag": 1,
+      "author": 1,
+      "when": "2000-01-07 00:00"
+    }
+  }
+]

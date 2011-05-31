@@ -1,1 +1,2 @@
--e hg+http://hg.mozilla.org/build/compare-locales/@default#egg=compare-locales
+-e git+git://github.com/Pike/compare-locales.git#egg=compare-locales
+nashvegas
