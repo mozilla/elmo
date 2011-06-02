@@ -42,6 +42,7 @@ from django.test import TestCase
 from django.core.urlresolvers import reverse
 from shipping.models import Milestone, Application, AppVersion, Signoff, Action
 from shipping.views import _signoffs
+from shipping.api import signoff_actions, flag_lists
 from life.models import Tree, Forest
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
@@ -325,6 +326,54 @@ class ShippingTestCase(ShippingTestCaseBase):
         response = self.client.get(url)
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
+
+
+class ApiActionTest(TestCase):
+    fixtures = ["test_repos.json", "test_pushes.json", "signoffs.json"]
+
+    def test_count(self):
+        """Test that we have the right amount of Signoffs and Actions"""
+        eq_(Signoff.objects.count(), 3)
+        eq_(Action.objects.count(), 5)
+
+    def test_accepted(self):
+        """Test for the german accepted signoff"""
+        actions = signoff_actions(appversions={"code": "fx1.0"},
+                                  locales={"code": "de"})
+        actions = list(actions)
+        eq_(len(actions), 1)
+        so = Signoff.objects.get(action=actions[0][0])
+        eq_(so.push.tip.shortrev, "l10n de 0002")
+        eq_(so.locale.code, "de")
+        eq_(so.action_set.count(), 2)
+
+    def test_pending(self):
+        """Test for the pending polish signoff"""
+        actions = signoff_actions(appversions={"code": "fx1.0"},
+                                  locales={"code": "pl"})
+        actions = list(actions)
+        eq_(len(actions), 1)
+        so = Signoff.objects.get(action=actions[0][0])
+        eq_(so.push.tip.shortrev, "l10n pl 0003")
+        eq_(so.locale.code, "pl")
+        eq_(so.action_set.count(), 1)
+
+    def test_rejected(self):
+        """Test for the rejected polish signoff"""
+        actions = signoff_actions(appversions={"code": "fx1.0"},
+                                  locales={"code": "fr"})
+        actions = list(actions)
+        eq_(len(actions), 1)
+        eq_(actions[0][1], Action.REJECTED)
+        so = Signoff.objects.get(action=actions[0][0])
+        eq_(so.push.tip.shortrev, "l10n fr 0003")
+        eq_(so.locale.code, "fr")
+        eq_(so.action_set.count(), 2)
+
+    def test_getlist(self):
+        """Test that the list returns on accepted and one pending signoff."""
+        flags = flag_lists(appversions={"code": "fx1.0"})
+        eq_(flags, {("fx", "pl"): [0], ("fx", "de"): [1], ("fx", "fr"): [2]})
 
 
 class SignOffTest(TestCase, EmbedsTestCaseMixin):
