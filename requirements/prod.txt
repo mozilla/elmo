@@ -1,2 +1,5 @@
 -e git+git://github.com/Pike/compare-locales.git#egg=compare-locales
 nashvegas
+bleach
+html5lib
+

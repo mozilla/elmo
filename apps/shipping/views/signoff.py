@@ -44,6 +44,7 @@ from django.db.models import Max
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
+from django.conf import settings
 # TODO: from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_POST, etag
 
@@ -217,7 +218,7 @@ def signoff(request, locale_code, app_code):
                     elif _r.allmissing == 0 and _r.errors == 0:
                         # source checks are good, suggest
                         suggested_signoff = p['id']
-                    
+
     return render_to_response('shipping/signoffs.html',
                               {'appver': appver,
                                'language': lang,
