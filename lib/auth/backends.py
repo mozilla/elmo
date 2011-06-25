@@ -23,7 +23,7 @@ class MozLdapBackend(RemoteUserBackend):
         # core handler for middleware classes. Ugly truth :)
         self.host = settings.LDAP_HOST
         self.dn = settings.LDAP_DN
-        self.password = settings.LDAP_PASS
+        self.password = settings.LDAP_PASSWORD
         self.localizers = None
 
     #

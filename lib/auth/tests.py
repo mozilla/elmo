@@ -42,7 +42,7 @@ from django.contrib.auth.models import User
 
 # lib.auth.backends expects the LDAP_* to be set up
 # fake that so we can import MozLdapBackend
-settings.LDAP_HOST = settings.LDAP_DN = settings.LDAP_PASS = 'test'
+settings.LDAP_HOST = settings.LDAP_DN = settings.LDAP_PASSWORD = 'test'
 from lib.auth.backends import MozLdapBackend
 
 from mock import Mock
