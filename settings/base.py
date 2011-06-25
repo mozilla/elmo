@@ -273,7 +273,7 @@ except ImportError:
     pass
 else:
     # all these must exist and be set to something
-    for each in 'LDAP_HOST', 'LDAP_DN', 'LDAP_PASS':
+    for each in 'LDAP_HOST', 'LDAP_DN', 'LDAP_PASSWORD':
         if not getattr(ldap_settings, each, None):
             raise ValueError('%s must be set' % each)
 
