@@ -163,6 +163,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
 
     'commonware.middleware.FrameOptionsHeader',
+    'commonware.middleware.HidePasswordOnException',
 )
 
 ROOT_URLCONF = '%s.urls' % ROOT_PACKAGE
