@@ -1,6 +1,6 @@
 import re
 from os import listdir
-from os.path import join, dirname
+from os.path import join, dirname, splitext
 
 import test_utils
 
@@ -21,6 +21,10 @@ class MigrationTests(test_utils.TestCase):
         seen_numbers = set()
         path = self._migrations_path()
         for filename in listdir(path):
+            __, ext = splitext(filename)
+            # prevent matching backup files (e.g. 001_foo.sql~)
+            if ext not in [".sql", ".py"]: # same as nashvegas
+                continue
             match = leading_digits.match(filename)
             if match:
                 number = match.group()

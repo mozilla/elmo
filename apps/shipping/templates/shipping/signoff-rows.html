@@ -37,6 +37,7 @@
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
 {% load run_filters %}
+{% load commons_filters %}
 {% for push in pushes %}
   <tr class="pushrow" id="{{push.id}}" data-push="{{push.id}}">
     <td class="push{% if forloop.first %} top{% endif %}{% if forloop.last %}  bottom {% endif %}" rowspan="{{push.rows}}">{{push.when|date}}<br><span class="csuser">{{push.who}}</span></td>
@@ -82,7 +83,7 @@
               {{so.action.author.get_full_name}}
               rejected sign-off by {{so.signoff.author.get_full_name}} on
               {{so.action.when|date}}:</div>
-              <div class="so_msg">{{so.action.comment|safe}}
+              <div class="so_msg">{{so.action.comment|bleach_safe}}
               {% endifequal %}
               {% ifequal flag "pending" %}
                 {{so.signoff.author.get_full_name}} signed off on
