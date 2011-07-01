@@ -283,13 +283,16 @@ def signoff_json(request):
     if request.GET.has_key('ms'):
         av_or_m = get_object_or_404(Milestone, code=request.GET['ms'])
         appvers = appvers.filter(app=av_or_m.appver.app)
+        given_app = av_or_m.appver.app.code
     elif request.GET.has_key('av'):
         av_or_m = get_object_or_404(AppVersion, code=request.GET['av'])
         appvers = appvers.filter(app=av_or_m.app)
+        given_app = av_or_m.app.code
     else:
-        av_or_m = None
-        appvers = appvers.all()
+        av_or_m = given_app = None
+        appvers = appvers.exclude(tree__isnull=True)
     tree2av = dict(AppVersion.objects.values_list("tree__code","code"))
+    tree2app = dict(AppVersion.objects.values_list("tree__code", "app__code"))
     locale = request.GET.get('locale', None)
     lsd = _signoffs(av_or_m, getlist=True, locale=locale)
     items = defaultdict(list)
@@ -303,22 +306,23 @@ def signoff_json(request):
             _ms = _av.milestone_set.filter(status=2).order_by('-pk')[0]
         except IndexError:
             continue
-        tree = _ms.appver.tree.code
+        app = _av.app.code
         _sos = _ms.signoffs
         if locale is not None:
             _sos = _sos.filter(locale__code=locale)
         for loc in _sos.values_list('locale__code', flat=True):
-            shipped_in[(tree, loc)].append(_ms.code)
+            shipped_in[(app, loc)].append(_av.code)
     # make a list now
     items = [{"type": "SignOff",
               "label": "%s/%s" % (tree,locale),
               "tree": tree,
+              "apploc" : ("%s::%s" % (given_app or tree2app[tree], locale)),
               "signoff": list(values)}
              for (tree, locale), values in items.iteritems()]
     items += [{"type": "Shippings",
-               "label": "%s/%s" % (tree,locale),
+               "label": "%s::%s" % (av,locale),
                "shipped": stones}
-              for (tree, locale), stones in shipped_in.iteritems()]
+              for (av, locale), stones in shipped_in.iteritems()]
     items += [{"type": "AppVer4Tree",
                "label": tree,
                "appversion": av}
