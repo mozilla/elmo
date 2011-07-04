@@ -67,7 +67,8 @@ class AppVersion(models.Model):
     version = models.CharField(max_length = 10)
     code = models.CharField(max_length = 20, blank = True)
     codename = models.CharField(max_length = 30, blank = True, null = True)
-    tree = models.ForeignKey(Tree)
+    # tree can be null for shipped appversions in the rapid release cadence
+    tree = models.ForeignKey(Tree, blank=True, null=True)
 
 
     def save(self, *args, **kwargs):
