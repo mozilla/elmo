@@ -219,7 +219,8 @@ def dashboard(request):
         query.append(('ms', mstone.code))
     elif 'av' in request.GET:
         appver = get_object_or_404(AppVersion, code=request.GET['av'])
-        args.append(('tree', appver.tree.code))
+        args.append(('tree', (appver.tree is not None and appver.tree.code)
+                     or appver.lasttree.code))
         subtitles.append(str(appver))
         query.append(('av', appver.code))
 
