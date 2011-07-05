@@ -73,9 +73,14 @@ def about(req, ms_code):
         return HttpResponse('no milestone found for %s' % ms_code)
 
     mss = Milestone.objects.filter(id=ms.id)
-    tree, forestname, foresturl = \
-        mss.values_list('appver__tree__code','appver__tree__l10n__name',
-                        'appver__tree__l10n__url')[0]
+    try:
+        tree, forestname, foresturl = \
+              mss.values_list('appver__tree__code','appver__tree__l10n__name',
+                              'appver__tree__l10n__url')[0]
+    except IndexError:
+        tree, forestname, foresturl = \
+              mss.values_list('appver__lasttree__code','appver__lasttree__l10n__name',
+                              'appver__lasttree__l10n__url')[0]
 
     return render_to_response('shipping/about-milestone.html',
                               {'ms': ms,
@@ -94,6 +99,11 @@ def statuses(req, ms_code):
     except:
         return HttpResponse('no milestone found for %s' % ms_code)
 
+    if ms.appver.tree is not None:
+        tree = ms.appver.tree
+    else:
+        tree = ms.appver.lasttree
+
     sos_vals = _signoffs(ms).values_list('id','push__id', 'locale__code')
     sos = dict(d[:2] for d in sos_vals)
     loc2push = dict((d[2], d[1]) for d in sos_vals)
@@ -110,7 +120,7 @@ def statuses(req, ms_code):
     active = {}
     if ms.status != 2:
         runs = Run.objects.filter(active__isnull=False)
-        runs = runs.filter(tree__appversion__milestone=ms)
+        runs = runs.filter(tree=tree)
         active = runs2dict(runs)
 
     # if we have a previously shipped milestone, check the diffs
@@ -140,7 +150,7 @@ def statuses(req, ms_code):
     cs = Changeset.objects.filter(pushes__id__in=sos.values())
     cs_ids = list(cs.values_list('id',flat=True))
     runs = Run_Revisions.objects.filter(changeset__id__in=cs_ids,
-                                        run__tree__appversion__milestone=ms)
+                                        run__tree=tree)
     latest = runs2dict(runs, 'run__')
 
     # get the snapshots from the sign-offs

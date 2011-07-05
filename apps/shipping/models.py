@@ -69,6 +69,9 @@ class AppVersion(models.Model):
     codename = models.CharField(max_length = 30, blank = True, null = True)
     # tree can be null for shipped appversions in the rapid release cadence
     tree = models.ForeignKey(Tree, blank=True, null=True)
+    # ... but then we should keep track of that in lasttree
+    lasttree = models.ForeignKey(Tree, related_name='legacy_appversions',
+                                 blank=True, null=True)
 
 
     def save(self, *args, **kwargs):
