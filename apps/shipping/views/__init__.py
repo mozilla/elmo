@@ -292,13 +292,17 @@ def signoff_json(request):
     else:
         av_or_m = given_app = None
         appvers = appvers.exclude(tree__isnull=True)
-    tree2av = dict(AppVersion.objects.values_list("tree__code","code"))
-    tree2app = dict(AppVersion.objects.values_list("tree__code", "app__code"))
+    tree_avs = appvers.exclude(tree__isnull=True)
+    tree2av = dict(tree_avs.values_list("tree__code", "code"))
+    tree2app = dict(tree_avs.values_list("tree__code", "app__code"))
     locale = request.GET.get('locale', None)
     lsd = _signoffs(av_or_m, getlist=True, locale=locale)
     items = defaultdict(list)
     values = dict(Action._meta.get_field('flag').flatchoices)
     for k, sol in lsd.iteritems():
+        # ignore tree/locale combos which have no active tree no more
+        if k[0] is None:
+            continue
         items[k] = [values[so] for so in sol]
     # get shipped-in data, latest milestone of all appversions for now
     shipped_in = defaultdict(list)
