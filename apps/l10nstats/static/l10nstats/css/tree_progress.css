@@ -43,7 +43,6 @@
 }
 .bar {
     position: absolute; 
-    border: 1px solid black;
     border-bottom-width: 0px;
 }
 .cluster_a { background-color: blue; }
