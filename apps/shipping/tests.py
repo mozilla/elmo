@@ -45,6 +45,7 @@ from shipping.views import _signoffs
 from life.models import Tree, Forest
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
+from django.utils import simplejson as json
 from commons.tests.mixins import EmbedsTestCaseMixin
 from nose.tools import eq_, ok_
 
@@ -334,8 +335,8 @@ class SignOffTest(TestCase, EmbedsTestCaseMixin):
 
     def test_count(self):
         """Test that we have the right amount of Signoffs and Actions"""
-        eq_(Signoff.objects.count(), 2)
-        eq_(Action.objects.count(), 3)
+        eq_(Signoff.objects.count(), 3)
+        eq_(Action.objects.count(), 5)
 
     def test_accepted(self):
         """Test for the german accepted signoff"""
@@ -351,10 +352,75 @@ class SignOffTest(TestCase, EmbedsTestCaseMixin):
         eq_(so.locale.code, "pl")
         eq_(so.action_set.count(), 1)
 
+    def test_rejected(self):
+        """Test for the rejected french signoff"""
+        so = _signoffs(self.av, locale="fr")
+        eq_(so, None)
+        so = _signoffs(self.av, status=2, locale="fr")
+        eq_(so.push.tip.shortrev, "l10n fr 0003")
+        eq_(so.locale.code, "fr")
+        eq_(so.action_set.count(), 2)
+
     def test_getlist(self):
         """Test that the list returns on accepted and one pending signoff."""
         sos = _signoffs(self.av, getlist=True)
-        eq_(sos, {("fx", "pl"): [0], ("fx", "de"): [1]})
+        eq_(sos, {("fx", "pl"): [0], ("fx", "de"): [1], ("fx", "fr"): [2]})
+
+    def test_l10n_changesets(self):
+        """Test that l10n-changesets is OK"""
+        url = reverse('shipping.views.l10n_changesets')
+        url += '?av=fx1.0'
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        eq_(response.content, """de l10n de 0002
+""")
+
+    def test_shipped_locales(self):
+        """Test that shipped-locales is OK"""
+        url = reverse('shipping.views.shipped_locales')
+        url += '?av=fx1.0'
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        eq_(response.content, """de
+en-US
+""")
+
+    def test_signoff_json(self):
+        """Test that the signoff json for the dashboard is OK"""
+        url = reverse('shipping.views.signoff_json')
+        url += '?av=fx1.0'
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        ok_('items' in data)
+        items = data['items']
+        eq_(len(items), 4)
+        sos = {}
+        avt = None
+        for item in items:
+            if item['type'] == 'SignOff':
+                sos[item['label']] = item
+            elif item['type'] == 'AppVer4Tree':
+                avt = item
+            else:
+                eq_(item, None)
+        eq_(avt['appversion'], 'fx1.0')
+        eq_(avt['label'], 'fx')
+        ok_('fx/de' in sos)
+        so = sos['fx/de']
+        eq_(so['signoff'], ['accepted'])
+        eq_(so['apploc'], 'fx::de')
+        eq_(so['tree'], 'fx')
+        ok_('fx/fr' in sos)
+        so = sos['fx/fr']
+        eq_(so['signoff'], ['rejected'])
+        eq_(so['apploc'], 'fx::fr')
+        eq_(so['tree'], 'fx')
+        ok_('fx/pl' in sos)
+        so = sos['fx/pl']
+        eq_(so['signoff'], ['pending'])
+        eq_(so['apploc'], 'fx::pl')
+        eq_(so['tree'], 'fx')
 
     def test_dashboard_static_files(self):
         """render the shipping dashboard and check that all static files are

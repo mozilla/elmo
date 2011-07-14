@@ -64,5 +64,16 @@
       "push_date": "2000-01-04 00:00",
       "push_id": 3
     }
+  },
+  {
+    "pk": 7,
+    "model": "life.push",
+    "fields": {
+      "repository": ["l10n/fr"],
+      "changesets": [["l10n fr 0002"],["l10n fr 0003"]],
+      "user": "fr@ldap.l10n.tld",
+      "push_date": "2000-01-05 00:00",
+      "push_id": 1
+    }
   }
 ]
