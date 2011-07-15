@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <!-- {% comment %}
    - ***** BEGIN LICENSE BLOCK *****
    - Version: MPL 1.1/GPL 2.0/LGPL 2.1
@@ -17,10 +16,11 @@
    -
    - The Initial Developer of the Original Code is
    - Mozilla Foundation.
-   - Portions created by the Initial Developer are Copyright (C) 2010
+   - Portions created by the Initial Developer are Copyright (C) 2011
    - the Initial Developer. All Rights Reserved.
    -
    - Contributor(s):
+   -   Peter Bengtsson <peterbe@mozilla.com>
    -
    - Alternatively, the contents of this file may be used under the terms of
    - either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -36,45 +36,14 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
-<html lang="{{ LANG }}" dir="{{ DIR }}">
-  <head>
-    <meta charset="utf-8">
-    <link rel="shortcut icon" href="{{ STATIC_URL }}img/favicon.ico" type="image/x-icon">
-    <link rel="icon" href="{{ STATIC_URL }}img/favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="{{ STATIC_URL }}css/style.css" type="text/css">
-<title>{% block title_matter %}{% endblock %}</title>
-{% block head_matter %}{% endblock %}
-</head>
 
-<body>
-<div id="menu">
- <div id="auth">
-   {% include "accounts/user_forms.html" %}
-   <noscript>Not logged in</noscript>
- </div>
- <ul>
-   <li>Mozilla Localization</li>
-   <li><a href="{% url homepage.views.index %}">Home</a></li>
-   <li><a href="{% url homepage.views.teams %}">Teams</a></li>
-   <li><a href="https://wiki.mozilla.org/L10n">Documentation</a></li>
-   {% block extra_nav_list_items %}{% endblock %}
- </ul>
- <br>
+<a class="site_login" href="#login">Log in</a>
+
+{% with login_form as form %}
+{% include "accounts/login_form.html" %}
+{% endwith %}
+
+<div class="site_logout" style="display:none">
+  Hello, <span class="username"></span>.
+  <a class="logout" href="{% url accounts.views.logout %}">Log out</a>
 </div>
-<h1></h1>
-{% block content %}{% endblock %}
-<div id="page_footer"><a href="{% url privacy.views.show_policy %}">Privacy policy</a></div>
-
-<script>
-var CONFIG = {USER_URL: '{% url accounts.views.user_json %}',
-              CURRENT_URL: {% if request %}'{{ request.get_full_path }}'{% else %}window.location.href{% endif %}, {# needed because of some lack of RequestContext #}
-              LOADING_GIF_URL: '{{ STATIC_URL }}img/loading.gif',
-              NEEDS_RELOAD: {% if login_form_needs_reload and request %}true{% else %} false{% endif %}
-              };
-</script>
-
-<script src="{{ STATIC_URL }}js/jquery.js"></script>
-<script src="{{ STATIC_URL }}js/base.js"></script>
-{% block javascript_matter %}{% endblock %}
-</body>
-</html>

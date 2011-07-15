@@ -35,44 +35,77 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-if (!CONFIG) alert("variable CONFIG must be loaded first");
+if (!CONFIG) alert('variable CONFIG must be loaded first');
 
-function submit_site_login() {
-   var p={};
-   $.each($('#site_login').serializeArray(),
-          function(i, o){
-             p[o.name]=o.value;}
-         );
-   return doLoad(CONFIG.LOGIN_URL, p);
-}
+var AjaxLogin = (function() {
+  return {
+     initialize: function() {
+       /* Do a light-weight AJAX GET for the username;
+	* or else prepare the login form with a fresh csrf token.
+	*/
+       $.getJSON(CONFIG.USER_URL, function(res) {
+	 if (res.user_name) {
+	   $('a.site_login').hide();
+	   $('div.site_logout .username').text(res.user_name);
+	   $('div.site_logout').show();
+	 } else {
+	   $('input[name="csrfmiddlewaretoken"]', 'form.site_login')
+	     .val(res.csrf_token);
+	 }
+       });
 
-function submit_site_logout() {
-   var p = {};
-   $.each($('#site_login').serializeArray(),
-          function(i, o){
-             p[o.name] = o.value;
-          });
-   if (doLoad(CONFIG.LOGOUT_URL, p)) {
-      // only true if we're needing a reload
-      $('#site_login').submit()
-   }
-   return false;
-}
+       /* Initially a 'Log in' link appears on every page */
+       $('a.site_login').click(function() {
+	 AjaxLogin.show_login_form();
+	 return false;
+       });
 
-function doLoad(url, p) {
-   if (CONFIG.NEEDS_RELOAD) {
-      $('input[name=next]').val(CONFIG.CURRENT_URL);
-      return true;
-   } else {
-      p.next = CONFIG.USER_URL;
-      $('#auth')
-        .empty()
-          .append($('<img>', {src:CONFIG.LOADING_GIF_URL}))
-            .load(url, p);
-      return false;
-   }
-}
+       /* Keep a live event delegator on the login form because if a login
+	* attempt fails it will return us the HTML of the failed form which
+	* we'll use to replace the old one.
+	*/
+       $('form.site_login').live('submit', function() {
+	 var p = {};
+	 $.each($(this).serializeArray(), function(i, o) {
+	   p[o.name] = o.value;
+	 });
+
+	 $('form.site_login')
+	   .empty()
+	     .append($('<img>', {src: CONFIG.LOADING_GIF_URL}));
+
+	 $.post($(this).attr('action'), p, function(res) {
+	   if (res.user_name) {
+	     if (CONFIG.NEEDS_RELOAD) {
+	       location.href = CONFIG.CURRENT_URL;
+	     } else {
+	       $('form.site_login').hide();
+	       $('a.site_login').hide();
+	       $('div.site_logout .username').text(res.user_name);
+	       $('div.site_logout').show();
+	     }
+	   } else {
+	     // if it failed we get the whole form as HTML
+	     $('form.site_login').remove();
+	     // re-insert it into the page
+	     $('#auth').append(res);
+	   }
+	 });
+	 return false;
+       });
+     },
+    show_login_form: function() {
+      $('a.site_login').hide();
+      $('form.site_login').show();
+      $('#id_username').trigger('focus');
+    }
+  };
+})();
+
 
 $(function() {
-   $('#auth').load(CONFIG.USER_URL);
+  AjaxLogin.initialize();
+  if (location.hash == '#login') {
+    AjaxLogin.show_login_form();
+  }
 });

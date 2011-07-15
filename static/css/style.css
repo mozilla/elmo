@@ -20,6 +20,9 @@
 #menu br {
   clear: both;
 }
+#menu .errorlist li {
+  color:red;
+}
 #auth {
   float: right;
 }

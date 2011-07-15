@@ -15,10 +15,11 @@
 #
 # The Initial Developer of the Original Code is
 # Mozilla Foundation.
-# Portions created by the Initial Developer are Copyright (C) 2010
+# Portions created by the Initial Developer are Copyright (C) 2011
 # the Initial Developer. All Rights Reserved.
 #
 # Contributor(s):
+#    Peter Bengtsson <peterbe@mozilla.com>
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -34,52 +35,8 @@
 #
 # ***** END LICENSE BLOCK *****
 
-'''Views for logging in and out of l10n_site.
-'''
-
-
-from django.contrib.auth.views import REDIRECT_FIELD_NAME
-from django.shortcuts import render_to_response
-from django.http import HttpResponseRedirect, HttpResponse
-from django.template import RequestContext
-from django.views.decorators import cache
-from django.core.context_processors import csrf
-from django.utils import simplejson as json
-from django.views.decorators.csrf import csrf_protect
-from django.contrib.auth.views import login as django_login
-
 from forms import AuthenticationForm
 
-
-def login(request):
-    # the template is only used to show errors
-    response = django_login(
-      request,
-      template_name='accounts/login_form.html',
-      authentication_form=AuthenticationForm,
-    )
-    if request.is_ajax():
-        if response.status_code == 302:
-            # it worked!
-            return user_json(request)
-
-    return response
-
-@cache.cache_control(private=True)
-def user_json(request):
-    result = {}
-    if request.user.is_authenticated():
-        if request.user.first_name:
-            result['user_name'] = request.user.first_name
-        else:
-            result['user_name'] = request.user.username
-    else:
-        result['csrf_token'] = unicode(csrf(request)['csrf_token'])
-    return HttpResponse(json.dumps(result), mimetype="application/json")
-
-
-def logout(request, redirect_field_name=REDIRECT_FIELD_NAME):
-    from django.contrib.auth import logout
-    logout(request)
-    redirect_to = request.REQUEST.get(redirect_field_name, '')
-    return HttpResponseRedirect(redirect_to or '/')
+def accounts(request):
+    login_form = AuthenticationForm()
+    return {'login_form': login_form}

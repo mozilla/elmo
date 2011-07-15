@@ -16,10 +16,11 @@
    -
    - The Initial Developer of the Original Code is
    - Mozilla Foundation.
-   - Portions created by the Initial Developer are Copyright (C) 2010
+   - Portions created by the Initial Developer are Copyright (C) 2011
    - the Initial Developer. All Rights Reserved.
    -
    - Contributor(s):
+   -   Peter Bengtsson <peterbe@mozilla.com>
    -
    - Alternatively, the contents of this file may be used under the terms of
    - either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -35,16 +36,7 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
-{% if form %}
-{% if not form.errors %}
-<a onclick="$('#site_login').show();$(this).hide(); $('#id_username').focus(); return false;" href="">Log in</a>
-{% endif %}
-<form {% if not form.errors %}style="display:none" {% endif %} onsubmit="return submit_site_login();" id="site_login" method="post" action="{% url django.contrib.auth.views.login %}">{% csrf_token %}
+
+<form {% if not form.errors %}style="display:none"{% endif %} class="site_login" method="post" action="{% url accounts.views.login %}">{% csrf_token %}
 <div style="display:none"><input type="hidden" name="next" value=""></div>
 <ul>{{ form.as_ul }}<li><input type="submit" value="OK"></li></ul></form>
-{% else %}
-<form method="post" id="site_login" action="{% url accounts.views.logout %}">{% csrf_token %}
-<div style="display:none"><input type="hidden" name="next" value=""></div>
- Hello, {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}. 
-<a onclick="return submit_site_logout();" href="{% url accounts.views.logout %}">Log out</a></form>
-{% endif %}

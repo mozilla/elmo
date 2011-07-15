@@ -36,16 +36,18 @@
 # ***** END LICENSE BLOCK *****
 
 import re
+from urlparse import urlparse
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
+from django.conf import settings
+from django.utils import simplejson as json
 from nose.tools import eq_, ok_
-
 
 class AccountsTestCase(TestCase):
 
     def test_login_long_username(self):
-        url = reverse('django.contrib.auth.views.login')
+        url = reverse('accounts.views.login')
         data = dict(
           username='some_with_a_really_long@emailaddress.com',
           password='secret'
@@ -63,13 +65,15 @@ class AccountsTestCase(TestCase):
 
         response = self.client.post(url, data)
         ok_(response.status_code, 302)
-        url = reverse('accounts.views.user_html')
+        url = reverse('accounts.views.user_json')
         response = self.client.get(url)
         ok_(response.status_code, 200)
-        ok_('Looong' in response.content)
+        eq_(response['Content-Type'], 'application/json')
+        data = json.loads(response.content)
+        eq_(data['user_name'], 'Looong')
 
     def test_login_form_allows_long_username(self):
-        url = reverse('accounts.views.user_html')
+        url = '/'
         response = self.client.get(url)
         eq_(response.status_code, 200)
         input_regex = re.compile('<input ([^>]+)>', re.M)
@@ -79,3 +83,117 @@ class AccountsTestCase(TestCase):
                     maxlength = re.findall('maxlength="(\d+)"', input_)[0]
                     ok_(maxlength.isdigit())
                     ok_(int(maxlength) > 30)
+
+    def test_user_json(self):
+        url = reverse('accounts.views.user_json')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        ok_(data['csrf_token'])
+        ok_('user_name' not in data)
+
+        user = User.objects.create_user(
+          'something_short',
+          'an.email.that.is@very.looong.com',
+          'secret'
+        )
+        user.save()
+        assert self.client.login(username=user.username,
+                                 password='secret')
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['user_name'], user.username)
+        ok_('csrf_token' not in data)
+
+        user.first_name = "Peter"
+        user.last_name = "Bengtsson"
+        user.save()
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['user_name'], "Peter")
+
+    def test_logout(self):
+        url = reverse('accounts.views.logout')
+        user = User.objects.create_user(
+          'something_short',
+          'an.email.that.is@very.looong.com',
+          'secret'
+        )
+        user.save()
+        assert self.client.login(username=user.username,
+                                 password='secret')
+
+        response = self.client.get(url) # note: it's GET
+        eq_(response.status_code, 302)
+        path = urlparse(response['Location']).path
+        eq_(path, '/')
+
+        response = self.client.get(reverse('accounts.views.user_json'))
+        data = json.loads(response.content)
+        ok_('user_name' not in data)
+
+    def test_logout_with_next_url(self):
+        url = reverse('accounts.views.logout')
+        user = User.objects.create_user(
+          'something_short',
+          'an.email.that.is@very.looong.com',
+          'secret'
+        )
+        user.save()
+        assert self.client.login(username=user.username,
+                                 password='secret')
+        from django.contrib.auth.views import REDIRECT_FIELD_NAME
+        response = self.client.get(url,
+          {REDIRECT_FIELD_NAME: '/foo/bar'}
+        )
+        eq_(response.status_code, 302)
+        path = urlparse(response['Location']).path
+        eq_(path, '/foo/bar')
+
+    def test_ajax_login(self):
+        url = reverse('accounts.views.login')
+
+        user = User.objects.create_user(
+          'something_short',
+          'an.email.that.is@very.looong.com',
+          'secret'
+        )
+        user.save()
+        response = self.client.post(url, {'username': user.username,
+                                          'password': 'wrong'})
+        eq_(response.status_code, 200)
+        ok_('errorlist' in response.content)
+        ok_('value="%s"' % user.username in response.content)
+        ok_('text/html' in response['Content-Type'])
+
+        # if the password is wrong it doesn't matter if it's an AJAX request
+        response = self.client.post(url, {'username': user.username,
+                                          'password': 'wrong'},
+                                    HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        eq_(response.status_code, 200)
+        ok_('errorlist' in response.content)
+        ok_('value="%s"' % user.username in response.content)
+
+        # but get it right and as AJAX and you get JSON back
+        response = self.client.post(url, {'username': user.username,
+                                          'password': 'secret'},
+                                    HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['user_name'], user.username)
+        ok_('application/json' in response['Content-Type'])
+        ok_('private' in response['Cache-Control'])
+
+        user.first_name = "Peter"
+        user.last_name = "Bengtsson"
+        user.save()
+        response = self.client.post(url, {'username': user.username,
+                                          'password': 'secret'},
+                                    HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['user_name'], "Peter")

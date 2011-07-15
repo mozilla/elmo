@@ -64,7 +64,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
 
     def test_secure_session_cookies(self):
         """secure session cookies should always be 'secure' and 'httponly'"""
-        url = reverse('django.contrib.auth.views.login')
+        url = reverse('accounts.views.login')
         # run it as a mocked AJAX request because that's how elmo does it
         response = self.client.post(url,
           {'username':'peterbe', 'password':'secret'},
@@ -96,7 +96,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         ok_(self.client.cookies['sessionid']['httponly'])
 
         # should now be logged in
-        url = reverse('accounts.views.user_html')
+        url = reverse('accounts.views.user_json')
         response = self.client.get(url)
         eq_(response.status_code, 200)
         # "Hi Peter" or something like that

@@ -107,6 +107,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.static',
     'django.contrib.messages.context_processors.messages',
     'commons.context_processors.i18n',
+    'accounts.context_processors.accounts',
 )
 
 TEMPLATE_DIRS = (
