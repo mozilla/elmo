@@ -42,24 +42,17 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.http import (HttpResponseRedirect, HttpResponse, Http404,
                          HttpResponseNotAllowed)
-from life.models import Repository, Locale, Push, Changeset, Tree
-from shipping.models import (Milestone, Signoff, Snapshot, AppVersion, Action,
-                             SignoffForm, ActionForm)
-from l10nstats.models import Run, Run_Revisions
-from django import forms
+from life.models import Repository, Locale
+from shipping.models import Milestone, Signoff, AppVersion, Action
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.views.decorators.cache import cache_control
 from django.utils import simplejson
 from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
-from django.core import serializers
-from django.db import connection
 from django.db.models import Max
 
 from collections import defaultdict
-from ConfigParser import ConfigParser
-import datetime
 from difflib import SequenceMatcher
 import re
 import urllib
@@ -239,104 +232,6 @@ def dashboard(request):
             'query': mark_safe(urlencode(query)),
             'args': mark_safe(urlencode(args)),
             }, context_instance=RequestContext(request))
-
-@cache_control(max_age=60)
-def l10n_changesets(request):
-    if request.GET.has_key('ms'):
-        av_or_m = get_object_or_404(Milestone, code=request.GET['ms'])
-    elif request.GET.has_key('av'):
-        av_or_m = get_object_or_404(AppVersion, code=request.GET['av'])
-    else:
-        return HttpResponse('No milestone or appversion given')
-
-    sos = _signoffs(av_or_m).annotate(tip=Max('push__changesets__id'))
-    tips = dict(sos.values_list('locale__code', 'tip'))
-    revmap = dict(Changeset.objects.filter(id__in=tips.values()).values_list('id', 'revision'))
-    r = HttpResponse(('%s %s\n' % (l, revmap[tips[l]][:12])
-                      for l in sorted(tips.keys())),
-                     content_type='text/plain; charset=utf-8')
-    r['Content-Disposition'] = 'inline; filename=l10n-changesets'
-    return r
-
-@cache_control(max_age=60)
-def shipped_locales(request):
-    if request.GET.has_key('ms'):
-        av_or_m = get_object_or_404(Milestone, code=request.GET['ms'])
-    elif request.GET.has_key('av'):
-        av_or_m = get_object_or_404(AppVersion, code=request.GET['av'])
-    else:
-        return HttpResponse('No milestone or appversion given')
-
-    sos = _signoffs(av_or_m).values_list('locale__code', flat=True)
-    locales = list(sos) + ['en-US']
-    def withPlatforms(loc):
-        if loc == 'ja':
-            return 'ja linux win32\n'
-        if loc == 'ja-JP-mac':
-            return 'ja-JP-mac osx\n'
-        return loc + '\n'
-
-    r = HttpResponse(map(withPlatforms, sorted(locales)),
-                      content_type='text/plain; charset=utf-8')
-    r['Content-Disposition'] = 'inline; filename=shipped-locales'
-    return r
-
-@cache_control(max_age=60)
-def signoff_json(request):
-    appvers = AppVersion.objects
-    if request.GET.has_key('ms'):
-        av_or_m = get_object_or_404(Milestone, code=request.GET['ms'])
-        appvers = appvers.filter(app=av_or_m.appver.app)
-        given_app = av_or_m.appver.app.code
-    elif request.GET.has_key('av'):
-        av_or_m = get_object_or_404(AppVersion, code=request.GET['av'])
-        appvers = appvers.filter(app=av_or_m.app)
-        given_app = av_or_m.app.code
-    else:
-        av_or_m = given_app = None
-        appvers = appvers.exclude(tree__isnull=True)
-    tree_avs = appvers.exclude(tree__isnull=True)
-    tree2av = dict(tree_avs.values_list("tree__code", "code"))
-    tree2app = dict(tree_avs.values_list("tree__code", "app__code"))
-    locale = request.GET.get('locale', None)
-    lsd = _signoffs(av_or_m, getlist=True, locale=locale)
-    items = defaultdict(list)
-    values = dict(Action._meta.get_field('flag').flatchoices)
-    for k, sol in lsd.iteritems():
-        # ignore tree/locale combos which have no active tree no more
-        if k[0] is None:
-            continue
-        items[k] = [values[so] for so in sol]
-    # get shipped-in data, latest milestone of all appversions for now
-    shipped_in = defaultdict(list)
-    for _av in appvers:
-        try:
-            _ms = _av.milestone_set.filter(status=2).order_by('-pk')[0]
-        except IndexError:
-            continue
-        app = _av.app.code
-        _sos = _ms.signoffs
-        if locale is not None:
-            _sos = _sos.filter(locale__code=locale)
-        for loc in _sos.values_list('locale__code', flat=True):
-            shipped_in[(app, loc)].append(_av.code)
-    # make a list now
-    items = [{"type": "SignOff",
-              "label": "%s/%s" % (tree,locale),
-              "tree": tree,
-              "apploc" : ("%s::%s" % (given_app or tree2app[tree], locale)),
-              "signoff": list(values)}
-             for (tree, locale), values in items.iteritems()]
-    items += [{"type": "Shippings",
-               "label": "%s::%s" % (av,locale),
-               "shipped": stones}
-              for (av, locale), stones in shipped_in.iteritems()]
-    items += [{"type": "AppVer4Tree",
-               "label": tree,
-               "appversion": av}
-              for tree, av in tree2av.iteritems()]
-    return HttpResponse(simplejson.dumps({'items': items}, indent=2),
-                        mimetype="text/plain")
 
 
 def milestones(request):

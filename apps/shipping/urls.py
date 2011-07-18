@@ -42,9 +42,6 @@ from django.conf.urls.defaults import *
 urlpatterns = patterns('shipping.views',
     (r'^\/?$', 'index'),
     (r'^\/dashboard\/?$', 'dashboard'),
-    (r'^\/l10n-changesets$', 'l10n_changesets'),
-    (r'^\/shipped-locales$', 'shipped_locales'),
-    (r'^\/api\/signoffs$', 'signoff_json'),
     (r'^\/diff$', 'diff_app'),
     (r'^\/milestones$', 'milestones'),
     (r'^\/stones-data$', 'stones_data'),
@@ -54,6 +51,12 @@ urlpatterns = patterns('shipping.views',
     (r'^\/confirm-drill$', 'confirm_drill_mstone'),
     (r'^\/drill$', 'drill_mstone'),
     (r'^\/ship$', 'ship_mstone'),
+)
+
+urlpatterns += patterns('shipping.views.status',
+    (r'^/l10n-changesets$', 'l10n_changesets'),
+    (r'^/shipped-locales$', 'shipped_locales'),
+    (r'^/api/signoffs$', 'signoff_json'),
 )
 
 urlpatterns += patterns('shipping.views.milestone',

@@ -184,7 +184,7 @@ class ShippingTestCase(ShippingTestCaseBase):
 
     def test_l10n_changesets_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
-        url = reverse('shipping.views.l10n_changesets')
+        url = reverse('shipping.views.status.l10n_changesets')
         # Fail
         response = self.client.get(url, dict(ms=""))
         eq_(response.status_code, 404)
@@ -205,7 +205,7 @@ class ShippingTestCase(ShippingTestCaseBase):
 
     def test_shipped_locales_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
-        url = reverse('shipping.views.shipped_locales')
+        url = reverse('shipping.views.status.shipped_locales')
         # Fail
         response = self.client.get(url, dict(ms=""))
         eq_(response.status_code, 404)
@@ -226,7 +226,7 @@ class ShippingTestCase(ShippingTestCaseBase):
 
     def test_signoff_json_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
-        url = reverse('shipping.views.signoff_json')
+        url = reverse('shipping.views.status.signoff_json')
         # Fail
         response = self.client.get(url, dict(ms=""))
         eq_(response.status_code, 404)
@@ -382,34 +382,6 @@ class SignOffTest(TestCase, EmbedsTestCaseMixin):
     def setUp(self):
         self.av = AppVersion.objects.get(code="fx1.0")
 
-    def test_count(self):
-        """Test that we have the right amount of Signoffs and Actions"""
-        eq_(Signoff.objects.count(), 3)
-        eq_(Action.objects.count(), 5)
-
-    def test_accepted(self):
-        """Test for the german accepted signoff"""
-        so = _signoffs(self.av, locale="de")
-        eq_(so.push.tip.shortrev, "l10n de 0002")
-        eq_(so.locale.code, "de")
-        eq_(so.action_set.count(), 2)
-
-    def test_pending(self):
-        """Test for the pending polish signoff"""
-        so = _signoffs(self.av, status=0, locale="pl")
-        eq_(so.push.tip.shortrev, "l10n pl 0003")
-        eq_(so.locale.code, "pl")
-        eq_(so.action_set.count(), 1)
-
-    def test_rejected(self):
-        """Test for the rejected french signoff"""
-        so = _signoffs(self.av, locale="fr")
-        eq_(so, None)
-        so = _signoffs(self.av, status=2, locale="fr")
-        eq_(so.push.tip.shortrev, "l10n fr 0003")
-        eq_(so.locale.code, "fr")
-        eq_(so.action_set.count(), 2)
-
     def test_getlist(self):
         """Test that the list returns on accepted and one pending signoff."""
         sos = _signoffs(self.av, getlist=True)
@@ -417,7 +389,7 @@ class SignOffTest(TestCase, EmbedsTestCaseMixin):
 
     def test_l10n_changesets(self):
         """Test that l10n-changesets is OK"""
-        url = reverse('shipping.views.l10n_changesets')
+        url = reverse('shipping.views.status.l10n_changesets')
         url += '?av=fx1.0'
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -426,7 +398,7 @@ class SignOffTest(TestCase, EmbedsTestCaseMixin):
 
     def test_shipped_locales(self):
         """Test that shipped-locales is OK"""
-        url = reverse('shipping.views.shipped_locales')
+        url = reverse('shipping.views.status.shipped_locales')
         url += '?av=fx1.0'
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -436,7 +408,7 @@ en-US
 
     def test_signoff_json(self):
         """Test that the signoff json for the dashboard is OK"""
-        url = reverse('shipping.views.signoff_json')
+        url = reverse('shipping.views.status.signoff_json')
         url += '?av=fx1.0'
         response = self.client.get(url)
         eq_(response.status_code, 200)

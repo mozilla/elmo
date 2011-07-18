@@ -38,7 +38,7 @@
 {% endcomment %} -->
 {% block title_matter %}Signoffs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}
 {% block h1_matter %}Signoffs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}
-{% block extra_data %}<link href="{% url shipping.views.signoff_json %}?{{query}}" type="application/json" rel="exhibit/data"/>{% endblock %}
+{% block extra_data %}<link href="{% url shipping.views.status.signoff_json %}?{{query}}" type="application/json" rel="exhibit/data"/>{% endblock %}
 
 {% block extra_query_options %}EX_OPTIONS.push("signoff");{% endblock %}
 
