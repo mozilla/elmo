@@ -31,8 +31,6 @@ urlpatterns = patterns('',
                             include('accounts.urls')),
                        (r'^',
                         include('homepage.urls')),
-                       (r'^robots\.txt$', lambda r: HttpResponse("User-agent: *\nDisallow: /*",
-                                                                 mimetype="text/plain")),
 
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
     # to INSTALLED_APPS to enable admin documentation:
