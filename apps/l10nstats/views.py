@@ -503,4 +503,5 @@ def compare(request):
                               {'run': run,
                                'nodes': nodes,
                                'widths': widths,
-                               'summary': summary})
+                               'summary': summary},
+                              context_instance=RequestContext(request))
