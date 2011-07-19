@@ -43,17 +43,39 @@ from django.shortcuts import render_to_response
 from django.http import HttpResponseRedirect, HttpResponse
 from django.template import RequestContext
 from django.views.decorators import cache
+from django.core.context_processors import csrf
+from django.utils import simplejson as json
+from django.views.decorators.csrf import csrf_protect
+from django.contrib.auth.views import login as django_login
+
 from forms import AuthenticationForm
 
 
+def login(request):
+    # the template is only used to show errors
+    response = django_login(
+      request,
+      template_name='accounts/login_form.html',
+      authentication_form=AuthenticationForm,
+    )
+    if request.is_ajax():
+        if response.status_code == 302:
+            # it worked!
+            return user_json(request)
+
+    return response
+
 @cache.cache_control(private=True)
-def user_html(request):
-    form = None
-    if not request.user.is_authenticated():
-        form = AuthenticationForm(request)
-    return render_to_response('accounts/user.html',
-                              {'form': form},
-                              context_instance=RequestContext(request))
+def user_json(request):
+    result = {}
+    if request.user.is_authenticated():
+        if request.user.first_name:
+            result['user_name'] = request.user.first_name
+        else:
+            result['user_name'] = request.user.username
+    else:
+        result['csrf_token'] = unicode(csrf(request)['csrf_token'])
+    return HttpResponse(json.dumps(result), mimetype="application/json")
 
 
 def logout(request, redirect_field_name=REDIRECT_FIELD_NAME):

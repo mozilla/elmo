@@ -586,7 +586,8 @@ def waterfall(request):
     return render_to_response('tinder/waterfall.html',
                               {'times': times, 'filters': filters,
                                'heads': head,
-                               'rows': rows})
+                               'rows': rows},
+                               context_instance=RequestContext(request))
 
 def builds_for_change(request):
     """View for builds for one particular change.
@@ -620,7 +621,8 @@ def builds_for_change(request):
                               {'done_builds': done,
                                'pending': pending,
                                'url': url,
-                               'change': change})
+                               'change': change},
+                               context_instance=RequestContext(request))
 
 
 class BuildsForChangeFeed(Feed):
@@ -699,7 +701,8 @@ def showbuild(request, buildername, buildnumber):
     return render_to_response('tinder/showbuild.html',
                               {'build': build,
                                'steps': steps,
-                               'props': props})
+                               'props': props},
+                               context_instance=RequestContext(request))
 
 mastermaps = MasterMap.objects.filter(webhead__name='head 1')
 def generateLog(master, filename):
@@ -752,4 +755,5 @@ def showlog(request, master, file):
     return render_to_response('tinder/log.html',
                               {'build': build,
                                'file': file,
-                               'chunks': classify(generateLog(master, file))})
+                               'chunks': classify(generateLog(master, file))},
+                               context_instance=RequestContext(request))

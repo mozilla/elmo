@@ -39,8 +39,6 @@
 {% load build_extras %}
 {% block title_matter %}Builds for change {{ change.number }}{% endblock %}
 {% block head_matter %}
-<script type="application/javascript">
-</script>
 <style type="text/css">
 .success {background-color: green;}
 .warning {background-color: orange;}
@@ -71,4 +69,5 @@ on {{ change.branch }}
   {{ build.build|showbuild }}
 </div>
 {% endfor %}
+<div style="clear:left">&nbsp;</div>
 {% endblock %}

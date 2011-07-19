@@ -38,16 +38,15 @@
 '''Tests for the build progress displays.
 '''
 
-import unittest
 import os
 import datetime
 from tempfile import gettempdir
-from collections import defaultdict
 from nose.tools import eq_, ok_
 from django.test import TestCase
 
 from django.core.urlresolvers import reverse
-from mbdb.models import Build, Change, Master, Log
+from mbdb.models import (Build, Change, Master, Log, Property, SourceStamp,
+                         Builder, Slave)
 from tinder.views import _waterfall, waterfall
 from tinder.templatetags import build_extras
 from tinder.models import MasterMap, WebHead
@@ -79,9 +78,9 @@ class WaterfallStarted(TestCase):
         self.assertEqual(build_rows[2][0]['obj'], None)
 
     def testHtml(self):
-        resp = waterfall(None)
-        self.assertTrue(resp.status_code, 200)
-        self.assertTrue(len(resp.content) > 0, 'Html content should be there')
+        url = reverse('tinder.views.waterfall')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
 
 class WaterfallParallel(TestCase):
     fixtures = ['parallel_builds.json']
@@ -92,9 +91,9 @@ class WaterfallParallel(TestCase):
 
     def testHtml(self):
         '''Testing parallel builds in _waterfall'''
-        resp = waterfall(None)
-        self.assertTrue(resp.status_code, 200)
-        self.assertTrue(len(resp.content) > 0, 'Html content should be there')
+        url = reverse('tinder.views.waterfall')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
 
 class FullBuilds(TestCase):
     fixtures = ['full_parallel_builds.json']
@@ -208,7 +207,7 @@ class ViewsTestCase(TestCase):
 
     def test_pmap(self):
         from views import pmap
-        from mbdb.models import Build, Property, SourceStamp, Builder, Slave, Change
+
 
         prop1 = Property.objects.create(
           name='gender',
@@ -315,10 +314,12 @@ class ViewsTestCase(TestCase):
           logmount=self.temp_directory,
         )
         response = self.client.get(url)
-        ok_('<span class="pre header">header content\n</span>' in response.content)
-        ok_('<span class="pre stdout">stdout content\n</span>' in response.content)
-        ok_('<span class="pre stderr">stderr content\n</span>' in response.content)
-        ok_('json' not in response.content)
+        content = response.content
+        content = content.split('<h1', 1)[1].split('id="page_footer"')[0]
+        ok_('<span class="pre header">header content\n</span>' in content)
+        ok_('<span class="pre stdout">stdout content\n</span>' in content)
+        ok_('<span class="pre stderr">stderr content\n</span>' in content)
+        ok_('json' not in content)
 
 SAMPLE_BUILD_LOG_PAYLOAD = '''16:2header content
 ,16:1stderr content

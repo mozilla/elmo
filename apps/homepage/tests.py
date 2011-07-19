@@ -38,8 +38,11 @@
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.conf import settings
+from nose.tools import eq_, ok_
+from life.models import Locale
+from commons.tests.mixins import EmbedsTestCaseMixin
 
-class HomepageTestCase(TestCase):
+class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
     def setUp(self):
         super(HomepageTestCase, self).setUp()
 
@@ -59,15 +62,15 @@ class HomepageTestCase(TestCase):
         super(HomepageTestCase, self).tearDown()
         settings.AUTHENTICATION_BACKENDS = self._original_auth_backends
 
-    def testSecureSessionCookies(self):
+    def test_secure_session_cookies(self):
         """secure session cookies should always be 'secure' and 'httponly'"""
-        url = reverse('django.contrib.auth.views.login')
+        url = reverse('accounts.views.login')
         # run it as a mocked AJAX request because that's how elmo does it
         response = self.client.post(url,
           {'username':'peterbe', 'password':'secret'},
           **{'X-Requested-With':'XMLHttpRequest'})
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue('class="errorlist"' in response.content)
+        eq_(response.status_code, 200)
+        ok_('class="errorlist"' in response.content)
 
         from django.contrib.auth.models import User
         user = User.objects.create(username='peterbe',
@@ -81,20 +84,61 @@ class HomepageTestCase(TestCase):
            'next': '/foo'},
           **{'X-Requested-With':'XMLHttpRequest'})
         # even though it's
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(response['Location'].endswith('/foo'))
+        eq_(response.status_code, 302)
+        ok_(response['Location'].endswith('/foo'))
 
         # if this fails it's because settings.SESSION_COOKIE_SECURE isn't true
         assert settings.SESSION_COOKIE_SECURE
-        self.assertTrue(self.client.cookies['sessionid']['secure'])
+        ok_(self.client.cookies['sessionid']['secure'])
 
         # if this fails it's because settings.SESSION_COOKIE_HTTPONLY isn't true
         assert settings.SESSION_COOKIE_HTTPONLY
-        self.assertTrue(self.client.cookies['sessionid']['httponly'])
+        ok_(self.client.cookies['sessionid']['httponly'])
 
         # should now be logged in
-        url = reverse('accounts.views.user_html')
+        url = reverse('accounts.views.user_json')
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
         # "Hi Peter" or something like that
-        self.assertTrue('Peter' in response.content)
+        ok_('Peter' in response.content)
+
+    def test_index_page(self):
+        """load the current homepage index view"""
+        url = reverse('homepage.views.index')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        self.assert_all_embeds(response.content)
+
+    def test_teams_page(self):
+        """check that the teams page renders correctly"""
+        Locale.objects.create(
+          code='en-US',
+          name='English',
+        )
+        Locale.objects.create(
+          code='sv-SE',
+          name='Swedish',
+        )
+
+        url = reverse('homepage.views.teams')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        self.assert_all_embeds(response.content)
+        ok_(-1 < response.content.find('English')
+               < response.content.find('Swedish'))
+
+    def test_team_page(self):
+        """test a team (aka. locale) page"""
+        Locale.objects.create(
+          code='sv-SE',
+          name='Swedish',
+        )
+        url = reverse('homepage.views.locale_team', args=['xxx'])
+        response = self.client.get(url)
+        # XXX would love for this to be a 404 instead (peterbe)
+        eq_(response.status_code, 302)
+        url = reverse('homepage.views.locale_team', args=['sv-SE'])
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        self.assert_all_embeds(response.content)
+        ok_('Swedish' in response.content)

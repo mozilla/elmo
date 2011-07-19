@@ -36,24 +36,36 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
-{% block js_include %}
-  <script type="text/javascript" src="{% url static path="jquery.ui/ui/ui.core.js" %}"></script>
-  <script type="text/javascript" src="{% url static path="jquery.ui/ui/ui.accordion.js" %}"></script>
-{% endblock %}
+{% block head_matter %}
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.core.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.resizable.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.accordion.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.dialog.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.slider.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.tabs.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.datepicker.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.progressbar.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.theme.css" type="text/css">
 
-{% block style_include %}
-  <link rel="stylesheet" href="{% url static path="jquery.ui/themes/base/ui.all.css" %}" type="text/css" media="all" />
-{% endblock %}
-{% block style %}
+<style>
 #new_milestone {
   float: left;
 }
 #controls {
   clear: left;
 }
+</style>
 {% endblock %}
 
-{% block javascript %}
+{% block javascript_matter %}
+<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.core.js"></script>
+<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.draggable.js"></script>
+<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.resizable.js"></script>
+<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.dialog.js"></script>
+<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.slider.js"></script>
+<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.accordion.js"></script>
+<script>
+// XXX (peter, 17 may 2011) Is this still in use? I can't find id="new_milestone" anywhere
 $(document).ready(function() {
   var acc=$("#new_milestone").accordion({collapsible:true,animated:false,autoHeight:false});
  acc.bind('accordionchange', function(event, ui) {
@@ -69,16 +81,17 @@ $(document).ready(function() {
  });
 {% if not proposed %}  acc.accordion('activate', false);{% endif %}
 });
+</script>
 {% endblock %}
 
-{% block title %}Shipping {{ mstone }}{% endblock %}
+{% block title_matter %}Shipping {{ mstone }}{% endblock %}
 
 {% block content %}
 <h1>Shipping {{ mstone }}</h1>
 This chem-spill release will not make any l10n-changes and take the
-shipping information from 
+shipping information from
 <form id="ship" method="post" action="{% url shipping.views.drill_mstone %}">{% csrf_token %}
-<input type="hidden" name="ms" value="{{ mstone.code }}" />
+<input type="hidden" name="ms" value="{{ mstone.code }}">
 <select name="base" size="{{ older|length }}">{% for base in older %}
   <option value="{{base.code}}" {% if forloop.first %}selected{% endif %}>
     {{ base }}

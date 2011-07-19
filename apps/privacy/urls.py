@@ -45,5 +45,4 @@ urlpatterns = patterns('privacy.views',
                        (r'^add$', 'add_policy'),
                        (r'^activate$', 'activate_policy'),
                        (r'^comment$', 'add_comment'),
-                       (r'^shared.css$', 'policy_css'),
                        )

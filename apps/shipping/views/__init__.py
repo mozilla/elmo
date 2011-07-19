@@ -108,6 +108,8 @@ def __universal_le(content):
 
 def diff_app(request):
     # XXX TODO: error handling
+    if 'repo' not in request.GET:
+        raise Http404("repo must be supplied")
     reponame = request.GET['repo']
     repopath = settings.REPOSITORY_BASE + '/' + reponame
     repo_url = Repository.objects.filter(name=reponame).values_list('url', flat=True)[0]
@@ -205,7 +207,8 @@ def diff_app(request):
                                'repo_url': repo_url,
                                'old_rev': request.GET['from'],
                                'new_rev': request.GET['to'],
-                               'diffs': diffs})
+                               'diffs': diffs},
+                               context_instance=RequestContext(request))
 
 
 def dashboard(request):
@@ -452,14 +455,9 @@ def confirm_ship_mstone(request):
     Ends up in ship_mstone if everything is fine.
     Redirects to milestones() in case of trouble.
     """
-    if not ("ms" in request.GET):
-        return HttpResponseRedirect(reverse('shipping.views.milestones'))
-    try:
-        mstone = Milestone.objects.get(code=request.GET['ms'])
-    except Milestone.DoesNotExist:
-        raise Http404("milestone does not exist")
-    except:
-        return HttpResponseRedirect(reverse('shipping.views.milestones'))
+    if not request.GET.get('ms'):
+        raise Http404("ms must be supplied")
+    mstone = get_object_or_404(Milestone, code=request.GET['ms'])
     if mstone.status != 1:
         return HttpResponseRedirect(reverse('shipping.views.milestones'))
     statuses = _signoffs(mstone, getlist=True)
@@ -512,13 +510,11 @@ def confirm_drill_mstone(request):
     Ends up in drill_mstone if everything is fine.
     Redirects to milestones() in case of trouble.
     """
-    if not ("ms" in request.GET and
-            request.user.has_perm('shipping.can_ship')):
+    if not request.GET.get('ms'):
+        raise Http404("ms must be supplied")
+    if not request.user.has_perm('shipping.can_ship'):
         return HttpResponseRedirect(reverse('shipping.views.milestones'))
-    try:
-        mstone = Milestone.objects.get(code=request.GET['ms'])
-    except:
-        return HttpResponseRedirect(reverse('shipping.views.milestones'))
+    mstone = get_object_or_404(Milestone, code=request.GET['ms'])
     if mstone.status != 1:
         return HttpResponseRedirect(reverse('shipping.views.milestones'))
 

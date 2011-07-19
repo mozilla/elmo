@@ -39,89 +39,22 @@
 {% load simile %}
 {% block title_matter %}L10n Dashboard{% endblock %}
 {% block head_matter %}
-  <!-- <link href="schema.json" type="application/json" rel="exhibit/data" /> -->
-  <link href="{% url l10nstats.views.status_json %}?{{ args }}" type="application/json" rel="exhibit/data" />
-  <link href="{% url webdashboard path="json/?tag=URGENT" %}" type="application/json" rel="exhibit/data" />
+<!-- <link href="schema.json" type="application/json" rel="exhibit/data" /> -->
+<link href="{% url l10nstats.views.status_json %}?{{ args }}" type="application/json" rel="exhibit/data" />
+<link href="{% url webdashboard path="json/?tag=URGENT" %}" type="application/json" rel="exhibit/data" />
+<link rel="stylesheet" href="{{ STATIC_URL }}l10nstats/css/index.css" type="text/css">
 {% block extra_data %}{% endblock %}
 {% exhibit autoCreate=false %}
-  <script type="text/javascript">
-        SimileAjax.jQuery(document).ready(function() {
-            var fDone = function() {
-               var params = SimileAjax.parseURLParameters();
-               var options = ["tree", "result", "locale", "shipping"];
-               {% block extra_query_options %}{% endblock %}
-                for ( var i in options ) {
-                  var option = options[i];
-                  if (option in params) {
-                    if (params[option]) {
-                      document.getElementById(option +
-                        "-facet").setAttribute("ex:selection", params[option]);
-                     }
-                     else {
-                      document.getElementById(option +
-                        "-facet").setAttribute("ex:selectMissing", "true");
-                     }
-                  }
-                }
-
-                window.exhibit = Exhibit.create();
-                window.exhibit.configureFromDOM();
-            };
-
-            window.database = Exhibit.Database.create();
-            window.database.loadDataLinks(fDone);
-        });
-  </script>
-
-   <style>
-.exhibit-facet-body {height: 5em !important;}
-div.thumbnail {border: solid black 1px; margin: 2px;}
-.success {background-color: green;}
-.warning {background-color: orange;}
-.failure {background-color: red;}
-.tree_cell.success {background-color: rgba(0, 128, 0, 0.5);}
-.tree_cell.warnings {background-color: rgba(255, 165, 0, 0.5);}
-.tree_cell.failure {background-color: rgba(255, 0, 0, 0.5);}
-
-.stats {
-    background-color: white;
-    cell-padding:0px;
-    border-spacing:0px;
-    padding: 3px;
-}
-.status {
-    height: 1ex;
-    margin: 0px;
-    padding: 0px;
-    border: 0px;
-}
-.changed {background-color: green;}
-.unchanged {background-color: grey;}
-.missing {background-color: red;}
-
-.bugs_pane {
-  margin: 1em !important;
-  margin-top: 2em !important;
-}
-.bug_block {margin-top: 1em !important;}
-.blocker_block {
-  margin: .5em !important;
-  padding-left: 2em !important;
-}
-.noblockers {
-  margin: .5em !important;
-  padding-left: 2em !important;
-  font-style: italic;
-}
-.bugfield_status_whiteboard {
-  font-style: italic;
-  padding-left: 2em;
-}
-.bugfield_short_desc {
-  padding-left: 1em;
-}
-   </style>
+<script>
+var EX_OPTIONS = ["tree", "result", "locale", "shipping"];
+{% block extra_query_options %}{% endblock %}
+</script>
 {% endblock %}
+
+{% block javascript_matter %}
+<script src="{{ STATIC_URL }}l10nstats/js/index.js"></script>
+{% endblock %}
+
 {% block content %}
  <h1>{% block h1_matter %}L10n Dashboard{% endblock %}</h1>
 

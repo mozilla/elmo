@@ -37,18 +37,10 @@
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
 
-{% block title %}Locale changes for {{av}}{% endblock %}
+{% block title_matter %}Locale changes for {{appver}}{% endblock %}
 
-{% block js_include %}
-{% endblock %}
-
-{% block style_include %}
-{% endblock %}
-
-{% block javascript %}
-{% endblock %}
-
-{% block style %}
+{% block head_matter %}
+<style>
 .dropped {
 color: red;
 }
@@ -58,10 +50,11 @@ color: green;
 .milestone {
 white-space: nowrap;
 }
+</style>
 {% endblock %}
 
 {% block content %}
-<h1>Locale changes for {{av}}</h1>
+<h1>Locale changes for {{appver}}</h1>
 <table>
 {% for row in rows %}
 <tr>

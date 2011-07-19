@@ -40,47 +40,7 @@
 {% block title_matter %}
 Comparison for {{ run.tree.code }}-{{run.locale.code }} ({{ run.build.buildnumber }}) {% endblock %}
 {% block head_matter %}
-<style type="text/css">
-.json-child {
-  padding-left:1em;
-}
-.diff {
-  padding-left:.5em;
-  margin-left:1em;
-  border:solid black 1px;
-}
-.obsoleteFile {
-  text-decoration: line-through;
-  color: grey;
-}
-.error {
-  color: #990000;
-  font-weight: bolder;
-}
-.warning {
-  color: #FF6600;
-  font-weight: bolder;
-}
-.obsolete {
-  text-decoration: line-through;
-  color: grey;
-}
-#stats {
-  background-color: white;
-  cell-padding:0px;
-  border-spacing:0px;
-  padding: 3px;
-}
-.status {
-  height: 2ex;
-  margin:0px;
-  padding:0px;
-  border:0px
-}
-.changed {background-color: green;}
-.unchanged {background-color: grey;}
-.missingkeys {background-color: red;}
-</style>
+<link rel="stylesheet" href="{{ STATIC_URL }}l10nstats/css/compare.css" type="text/css">
 {% endblock %}
 {% block content %}
 <h1>Comparison for {{ run.tree.code }}-{{ run.locale.code }}</h1>

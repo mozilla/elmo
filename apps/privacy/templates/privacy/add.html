@@ -38,69 +38,11 @@
 {% endcomment %} -->
 {% block title_matter %}Add new Privacy Policy{% endblock %}
 {% block head_matter %}
-<link rel="stylesheet" type="text/css" href="{% url privacy.views.policy_css %}">
-<style type="text/css">
-td {
-  width: 50%;
-  vertical-align: top;
-}
-#policy {
-  border: solid grey;
-  padding: .5em;
-  overflow: auto;
-}
-#preview {
-  height: 2em;
-}
-.pending {
-  opacity: 0.7;
-}
-</style>
-<script type="application/javascript">
-var _idle = 0, _pending = false;
-var _policy, _comment, _submit;
-function onPolicyChanged(event) {
-  if (!_pending) {
-    $("#policy").addClass("pending");
-    _pending = true;
-  }
-  _submit.attr('disabled', true);
-  _idle = 0;
-}
+<link rel="stylesheet" href="{{ STATIC_URL }}privacy/css/privacy.css" type="text/css">
+{% endblock %}
 
-function onCommentChanged(event) {
-  _submit.attr('disabled', true);
-  _idle = 0;
-}
-
-function onTimer() {
-  if (_idle < 1000) {
-    _idle += 200;
-    return;
-  }
-  if (_pending) {
-    var p = $("#policy");
-    p.html(_policy.val());
-    p.removeClass("pending");
-    _pending = false;
-  }
-  if (_idle < 2000) {
-    // we're just stepping out of idle, check disabled
-    _submit.attr('disabled', !_policy.val() || _policy.val() == _policy.text() || !_comment.val());
-    _idle = 2000;
-  }
-}
-
-$(document).ready(function() {
-  _policy = $("textarea[name=content]");
-  _comment = $("textarea[name=comment]");
-  _submit = $("input[type=submit]");
-  _policy.keypress(onPolicyChanged);
-  _comment.keypress(onCommentChanged);
-  $("#policy").html(_policy.text());
-  window.setInterval(onTimer, 200);
-});
-</script>
+{% block javascript_matter %}
+<script src="{{ STATIC_URL }}privacy/js/add.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -110,7 +52,7 @@ $(document).ready(function() {
 <p><em>Use HTML markup with &lt;h2>, &lt;p> &lt;p class="intro"> and
 &lt;a></em></p>
 <form name="editor" action="#" method="post">{% csrf_token %}
-<table>
+<table id="add">
   <tbody>
     <tr>
       <td rowspan="2">

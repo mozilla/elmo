@@ -38,13 +38,17 @@
 {% endcomment %} -->
 {% block title_matter %}Pushes{% endblock %}
 {% block head_matter %}
-<script type="application/javascript" src="{% url static path="jquery.ui/ui/ui.core.js" %}"></script>
-<script type="application/javascript" src="{% url static path="jquery.ui/ui/ui.draggable.js" %}"></script>
-<script type="application/javascript" src="{% url static path="jquery.ui/ui/ui.resizable.js" %}"></script>
-<script type="application/javascript" src="{% url static path="jquery.ui/ui/ui.dialog.js" %}"></script>
-<script type="application/javascript" src="{% url static path="js/widgets.js" %}"></script>
-<link rel="stylesheet" href="{% url static path="css/style-gitweb.css" %}" type="text/css" >
-<link rel="stylesheet" href="{% url static path="jquery.ui/themes/base/ui.all.css" %}" type="text/css" >
+<link rel="stylesheet" href="{{ STATIC_URL }}pushes/css/style-gitweb.css" %}" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.core.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.resizable.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.accordion.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.dialog.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.slider.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.tabs.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.datepicker.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.progressbar.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.theme.css" type="text/css">
+
 <style type="text/css">
 table.ui-widget {padding: 0px;}
 </style>
@@ -59,152 +63,25 @@ table.ui-widget {padding: 0px;}
   display: none;
 }
 </style>
-<script type="application/javascript">
-function log(msg) {
-  if (window.console && console.log) {
-    console.log(msg);
-  }
-};
-
-var progress = {
-  _c: 0,
-  load: function() {
-    this._c++;
-    document.body.style.cursor = 'progress';
-  },
-  done: function() {
-    this._c--;
-    if (this._c == 0) {
-      document.body.style.cursor = '';
-    }
-  }
-};
-
-
-$(document).ready(function(){
-  var d = $('#searchpane').dialog({
-    autoOpen: false,
-    modal: true,
-    width: 500,
-    buttons: {
-      Search: function() {$(this).children('form').submit();}
-    }
-  })
-  $('#search').click(function(){d.dialog('open');})
-    .hover(
-	  function() {
-	    $(this).addClass('ui-state-hover');
-	  },
-	  function() {
-            $(this).removeClass('ui-state-hover');
-	  })
-    .focus(function() {
-      $(this).addClass('ui-state-focus');
-    })
-    .blur(function() {
-      $(this).removeClass('ui-state-focus');
-    });
-  function enableField(fieldName) {
-    var targetInput = $('#i_' + fieldName)[0];
-    return function(e) {
-      var cell = $(e.target).parents('tr').children('td:nth-child(2)');
-      if (!cell.hasClass('ui-widget')) {
-	var date = targetInput.value ? Number(targetInput.value * 1000) : undefined;
-	cell.html('').datetime({
-	    date: date
-	  })
-	  .bind('datetimevalue', function(e, v) {
-	    targetInput.value = Number(v) / 1000;
-	  });
-	$('#i_' + fieldName).attr('name', fieldName);
-      }
-      else {
-	cell.datetime('destroy').html('&hellip;');
-	$('#i_' + fieldName).removeAttr('name');
-      }
-      
-    }
-  };
-  $('#b_from').click(enableField('from'));
-  {% if search.from %}
-  $('#b_from').trigger('click');
-  {% endif %}
-  $('#b_until').click(enableField('until'));
-  {% if search.until %}
-  $('#b_until').trigger('click');
-  {% endif %}
-  $('#b_limit').click(
-    function(e) {
-      var cell = $(e.target).parents('tr').children('td:nth-child(2)');
-      if (!cell.hasClass('ui-widget')) {
-	cell.addClass('ui-widget').removeClass('ui-state-disabled');
-	cell.find('input').attr('name', 'length');
-      }
-      else {
-	cell.removeClass('ui-widget').addClass('ui-state-disabled');
-	cell.find('input').removeAttr('name');
-      }
-    }
-  );
-});
-
-function addSearch(select) {
-  if (select.selectedIndex == 0) {
-    log("doing nothing, lead selected");
-    return;
-  }
-  var choice = select.options[select.options.selectedIndex];
-  log("selected " + choice);
-  switch (choice.id) {
-    case "search_files":
-      $('#searchrows').append('<tr><td>Path part</td><td><input name="path" type="text" size="10" maxlength="30"></tr>');
-      break;
-    case "search_repos":
-      $('#searchrows').append('<tr><td>Repository part</td><td><input name="repo" type="text" size="10" maxlength="30"></tr>');
-      break;
-  }
-};
-
-var diffstuff = false;
-function show_to() {
-  if (diffstuff) return;
-  var styles=document.styleSheets;
-  for (var i=0, ii=styles.length; i<ii; ++i) {
-    if (styles[i].title == 'diffstuff') {
-      diffstuff = styles[i];
-      diffstuff.deleteRule(0);
-      return
-    }
-  }
-}
-
-function show_diffs(reponame, input) {
-  show_to();
-  var tos = $('.diff_tofrom');
-  tos.removeClass('diff_tofrom');
-  tos = $('td.diff_active>input[rev=' + input.value +']');
-  tos.addClass('diff_tofrom');
-  $('tr[repo]').each(function(i, r) {
-    if (r.getAttribute('repo') == reponame) {
-      $(r).removeClass('hidediff');
-    }
-    else {
-      $(r).addClass('hidediff');
-    }
-  });
-}
-
-function doDiff(button) {
-  var params = {};
-  $('input[type=radio]').each(function(i,r){
-      if (r.checked){params.from = r.value;}
-    });
-  params.to = button.getAttribute('rev');
-  params.repo = $(button).parents('tr').first().attr('repo');
-  window.open('{% url shipping.views.diff_app %}?'+$.param(params, true));
-}
-</script>
 {% endblock %}
+{% block javascript_matter %}
+<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.core.js"></script>
+<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.draggable.js"></script>
+<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.resizable.js"></script>
+<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.dialog.js"></script>
+<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.slider.js"></script>
+<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.accordion.js"></script>
+<script type="application/javascript" src="{{ STATIC_URL }}pushes/js/widgets.js"></script>
+<script>
+var SEARCH = {
+  FROM: {% if search.from %}'{{ search.from }}'{% else %}null{% endif %}
+, UNTIL: {% if search.until %}'{{ search.until }}'{% else %}null{% endif %}
+};
+var DIFF_APP_URL = '{% url shipping.views.diff_app %}';
+</script>
+<script type="application/javascript" src="{{ STATIC_URL }}pushes/js/pushlog.js"></script>
+{% endblock %}
+
 {% block content %}
 <button type="button" class="ui-state-default ui-corner-all" id="search">Search &hellip;</button>
 <div id="searchpane" style="display:none;" title="search pushlogs">
@@ -277,7 +154,7 @@ function doDiff(button) {
               rev="{{push.tip.revision|slice:":12"}}"></td>
 	  </tr>
 	  {% for change in push.changesets %}
-	  <tr class="{{push.class}}" repo="{{push.push.repository.name}}">	  
+	  <tr class="{{push.class}}" repo="{{push.push.repository.name}}">
 	    <td class="age">
 	      <a href="{{push.push.repository.url}}rev/{{change.revision|slice:":12"}}"
 	      target="_blank">

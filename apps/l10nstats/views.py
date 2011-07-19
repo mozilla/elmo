@@ -44,10 +44,11 @@ import time
 from urllib2 import urlopen
 from urlparse import urljoin
 
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404
 from django.template.loader import render_to_string
-from django.http import HttpResponse, HttpResponseNotFound,\
-    HttpResponseNotModified
+from django.template import RequestContext
+from django.http import (HttpResponse, HttpResponseNotFound,
+                         HttpResponseNotModified, Http404)
 from django.db.models import Min, Max
 from django.views.decorators.cache import cache_control
 from django.utils import simplejson
@@ -79,31 +80,33 @@ def getRunsBefore(tree, stamp, locales):
 
 def index(request):
     """The main dashboard entry page.
-    
+
     Implemented with a Simile Exhibit.
     """
-    # verify args?
     args = []
-    if 'locale' in request.GET:
-        locales = request.GET.getlist('locale')
-        locales = Locale.objects.filter(code__in=locales)
+    if request.GET.get('locale'):
+        locales_list = request.GET.getlist('locale')
+        locales = Locale.objects.filter(code__in=locales_list)
         locales = locales.values_list('code', flat=True)
-        if locales:
-            args += [('locale', loc) for loc in locales]
-    if 'tree' in request.GET:
-        trees = request.GET.getlist('tree')
-        trees = Tree.objects.filter(code__in=trees)
+        if len(locales) != len(locales_list):
+            raise Http404("Invalid list of locales")
+        args += [('locale', loc) for loc in locales]
+    if request.GET.get('tree'):
+        trees_list = request.GET.getlist('tree')
+        trees = Tree.objects.filter(code__in=trees_list)
         trees = trees.values_list('code', flat=True)
-        if trees:
-            args += [('tree', t) for t in trees]
+        if len(trees) != len(trees_list):
+            raise Http404("Invalid list of trees")
+        args += [('tree', t) for t in trees]
     return render_to_response('l10nstats/index.html',
-                              {'args': mark_safe(urlencode(args))})
+                              {'args': mark_safe(urlencode(args))},
+                              context_instance=RequestContext(request))
 
 
 def proxy(request, path=None, base=None):
     """Proxy to files from different domains.
 
-    Proxy the files served from different domains which don't allow cross 
+    Proxy the files served from different domains which don't allow cross
     origin resource sharing explicitly.
 
     """
@@ -159,7 +162,7 @@ schema = {
 @cache_control(max_age=5*60)
 def status_json(request):
     """The json output for the builds.
-    
+
     Used by the main dashboard page Exhibit.
     """
 
@@ -216,7 +219,7 @@ def homesnippet(request):
     return render_to_string('l10nstats/snippet.html', {
             'trees': act,
             })
-    
+
 
 
 def teamsnippet(request, loc):
@@ -231,7 +234,7 @@ def teamsnippet(request, loc):
 
 def history_plot(request):
     """Progress of a single locale and tree.
-    
+
     Implemented with a Simile Timeplot.
     """
     tree = locale = None
@@ -295,20 +298,18 @@ def history_plot(request):
                                    'starttime': starttime,
                                    'endtime': endtime,
                                    'stamps': stamps,
-                                   'runs': runs(q2, p)})
+                                   'runs': runs(q2, p)},
+                                  context_instance=RequestContext(request))
     return HttpResponseNotFound("sorry, gimme tree and locale")
 
 def tree_progress(request, tree):
     """Progress of all locales on a tree.
-    
+
     Display the number of successful vs not locales.
-    
+
     Implemented as Simile Timeplot.
     """
-    try:
-        tree = Tree.objects.get(code=tree)
-    except Tree.DoesNotExist:
-        return HttpResponseNotFound("sorry, gimme tree")
+    tree = get_object_or_404(Tree, code=tree)
 
     locales = Locale.objects.filter(run__tree=tree, run__active__isnull=False)
     locales = list(locales)
@@ -323,7 +324,7 @@ def tree_progress(request, tree):
     starttime = endtime - timedelta(14)
 
     if starttime > allEnd:
-        # by default, we'd just see a flat graph, show half a day more 
+        # by default, we'd just see a flat graph, show half a day more
         # than allend
         endtime = displayEnd
         starttime = endtime - timedelta(14)
@@ -334,7 +335,7 @@ def tree_progress(request, tree):
         except Exception:
             pass
         if starttime < allStart:
-            # make sure that even though there nothing to see, 
+            # make sure that even though there nothing to see,
             # the slider shows all times
             allStart = starttime
     if 'endtime' in request.GET:
@@ -375,7 +376,8 @@ def tree_progress(request, tree):
                                'explicitStart': 'starttime' in request.GET,
                                'allStart': allStart,
                                'allEnd': displayEnd,
-                               'data': data})
+                               'data': data},
+                               context_instance=RequestContext(request))
 
 
 def grid(request):
@@ -445,7 +447,7 @@ class JSONAdaptor(object):
                 self.fileIs = 'obsolete'
             elif 'missingFile' in self.value:
                 self.fileIs = 'missing'
-            elif ('missingEntity' in self.value or 
+            elif ('missingEntity' in self.value or
                   'obsoleteEntity' in self.value or
                   'warning' in self.value or
                   'error' in self.value):
