@@ -168,6 +168,7 @@ class Milestone(models.Model):
     """ stores unique milestones like fx35b4
     The milestone is open for signoff between string_freeze and code
     """
+    UPCOMING, OPEN, SHIPPED = range(3)
     code = models.CharField(max_length = 30)
     name = models.CharField(max_length = 50)
     appver = models.ForeignKey(AppVersion)

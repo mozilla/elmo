@@ -14,6 +14,13 @@
     }
   },
   {
+    "pk": 3,
+    "model": "life.locale",
+    "fields": {
+      "code": "fr"
+    }
+  },
+  {
     "pk": 2,
     "model": "life.changeset",
     "fields": {
@@ -91,6 +98,28 @@
     }
   },
   {
+    "pk": 9,
+    "model": "life.changeset",
+    "fields": {
+      "revision": "l10n fr 0002",
+      "user": "french localizer",
+      "description": "first fr commit",
+      "files": [],
+      "parents": [["000000000000"]]
+    }
+  },
+  {
+    "pk": 10,
+    "model": "life.changeset",
+    "fields": {
+      "revision": "l10n fr 0003",
+      "user": "french localizer",
+      "description": "second fr commit",
+      "files": [],
+      "parents": [["l10n fr 0002"]]
+    }
+  },
+  {
     "pk": 1, 
     "model": "life.forest", 
     "fields": {
@@ -140,6 +169,21 @@
 	["l10n pl 0003"]
       ], 
       "name": "l10n/pl", 
+      "forest": ["l10n"]
+    }
+  }, 
+  {
+    "pk": 4, 
+    "model": "life.repository", 
+    "fields": {
+      "url": "http://localhost:8001/l10n/fr/", 
+      "locale": ["fr"], 
+      "changesets": [
+        ["000000000000"],
+	["l10n fr 0002"],
+	["l10n fr 0003"]
+      ], 
+      "name": "l10n/fr", 
       "forest": ["l10n"]
     }
   }

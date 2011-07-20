@@ -68,9 +68,9 @@ There are no pending sign-offs.
 </p>
 {% endif %}
 <p>You'd be shipping {{ good }} locales with
-<a href="{% url shipping.views.shipped_locales %}?ms={{ mstone.code }}" target="_blank">shipped-locales</a>
+<a href="{% url shipping.views.status.shipped_locales %}?ms={{ mstone.code }}" target="_blank">shipped-locales</a>
 and
-<a href="{% url shipping.views.l10n_changesets %}?ms={{ mstone.code }}" target="_blank">l10n-changesets</a>.
+<a href="{% url shipping.views.status.l10n_changesets %}?ms={{ mstone.code }}" target="_blank">l10n-changesets</a>.
 </p>
 <p>Alternatively, fill out the l10n-changesets.json form:</p>
 <p>
