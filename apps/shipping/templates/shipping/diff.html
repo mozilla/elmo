@@ -57,7 +57,7 @@ Changed files:
 {% for fragment, diff in diffs %}
 {% if diff.value and diff.value.isFile %}
 <div class="diff file-{{diff.value.class}}">
-  <a href="{{repo_url}}file/{{diff.value.rev}}/{{diff.value.path}}" target="_blank">{{fragment}}</a>{{diff.value.desc}}
+  <a href="{{repo_url}}file/{{diff.value.rev}}/{{diff.value.path}}" target="_blank">{{fragment}}</a> Cannot parse file
 </div>
 {% else %}
 <div class="diff-container {{diff.value.class}} ui-accordion

@@ -95,8 +95,8 @@ def teamsnippet(request, loc):
             })
 
 
-def __universal_le(content):
-    "CompareLocales reads files with universal line endings, fake that"
+def _universal_newlines(content):
+    "CompareLocales reads files with universal newlines, fake that"
     return content.replace('\r\n','\n').replace('\r','\n')
 
 def diff_app(request):
@@ -114,48 +114,54 @@ def diff_app(request):
     ctx2 = repo.changectx(request.GET['to'])
     match = None # maybe get something from l10n.ini and cmdutil
     changed, added, removed = repo.status(ctx1, ctx2, match=match)[:3]
+    paths = ([(f, 'changed') for f in changed]
+             + [(f, 'removed') for f in removed]
+             + [(f, 'added') for f in added])
     diffs = DataTree(dict)
-    for path in added:
-        diffs[path].update({'path': path,
-                            'isFile': True,
-                            'rev': request.GET['to'],
-                            'desc': ' (File added)',
-                            'class': 'added'})
-    for path in removed:
-        diffs[path].update({'path': path,
-                            'isFile': True,
-                            'rev': request.GET['from'],
-                            'desc': ' (File removed)',
-                            'class': 'removed'})
-    for path in changed:
+    for path, action in paths:
         lines = []
         try:
             p = getParser(path)
         except UserWarning:
             diffs[path].update({'path': path,
-                                'lines': [{'class': 'issue',
-                                           'oldval': '',
-                                           'newval': '',
-                                           'entity': 'cannot parse ' + path}]})
+                                'isFile': True,
+                                'rev': ((action == 'removed') and request.GET['from']
+                                        or request.GET['to']),
+                                'class': action})
             continue
-        data1 = ctx1.filectx(path).data()
-        data2 = ctx2.filectx(path).data()
-        try:
-            # parsing errors or such can break this, catch those and fail
-            # gracefully
-            # fake reading with universal line endings, too
-            p.readContents(__universal_le(data1))
-            a_entities, a_map = p.parse()
-            p.readContents(__universal_le(data2))
-            c_entities, c_map = p.parse()
-            del p
-        except:
-            diffs[path].update({'path': path,
-                                'lines': [{'class': 'issue',
-                                           'oldval': '',
-                                           'newval': '',
-                                           'entity': 'cannot parse ' + path}]})
-            continue
+        if action == 'added':
+            a_entities = []
+            a_map = {}
+        else:
+            data = ctx1.filectx(path).data()
+            data = _universal_newlines(data)
+            try:
+                p.readContents(data)
+                a_entities, a_map = p.parse()
+            except:
+                diffs[path].update({'path': path,
+                                    'isFile': True,
+                                    'rev': ((action == 'removed') and request.GET['from']
+                                            or request.GET['to']),
+                                    'class': action})
+                continue
+                
+        if action == 'removed':
+            c_entities = []
+            c_map = {}
+        else:
+            data = ctx2.filectx(path).data()
+            data = _universal_newlines(data)
+            try:
+                p.readContents(data)
+                c_entities, c_map = p.parse()
+            except:
+                diffs[path].update({'path': path,
+                                    'isFile': True,
+                                    'rev': ((action == 'removed') and request.GET['from']
+                                            or request.GET['to']),
+                                    'class': action})
+                continue
         a_list = sorted(a_map.keys())
         c_list = sorted(c_map.keys())
         ar = AddRemove()
