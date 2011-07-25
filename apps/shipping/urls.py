@@ -59,6 +59,11 @@ urlpatterns += patterns('shipping.views.status',
     (r'^/api/signoffs$', 'signoff_json'),
 )
 
+urlpatterns += patterns('shipping.views.outreach',
+    (r'^/outreach/$', 'select_apps'),
+    (r'^/outreach/data$', 'data'),
+)
+
 urlpatterns += patterns('shipping.views.milestone',
     (r'^\/about-milestone/(.*)', 'about'),
     (r'^\/milestone-statuses/(.*)', 'statuses'),
