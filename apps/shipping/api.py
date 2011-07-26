@@ -42,7 +42,7 @@
 from collections import defaultdict
 
 from life.models import Locale
-from shipping.models import AppVersion, Action
+from shipping.models import AppVersion, Signoff, Action
 
 
 def signoff_actions(locales=None, appversions=None, chunks=100):
@@ -119,3 +119,10 @@ def flag_lists(locales=None, appversions=None, chunks=100):
         if f not in flags[tree, loc]:
             flags[tree, loc].append(f)
     return flags
+
+
+def accepted_signoffs(**avq):
+    actions = [a_id for a_id, flag in
+               signoff_actions(appversions=avq)
+               if flag == Action.ACCEPTED]
+    return Signoff.objects.filter(action__in=actions)

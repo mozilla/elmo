@@ -42,7 +42,7 @@ from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from django.views.generic import View
 from life.models import Changeset
-from shipping.api import signoff_actions, flag_lists
+from shipping.api import accepted_signoffs, flag_lists
 from shipping.models import (Milestone, Signoff, Action,
                              Application, AppVersion)
 from django.views.decorators.cache import cache_control
@@ -84,9 +84,7 @@ class SignoffDataView(View):
         return self.data_for_avq(avq)
 
     def data_for_avq(self, avq):
-        actions = [a_id for a_id, a_flag in signoff_actions(appversions=avq)
-                   if a_flag == Action.ACCEPTED]
-        return (Signoff.objects.filter(action__in=actions),)
+        return (accepted_signoffs(**avq),)
 
     def data_for_milestone(self, mile):
         return (mile.signoffs,)

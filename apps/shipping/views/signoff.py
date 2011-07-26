@@ -50,25 +50,23 @@ from django.views.decorators.http import require_POST, etag
 
 from life.models import Repository, Locale, Push, Changeset, Push_Changesets
 from shipping.models import AppVersion, Signoff, Action
-from shipping.views import _signoffs
+from shipping.api import signoff_actions
 from l10nstats.models import Run, Run_Revisions
 
 
 class _RowCollector:
     """Helper class to collect all the rows and tests etc for a Push_Changesets query.
     """
-    def __init__(self, pcs, sos, actions):
+    def __init__(self, pcs, actions4push):
         """Create _RowCollector and do the work. Result is in self.pushes.
 
         pcs is a Push_Changesets queryset, ordered by -push_date, -changeset_id
-        sos is a dict mapping push ids to lists of sign offs, annotated with latest_action
-        actions is a dict mapping action ids to action objects
+        actions4push is a dict mapping push ids to lists of action objects
 
         The result is a list of dictionaries, describing the table rows to be shown for each push,
         as well as the detail information within.
         """
-        self.sos = sos
-        self.actions = actions
+        self.actions4push = actions4push
         self.pushes = []
         self._prev = None
         self.rowcount = 0
@@ -85,9 +83,9 @@ class _RowCollector:
         if self._prev is not None:
             self.pushes[-1]['changerows'] = self.rowcount
             signoffs = []
-            for so in self.sos[self._prev]:
-                _d = {'signoff':so, 'action': self.actions[so.latest_action]}
-                for snap in so.snapshot_set.all():
+            for action in self.actions4push[self._prev]:
+                _d = {'signoff': action.signoff, 'action': action}
+                for snap in action.signoff.snapshot_set.all():
                     _i = snap.instance()
                     _n = _i._meta.object_name.lower()
                     _d[_n] = _i
@@ -130,39 +128,36 @@ def signoff(request, locale_code, app_code):
     # which pushes to show
     pushes_q = Push.objects.order_by('-push_date').filter(changesets__branch__id=1)
     pushes_q = pushes_q.filter(repository=repo)
-    current_so = _signoffs(appver, locale=lang.code)
+    actions = list(a_id for a_id, flag in \
+                   signoff_actions(appversions={'id': appver.id},
+                                   locales={'id': lang.id}))
+    actions = list(Action.objects.filter(id__in=actions)
+                   .select_related('signoff__push', 'author'))
+    current_so = currentpush = None
+    actions4push = defaultdict(list)
+    for action in actions:
+        if action.flag == Action.ACCEPTED:
+            current_so = action.signoff
+            currentpush = current_so.push_id
+        actions4push[action.signoff.push_id].append(action)
     if current_so is not None:
         pushes_q = pushes_q.filter(push_date__gte=current_so.push.push_date).distinct()
-        currentpush = current_so.push_id
     else:
         pushes_q = pushes_q.distinct()[:10]
-        currentpush = None
 
     # get pushes, changesets and signoffs/actions
     _p = list(pushes_q.values_list('id',flat=True))
     pcs = Push_Changesets.objects.filter(push__in=_p).order_by('-push__push_date','-changeset__id')
 
-    sos = defaultdict(list)
-    _sos = Signoff.objects.filter(push__in=_p).filter(appversion=appver, locale=lang)
-    _sos = Signoff.objects.filter(id__in=list(_sos.values_list('id',flat=True)))
-    _soflags = {}
-    # XXX this query takes a bit, maybe get push and author objects separately?
-    for _so in _sos.annotate(latest_action=Max('action__id')).order_by('latest_action').distinct().select_related('push','author'):
-        sos[_so.push.id].append(_so)
-        _soflags[_so.id] = _so.latest_action
-    actions = Action.objects
-    actions = actions.filter(id__in=_soflags.values())
-    actions = dict((a.id, a) for a in actions.select_related('author'))
-
-    pushes = _RowCollector(pcs, sos, actions).pushes
+    pushes = _RowCollector(pcs, actions4push).pushes
 
     # get current status of signoffs
     pending = rejected = accepted = None
-    all_sos = reduce(lambda x,y:x+y, filter(None, sos.itervalues()), [])
-    all_sos.sort(key=lambda _so: -_so.id)
+    all_actions = sorted(actions, key=lambda _a: -_a.signoff.id)
     initial_diff = []
-    for _so in all_sos:
-        flag = actions[_so.latest_action].flag
+    for action in all_actions:
+        flag = action.flag
+        _so = action.signoff
         if flag == Action.PENDING: # keep if there's no pending or rejected
             if pending is None and rejected is None:
                 pending = _so.push
@@ -184,20 +179,21 @@ def signoff(request, locale_code, app_code):
             pass
 
     # get latest runs for our changesets
-    csl = list(pcs.values_list('changeset__id',flat=True))
+    csl = list(pcs.values_list('changeset__id', flat=True))
     rrs = Run_Revisions.objects.filter(run__tree=appver.tree_id,
                                        run__locale=lang,
                                        changeset__in=csl)
-    rrs = rrs.order_by('changeset','run')
+    rrs = rrs.order_by('changeset', 'run')
     c2r = dict(rrs.values_list('changeset', 'run'))
-    r2r = dict((r.id, r)
-               for r in Run.objects.filter(id__in=c2r.values()).select_related('build'))
+    r2r = dict((r.id, r) for r in (Run.objects
+                                   .filter(id__in=c2r.values())
+                                   .select_related('build')))
 
     # merge data back into pushes list
     suggested_signoff = None
     # initial_diff and runs
     if len(initial_diff) < 2 and pushes:
-        pushes[0]['changes'][0].diffbases = [None] * (2 - len(initial_diff) )
+        pushes[0]['changes'][0].diffbases = [None] * (2 - len(initial_diff))
     for p in pushes:
         # initial_diff
         for sod in p['signoffs']:
@@ -205,7 +201,6 @@ def signoff(request, locale_code, app_code):
                 sod['diffbases'] = 1
         # runs
         for c in p['changes']:
-            _cid = c.id
             if c.id in c2r and c2r[c.id] is not None:
                 # we stored a run for a changeset in this push
                 _r = r2r[c2r[c.id]]
@@ -213,7 +208,7 @@ def signoff(request, locale_code, app_code):
                 # should we suggest this?
                 if suggested_signoff is None:
                     if p['signoffs']:
-                        # latest good push is signed off, don't suggest anything
+                        # last good push is signed off, don't suggest anything
                         suggested_signoff = False
                     elif _r.allmissing == 0 and _r.errors == 0:
                         # source checks are good, suggest
@@ -223,7 +218,7 @@ def signoff(request, locale_code, app_code):
                               {'appver': appver,
                                'language': lang,
                                'pushes': pushes,
-                               'current': currentpush, # id of currently shipping push
+                               'current': currentpush,
                                'pending': pending,
                                'rejected': rejected,
                                'accepted': accepted,
@@ -234,6 +229,7 @@ def signoff(request, locale_code, app_code):
                                'request': request,
                                },
                               context_instance=RequestContext(request))
+
 
 def signoff_details(request, locale_code, app_code):
     """Details pane loaded on sign-off on a particular revision.

@@ -41,7 +41,6 @@
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 from shipping.models import Milestone, Application, AppVersion, Signoff, Action
-from shipping.views import _signoffs
 from shipping.api import signoff_actions, flag_lists
 from life.models import Tree, Forest
 from django.contrib.auth.models import User, Permission
@@ -300,6 +299,8 @@ class ShippingTestCase(ShippingTestCaseBase):
         response = self.client.post(url, dict(ms="junk"))
         eq_(response.status_code, 404)
 
+        milestone.status = Milestone.OPEN
+        milestone.save()
         response = self.client.post(url, dict(ms=milestone.code))
         eq_(response.status_code, 302)
 
@@ -382,11 +383,6 @@ class SignOffTest(TestCase, EmbedsTestCaseMixin):
     def setUp(self):
         self.av = AppVersion.objects.get(code="fx1.0")
 
-    def test_getlist(self):
-        """Test that the list returns on accepted and one pending signoff."""
-        sos = _signoffs(self.av, getlist=True)
-        eq_(sos, {("fx", "pl"): [0], ("fx", "de"): [1], ("fx", "fr"): [2]})
-
     def test_l10n_changesets(self):
         """Test that l10n-changesets is OK"""
         url = reverse('shipping.views.status.l10n_changesets')
@@ -442,6 +438,56 @@ en-US
         eq_(so['signoff'], ['pending'])
         eq_(so['apploc'], 'fx::pl')
         eq_(so['tree'], 'fx')
+
+    def test_ship_milestone(self):
+        """Go through a shipping cycle and verify the results"""
+        mile = self.av.milestone_set.create(code='fx1.0b1',
+                                            name='Build 1')
+        releng = User.objects.create_user(
+            username='fxbld',
+            email='fxbld@mozilla.com',
+            password='secret',
+        )
+        releng.user_permissions.add(
+            Permission.objects.get(codename='can_ship'),
+            Permission.objects.get(codename='can_open')
+        )
+        assert self.client.login(username='fxbld', password='secret')
+        ship = reverse('shipping.views.ship_mstone')
+        response = self.client.post(ship, {'ms': mile.code})
+        eq_(response.status_code, 403)
+        _open = reverse('shipping.views.open_mstone')
+        response = self.client.post(_open, {'ms': mile.code})
+        eq_(response.status_code, 302)
+        response = self.client.post(ship, {'ms': mile.code})
+        eq_(response.status_code, 302)
+        mile = self.av.milestone_set.all()[0]  # refresh mile from the db
+        eq_(mile.status, Milestone.SHIPPED)
+        eq_(mile.signoffs.count(), 1)
+        # now that it's shipped, it should error to ship again
+        response = self.client.post(ship, {'ms': mile.code})
+        eq_(response.status_code, 403)
+        # verify l10n-changesets and json, and shipped-locales
+        url = reverse('shipping.views.status.l10n_changesets')
+        response = self.client.get(url, {'ms': mile.code})
+        eq_(response.status_code, 200)
+        eq_(response.content, "de l10n de 0002\n")
+        url = reverse('shipping.views.milestone.json_changesets')
+        response = self.client.get(url, {'ms': mile.code,
+                                         'platforms': 'windows, linux'})
+        eq_(response.status_code, 200)
+        json_changes = json.loads(response.content)
+        eq_(json_changes, {'de':
+                           {
+                               'revision': 'l10n de 0002',
+                               'platforms': ['windows', 'linux']
+                               }
+                           })
+        url = reverse('shipping.views.status.shipped_locales')
+        response = self.client.get(url, {'ms': mile.code})
+        eq_(response.status_code, 200)
+        eq_(response.content, "de\nen-US\n")
+        
 
     def test_dashboard_static_files(self):
         """render the shipping dashboard and check that all static files are

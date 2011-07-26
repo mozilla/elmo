@@ -41,9 +41,10 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.http import (HttpResponseRedirect, HttpResponse, Http404,
-                         HttpResponseNotAllowed)
+                         HttpResponseNotAllowed, HttpResponseForbidden)
 from life.models import Repository, Locale
 from shipping.models import Milestone, Signoff, AppVersion, Action
+from shipping.api import signoff_actions, flag_lists, accepted_signoffs
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.views.decorators.cache import cache_control
@@ -302,30 +303,6 @@ def open_mstone(request):
             pass
     return HttpResponseRedirect(reverse('shipping.views.milestones'))
 
-def clear_mstone(request):
-    """Clear a milestone, reset all sign-offs.
-
-    Only available to POST, and requires signoff.can_open permissions.
-    Redirects to dasboard() for the milestone.
-    """
-    if (request.method == "POST" and
-        'ms' in request.POST and
-        request.user.has_perm('shipping.can_open')):
-        try:
-            mstone = Milestone.objects.get(code=request.POST['ms'])
-            if mstone.status is 2:
-                return HttpResponseRedirect(reverse('shipping.views.milestones'))
-            # get all signoffs, independent of state, and file an obsolete
-            # action
-            for so in _signoffs(mstone, status=None):
-                so.action_set.create(flag=4, author=request.user)
-            return HttpResponseRedirect(reverse('shipping.views.dashboard')
-                                        + "?ms=" + mstone.code)
-        except:
-            pass
-    return HttpResponseRedirect(reverse('shipping.views.milestones'))
-
-
 def _propose_mstone(mstone):
     """Propose a new milestone based on an existing one.
 
@@ -359,9 +336,9 @@ def confirm_ship_mstone(request):
     if not request.GET.get('ms'):
         raise Http404("ms must be supplied")
     mstone = get_object_or_404(Milestone, code=request.GET['ms'])
-    if mstone.status != 1:
+    if mstone.status != Milestone.OPEN:
         return HttpResponseRedirect(reverse('shipping.views.milestones'))
-    statuses = _signoffs(mstone, getlist=True)
+    statuses = flag_lists(appversions={'id': mstone.appver_id})
     pending_locs = []
     good = 0
     for (tree, loc), flags in statuses.iteritems():
@@ -394,8 +371,10 @@ def ship_mstone(request):
         return HttpResponseRedirect(reverse('shipping.views.milestones'))
 
     mstone = get_object_or_404(Milestone, code=request.POST['ms'])
-    # get current signoffs
-    cs = _signoffs(mstone).values_list('id', flat=True)
+    if mstone.status != Milestone.OPEN:
+        return HttpResponseForbidden('Can only ship open milestones')
+    cs = (accepted_signoffs(id=mstone.appver_id)
+          .values_list('id', flat=True))
     mstone.signoffs.add(*list(cs))  # add them
     mstone.status = 2
     # XXX create event
@@ -452,81 +431,3 @@ def drill_mstone(request):
         except Exception, e:
             pass
     return HttpResponseRedirect(reverse('shipping.views.milestones'))
-
-
-def _signoffs(appver_or_ms=None, status=1, getlist=False, locale=None):
-    '''Get the signoffs for a milestone, or for the appversion as
-    queryset (or manager).
-    By default, returns the accepted ones, which can be overwritten to
-    get any (status=None) or a particular status.
-
-    If the locale argument is given, return the latest signoff with the
-    requested status, or None. Requires appver_or_ms to be given.
-
-    If getlist=True is specified, returns a dictionary mapping
-    tree-locale typles to a list of statuses, all that are newer than the
-    latest obsolete action or accepted signoff (the latter is included).
-    '''
-    if isinstance(appver_or_ms, Milestone):
-        ms = appver_or_ms
-        if ms.status==2:
-            assert not getlist
-            if locale is not None:
-                try:
-                    return ms.signoffs.get(locale__code=locale)
-                except Signoff.DoesNotExist:
-                    return None
-            return ms.signoffs
-        appver = ms.appver
-    else:
-        appver = appver_or_ms
-
-    sos = Signoff.objects
-    if appver is not None:
-        sos = sos.filter(appversion=appver)
-    if locale is not None:
-        sos = sos.filter(locale__code=locale)
-    sos = sos.annotate(latest_action=Max('action__id'))
-    sos_vals = list(sos.values('locale__code','id','latest_action', 'appversion__tree__code'))
-    actions = Action.objects
-    actionflags=dict(actions.filter(id__in=map(lambda d: d['latest_action'],
-                                               sos_vals)).values_list('id','flag'))
-    actionflags[0] = 0 # migrated pending signoffs lack any action :-(
-    if getlist:
-        lf = defaultdict(list)
-    else:
-        lf = dict()
-    for d in sos_vals:
-        loc = d['locale__code']
-        tree = d['appversion__tree__code']
-        flag = actionflags[d['latest_action'] or 0]
-        if flag == 4 and status != 4:
-            # obsoleted, drop previous signoffs
-            lf.pop((tree,loc), None)
-        else:
-            if getlist:
-                if flag == 1:
-                    # approved, forget previous
-                    lf[(tree,loc)] = [flag]
-                else:
-                    lf[(tree,loc)].append(flag)
-            else:
-                if status is not None:
-                    if flag == status:
-                        lf[(tree,loc)] = d['id']
-                else:
-                    lf[(tree,loc)] = d['id']
-
-    if getlist:
-        if locale is not None:
-            for tree, loc in lf.iterkeys():
-                if loc != locale:
-                    lf.pop((tree,loc))
-        return lf
-    if locale is not None:
-        assert appver
-        try:
-            return sos.get(id=lf[(appver.tree.code,locale)])
-        except KeyError:
-            return None
-    return sos.filter(id__in=lf.values())
