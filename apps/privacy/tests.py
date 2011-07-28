@@ -39,7 +39,8 @@ from nose.tools import eq_, ok_
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.contrib.auth.models import User, Permission
-from models import Policy, Comment, CHANGE, LogEntry
+from django.contrib.admin.models import LogEntry, CHANGE
+from models import Policy, Comment
 from commons.tests.mixins import EmbedsTestCaseMixin
 
 
@@ -59,7 +60,7 @@ class PrivacyTestCase(TestCase, EmbedsTestCaseMixin):
           text="Hi Mozilla",
           active=True
         )
-        log_entry = LogEntry.objects.create(
+        LogEntry.objects.create(
           content_type=Policy.contenttype(),
           user=user,
           object_id=policy.id,

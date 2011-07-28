@@ -42,28 +42,25 @@ import os.path
 from urllib2 import urlopen
 import re
 
-from django.core.management.base import BaseCommand, CommandError
-try:
-    import json
-except ImportError:
-    import simplejson as json
+from django.core.management.base import BaseCommand
+from django.utils import simplejson as json
 import bugsy
 
 basebug = {
-    "rep_platform":"All",
-    "op_sys": "All",
-    "product": "Mozilla Localizations",
-    "component": "{{ component }}",
-    "cc": "{{ bugmail }}"
+  "rep_platform": "All",
+  "op_sys": "All",
+  "product": "Mozilla Localizations",
+  "component": "{{ component }}",
+  "cc": "{{ bugmail }}"
 }
 
-json_license = '''{% comment %}
+json_license = """{% comment %}
 ***** BEGIN LICENSE BLOCK *****
 Version: MPL 1.1/GPL 2.0/LGPL 2.1
 
-The contents of this file are subject to the Mozilla Public License Version 
-1.1 (the "License"); you may not use this file except in compliance with 
-the License. You may obtain a copy of the License at 
+The contents of this file are subject to the Mozilla Public License Version
+1.1 (the "License"); you may not use this file except in compliance with
+the License. You may obtain a copy of the License at
 http://www.mozilla.org/MPL/
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -94,45 +91,51 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 ***** END LICENSE BLOCK *****
 {% endcomment %}
-'''
+"""
+
 
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
-        make_option('-q', '--quiet', dest = 'quiet', action = 'store_true',
-                    help = 'Run quietly'),
+        make_option('-q', '--quiet', dest='quiet', action='store_true',
+                    help='Run quietly'),
         )
     help = 'TEMPORARY Download bugograms for new locales from wikimo'
 
-    sectioner = re.compile('===? (.*?) ===?\n(.*?)(?===)', re.M|re.S)
-    props = re.compile('^; (.*?) : (.*?)$', re.M|re.S)
+    sectioner = re.compile('===? (.*?) ===?\n(.*?)(?===)', re.M | re.S)
+    props = re.compile('^; (.*?) : (.*?)$', re.M | re.S)
     params = re.compile('%\((.*?)\)s')
 
     def handle(self, *args, **options):
-        quiet = options.get('quiet', False)
+        for alias, pn in (('fx', 'L10n:Bugogram'),
+                          ('fennec', 'L10n:Mobile/Bugogram')):
 
-        for alias, pn in (('fx','L10n:Bugogram'), ('fennec', 'L10n:Mobile/Bugogram')):
+            page = urlopen(
+              'http://wiki.mozilla.org/index.php?title=%s&action=raw' % pn
+              ).read()
 
-            page = urlopen('http://wiki.mozilla.org/index.php?title=%s&action=raw'%pn).read()
-        
             allbugs = []
-            
-            for section in self.sectioner.finditer(page):
-              title = section.group(1)
-              content = self.params.sub(lambda m: '{{ %s }}' % m.group(1),
-                                      section.group(2))
-              offset = 0
-              props = {}
-              for m in self.props.finditer(content):
-                  offset = m.end(2)
-                  props[m.group(1)] = m.group(2)
-              if not props:
-                  continue
-              properties = basebug.copy()
-              properties.update(props)
-              properties['comment'] = content[offset:].strip()
-              properties['title'] = title
-            
-              allbugs.append(properties)
 
-            fname = os.path.join(*(bugsy.__path__+['templates','bugsy','new-%s-locales.json'%alias]))
-            open(fname, 'w').write(json_license + json.dumps(allbugs, indent=2) + "\n")
+            for section in self.sectioner.finditer(page):
+                title = section.group(1)
+                content = self.params.sub(lambda m: '{{ %s }}' % m.group(1),
+                                      section.group(2))
+                offset = 0
+                props = {}
+                for m in self.props.finditer(content):
+                    offset = m.end(2)
+                    props[m.group(1)] = m.group(2)
+                if not props:
+                    continue
+                properties = basebug.copy()
+                properties.update(props)
+                properties['comment'] = content[offset:].strip()
+                properties['title'] = title
+
+                allbugs.append(properties)
+
+            fname = os.path.join(*(bugsy.__path__ +
+                                   ['templates',
+                                    'bugsy',
+                                    'new-%s-locales.json' % alias]))
+            open(fname, 'w').write(
+              json_license + json.dumps(allbugs, indent=2) + "\n")

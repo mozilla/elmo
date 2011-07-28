@@ -61,11 +61,13 @@ def index(request):
             'bugs': bugs_div,
             }, context_instance=RequestContext(request))
 
+
 def teams(request):
     locs = Locale.objects.order_by('name')
     return render_to_response('homepage/teams.html', {
             'locales': locs,
             }, context_instance=RequestContext(request))
+
 
 def locale_team(request, code):
     try:

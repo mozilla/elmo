@@ -38,15 +38,11 @@
 '''
 
 from django.http import HttpResponse
-from django.shortcuts import render_to_response, redirect
-from django.utils.safestring import mark_safe
+from django.shortcuts import render_to_response
 from django.template import Context, Template, RequestContext
 from django.template.loader import render_to_string
 from django.utils import simplejson
 
-import re
-
-from bugsy.models import *
 from life.models import Locale
 
 
@@ -59,14 +55,17 @@ def homesnippet(request):
     return render_to_string('bugsy/snippet.html', {
             }, context_instance=RequestContext(request))
 
+
 def teamsnippet(request, locale):
-    return render_to_string('bugsy/team-snippet.html', {'locale': locale}
-           , context_instance=RequestContext(request))
+    return render_to_string('bugsy/team-snippet.html',
+                            {'locale': locale},
+                            context_instance=RequestContext(request))
 
 
 def file_bugs(request):
     return render_to_response('bugsy/file-bugs.html', {
             }, context_instance=RequestContext(request))
+
 
 def get_bug_links(request):
     locale_codes = request.GET.getlist('locales')

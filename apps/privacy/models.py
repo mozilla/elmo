@@ -39,17 +39,15 @@
 
 from django.db import models
 from django.utils.html import strip_tags
-
 from django.contrib.auth.models import User
-from django.contrib.admin.models import LogEntry, ADDITION, CHANGE
 from django.contrib.contenttypes.models import ContentType
 
-from datetime import datetime
 
 class CTMixin:
     """Mixin to create a cached query for the ContentType for this model.
     """
     _ct = None
+
     @classmethod
     def contenttype(cls):
         if cls._ct is None:
@@ -71,7 +69,7 @@ class Policy(models.Model, CTMixin):
         permissions = (('activate_policy', 'Can activate a policy'),)
 
     def __unicode__(self):
-        return "%d"  % self.id
+        return "%d" % self.id
 
 
 class Comment(models.Model, CTMixin):
