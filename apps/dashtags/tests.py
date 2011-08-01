@@ -2,12 +2,16 @@ from django.test import TestCase
 import unittest
 from django import template
 
+
 class Recurse(TestCase):
-    """Test the three tags for recursive templates, recurse, recurse_children, endrecurse."""
+    """Test the three tags for recursive templates, recurse, recurse_children,
+    endrecurse."""
     # no fixtures = []
     def test_recurse(self):
-        t = template.Template("""{% load recurse %}{% recurse_children %}{% for item in items %}{{ item.value }}
-{% if item.children %}{% recurse item.children as items %}{% endif %}{% endfor %}{% endrecurse %}""")
+        t = template.Template("""{% load recurse %}{% recurse_children %}
+{% for item in items %}{{ item.value }}
+{% if item.children %}{% recurse item.children as items %}{% endif %}
+{% endfor %}{% endrecurse %}""")
         d = {"items":
              [{
                  "value": "root",
@@ -26,11 +30,9 @@ class Recurse(TestCase):
               ]}
         c = template.Context(d)
         out = t.render(c)
-        self.assertEqual(out, """root
- leaf1
-  leafleaf1
- leaf2
-""")
+        self.assertEqual(out,
+          u'\nroot\n\n leaf1\n\n  leafleaf1\n\n\n leaf2\n\n\n')
+
 
 class Simile(unittest.TestCase):
     """Test the simile tags to include script tags for exhibit and timeplot."""
