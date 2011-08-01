@@ -21,9 +21,10 @@ class Command(BaseCommand):
                                "old and new appversion")
         old = AppVersion.objects.get(code=args[0])
         new = AppVersion.objects.get(code=args[1])
-        if old.tree.l10n != new.tree.l10n:
+        if (old.trees_over_time.latest().tree.l10n !=
+            new.trees_over_time.latest().tree.l10n):
             raise CommandError("Old and new appversion don't share l10n")
-        sos = accepted_signoffs(id=old.id)
+        sos = accepted_signoffs(old)
         for so in sos:
             print "transplanting " + so.locale.code
             _so = new.signoffs.create(push=so.push,

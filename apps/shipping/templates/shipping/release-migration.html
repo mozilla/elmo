@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+<!-- {% comment %}
+- This Source Code Form is subject to the terms of the Mozilla Public
+- License, v. 2.0. If a copy of the MPL was not distributed with this
+- file, You can obtain one at http://mozilla.org/MPL/2.0/.
+{% endcomment %} -->
+
+{% block title_matter %}Channel Migration{% endblock %}
+
+{% block content %}
+<h4>Select the applications you want to migrate:</h4>
+<form action="{% url shipping.views.release.migrate_appversions %}" method="POST">{%csrf_token%}
+<table>
+{% for av in appvers %}
+  <tr>
+    <td>
+      <input type="checkbox" value="{{av.app}}" name="app" checked>{{av.name}}
+    </td>
+    <td>
+      Version:
+      <input type="text" value="{{av.nextversion}}" name="{{av.app}}-version">
+    </td>
+    <td>
+      Code:
+      <input type="text" value="{{av.nextcode}}" name="{{av.app}}-code">
+    </td>
+    <td>
+      <input type="checkbox" checked="checked" name="{{av.app}}-fallback">
+      Fallback
+    </td>
+  </tr>
+{% endfor %}
+</table>
+Migration date (defaults to now): <input type="text" name="migration-date" value="{{migration_date}}"><br>
+<input type="submit" value="Submit">
+</form>
+{% endblock %}

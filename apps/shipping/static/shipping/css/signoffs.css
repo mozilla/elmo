@@ -2,6 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+
+#pushtable td {
+  border-style: inset;
+  border-width: 1px;
+  border-color: black;
+}
+
 .csuser {
     font-size: smaller;
     color: gray;
@@ -107,4 +114,12 @@ td.diff {
 .note {
     color: gray;
     font-style: italic;
+}
+
+.push-spacer {
+  height: 1px;
+}
+
+.tree-change-spacer {
+  height: 10px;
 }

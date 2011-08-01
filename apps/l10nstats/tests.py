@@ -36,11 +36,10 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
     def test_history_static_files(self):
         """render the tree_status view and check that all static files are
         accessible"""
-        appver, milestone = self._create_appver_milestone()
+        appver, tree, milestone = self._create_appver_tree_milestone()
         url = reverse('l10nstats.views.history_plot')
         response = self.client.get(url)
         eq_(response.status_code, 404)
-        tree, = Tree.objects.all()
         locale, __ = Locale.objects.get_or_create(
           code='en-US',
           name='English',
@@ -53,14 +52,13 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
     def test_tree_status_static_files(self):
         """render the tree_status view and check that all static files are
         accessible"""
-        appver, milestone = self._create_appver_milestone()
+        appver, tree, milestone = self._create_appver_tree_milestone()
 
         url = reverse('l10nstats.views.tree_progress', args=['XXX'])
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
         # _create_appver_milestone() creates a mock tree
-        tree, = Tree.objects.all()
         url = reverse('l10nstats.views.tree_progress', args=[tree.code])
         response = self.client.get(url)
         eq_(response.status_code, 200)

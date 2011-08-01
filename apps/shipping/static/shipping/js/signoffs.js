@@ -31,7 +31,7 @@ $(document).ready(function() {
     var params = {
       from: dfs[1].textContent,
       to: dfs[0].textContent,
-      repo: diffData.repo
+      repo: $(dfs[0]).data('repo')
     };
     params = $.param(params);
     window.open(diffData.url + "?" + params);

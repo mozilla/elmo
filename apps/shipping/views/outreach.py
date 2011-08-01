@@ -5,22 +5,16 @@
 """Views to help with outreach around the rapid release cycle.
 """
 
-import datetime
+from collections import defaultdict
 
 from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import render
 
-from life.models import Locale, Forest
-from shipping.models import Application, AppVersion, Signoff, Action
-from shipping.api import signoff_actions
+from life.models import Forest
+from shipping.models import Application, AppVersionTreeThrough
+from shipping.api import flags4appversions
 from l10nstats.models import Run
-
-
-# dateformat shared to roundtrip the branch dates between select_apps and data
-_dateformat = '%Y-%m-%d'
-# magic date for the rapid release schedule
-epoch = datetime.datetime(2011, 7, 5)
 
 
 def select_apps(request):
@@ -28,17 +22,14 @@ def select_apps(request):
     """
     # find all appversions that are working on the beta repos
     beta_forest = Forest.objects.get(name='releases/l10n/mozilla-beta')
+    beta_avs = list(AppVersionTreeThrough.objects.current()
+                    .filter(tree__in=beta_forest.tree_set.all())
+                    .values_list('appversion', flat=True))
     beta_apps = (Application.objects
-                 .filter(appversion__tree__l10n=beta_forest)
+                 .filter(appversion__in=beta_avs)
                  .order_by('code'))
-    n = datetime.datetime.utcnow()
-    sixweeks = (n - epoch).days / (6 * 7)
-    auroradate = epoch + sixweeks * datetime.timedelta(6 * 7)
-    betadate = auroradate - datetime.timedelta(6 * 7)
     return render(request, 'shipping/out-select-apps.html', {
                     'apps': beta_apps,
-                    'auroradate': auroradate.strftime(_dateformat),
-                    'betadate': betadate.strftime(_dateformat),
                   })
 
 
@@ -49,17 +40,6 @@ def data(request):
     beta_apps = Application.objects.filter(code__in=app_codes)
     if len(app_codes) != beta_apps.count():
         raise Http404('Some of the given apps were not found')
-    try:
-        auroradate = datetime.datetime.strptime(request.GET.get('auroradate'),
-                                                _dateformat)
-    except (ValueError, TypeError):
-        raise Http404("missing auroradate, or doesn't match %s" % _dateformat)
-    try:
-        betadate = datetime.datetime.strptime(request.GET.get('betadate'),
-                                              _dateformat)
-    except (ValueError, TypeError):
-        raise Http404("missing betadate, or doesn't match %s" % _dateformat)
-
     branches = request.GET.getlist('branch')
 
     f_aurora = Forest.objects.get(name='releases/l10n/mozilla-aurora')
@@ -69,65 +49,69 @@ def data(request):
         forests.append(f_aurora)
     if 'beta' in branches:
         forests.append(f_beta)
-    appvers = (AppVersion.objects.
-               filter(app__in=list(beta_apps.values_list('id', flat=True)),
-                      tree__l10n__in=forests)
-               .order_by('code')
-               .select_related('app', 'tree'))
-    appvers = list(appvers)
-    beta_av = dict.fromkeys(av.id for av in appvers
-                            if av.tree.l10n_id == f_beta.id)
     name4app = dict(beta_apps.values_list('id', 'name'))
-    code4av = dict((av.id, av.code) for av in appvers)
-    appname4av = dict((av.id, name4app[av.app_id]) for av in appvers)
-    tree4av = dict((av.id, av.tree_id) for av in appvers)
-    avq = {'id__in': [av.id for av in appvers]}
-    actions = [action_id
-               for action_id, flag in signoff_actions(appversions=avq)
-               if flag == Action.ACCEPTED]
-    old_signoffs = list(Signoff.objects
-                       .filter(action__in=actions)
-                       .exclude(push__push_date__gte=auroradate)
-                       .select_related('push__repository'))
-    # exclude signoffs on aurora pushes in the previous cycle
-    # that are now on beta
-    old_signoffs = filter(lambda so:
-                          not (so.push.repository.forest == f_aurora and
-                               so.appversion_id in beta_av and
-                               so.push.push_date >= betadate and
-                               so.push.push_date < auroradate),
-                          old_signoffs)
-    runqueries = (Q(locale=so.locale_id, tree=tree4av[so.appversion_id])
-                  for so in old_signoffs)
+    # get AppVersion_Trees
+    avts = (AppVersionTreeThrough.objects.current()
+            .filter(appversion__app__in=name4app.keys(),
+                    tree__l10n__in=forests)
+            .order_by('appversion__code')
+            .select_related('appversion__app', 'tree'))
+    avts = list(avts)
+    code4av = dict((avt.appversion_id, avt.appversion.code) for avt in avts)
+    appname4av = dict((avt.appversion_id,
+                       name4app[avt.appversion.app_id])
+                      for avt in avts)
+    tree4av = dict((avt.appversion_id, avt.tree_id) for avt in avts)
+    av4tree = dict((avt.tree_id, avt.appversion_id) for avt in avts)
+    locs = set()
+    loc4tree = defaultdict(list)
+    for t, l in (Run.objects
+                 .filter(tree__in=tree4av.values(), active__isnull=False)
+                 .values_list('tree', 'locale__code')
+                 .distinct()):
+        loc4tree[t].append(l)
+        locs.add(l)
+    locflags4av = flags4appversions(appversions={'id__in': tree4av.keys()})
+    loc4tree = defaultdict(list)
+    for av, flags4loc in locflags4av.iteritems():
+        if av.id not in tree4av:
+            continue
+        for loc, (real_av, flags) in flags4loc.iteritems():
+            if real_av == av.code:
+                continue
+            loc4tree[tree4av[av.id]].append(loc)
+    loc4tree = dict((t, locs) for t, locs in loc4tree.iteritems()
+                    if locs)
+    or_ = lambda l, r: l | r
+    runqueries = reduce(or_,
+                        (reduce(or_,
+                                (Q(tree=t, locale__code=l) for l in locs))
+                            for t, locs in loc4tree.iteritems()))
     actives = (Run.objects
-               .filter(reduce(lambda l, r: l | r, runqueries))
-               .exclude(active__isnull=True))
-    missings = dict(((r.tree_id, r.locale_id), r.allmissing)
+               .filter(runqueries)
+               .exclude(active__isnull=True)
+               .select_related('locale'))
+    missings = dict(((r.tree_id, r.locale.code), r.allmissing)
                     for r in actives)
     matrix = dict()
-    for signoff in old_signoffs:
-        if signoff.locale_id not in matrix:
-            matrix[signoff.locale_id] = [None] * len(appvers)
-        for av_i, av in enumerate(appvers):
-            if signoff.appversion_id == av.id:
-                break
-        entry = {'push': signoff.push.push_date,
-                 'av': code4av[signoff.appversion_id],
-                 'app': appname4av[signoff.appversion_id],
-                 'missing': missings[(tree4av[signoff.appversion_id],
-                                      signoff.locale_id)]}
-        matrix[signoff.locale_id][av_i] = entry
+    columns = tuple(avt.appversion_id for avt in avts)
+    for tree_id, locs in loc4tree.iteritems():
+        av_id = av4tree[tree_id]
+        for loc in locs:
+            if loc not in matrix:
+                matrix[loc] = [None] * len(avts)
+            col_index = columns.index(av_id)
+            entry = {'av': code4av[av_id],
+                     'app': appname4av[av_id],
+                     'missing': missings[(tree4av[av_id],
+                                          loc)]}
+            matrix[loc][col_index] = entry
 
-    id4loc = dict((Locale.objects
-                   .filter(id__in=matrix.keys())
-                   .values_list('code', 'id')))
-    rows = [{'loc':loc, 'entries': matrix[id4loc[loc]]}
-            for loc in sorted(id4loc.keys())]
+    rows = [{'loc':loc, 'entries': matrix[loc]}
+            for loc in sorted(matrix.keys())]
 
     return render(request, 'shipping/out-data.html', {
                     'apps': beta_apps,
-                    'appvers': appvers,
+                    'appvers': [avt.appversion for avt in avts],
                     'rows': rows,
-                    'auroradate': auroradate.strftime(_dateformat),
-                    'betadate': betadate.strftime(_dateformat),
                   })

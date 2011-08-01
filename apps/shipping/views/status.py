@@ -10,7 +10,7 @@ from django.http import HttpResponse
 from django.views.generic import View
 from life.models import Changeset
 from l10nstats.models import Run
-from shipping.api import accepted_signoffs, flag_lists
+from shipping.api import accepted_signoffs, flags4appversions
 from shipping.models import (Milestone, Action,
                              Application, AppVersion)
 from django.views.decorators.cache import cache_control
@@ -27,7 +27,7 @@ class SignoffDataView(View):
     Overload this method to handle further args.
     Second pass is get_data, which gets either
     - a shipped milestone, and calls data_for_milestone, or
-    - a appversion query dict, and calls data_for_avq.
+    - a appversion, and calls data_for_appversion.
     Both of these return tuples, which is then used by the
     actual content creation step, content(), which returns a string or
     iterator of strings, to be passed into the response.
@@ -43,16 +43,15 @@ class SignoffDataView(View):
             mile = get_object_or_404(Milestone, code=self.ms)
             if mile.status == Milestone.SHIPPED:
                 return self.data_for_milestone(mile)
-            avq = {"id": mile.appver_id}
+            appver = mile.appver
         elif self.av is not None:
             appver = get_object_or_404(AppVersion, code=self.av)
-            avq = {"id": appver.id}
         else:
-            avq = {}
-        return self.data_for_avq(avq)
+            raise RuntimeError("Expecting either ms or av")
+        return self.data_for_appversion(appver)
 
-    def data_for_avq(self, avq):
-        return (accepted_signoffs(**avq),)
+    def data_for_appversion(self, appver):
+        return (accepted_signoffs(appver),)
 
     def data_for_milestone(self, mile):
         return (mile.signoffs,)
@@ -155,15 +154,23 @@ class StatusJSON(SignoffDataView):
 
         if self.avs:
             # make sure its tree is in self.trees
-            for appver in AppVersion.objects.filter(code__in=self.avs):
-                if appver.tree and appver.tree.code not in self.trees:
-                    self.trees.append(appver.tree.code)
+            trees = (AppVersion.trees.through.objects
+                     .current()
+                .filter(appversion__code__in=self.avs)
+                .values_list('tree__code', flat=True))
+            for tree in trees:
+                if tree not in self.trees:
+                    self.trees.append(tree)
 
         if self.trees:
             # make sure its appversion is in self.avs
-            for appver in AppVersion.objects.filter(tree__code__in=self.trees):
-                if appver.code not in self.avs:
-                    self.avs.append(appver.code)
+            avs = (AppVersion.trees.through.objects
+                   .current()
+                .filter(tree__code__in=self.trees)
+                .values_list('appversion__code', flat=True))
+            for av in avs:
+                if av not in self.avs:
+                    self.avs.append(av)
 
     def get_data(self):
         runs = self.get_runs()
@@ -222,9 +229,21 @@ class StatusJSON(SignoffDataView):
                 avq['id__in'].add(appver['id'])
 
         if self.trees:
-            for appver in (AppVersion.objects
-                           .filter(tree__code__in=self.trees).values('id')):
-                avq['id__in'].add(appver['id'])
+            av_ids = (AppVersion.trees.through.objects
+                      .current()
+                .filter(tree__code__in=self.trees)
+                .values_list('appversion_id', flat=True))
+            avq['id__in'].update(av_ids)
+
+        # restrict avq to building appversions open to signoffs
+        currently_building = set(AppVersion.trees.through.objects
+                                 .current()
+                                 .filter(appversion__accepts_signoffs=True)
+                                 .values_list('appversion_id', flat=True))
+        if avq:
+            avq['id__in'] &= currently_building
+        else:
+            avq['id__in'] = currently_building
 
         apps = list(AppVersion.objects
                     .filter(**avq)
@@ -242,17 +261,23 @@ class StatusJSON(SignoffDataView):
         if self.locales:
             lq['code__in'] = self.locales
 
-        lsd = flag_lists(locales=lq, appversions=avq)
-        tree_avs = appvers.exclude(tree__isnull=True)
-        tree2av = dict(tree_avs.values_list("tree__code", "code"))
-        tree2app = dict(tree_avs.values_list("tree__code", "app__code"))
-        items = defaultdict(list)
+        locflags4av = flags4appversions(locales=lq, appversions=avq)
+        tree_avs = (AppVersion.trees.through.objects
+                    .current()
+                    .filter(appversion__in=appvers))
+        tree2av = dict(tree_avs.values_list("tree__code", "appversion__code"))
+        av2tree = dict((av, tree) for tree, av in tree2av.iteritems())
+        tree2app = dict(tree_avs.values_list("tree__code",
+                                             "appversion__app__code"))
         values = dict(Action._meta.get_field('flag').flatchoices)
-        for k in lsd:
-            # ignore tree/locale combos which have no active tree no more
-            if k[0] is None:
-                continue
-            items[k] = [values[so] for so in lsd[k]]
+        so_items = {}
+        for av in AppVersion.objects.filter(**avq):
+            for loc, (real_av, flags) in locflags4av[av].iteritems():
+                if real_av == av.code:
+                    so_items[(av2tree[av.code], loc)] = [values[f]
+                                                         for f in flags]
+                else:
+                    so_items[(av2tree[av.code], loc)] = [real_av]
         # get shipped-in data, latest milestone of all appversions for now
         shipped_in = defaultdict(list)
         for _av in appvers.select_related('app'):
@@ -274,7 +299,7 @@ class StatusJSON(SignoffDataView):
                   "apploc": ("%s::%s" % (given_app or tree2app[tree],
                                          locale)),
                   "signoff": sorted(values)}
-                 for (tree, locale), values in sorted(items.iteritems(),
+                 for (tree, locale), values in sorted(so_items.iteritems(),
                                                       key=lambda t:t[0])]
         items += [{"type": "Shippings",
                    "label": "%s::%s" % (av, locale),

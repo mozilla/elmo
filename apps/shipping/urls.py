@@ -46,3 +46,10 @@ urlpatterns += patterns('shipping.views.signoff',
     (r'^\/add-signoff\/(.*?)\/(.*)', 'add_signoff'),  # POST only
     (r'^\/review-signoff\/(.*?)\/(.*)', 'review_signoff'),  # POST only
 )
+
+urlpatterns += patterns('shipping.views.release',
+    (r'^/release/$', 'select_appversions'),
+    (r'^/release/migrate$', 'migrate_appversions'),  # POST only
+    (r'^/release/select-milestones/$', 'selectappversions4milestones'),
+    (r'^/release/create-milestones/$', 'create_milestones'),  # POST only
+)

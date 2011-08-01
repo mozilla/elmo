@@ -1,0 +1,103 @@
+[
+  {
+    "pk": 1,
+    "model": "life.locale",
+    "fields": {
+      "code": "de"
+    }
+  },
+  {
+    "pk": 2,
+    "model": "life.locale",
+    "fields": {
+      "code": "pl"
+    }
+  },
+  {
+    "pk": 3,
+    "model": "life.locale",
+    "fields": {
+      "code": "fr"
+    }
+  },
+  {
+    "pk": 4,
+    "model": "life.locale",
+    "fields": {
+      "code": "da"
+    }
+  },
+  {
+    "pk": 1, 
+    "model": "life.forest", 
+    "fields": {
+      "url": "http://localhost:8001/l10n/", 
+      "name": "l10n"
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "life.repository", 
+    "fields": {
+      "url": "http://localhost:8001/mozilla/", 
+      "locale": null, 
+      "changesets": [
+        ["000000000000"]
+        ], 
+      "name": "mozilla", 
+      "forest": null
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "life.repository", 
+    "fields": {
+      "url": "http://localhost:8001/l10n/de/", 
+      "locale": ["de"], 
+      "changesets": [
+        ["000000000000"]
+        ], 
+      "name": "l10n/de", 
+      "forest": ["l10n"]
+    }
+  }, 
+  {
+    "pk": 3, 
+    "model": "life.repository", 
+    "fields": {
+      "url": "http://localhost:8001/l10n/pl/", 
+      "locale": ["pl"], 
+      "changesets": [
+        ["000000000000"]
+        ], 
+      "name": "l10n/pl", 
+      "forest": ["l10n"]
+    }
+  }, 
+  {
+    "pk": 4, 
+    "model": "life.repository", 
+    "fields": {
+      "url": "http://localhost:8001/l10n/fr/", 
+      "locale": ["fr"], 
+      "changesets": [
+        ["000000000000"]
+        ], 
+      "name": "l10n/fr", 
+      "forest": ["l10n"]
+    }
+  }, 
+  {
+    "pk": 5, 
+    "model": "life.repository", 
+    "fields": {
+      "url": "http://localhost:8001/l10n/da/", 
+      "locale": ["da"], 
+      "changesets": [
+        ["000000000000"]
+        ], 
+      "name": "l10n/da", 
+      "forest": ["l10n"]
+    }
+  }
+]

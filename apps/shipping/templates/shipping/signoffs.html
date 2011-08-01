@@ -21,13 +21,11 @@
 
 <script>
 var diffData = {
-  tree: "{{tree}}",
-  repo: "{{repo.name}}",
   locale: "{{lang.code}}",
   url: "{% url pushes.views.diff %}"
 };
 var permissions = {
-  canAddSignoff: {{ perms.shipping.add_signoff|yesno:"true,false" }},
+  canAddSignoff: {% if appver.accepts_signoffs %} {{ perms.shipping.add_signoff|yesno:"true,false" }}{% else %}false{% endif %},
   canReviewSignoff: {{ perms.shipping.review_signoff|yesno:"true,false" }}
 };
 var signoffDetailsURL = "{% url shipping.views.signoff.signoff_details language.code appver.code %}";
@@ -44,8 +42,11 @@ var signoffDetailsURL = "{% url shipping.views.signoff.signoff_details language.
   <li><a href="{% url homepage.views.locale_team language.code %}">{{language}}</a></li>
 </ul>
 <h1>Sign-offs for {{appver}} in {{language}}</h1>
-<p>{% if accepted %}There is a <a href="#{{accepted.tip.shortrev}}">current accepted sign-off</a>, which is used
-for shipping {{appver}}.{% endif %}
+<p>{% if not appver.accepts_signoffs %}{{appver}} is not open for new sign-offs. It's either too early or too late
+to do that.{% endif %}
+{% if accepted %}There is {% if fallback %}an {{ real_av }} <a href="#{{fallback.tip.shortrev}}">fallback
+signoff</a>{% else %}a <a href="#{{accepted.tip.shortrev}}">current accepted sign-off</a>{% endif %},
+which is used for shipping {{appver}}.{% endif %}
 {% if pending %}There is a <a href="#{{pending.tip.shortrev}}">pending
 sign-off</a>, waiting to be reviewed. {% endif %}
 {% if rejected %}There is a <a href="#{{rejected.tip.shortrev}}">rejected sign-off</a>. {% endif %}
@@ -94,6 +95,20 @@ looks good to <a href="#{{suggested_signoff}}">sign off on</a>.{% endif %}
 {% include "shipping/signoff-rows.html" %}
   <tr><td colspan="4" class="note">Loading more data will be part of
   <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=658656">bug 658656</a></td></tr>
+{% if fallback %}
+  <tr class="tree-change-spacer"></tr>
+  <tr class="pushrow" id="{{fallback.tip.shortrev}}" data-push="{{fallback.tip.shortrev}}">
+    <td class="push top bottom">{{fallback.push_date|date}}<br><span class="csuser">{{fallback.user}}</span></td>
+    <td></td>
+    <td class="rev_td">
+      <div class="rev">Falling back to {{real_av}} at <a class="csuser" href="{{ fallback }}">
+rev
+<span class="shortrev" data-repo="fallback.repository.name">{{fallback.tip.shortrev}}</span>
+</a></div>
+    </td>
+    <td class="diff"><div class="diffanchor"></div></td>
+  </tr>
+{% endif %}
 </table>
 
 {% endblock %}

@@ -57,8 +57,17 @@
     "fields": {
       "app": 1,
       "version": "1.0",
-      "code": "fx1.0",
-      "accepts_signoffs": true
+      "code": "fx1.0"
+    }
+  },
+  {
+    "pk": 2,
+    "model": "shipping.appversion",
+    "fields": {
+      "app": 1,
+      "version": "1.1",
+      "code": "fx1.1",
+      "fallback": 1
     }
   },
   {
@@ -68,7 +77,7 @@
       "push": ["l10n/de", "l10n de 0002"],
       "appversion": ["fx1.0"],
       "author": 2,
-      "when": "2000-01-06 00:00",
+      "when": "2000-01-02 00:00",
       "locale": ["de"]
     }
   },
@@ -79,7 +88,7 @@
       "push": ["l10n/pl", "l10n pl 0002"],
       "appversion": ["fx1.0"],
       "author": 3,
-      "when": "2000-01-06 12:00",
+      "when": "2000-01-03 12:00",
       "locale": ["pl"]
     }
   },
@@ -95,35 +104,13 @@
     }
   },
   {
-    "pk": 4,
-    "model": "shipping.signoff",
-    "fields": {
-      "push": ["l10n/da", "l10n da 0003"],
-      "appversion": ["fx1.0"],
-      "author": 5,
-      "when": "2000-01-05 18:00",
-      "locale": ["da"]
-    }
-  },
-  {
-    "pk": 5,
-    "model": "shipping.signoff",
-    "fields": {
-      "push": ["l10n/da", "l10n da 0004"],
-      "appversion": ["fx1.0"],
-      "author": 5,
-      "when": "2000-01-06 18:00",
-      "locale": ["da"]
-    }
-  },
-  {
     "pk": 1,
     "model": "shipping.action",
     "fields": {
       "signoff": 1,
       "flag": 0,
       "author": 2,
-      "when": "2000-01-06 00:00"
+      "when": "2000-01-02 00:00"
     }
   },
   {
@@ -133,7 +120,7 @@
       "signoff": 2,
       "flag": 0,
       "author": 3,
-      "when": "2000-01-06 12:00"
+      "when": "2000-01-03 12:00"
     }
   },
   {
@@ -143,7 +130,7 @@
       "signoff": 1,
       "flag": 1,
       "author": 1,
-      "when": "2000-01-07 00:00"
+      "when": "2000-01-03 00:00"
     }
   },
   {
@@ -167,36 +154,6 @@
       "when": "2000-01-07 00:01"
     }
   },
-  {
-    "pk": 6,
-    "model": "shipping.action",
-    "fields": {
-      "signoff": 4,
-      "flag": 0,
-      "author": 5,
-      "when": "2000-01-05 18:00"
-    }
-  },
-  {
-    "pk": 7,
-    "model": "shipping.action",
-    "fields": {
-      "signoff": 5,
-      "flag": 0,
-      "author": 5,
-      "when": "2000-01-06 18:00"
-    }
-  },
-  {
-    "pk": 8,
-    "model": "shipping.action",
-    "fields": {
-      "signoff": 4,
-      "flag": 1,
-      "author": 1,
-      "when": "2000-01-07 12:00"
-    }
-  }, 
   {
     "pk": 1, 
     "model": "shipping.appversiontreethrough", 

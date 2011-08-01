@@ -3,6 +3,11 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
+{% if not accepts_signoffs %}
+  <div class="bad_signoff">
+  We're not accepting sign-offs at this point.
+  </div>
+{% else %}
 {% if good %}
   <div class="good_signoff">
   Technically, this looks good. You did test
@@ -32,4 +37,5 @@
   {% endif %}
   <p>You may want to pick a different
     revision.</p>
+{% endif %}
 {% endif %}

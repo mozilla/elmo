@@ -13,6 +13,7 @@ class MilestoneAdmin(admin.ModelAdmin):
 
 admin.site.register(Application)
 admin.site.register(AppVersion)
+admin.site.register(AppVersion.trees.through)
 admin.site.register(Milestone, MilestoneAdmin)
 admin.site.register(Action)
 admin.site.register(Event)

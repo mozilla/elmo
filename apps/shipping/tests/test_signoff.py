@@ -9,6 +9,7 @@ from django.contrib.auth.models import User, Permission
 from django.utils import simplejson as json
 from commons.tests.mixins import EmbedsTestCaseMixin
 from shipping.models import Milestone, AppVersion, Action
+from shipping import api
 from life.models import Locale, Push, Repository
 from l10nstats.models import Run
 
@@ -18,6 +19,10 @@ class SignOffTest(TestCase, EmbedsTestCaseMixin):
 
     def setUp(self):
         self.av = AppVersion.objects.get(code="fx1.0")
+        api.test_locales.extend(range(1, 5))
+
+    def tearDown(self):
+        del api.test_locales[:]
 
     def test_l10n_changesets(self):
         """Test that l10n-changesets is OK"""
@@ -229,8 +234,9 @@ en-US
         # add a new push
         assert Push.objects.all()
         # ...by copying the last one
+        tree = appver.trees_over_time.latest().tree
         pushes = (Push.objects
-                  .filter(repository__forest__tree=appver.tree_id)
+                  .filter(repository__forest__tree=tree)
                   .filter(repository__locale__code=locale.code)
                   .order_by('-pk'))
         last_push = pushes[0]
@@ -270,7 +276,7 @@ en-US
         assert not Run.objects.all().exists()  # none in fixtures
         # ...again, by copying the last one and making a small change
         Run.objects.create(
-          tree=appver.tree,
+          tree=tree,
           locale=locale,
         )
 
@@ -283,7 +289,7 @@ en-US
 
         # but not just any new run
         Run.objects.create(
-          tree=appver.tree,
+          tree=tree,
           locale=other_locale,
         )
         response = self.client.get(url)

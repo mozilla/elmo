@@ -15,7 +15,7 @@ from django.views.decorators import cache
 
 from life.models import Repository, Locale, Push, Changeset
 from shipping.models import AppVersion, Signoff, Action
-from shipping.api import signoff_actions, signoff_summary, annotated_pushes
+from shipping.api import flags4appversions, annotated_pushes
 from l10nstats.models import Run
 
 
@@ -34,18 +34,26 @@ def etag_signoff(request, locale_code, app_code):
 
     def get_id_or_null(q):
         # helper to get the first id, or 0
-        return (list(q.values_list('id', flat=True)[:1]) + [0])[0]
+        try:
+            return q.values_list('id', flat=True)[0]
+        except IndexError:
+            return 0
 
     actions = Action.objects.filter(signoff__locale__code=locale_code,
                                     signoff__appversion=av).order_by('-pk')
     # pushes and runs only matter if there's still a tree associated
-    if av.tree_id is not None:
+    # just check the current tree
+    try:
+        tree_id = av.trees_over_time.current().values_list('id', flat=True)[0]
+    except IndexError:
+        tree_id = None
+    if tree_id:
         pushes = (Push.objects
-                  .filter(repository__forest__tree=av.tree_id)
+                  .filter(repository__forest__tree=tree_id)
                   .filter(repository__locale__code=locale_code)
                   .order_by('-pk'))
         runs = (Run.objects
-                .filter(tree=av.tree_id)
+                .filter(tree=tree_id)
                 .filter(locale__code=locale_code)
                 .order_by('-pk'))
         ids = tuple(map(get_id_or_null, (actions, pushes, runs)))
@@ -68,35 +76,40 @@ def signoff(request, locale_code, app_code):
     """
     appver = get_object_or_404(AppVersion, code=app_code)
     lang = get_object_or_404(Locale, code=locale_code)
-    forest = appver.tree.l10n
-    repo = get_object_or_404(Repository, locale=lang, forest=forest)
     # which pushes to show
-    actions = list(a_id for a_id, flag in \
-                   signoff_actions(appversions={'id': appver.id},
-                                   locales={'id': lang.id}))
-    actions = list(Action.objects.filter(id__in=actions)
-                   .select_related('signoff__push', 'author'))
+    real_av, flags = (flags4appversions(
+        locales={'id': lang.id},
+        appversions={'id': appver.id})
+                      .get(appver, {})
+                      .get(lang.code, [None, {}]))
+    actions = list(Action.objects.filter(id__in=flags.values())
+                   .select_related('signoff__push__repository', 'author'))
 
     # get current status of signoffs
-    pending, rejected, accepted, initial_diff = signoff_summary(actions)
+    push4action = dict((a.id, a.signoff.push)
+        for a in actions)
+    pending = push4action.get(flags.get(Action.PENDING))
+    rejected = push4action.get(flags.get(Action.REJECTED))
+    accepted = push4action.get(flags.get(Action.ACCEPTED))
 
-    pushes, currentpush, suggested_signoff = annotated_pushes(repo, appver,
-                                                              lang, actions,
-                                                              initial_diff)
+    pushes, suggested_signoff = annotated_pushes(appver, lang, actions, flags)
+    if real_av != appver.code and accepted is not None:
+        # we're falling back, add the accepted push to the table
+        fallback = accepted
+    else:
+        fallback = None
 
     return render(request, 'shipping/signoffs.html', {
                     'appver': appver,
                     'language': lang,
                     'pushes': pushes,
-                    'current': currentpush,
                     'pending': pending,
                     'rejected': rejected,
                     'accepted': accepted,
-                    'tree': appver.tree.code,
-                    'repo': repo,
                     'suggested_signoff': suggested_signoff,
                     'login_form_needs_reload': True,
-                    'request': request,
+                    'fallback': fallback,
+                    'real_av': real_av,
                   })
 
 
@@ -119,7 +132,8 @@ def signoff_details(request, locale_code, app_code):
         runid = None
     appver = get_object_or_404(AppVersion, code=app_code)
     lang = get_object_or_404(Locale, code=locale_code)
-    forest = appver.tree.l10n
+    tree = appver.trees_over_time.current()[0].tree
+    forest = tree.l10n
     repo = get_object_or_404(Repository, locale=lang, forest=forest)
 
     run = lastrun = None
@@ -130,7 +144,7 @@ def signoff_details(request, locale_code, app_code):
         cs = None
     if cs is not None:
         runs = (Run.objects.order_by('-pk')
-                .filter(tree=appver.tree_id, locale=lang, revisions=cs))
+                .filter(tree=tree, locale=lang, revisions=cs))
         if runid is not None:
             try:
                 run = runs.get(id=runid)
@@ -169,6 +183,7 @@ def signoff_details(request, locale_code, app_code):
                     'good': good,
                     'doubled': doubled,
                     'newer': newer,
+                    'accepts_signoffs': appver.accepts_signoffs,
                   })
 
 
@@ -183,11 +198,13 @@ def add_signoff(request, locale_code, app_code):
         # permissions are cool, let's check the data
         try:
             lang = Locale.objects.get(code=locale_code)
-            appver = (AppVersion.objects
-                      .select_related('tree')
-                      .get(code=app_code))
-            repo = Repository.objects.get(locale=lang,
-                                          forest=appver.tree.l10n_id)
+            appver = AppVersion.objects.get(code=app_code)
+            if not appver.accepts_signoffs:
+                # we're not accepting signoffs, someone's hitting urls manually
+                raise ValueError("not accepting signoffs for %s" %
+                                 app_code)
+            tree = appver.get_current_tree()[0]
+            repo = Repository.objects.get(locale=lang, forest=tree.l10n_id)
             rev = request.POST['revision']
             push = Push.objects.get(repository=repo,
                                     changesets__revision__startswith=rev)
@@ -228,10 +245,9 @@ def review_signoff(request, locale_code, app_code):
         try:
             lang = Locale.objects.get(code=locale_code)
             appver = (AppVersion.objects
-                      .select_related('tree')
-                      .get(code=app_code))
-            Repository.objects.get(locale=lang,
-                                   forest=appver.tree.l10n_id)
+                      .select_related('tree').get(code=app_code))
+            tree = appver.get_current_tree()[0]
+            Repository.objects.get(locale=lang, forest=tree.l10n_id)
             action = request.POST['action']
             signoff_id = int(request.POST['signoff_id'])
             flag = action == "accept" and Action.ACCEPTED or Action.REJECTED

@@ -126,6 +126,7 @@ INSTALLED_APPS += (
     'shipping',
     'bugsy',
     'webby',
+    'elmo_commons',
 
 )
 # remove some from funfactory

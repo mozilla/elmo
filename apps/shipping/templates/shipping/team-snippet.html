@@ -75,7 +75,11 @@
 
             <!-- Accepted -->
             {% if run.accepted %}
-                <a class="current" href="{% url shipping.views.signoff.signoff locale.code run.appversion.code %}#{{ run.accepted_rev }}">Current</a>
+                <a class="{% if run.fallback %}fallback{%else%}current{%endif%}" href="{% url shipping.views.signoff.signoff locale.code run.appversion.code %}#{{ run.accepted_rev }}">
+                    {% if run.fallback %}
+                        {{ run.fallback }}
+                    {% else %}Current{% endif %}
+                </a>
             {% else %}
                 <a class="current hidden" href="#">Current</a>
             {% endif %}

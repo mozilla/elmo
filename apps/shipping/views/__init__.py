@@ -15,8 +15,7 @@ from django import http
 from life.models import Locale, Tree, Push, Changeset
 from l10nstats.models import Run_Revisions
 from shipping.models import Milestone, AppVersion, Action, Application
-from shipping.api import (signoff_actions, flag_lists, accepted_signoffs,
-                          signoff_summary)
+from shipping.api import flags4appversions, accepted_signoffs
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Max
@@ -88,10 +87,10 @@ def teamsnippet(loc):
     # the big loop on runs we don't need to make excessive queries for
     # appversions and applications
     _trees_to_appversions = {}
-    for appver in (AppVersion.objects
-                   .exclude(tree__isnull=True)
-                   .select_related('tree')):
-        _trees_to_appversions[appver.tree] = appver
+    for avt in (AppVersion.trees.through.objects
+                .current()
+                .select_related('appversion', 'tree')):
+        _trees_to_appversions[avt.tree] = avt.appversion
 
     def tree_to_application(tree):
         for key, app in _application_codes:
@@ -137,24 +136,33 @@ def teamsnippet(loc):
         # because Django templates (stupidly) swallows lookup errors we
         # have to apply the missing defaults too
         run.pending = run.rejected = run.accepted = \
-                      run.suggested_shortrev = run.appversion = None
-        if appversion:
+                      run.suggested_shortrev = \
+                      run.fallback = run.appversion = None
+        if appversion and appversion.accepts_signoffs:
             run.appversion = appversion
-            actions = [action_id for action_id, flag
-                       in signoff_actions(
-                          appversions=[run.appversion],
-                          locales=[loc.id])
-                          ]
-            actions = Action.objects.filter(id__in=actions) \
-                                    .select_related('signoff__push')
+            real_av, flags = (flags4appversions(
+                locales={'id': loc.id},
+                appversions={'id': appversion.id})
+                              .get(appversion, {})
+                              .get(loc.code, [None, {}]))
             # get current status of signoffs
             # we really only need the shortrevs, we'll get those below
-            run.pending, run.rejected, run.accepted, __ = \
-              signoff_summary(actions)
+            if flags:
+                actions = Action.objects.filter(id__in=flags.values()) \
+                                        .select_related('signoff__push')
+                action4id = dict((a.id, a)
+                    for a in actions)
+                for flag in (Action.PENDING, Action.ACCEPTED, Action.REJECTED):
+                    if flag in flags:
+                        a = action4id[flags[flag]]
+                        setattr(run, a.get_flag_display(), a.signoff.push)
+            if appversion.code != real_av:
+                run.fallback = real_av
             pushes.update((run.pending, run.rejected, run.accepted))
 
             # get the suggested signoff. If there are existing actions
             # we'll unset it when we get the shortrevs for those below
+            print run
             if run_.id in suggested_rev:
                 run.suggested_shortrev = suggested_rev[run_.id][:12]
 
@@ -254,6 +262,9 @@ def stones_data(request):
     latest = defaultdict(int)
     items = []
     stones = Milestone.objects.order_by('-pk').select_related('appver__app')
+    building = list(AppVersion.trees.through.objects
+                    .current()
+                    .values_list('appversion', flat=True))
     maxage = 5
     for stone in stones:
         age = latest[stone.appver.id]
@@ -262,7 +273,7 @@ def stones_data(request):
         latest[stone.appver.id] += 1
         items.append({'label': str(stone),
                       'appver': str(stone.appver),
-                      'building': stone.appver.tree is not None,
+                      'building': stone.appver_id in building,
                       'status': stone.status,
                       'code': stone.code,
                       'age': age})
@@ -324,14 +335,16 @@ def confirm_ship_mstone(request):
     mstone = get_object_or_404(Milestone, code=request.GET['ms'])
     if mstone.status != Milestone.OPEN:
         return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
-    statuses = flag_lists(appversions={'id': mstone.appver_id})
+    flags4loc = (flags4appversions(appversions={'id': mstone.appver.id})
+                 [mstone.appver])
+
     pending_locs = []
     good = 0
-    for (tree, loc), flags in statuses.iteritems():
-        if 0 in flags:
+    for loc, (real_av, flags) in flags4loc.iteritems():
+        if real_av == mstone.appver.code and Action.PENDING in flags:
             # pending
             pending_locs.append(loc)
-        if 1 in flags:
+        if Action.ACCEPTED in flags:
             # good
             good += 1
     pending_locs.sort()
@@ -359,7 +372,7 @@ def ship_mstone(request):
     mstone = get_object_or_404(Milestone, code=request.POST['ms'])
     if mstone.status != Milestone.OPEN:
         return http.HttpResponseForbidden('Can only ship open milestones')
-    cs = (accepted_signoffs(id=mstone.appver_id)
+    cs = (accepted_signoffs(mstone.appver)
           .values_list('id', flat=True))
     mstone.signoffs.add(*list(cs))  # add them
     mstone.status = 2
