@@ -1,4 +1,4 @@
-{% extends "l10nstats/index.html" %}
+{% extends "base.html" %}
 <!-- {% comment %}
    - ***** BEGIN LICENSE BLOCK *****
    - Version: MPL 1.1/GPL 2.0/LGPL 2.1
@@ -17,10 +17,11 @@
    -
    - The Initial Developer of the Original Code is
    - Mozilla Foundation.
-   - Portions created by the Initial Developer are Copyright (C) 2010
+   - Portions created by the Initial Developer are Copyright (C) 2011
    - the Initial Developer. All Rights Reserved.
    -
    - Contributor(s):
+   -  Axel Hecht <l10n@mozilla.com>
    -
    - Alternatively, the contents of this file may be used under the terms of
    - either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -36,27 +37,19 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
-{% block title_matter %}Signoffs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}
-{% block h1_matter %}Signoffs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}
-{% block extra_data %}<link href="{% url shipping.views.status.signoff_json %}?{{query}}" type="application/json" rel="exhibit/data"/>{% endblock %}
 
-{% block extra_query_options %}EX_OPTIONS.push("signoff");{% endblock %}
+{% block title_matter %}Outreach{% endblock %}
 
-{% block extra_labels %}, Sign-off{% endblock %}
-{% block extra_columns %}, .locale.signoff{% endblock %}
-{% block extra_cells %}<td>
-  <span ex:if="exists(.tree.appversion)">
-  <span>
-  <a ex:href-subcontent="{% url shipping.views.signoff.signoff "&#123;&#123;.locale&#125;&#125;" "&#123;&#123;.tree.appversion&#125;&#125;" %}">
-    <span ex:if="exists(.signoff )">
-      <span ex:content=".signoff"></span>
-      <span>no sign-offs</span>
-    </span>
-  </a>
-  </span>
-  </span>
-</td>{% endblock %}
-{% block extra_facets %}
-<div ex:role="facet" ex:expression=".signoff"
-  ex:facetLabel="Sign-off" id="signoff-facet"></div>
+{% block content %}
+<h4>Select the applications for which you want to do outreach:</h4>
+<form action="{% url shipping.views.outreach.data %}">
+<p>
+{% for app in apps %}
+<input type="checkbox" value="{{app.code}}" name="app" checked>{{app}}<br>
+{% endfor %}
+Beta branch date (Y-M-D): <input type="text" value="{{betadate}}" name="betadate"><br>
+Aurora branch date (Y-M-D): <input type="text" value="{{auroradate}}" name="auroradate"><br>
+</p>
+<input type="submit" value="Submit">
+</form>
 {% endblock %}

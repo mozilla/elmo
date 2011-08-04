@@ -21,6 +21,13 @@
     }
   },
   {
+    "pk": 4,
+    "model": "auth.user",
+    "fields": {
+      "username": "localizer_fr"
+    }
+  },
+  {
     "pk": 1,
     "model": "life.tree",
     "fields": {
@@ -70,6 +77,17 @@
     }
   },
   {
+    "pk": 3,
+    "model": "shipping.signoff",
+    "fields": {
+      "push": ["l10n/fr", "l10n fr 0003"],
+      "appversion": ["fx1.0"],
+      "author": 4,
+      "when": "2000-01-06 18:00",
+      "locale": ["fr"]
+    }
+  },
+  {
     "pk": 1,
     "model": "shipping.action",
     "fields": {
@@ -97,6 +115,27 @@
       "flag": 1,
       "author": 1,
       "when": "2000-01-07 00:00"
+    }
+  },
+  {
+    "pk": 4,
+    "model": "shipping.action",
+    "fields": {
+      "signoff": 3,
+      "flag": 0,
+      "author": 4,
+      "when": "2000-01-06 00:01"
+    }
+  },
+  {
+    "pk": 5,
+    "model": "shipping.action",
+    "fields": {
+      "signoff": 3,
+      "flag": 2,
+      "author": 1,
+      "comment": "rejecting this sign-off",
+      "when": "2000-01-07 00:01"
     }
   }
 ]

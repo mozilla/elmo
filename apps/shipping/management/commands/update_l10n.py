@@ -43,7 +43,7 @@ import os.path
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Max
 from shipping.models import Milestone
-from shipping.views import _signoffs
+from shipping.api import accepted_signoffs
 from life.models import Push, Changeset
 from django.conf import settings
 
@@ -68,7 +68,11 @@ class Command(BaseCommand):
         def resolve(path):
             return os.path.join(settings.REPOSITORY_BASE, *(forest + path.split('/')))
 
-        sos=dict(_signoffs(ms).values_list('locale__code', 'push_id'))
+        if ms.status == Milestone.SHIPPED:
+            sos = ms.signoffs
+        else:
+            sos = accepted_signoffs(id=ms.appver_id)
+        sos=dict(sos.values_list('locale__code', 'push_id'))
         tips = dict(Push.objects.filter(id__in=sos.values()).annotate(tip=Max('changesets__id')).values_list('id', 'tip'))
         revs = dict(Changeset.objects.filter(id__in=tips.values()).values_list('id','revision'))
         from mercurial.dispatch import dispatch as hgdispatch

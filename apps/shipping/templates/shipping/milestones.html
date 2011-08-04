@@ -86,11 +86,7 @@
               value="chem-spill" />
 	</span>
             </span>
-            <input type="button" {% if not perms.shipping.can_open %}
-            disabled="disabled"{% endif %}
-            ex:onclick-subcontent="doForm('clear','{&#123;.code}}')"
-              value="clear" />
-          </span>
+         </span>
        </span>
       </td>
     </tr>
@@ -106,9 +102,6 @@
    </tr>
  </table>
 <div style="display:none">
-  <form id="clear_ms" action="{% url shipping.views.clear_mstone %}" method="post">{% csrf_token %}
-  <input type="hidden" name="ms">
-  </form>
   <form id="open_ms" action="{% url shipping.views.open_mstone %}" method="post">{% csrf_token %}
   <input type="hidden" name="ms">
   </form>

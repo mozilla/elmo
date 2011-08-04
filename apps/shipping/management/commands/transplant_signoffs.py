@@ -41,7 +41,7 @@ from optparse import make_option
 
 from django.core.management.base import BaseCommand, CommandError
 from shipping.models import AppVersion
-from shipping.views import _signoffs
+from shipping.api import accepted_signoffs
 import pdb
 
 class Command(BaseCommand):
@@ -56,7 +56,7 @@ class Command(BaseCommand):
         new = AppVersion.objects.get(code=args[1])
         if old.tree.l10n != new.tree.l10n:
             raise CommandError, "Old and new appversion don't share l10n"
-        sos = _signoffs(old)
+        sos = accepted_signoffs(id=old.id)
         for so in sos:
             print "transplanting " + so.locale.code
             _so = new.signoffs.create(push = so.push,

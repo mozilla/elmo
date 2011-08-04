@@ -42,14 +42,14 @@ from optparse import make_option
 
 from django.core.management.base import BaseCommand, CommandError
 from shipping.models import AppVersion
-from shipping.views import _signoffs
+from shipping.api import accepted_signoffs
 import pdb
 
 class Command(BaseCommand):
     option_list = BaseCommand.option_list
-    help = '''Merge Signoffs (and Actions) from one appver to the other
+    help = """Merge Signoffs (and Actions) from one appver to the other
 
-Only recreates those sign-offs that don't exist on the target appver.'''
+Only recreates those sign-offs that don't exist on the target appver."""
     args = 'forked-appver target-appver'
 
     def handle(self, *args, **options):
@@ -59,8 +59,8 @@ Only recreates those sign-offs that don't exist on the target appver.'''
         target = AppVersion.objects.get(code=args[1])
         if fork.tree.l10n != target.tree.l10n:
             raise CommandError, "Fork and target appversion don't share l10n"
-        fsos = _signoffs(fork)
-        tsos = _signoffs(target)
+        fsos = accepted_signoffs(id=fork.id)
+        tsos = accepted_signoffs(id=target.id)
         known_push_ids = dict(tsos.values_list('locale__code','push__id'))
         sos = fsos.exclude(push__id__in=known_push_ids.values())
         

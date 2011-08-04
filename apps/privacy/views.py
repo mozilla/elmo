@@ -41,15 +41,16 @@ from django.core.urlresolvers import reverse
 from django.db.models import Count
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
-from django.http import (HttpResponseRedirect, HttpResponse,
+from django.http import (HttpResponseRedirect,
                          HttpResponseForbidden, Http404)
 from django.utils.encoding import force_unicode
-from django.views.decorators import cache
-from privacy.models import Policy, Comment, LogEntry, ADDITION, CHANGE
+from django.contrib.admin.models import LogEntry, ADDITION, CHANGE
+from privacy.models import Policy, Comment
 
 # We're not using the permission decorators from django.contrib.auth here
 # because we don't have a login-view for one, and it's not giving
 # us the flexibility to not use those.
+
 
 def show_policy(request, id=None):
     """Display the currently active policy, or, if id is given, the
@@ -65,8 +66,8 @@ def show_policy(request, id=None):
     if p is not None and p.active:
         logs = LogEntry.objects.filter(content_type=Policy.contenttype())
         logs = logs.filter(object_id=p.id,
-                           action_flag = CHANGE,
-                           change_message = 'activate')
+                           action_flag=CHANGE,
+                           change_message='activate')
         logs = logs.order_by('-action_time')
         activation = logs.values_list('action_time', flat=True)[0]
     else:
@@ -103,6 +104,7 @@ def versions(request):
                 detail['active_time'].append([lo.action_time])
             else:
                 detail['active_time'][-1].append(lo.action_time)
+
     def do_policies(_pols, _details):
         for _p in _pols:
             _d = _p.__dict__.copy()
@@ -128,14 +130,15 @@ def add_policy(request):
     c = RequestContext(request, {'current': current})
     return render_to_response("privacy/add.html", c)
 
+
 def post_policy(request):
     if not (request.user.has_perm('privacy.add_policy')
             and request.user.has_perm('privacy.add_comment')):
         return HttpResponseForbidden("not sufficient permissions")
-    p = Policy.objects.create(text = request.POST['content'])
-    c = Comment.objects.create(text = request.POST['comment'],
-                               policy = p,
-                               who = request.user)
+    p = Policy.objects.create(text=request.POST['content'])
+    c = Comment.objects.create(text=request.POST['comment'],
+                               policy=p,
+                               who=request.user)
     LogEntry.objects.log_action(request.user.id,
                                 Policy.contenttype().id, p.id,
                                 force_unicode(p), ADDITION)
@@ -143,8 +146,9 @@ def post_policy(request):
                                 Comment.contenttype().id, c.id,
                                 force_unicode(c), ADDITION)
 
+    return HttpResponseRedirect(reverse('privacy.views.show_policy',
+                                        kwargs={'id': p.id}))
 
-    return HttpResponseRedirect(reverse('privacy.views.show_policy', kwargs={'id':p.id}))
 
 def activate_policy(request):
     """Activate a selected policy, requires privacy.activate_policy
@@ -175,6 +179,7 @@ def activate_policy(request):
             policy.active = True
             policy.save()
     return HttpResponseRedirect(reverse('privacy.views.versions'))
+
 
 def add_comment(request):
     """Add a comment to a policy, requires privacy.add_comment

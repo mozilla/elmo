@@ -41,25 +41,19 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.http import (HttpResponseRedirect, HttpResponse, Http404,
-                         HttpResponseNotAllowed)
-from life.models import Repository, Locale, Push, Changeset, Tree
-from shipping.models import (Milestone, Signoff, Snapshot, AppVersion, Action,
-                             SignoffForm, ActionForm)
-from l10nstats.models import Run, Run_Revisions
-from django import forms
+                         HttpResponseNotAllowed, HttpResponseForbidden)
+from life.models import Repository, Locale
+from shipping.models import Milestone, Signoff, AppVersion, Action
+from shipping.api import signoff_actions, flag_lists, accepted_signoffs
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.views.decorators.cache import cache_control
 from django.utils import simplejson
 from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
-from django.core import serializers
-from django.db import connection
 from django.db.models import Max
 
 from collections import defaultdict
-from ConfigParser import ConfigParser
-import datetime
 from difflib import SequenceMatcher
 import re
 import urllib
@@ -102,8 +96,8 @@ def teamsnippet(request, loc):
             })
 
 
-def __universal_le(content):
-    "CompareLocales reads files with universal line endings, fake that"
+def _universal_newlines(content):
+    "CompareLocales reads files with universal newlines, fake that"
     return content.replace('\r\n','\n').replace('\r','\n')
 
 def diff_app(request):
@@ -121,48 +115,54 @@ def diff_app(request):
     ctx2 = repo.changectx(request.GET['to'])
     match = None # maybe get something from l10n.ini and cmdutil
     changed, added, removed = repo.status(ctx1, ctx2, match=match)[:3]
+    paths = ([(f, 'changed') for f in changed]
+             + [(f, 'removed') for f in removed]
+             + [(f, 'added') for f in added])
     diffs = DataTree(dict)
-    for path in added:
-        diffs[path].update({'path': path,
-                            'isFile': True,
-                            'rev': request.GET['to'],
-                            'desc': ' (File added)',
-                            'class': 'added'})
-    for path in removed:
-        diffs[path].update({'path': path,
-                            'isFile': True,
-                            'rev': request.GET['from'],
-                            'desc': ' (File removed)',
-                            'class': 'removed'})
-    for path in changed:
+    for path, action in paths:
         lines = []
         try:
             p = getParser(path)
         except UserWarning:
             diffs[path].update({'path': path,
-                                'lines': [{'class': 'issue',
-                                           'oldval': '',
-                                           'newval': '',
-                                           'entity': 'cannot parse ' + path}]})
+                                'isFile': True,
+                                'rev': ((action == 'removed') and request.GET['from']
+                                        or request.GET['to']),
+                                'class': action})
             continue
-        data1 = ctx1.filectx(path).data()
-        data2 = ctx2.filectx(path).data()
-        try:
-            # parsing errors or such can break this, catch those and fail
-            # gracefully
-            # fake reading with universal line endings, too
-            p.readContents(__universal_le(data1))
-            a_entities, a_map = p.parse()
-            p.readContents(__universal_le(data2))
-            c_entities, c_map = p.parse()
-            del p
-        except:
-            diffs[path].update({'path': path,
-                                'lines': [{'class': 'issue',
-                                           'oldval': '',
-                                           'newval': '',
-                                           'entity': 'cannot parse ' + path}]})
-            continue
+        if action == 'added':
+            a_entities = []
+            a_map = {}
+        else:
+            data = ctx1.filectx(path).data()
+            data = _universal_newlines(data)
+            try:
+                p.readContents(data)
+                a_entities, a_map = p.parse()
+            except:
+                diffs[path].update({'path': path,
+                                    'isFile': True,
+                                    'rev': ((action == 'removed') and request.GET['from']
+                                            or request.GET['to']),
+                                    'class': action})
+                continue
+                
+        if action == 'removed':
+            c_entities = []
+            c_map = {}
+        else:
+            data = ctx2.filectx(path).data()
+            data = _universal_newlines(data)
+            try:
+                p.readContents(data)
+                c_entities, c_map = p.parse()
+            except:
+                diffs[path].update({'path': path,
+                                    'isFile': True,
+                                    'rev': ((action == 'removed') and request.GET['from']
+                                            or request.GET['to']),
+                                    'class': action})
+                continue
         a_list = sorted(a_map.keys())
         c_list = sorted(c_map.keys())
         ar = AddRemove()
@@ -240,104 +240,6 @@ def dashboard(request):
             'args': mark_safe(urlencode(args)),
             }, context_instance=RequestContext(request))
 
-@cache_control(max_age=60)
-def l10n_changesets(request):
-    if request.GET.has_key('ms'):
-        av_or_m = get_object_or_404(Milestone, code=request.GET['ms'])
-    elif request.GET.has_key('av'):
-        av_or_m = get_object_or_404(AppVersion, code=request.GET['av'])
-    else:
-        return HttpResponse('No milestone or appversion given')
-
-    sos = _signoffs(av_or_m).annotate(tip=Max('push__changesets__id'))
-    tips = dict(sos.values_list('locale__code', 'tip'))
-    revmap = dict(Changeset.objects.filter(id__in=tips.values()).values_list('id', 'revision'))
-    r = HttpResponse(('%s %s\n' % (l, revmap[tips[l]][:12])
-                      for l in sorted(tips.keys())),
-                     content_type='text/plain; charset=utf-8')
-    r['Content-Disposition'] = 'inline; filename=l10n-changesets'
-    return r
-
-@cache_control(max_age=60)
-def shipped_locales(request):
-    if request.GET.has_key('ms'):
-        av_or_m = get_object_or_404(Milestone, code=request.GET['ms'])
-    elif request.GET.has_key('av'):
-        av_or_m = get_object_or_404(AppVersion, code=request.GET['av'])
-    else:
-        return HttpResponse('No milestone or appversion given')
-
-    sos = _signoffs(av_or_m).values_list('locale__code', flat=True)
-    locales = list(sos) + ['en-US']
-    def withPlatforms(loc):
-        if loc == 'ja':
-            return 'ja linux win32\n'
-        if loc == 'ja-JP-mac':
-            return 'ja-JP-mac osx\n'
-        return loc + '\n'
-
-    r = HttpResponse(map(withPlatforms, sorted(locales)),
-                      content_type='text/plain; charset=utf-8')
-    r['Content-Disposition'] = 'inline; filename=shipped-locales'
-    return r
-
-@cache_control(max_age=60)
-def signoff_json(request):
-    appvers = AppVersion.objects
-    if request.GET.has_key('ms'):
-        av_or_m = get_object_or_404(Milestone, code=request.GET['ms'])
-        appvers = appvers.filter(app=av_or_m.appver.app)
-        given_app = av_or_m.appver.app.code
-    elif request.GET.has_key('av'):
-        av_or_m = get_object_or_404(AppVersion, code=request.GET['av'])
-        appvers = appvers.filter(app=av_or_m.app)
-        given_app = av_or_m.app.code
-    else:
-        av_or_m = given_app = None
-        appvers = appvers.exclude(tree__isnull=True)
-    tree_avs = appvers.exclude(tree__isnull=True)
-    tree2av = dict(tree_avs.values_list("tree__code", "code"))
-    tree2app = dict(tree_avs.values_list("tree__code", "app__code"))
-    locale = request.GET.get('locale', None)
-    lsd = _signoffs(av_or_m, getlist=True, locale=locale)
-    items = defaultdict(list)
-    values = dict(Action._meta.get_field('flag').flatchoices)
-    for k, sol in lsd.iteritems():
-        # ignore tree/locale combos which have no active tree no more
-        if k[0] is None:
-            continue
-        items[k] = [values[so] for so in sol]
-    # get shipped-in data, latest milestone of all appversions for now
-    shipped_in = defaultdict(list)
-    for _av in appvers:
-        try:
-            _ms = _av.milestone_set.filter(status=2).order_by('-pk')[0]
-        except IndexError:
-            continue
-        app = _av.app.code
-        _sos = _ms.signoffs
-        if locale is not None:
-            _sos = _sos.filter(locale__code=locale)
-        for loc in _sos.values_list('locale__code', flat=True):
-            shipped_in[(app, loc)].append(_av.code)
-    # make a list now
-    items = [{"type": "SignOff",
-              "label": "%s/%s" % (tree,locale),
-              "tree": tree,
-              "apploc" : ("%s::%s" % (given_app or tree2app[tree], locale)),
-              "signoff": list(values)}
-             for (tree, locale), values in items.iteritems()]
-    items += [{"type": "Shippings",
-               "label": "%s::%s" % (av,locale),
-               "shipped": stones}
-              for (av, locale), stones in shipped_in.iteritems()]
-    items += [{"type": "AppVer4Tree",
-               "label": tree,
-               "appversion": av}
-              for tree, av in tree2av.iteritems()]
-    return HttpResponse(simplejson.dumps({'items': items}, indent=2),
-                        mimetype="text/plain")
-
 
 def milestones(request):
     """Administrate milestones.
@@ -401,30 +303,6 @@ def open_mstone(request):
             pass
     return HttpResponseRedirect(reverse('shipping.views.milestones'))
 
-def clear_mstone(request):
-    """Clear a milestone, reset all sign-offs.
-
-    Only available to POST, and requires signoff.can_open permissions.
-    Redirects to dasboard() for the milestone.
-    """
-    if (request.method == "POST" and
-        'ms' in request.POST and
-        request.user.has_perm('shipping.can_open')):
-        try:
-            mstone = Milestone.objects.get(code=request.POST['ms'])
-            if mstone.status is 2:
-                return HttpResponseRedirect(reverse('shipping.views.milestones'))
-            # get all signoffs, independent of state, and file an obsolete
-            # action
-            for so in _signoffs(mstone, status=None):
-                so.action_set.create(flag=4, author=request.user)
-            return HttpResponseRedirect(reverse('shipping.views.dashboard')
-                                        + "?ms=" + mstone.code)
-        except:
-            pass
-    return HttpResponseRedirect(reverse('shipping.views.milestones'))
-
-
 def _propose_mstone(mstone):
     """Propose a new milestone based on an existing one.
 
@@ -458,9 +336,9 @@ def confirm_ship_mstone(request):
     if not request.GET.get('ms'):
         raise Http404("ms must be supplied")
     mstone = get_object_or_404(Milestone, code=request.GET['ms'])
-    if mstone.status != 1:
+    if mstone.status != Milestone.OPEN:
         return HttpResponseRedirect(reverse('shipping.views.milestones'))
-    statuses = _signoffs(mstone, getlist=True)
+    statuses = flag_lists(appversions={'id': mstone.appver_id})
     pending_locs = []
     good = 0
     for (tree, loc), flags in statuses.iteritems():
@@ -493,8 +371,10 @@ def ship_mstone(request):
         return HttpResponseRedirect(reverse('shipping.views.milestones'))
 
     mstone = get_object_or_404(Milestone, code=request.POST['ms'])
-    # get current signoffs
-    cs = _signoffs(mstone).values_list('id', flat=True)
+    if mstone.status != Milestone.OPEN:
+        return HttpResponseForbidden('Can only ship open milestones')
+    cs = (accepted_signoffs(id=mstone.appver_id)
+          .values_list('id', flat=True))
     mstone.signoffs.add(*list(cs))  # add them
     mstone.status = 2
     # XXX create event
@@ -551,81 +431,3 @@ def drill_mstone(request):
         except Exception, e:
             pass
     return HttpResponseRedirect(reverse('shipping.views.milestones'))
-
-
-def _signoffs(appver_or_ms=None, status=1, getlist=False, locale=None):
-    '''Get the signoffs for a milestone, or for the appversion as
-    queryset (or manager).
-    By default, returns the accepted ones, which can be overwritten to
-    get any (status=None) or a particular status.
-
-    If the locale argument is given, return the latest signoff with the
-    requested status, or None. Requires appver_or_ms to be given.
-
-    If getlist=True is specified, returns a dictionary mapping
-    tree-locale typles to a list of statuses, all that are newer than the
-    latest obsolete action or accepted signoff (the latter is included).
-    '''
-    if isinstance(appver_or_ms, Milestone):
-        ms = appver_or_ms
-        if ms.status==2:
-            assert not getlist
-            if locale is not None:
-                try:
-                    return ms.signoffs.get(locale__code=locale)
-                except Signoff.DoesNotExist:
-                    return None
-            return ms.signoffs
-        appver = ms.appver
-    else:
-        appver = appver_or_ms
-
-    sos = Signoff.objects
-    if appver is not None:
-        sos = sos.filter(appversion=appver)
-    if locale is not None:
-        sos = sos.filter(locale__code=locale)
-    sos = sos.annotate(latest_action=Max('action__id'))
-    sos_vals = list(sos.values('locale__code','id','latest_action', 'appversion__tree__code'))
-    actions = Action.objects
-    actionflags=dict(actions.filter(id__in=map(lambda d: d['latest_action'],
-                                               sos_vals)).values_list('id','flag'))
-    actionflags[0] = 0 # migrated pending signoffs lack any action :-(
-    if getlist:
-        lf = defaultdict(list)
-    else:
-        lf = dict()
-    for d in sos_vals:
-        loc = d['locale__code']
-        tree = d['appversion__tree__code']
-        flag = actionflags[d['latest_action'] or 0]
-        if flag == 4 and status != 4:
-            # obsoleted, drop previous signoffs
-            lf.pop((tree,loc), None)
-        else:
-            if getlist:
-                if flag == 1:
-                    # approved, forget previous
-                    lf[(tree,loc)] = [flag]
-                else:
-                    lf[(tree,loc)].append(flag)
-            else:
-                if status is not None:
-                    if flag == status:
-                        lf[(tree,loc)] = d['id']
-                else:
-                    lf[(tree,loc)] = d['id']
-
-    if getlist:
-        if locale is not None:
-            for tree, loc in lf.iterkeys():
-                if loc != locale:
-                    lf.pop((tree,loc))
-        return lf
-    if locale is not None:
-        assert appver
-        try:
-            return sos.get(id=lf[(appver.tree.code,locale)])
-        except KeyError:
-            return None
-    return sos.filter(id__in=lf.values())

@@ -42,6 +42,7 @@ from nose.tools import eq_, ok_
 from life.models import Locale
 from commons.tests.mixins import EmbedsTestCaseMixin
 
+
 class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
     def setUp(self):
         super(HomepageTestCase, self).setUp()
@@ -67,8 +68,9 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         url = reverse('accounts.views.login')
         # run it as a mocked AJAX request because that's how elmo does it
         response = self.client.post(url,
-          {'username':'peterbe', 'password':'secret'},
-          **{'X-Requested-With':'XMLHttpRequest'})
+          {'username': 'peterbe',
+           'password': 'secret'},
+          **{'X-Requested-With': 'XMLHttpRequest'})
         eq_(response.status_code, 200)
         ok_('class="errorlist"' in response.content)
 
@@ -79,19 +81,21 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         user.save()
 
         response = self.client.post(url,
-          {'username':'peterbe',
-           'password':'secret',
+          {'username': 'peterbe',
+           'password': 'secret',
            'next': '/foo'},
-          **{'X-Requested-With':'XMLHttpRequest'})
+          **{'X-Requested-With': 'XMLHttpRequest'})
         # even though it's
         eq_(response.status_code, 302)
         ok_(response['Location'].endswith('/foo'))
 
-        # if this fails it's because settings.SESSION_COOKIE_SECURE isn't true
+        # if this fails it's because settings.SESSION_COOKIE_SECURE
+        # isn't true
         assert settings.SESSION_COOKIE_SECURE
         ok_(self.client.cookies['sessionid']['secure'])
 
-        # if this fails it's because settings.SESSION_COOKIE_HTTPONLY isn't true
+        # if this fails it's because settings.SESSION_COOKIE_HTTPONLY
+        # isn't true
         assert settings.SESSION_COOKIE_HTTPONLY
         ok_(self.client.cookies['sessionid']['httponly'])
 
