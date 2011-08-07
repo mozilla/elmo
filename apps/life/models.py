@@ -47,7 +47,7 @@ class LocaleManager(models.Manager):
 
 class Locale(models.Model):
     """stores list of locales and their names
-    
+
     Fields:
     code   -- locale code
     name   -- english name of the locale
@@ -93,7 +93,7 @@ class ChangesetManager(models.Manager):
 
 class Changeset(models.Model):
     """stores list of changsets
-    
+
     Fields:
     revision -- revision that has been created by this changeset
     user -- author of this changeset
@@ -136,12 +136,12 @@ class Changeset(models.Model):
 class ForestManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
-  
+
 class Forest(models.Model):
     """stores set of trees
-    
+
     For example all l10n-central trees create single forest
-    
+
     Fields:
     name -- name of the forest
     url -- url to the tree list which is a base for a tree url pattern
@@ -162,7 +162,7 @@ class RepositoryManager(models.Manager):
 
 class Repository(models.Model):
     """stores set of repositories
-    
+
     Fields:
     name -- name of the repository
     url -- url to the repository
@@ -183,11 +183,11 @@ class Repository(models.Model):
         except IndexError:
             # no push in repo, return 0
             return 0
-    def save(self, force_insert=False, force_update=False):
+    def save(self, *args, **kwargs):
         # do we need an initial changeset? self.id will be set in super().save()
         needsInitialChangeset = self.id is None
         # Call the "real" save() method.
-        super(Repository, self).save(force_insert, force_update)
+        super(Repository, self).save(*args, **kwargs)
         if needsInitialChangeset:
             cs = Changeset.objects.get(revision='0'*40)
             self.changesets.add(cs)
@@ -203,7 +203,7 @@ class PushManager(models.Manager):
 
 class Push(models.Model):
     """stores context of who pushed what when
-    
+
     Fields:
     repository -- repository changesets were pushed to
     user -- person who did the push
@@ -250,12 +250,12 @@ class TreeManager(models.Manager):
 
 class Tree(models.Model):
     """stores unique repositories combination
-    
+
     Like:
     comm-central + mozilla-central = Thunderbird trunk
     releases/mozilla-1.9.1 = Firefox 3.5
     mobile-browser + releases/mozilla-1.9.1 = Fennec 1.0
-    
+
     Fiels:
     code -- unique code name of the tree (e.g. fx35)
     repositories -- list of repositories that make this tree
