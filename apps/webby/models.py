@@ -39,6 +39,7 @@ from django.db import models
 from life.models import Locale
 from django.contrib.auth.models import User
 
+
 class ProjectManager(models.Manager):
     def active(self):
         return self.filter(is_archived=False)
@@ -65,7 +66,7 @@ class Project(models.Model):
     code_repo_url = models.CharField(max_length=150, blank=True, null=True)
     stage_url = models.URLField(blank=True, null=True, verify_exists=False)
     final_url = models.URLField(blank=True, null=True, verify_exists=False)
-    # stage_auth_url can't be a URLField, because Django doesn't accept the 
+    # stage_auth_url can't be a URLField, because Django doesn't accept the
     # //<user>:<password>@<host>:<port>/<url-path> syntax as valid
     stage_auth_url = models.CharField(max_length=250, blank=True, null=True)
     stage_login = models.CharField(max_length=80, blank=True, null=True)
@@ -82,10 +83,10 @@ class Project(models.Model):
 
 
 class Weblocale(models.Model):
-    """ Many-to-Many proxy class for project/locale pairs 
-    """
+    """Many-to-Many proxy class for project/locale pairs."""
     class Meta:
         unique_together = (("project", "locale"),)
+
     project = models.ForeignKey(Project)
     locale = models.ForeignKey(Locale)
     requestee = models.ForeignKey(User, blank=True, null=True)

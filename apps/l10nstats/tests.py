@@ -115,7 +115,7 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
         """index() view takes arguments 'locale' and 'tree' and if these
         aren't correct that view should raise a 404"""
         url = reverse('l10nstats.views.index')
-        response = self.client.get(url, {'locale':'xxx'})
+        response = self.client.get(url, {'locale': 'xxx'})
         eq_(response.status_code, 404)
 
         locale, __ = Locale.objects.get_or_create(
@@ -128,24 +128,22 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
           name='Japanese',
         )
 
-        response = self.client.get(url, {'locale':['en-US','xxx']})
+        response = self.client.get(url, {'locale': ['en-US', 'xxx']})
         eq_(response.status_code, 404)
 
-        response = self.client.get(url, {'locale':['en-US','jp']})
+        response = self.client.get(url, {'locale': ['en-US', 'jp']})
         eq_(response.status_code, 200)
 
         # test the tree argument now
-
-
-        response = self.client.get(url, {'tree':'xxx'})
+        response = self.client.get(url, {'tree': 'xxx'})
         eq_(response.status_code, 404)
 
         self._create_appver_milestone()
         assert Tree.objects.all().exists()
         tree, = Tree.objects.all()
 
-        response = self.client.get(url, {'tree':['xxx', tree.code]})
+        response = self.client.get(url, {'tree': ['xxx', tree.code]})
         eq_(response.status_code, 404)
 
-        response = self.client.get(url, {'tree':[tree.code]})
+        response = self.client.get(url, {'tree': [tree.code]})
         eq_(response.status_code, 200)

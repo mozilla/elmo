@@ -41,13 +41,15 @@ from django.db import models
 from life.models import Locale, Tree, Changeset
 from mbdb.models import Build
 
+
 class ModuleCount(models.Model):
     """Abstraction of untranslated strings per module.
-    
+
     Module is usually something like 'browser' or 'security/manager'
     """
     name = models.CharField(max_length=50)
     count = models.IntegerField()
+
     def __unicode__(self):
         return self.name + '(%d)' % self.count
 
@@ -59,6 +61,7 @@ class Revision(models.Model):
     class Meta:
         unique_together = (('repository', 'ident'),)
 '''
+
 
 class Run(models.Model):
     """Abstraction for a inspect-locales run.
@@ -79,13 +82,14 @@ class Run(models.Model):
     unchanged = models.IntegerField(default=0)
     keys = models.IntegerField(default=0)
     errors = models.IntegerField(default=0)
-    report = models.IntegerField(default=0) 
-    warnings = models.IntegerField(default=0) 
+    report = models.IntegerField(default=0)
+    warnings = models.IntegerField(default=0)
     completion = models.SmallIntegerField(default=0)
 
     @property
     def allmissing(self):
-        """property adding missing and missingInFiles to be used in templates etc.
+        """property adding missing and missingInFiles to be used in templates
+        etc.
 
         We keep track of missing strings in existing files and in new files
         separetely, add the two for the most stats here.
@@ -93,7 +97,8 @@ class Run(models.Model):
         return self.missing + self.missingInFiles
 
     def activate(self):
-        previous = Active.objects.filter(run__tree = self.tree, run__locale = self.locale)
+        previous = Active.objects.filter(run__tree=self.tree,
+                                         run__locale=self.locale)
         previousl = list(previous)
         if len(previousl) == 1:
             previousl[0].run = self
@@ -103,15 +108,18 @@ class Run(models.Model):
                 previous.delete()
             Active.objects.create(run=self)
         if self.cleanupUnchanged:
-            UnchangedInFile.objects.filter(run__active__isnull=True).distinct().delete()
+            (UnchangedInFile.objects.filter(run__active__isnull=True)
+             .distinct().delete())
 
     # fields and class method to convert a query over runs to a brief text
     dfields = ['errors', 'missing', 'missingInFiles',
                'obsolete',
                'completion']
+
     @classmethod
-    def to_class_string(cls, iterable, prefix = ''):
-        '''Convert an iterable list of dictionaries to brief output, and result.
+    def to_class_string(cls, iterable, prefix=''):
+        """Convert an iterable list of dictionaries to brief output, and
+        result.
 
         The input can be a values() query ending up on Run objects, and needs
         all the fields in dfields. The given prefix can be used if the
@@ -119,7 +127,7 @@ class Run(models.Model):
 
         Yields triples of the input dictionary, the short text, and a
         classification, any of "error", "warnings", or "success".
-        '''
+        """
         for d in iterable:
             cmp_segs = []
             cls = None
@@ -149,8 +157,9 @@ class Run_Revisions(models.Model):
     """
     run = models.ForeignKey(Run)
     changeset = models.ForeignKey(Changeset)
+
     class Meta:
-        unique_together = (('run','changeset'),)
+        unique_together = (('run', 'changeset'),)
         managed = False
 
 

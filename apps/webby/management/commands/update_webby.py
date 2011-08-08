@@ -39,6 +39,7 @@ from django.core.management.base import BaseCommand
 from webby.models import Project
 from webby.utils import update_verbatim_all, update_svn_all
 
+
 class Command(BaseCommand):
     help = 'Updates stats on all webby projects'
 
@@ -60,4 +61,3 @@ class Command(BaseCommand):
                 print(' Failed\n')
 
         print('Webby updated\n')
-

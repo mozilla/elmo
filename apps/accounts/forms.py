@@ -38,6 +38,7 @@
 from django import forms
 import django.contrib.auth.forms
 
+
 class AuthenticationForm(django.contrib.auth.forms.AuthenticationForm):
     """override the authentication form because we use the email address as the
     key to authentication."""

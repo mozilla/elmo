@@ -86,11 +86,11 @@ def project(request, slug):
                               requestee=request.user)
             wlobj.save()
             LogEntry.objects.log_action(
-                user_id         = request.user.pk,
-                content_type_id = ContentType.objects.get_for_model(wlobj).pk,
-                object_id       = wlobj.pk,
-                object_repr     = unicode(wlobj),
-                action_flag     = ADDITION
+                user_id=request.user.pk,
+                content_type_id=ContentType.objects.get_for_model(wlobj).pk,
+                object_id=wlobj.pk,
+                object_repr=unicode(wlobj),
+                action_flag=ADDITION
             )
             return HttpResponseRedirect('')
         else:

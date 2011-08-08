@@ -36,7 +36,7 @@
 
 'Url mappings for accounts app'
 
-from django.conf.urls.defaults import *
+from django.conf.urls.defaults import patterns
 
 urlpatterns = patterns('accounts.views',
     (r'^login', 'login'),
