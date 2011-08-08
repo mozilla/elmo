@@ -533,7 +533,6 @@ en-US
                   signoff__appversion__code=appver.code)
           .order_by('-pk'))
         last_action = actions[0]
-        ok_('|%d' % last_action.pk in etag)
 
         # now, log in and expect the ETag to change once the user has the
         # right permissions
@@ -581,7 +580,6 @@ en-US
         etag_before = etag
         etag = response.get('etag', None)
         ok_(etag != etag_before)
-        ok_(str(new_last_action.pk) in etag)
 
         # add a new push
         assert Push.objects.all()
@@ -597,10 +595,6 @@ en-US
           push_date=last_push.push_date,
           push_id=last_push.push_id + 1
         )
-        # change the id to something much different from 1 or 2 or 4 so that we
-        # can spot this id inside the "hash" of the etag identifier
-        push.pk = 777
-        push.save()
 
         # that should force a new etag identifier
         response = self.client.get(url)
@@ -608,17 +602,10 @@ en-US
         etag_before = etag
         etag = response.get('etag', None)
         ok_(etag != etag_before)
-        ok_(str(new_last_action.pk) in etag)
-        ok_('777' in etag)
 
         # but not if a new, unreleated push is created
         other_locale = Locale.objects.get(code='pl')
-        other_repo = Repository.objects.create(
-          forest=last_push.repository.forest,
-          name=last_push.repository.name + '...',
-          url=last_push.repository.url,
-          locale=other_locale,  # the difference
-        )
+        other_repo = Repository.objects.get(locale=other_locale)
 
         Push.objects.create(
           repository=other_repo,
@@ -641,9 +628,6 @@ en-US
           tree=appver.tree,
           locale=locale,
         )
-        # again, change the id to something that stands out more
-        run.pk = 666
-        run.save()
 
         # that should force a new etag identifier
         response = self.client.get(url)
@@ -651,8 +635,6 @@ en-US
         etag_before = etag
         etag = response.get('etag', None)
         ok_(etag != etag_before)
-        ok_(str(new_last_action.pk) in etag)
-        ok_('666' in etag)
 
         # but not just any new run
         run = Run.objects.create(
@@ -673,4 +655,3 @@ en-US
         etag_before = etag
         etag = response.get('etag', None)
         ok_(etag != etag_before)
-        ok_(str(new_last_action.pk) in etag)
