@@ -38,6 +38,7 @@
 
 
 from datetime import datetime
+import os.path
 
 from mbdb.models import Change, Tag, File, Log, SourceStamp
 from django.conf import settings
@@ -126,7 +127,7 @@ def modelForLog(dbstep, logfile, basedir, isFinished = False):
                                   name = logfile.getName(),
                                   isFinished = True)
     else:
-        relfile = logfile.getFilename()[len(basedir)+1:]
+        relfile = os.path.relpath(logfile.getFilename(), basedir)
         logf = dbstep.logs.create(filename = relfile, html = None,
                                   name = logfile.getName(),
                                   isFinished = isFinished)

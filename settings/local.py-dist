@@ -40,8 +40,15 @@ MANAGERS = ADMINS
 # these are appropriate settings only for local development
 DEBUG = TEMPLATE_DEBUG = True
 #TEMPLATE_STRING_IF_INVALID = '!{ %s }'
-#REPOSITORY_BASE = '/home/peterbe/dev/MOZILLA/ELMO/repos'
 SESSION_COOKIE_SECURE = False
 
 # if you want to test the Arecibo
 #ARECIBO_SERVER_URL = "http://amckay-arecibo.khan.mozilla.org/"
+
+try:
+    from .mounts_local import *
+except ImportError:
+    # if the file exists, ImportError is actually fatal   
+    import os.path as op
+    if op.isfile(op.join(op.dirname(__file__), 'mounts_local.py')):
+	raise

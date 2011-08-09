@@ -39,9 +39,10 @@
 
 from django.db.models import Q
 from django.db import connection
+from django.conf import settings
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.http import HttpResponseNotFound
+from django.http import HttpResponseNotFound, Http404
 from django.contrib.syndication.feeds import Feed
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
@@ -56,7 +57,6 @@ from datetime import datetime, timedelta
 import calendar
 from mbdb.models import *
 from life.models import Push, Repository
-from tinder.models import MasterMap
 
 
 resultclasses = ['success', 'warning', 'failure', 'skip', 'except']
@@ -704,40 +704,46 @@ def showbuild(request, buildername, buildnumber):
                                'props': props},
                                context_instance=RequestContext(request))
 
-mastermaps = MasterMap.objects.filter(webhead__name='head 1')
 def generateLog(master, filename):
     """Generic generator to read buildbot step logs.
     """
-    base = mastermaps.get(master__name=master).logmount
+    try:
+        base = settings.LOG_MOUNTS[master]
+    except KeyError:
+        raise Http404("Master `%s` not found" % master)
     head = re.compile('(\d+):(\d)')
     f = None
     filename = os.path.join(base, filename)
     try:
         f = BZ2File(filename + ".bz2", "r")
     except IOError:
-        f = open(filename, "r")
-    buflen = 64*1024
-    buf = f.read(buflen)
-    offset = 0
-    while buf:
-        m = head.match(buf, offset)
-        if m:
-            cnt = int(m.group(1))
-            channel = int(m.group(2))
-            offset = m.end()
-            chunk = buf[offset:offset+cnt-1]
-            if len(chunk) < cnt - 1:
-                cnt -= len(chunk)
-                morebuf = f.read(cnt)
-                chunk += morebuf[:-1] # drop ','
-                buf = []
-                offset = 0
-            else:
-                offset += cnt
-            yield {'channel': channel, 'data': chunk}
-        buf = buf[offset:] + f.read(buflen)
+        try:
+            f = open(filename, "r")
+        except IOError:
+            raise Http404("Log `%s` on master `%s` not found" % (filename, master))
+    def _iter(f):
+        buflen = 64*1024
+        buf = f.read(buflen)
         offset = 0
-
+        while buf:
+            m = head.match(buf, offset)
+            if m:
+                cnt = int(m.group(1))
+                channel = int(m.group(2))
+                offset = m.end()
+                chunk = buf[offset:offset+cnt-1]
+                if len(chunk) < cnt - 1:
+                    cnt -= len(chunk)
+                    morebuf = f.read(cnt)
+                    chunk += morebuf[:-1] # drop ','
+                    buf = []
+                    offset = 0
+                else:
+                    offset += cnt
+                yield {'channel': channel, 'data': chunk}
+            buf = buf[offset:] + f.read(buflen)
+            offset = 0
+    return _iter(f)
 
 def showlog(request, master, file):
     """Show a log file.
@@ -752,8 +758,9 @@ def showlog(request, master, file):
                        'data': chunk['data']}
     build = Build.objects.get(steps__logs__filename=file,
                               builder__master__name=master)
+    chunks = generateLog(master, file)
     return render_to_response('tinder/log.html',
                               {'build': build,
                                'file': file,
-                               'chunks': classify(generateLog(master, file))},
+                               'chunks': classify(chunks)},
                                context_instance=RequestContext(request))
