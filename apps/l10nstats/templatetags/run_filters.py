@@ -40,29 +40,30 @@
 
 from django import template
 from django.utils.safestring import mark_safe
-from django.utils.html import conditional_escape
 from django.core.urlresolvers import reverse
 
 from l10nstats.models import Run
 
 register = template.Library()
 
+
 @register.filter
-def showrun(run, autoescape=None):
-    """Display a l10nstats.models.Run object in a template in a consistent manner.
+def showrun(run):
+    """Display a l10nstats.models.Run object in a template in a consistent
+    manner.
+
+    Since we're not accepting input strings we don't have to worry about
+    autoescaping.
     """
-    if autoescape:
-        esc = conditional_escape
-    else:
-        esc = lambda x: x
     if not isinstance(run, Run):
         return mark_safe("&nbsp;")
-    fmt = '<a %%s href="%s?run=%%d">%%s</a>' % reverse('l10nstats.views.compare')
+    fmt = ('<a %%s href="%s?run=%%d">%%s</a>' %
+            reverse('l10nstats.views.compare'))
     missing = run.missing + run.missingInFiles
     data = {'missing': missing}
     for k in ('errors', 'total'):
         data[k] = getattr(run, k)
-    datastr = ' '.join('data-%s="%d"' % (k,v) for k,v in data.iteritems())
+    datastr = ' '.join('data-%s="%d"' % (k, v) for k, v in data.iteritems())
     cmp_segs = []
     if run.errors:
         cmp_segs.append('%d error(s)' % run.errors)
@@ -76,5 +77,3 @@ def showrun(run, autoescape=None):
     compare = ', '.join(cmp_segs)
 
     return mark_safe(fmt % (datastr, run.id, compare))
-
-showrun.needs_autoescape = True

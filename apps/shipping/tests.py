@@ -42,7 +42,8 @@ from django.test import TestCase
 from django.core.urlresolvers import reverse
 from shipping.models import Milestone, Application, AppVersion, Signoff, Action
 from shipping.api import signoff_actions, flag_lists
-from life.models import Tree, Forest
+from life.models import Tree, Forest, Locale, Push, Repository
+from l10nstats.models import Run
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.utils import simplejson as json
@@ -487,7 +488,7 @@ en-US
         response = self.client.get(url, {'ms': mile.code})
         eq_(response.status_code, 200)
         eq_(response.content, "de\nen-US\n")
-        
+
 
     def test_dashboard_static_files(self):
         """render the shipping dashboard and check that all static files are
@@ -504,3 +505,153 @@ en-US
         response = self.client.get(url)
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
+
+    def test_signoff_etag(self):
+        """Test that the ETag is sent correctly for the signoff() view.
+
+        Copied here from the etag_signoff() function's doc string:
+            The signoff view should update for:
+                - new actions
+                - new pushes
+                - new runs on existing pushes
+                - changed permissions
+
+        So, we need to make this test check all of that.
+        """
+        appver = self.av
+        locale = Locale.objects.get(code='de')
+        url = reverse('shipping.views.signoff.signoff',
+                      args=[locale.code, appver.code])
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        etag = response.get('etag', None)
+        ok_(etag)
+
+        # expect the PK of the most recent action to be in the etag
+        actions = (Action.objects
+          .filter(signoff__locale__code=locale.code,
+                  signoff__appversion__code=appver.code)
+          .order_by('-pk'))
+        last_action = actions[0]
+
+        # now, log in and expect the ETag to change once the user has the
+        # right permissions
+        user = User.objects.get(username='l10ndriver')  # from fixtures
+        user.set_password('secret')
+        user.save()
+        assert self.client.login(username='l10ndriver', password='secret')
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        etag_before = etag
+        etag = response.get('etag', None)
+        ok_(etag)
+        eq_(etag, etag_before)
+
+        add_perm = Permission.objects.get(codename='add_signoff')
+        user.user_permissions.add(add_perm)
+        user.save()
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        etag_before = etag
+        etag = response.get('etag', None)
+        ok_(etag != etag_before)
+
+        add_perm = Permission.objects.get(codename='review_signoff')
+        user.user_permissions.add(add_perm)
+        user.save()
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        etag_before = etag
+        etag = response.get('etag', None)
+        ok_(etag != etag_before)
+
+        # add a new action
+        new_last_action = Action.objects.create(
+          signoff=last_action.signoff,
+          flag=last_action.flag,
+          author=user,
+          comment='test'
+        )
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        etag_before = etag
+        etag = response.get('etag', None)
+        ok_(etag != etag_before)
+
+        # add a new push
+        assert Push.objects.all()
+        # ...by copying the last one
+        pushes = (Push.objects
+                  .filter(repository__forest__tree=appver.tree_id)
+                  .filter(repository__locale__code=locale.code)
+                  .order_by('-pk'))
+        last_push = pushes[0]
+        push = Push.objects.create(
+          repository=last_push.repository,
+          user=last_push.user,
+          push_date=last_push.push_date,
+          push_id=last_push.push_id + 1
+        )
+
+        # that should force a new etag identifier
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        etag_before = etag
+        etag = response.get('etag', None)
+        ok_(etag != etag_before)
+
+        # but not if a new, unreleated push is created
+        other_locale = Locale.objects.get(code='pl')
+        other_repo = Repository.objects.get(locale=other_locale)
+
+        Push.objects.create(
+          repository=other_repo,
+          user=last_push.user,
+          push_date=last_push.push_date,
+          push_id=last_push.push_id + 1
+        )
+
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        etag_before = etag
+        etag = response.get('etag', None)
+        # doesn't change the etag since the *relevant* pushes haven't changed
+        ok_(etag == etag_before)
+
+        # add a new run
+        assert not Run.objects.all().exists()  # none in fixtures
+        # ...again, by copying the last one and making a small change
+        run = Run.objects.create(
+          tree=appver.tree,
+          locale=locale,
+        )
+
+        # that should force a new etag identifier
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        etag_before = etag
+        etag = response.get('etag', None)
+        ok_(etag != etag_before)
+
+        # but not just any new run
+        run = Run.objects.create(
+          tree=appver.tree,
+          locale=other_locale,
+        )
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        etag_before = etag
+        etag = response.get('etag', None)
+        # not different this time!
+        ok_(etag == etag_before)
+
+        # lastly, log out and it should ne different
+        self.client.logout()
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        etag_before = etag
+        etag = response.get('etag', None)
+        ok_(etag != etag_before)

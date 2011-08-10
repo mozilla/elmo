@@ -35,7 +35,7 @@
 #
 # ***** END LICENSE BLOCK *****
 
-from django.conf.urls.defaults import *
+from django.conf.urls.defaults import patterns, url
 from webby.feeds import AllOptinsFeed, PendingOptinsFeed
 
 urlpatterns = patterns('webby.views',

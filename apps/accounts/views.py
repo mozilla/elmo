@@ -39,15 +39,11 @@
 
 
 from django.contrib.auth.views import REDIRECT_FIELD_NAME
-from django.shortcuts import render_to_response
 from django.http import HttpResponseRedirect, HttpResponse
-from django.template import RequestContext
 from django.views.decorators import cache
 from django.core.context_processors import csrf
 from django.utils import simplejson as json
-from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.views import login as django_login
-
 from forms import AuthenticationForm
 
 
@@ -64,6 +60,7 @@ def login(request):
             return user_json(request)
 
     return response
+
 
 @cache.cache_control(private=True)
 def user_json(request):

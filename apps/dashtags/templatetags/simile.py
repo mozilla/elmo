@@ -2,19 +2,19 @@
 '''
 
 from django import template
-from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
 
 
 register = template.Library()
+
 
 def simile(parser, token, apps, forceBundle=False):
     """Generic function for simile api inclusions
     """
 
     args = token.split_contents()[1:]
-    simileurl = reverse('static', kwargs={'path':'simile/'})
-    opts = {'bundle':'true', 'autoCreate': 'true'}
+    simileurl = reverse('static', kwargs={'path': 'simile/'})
+    opts = {'bundle': 'true', 'autoCreate': 'true'}
     for arg in args:
         try:
             k, v = arg.split('=', 1)
@@ -22,10 +22,10 @@ def simile(parser, token, apps, forceBundle=False):
                 opts[k] = v
         except ValueError:
             pass
-    bundle = opts['bundle']=='false' and 'bundle=false' or None
+    bundle = opts['bundle'] == 'false' and 'bundle=false' or None
     if bundle is None and forceBundle:
         bundle = 'bundle=true'
-    autoCreate = opts['autoCreate']=='false' and 'autoCreate=false' or None
+    autoCreate = opts['autoCreate'] == 'false' and 'autoCreate=false' or None
     ajax_params = '&'.join(filter(None, [bundle]))
     if ajax_params:
         ajax_params = '?' + ajax_params
@@ -38,7 +38,8 @@ def simile(parser, token, apps, forceBundle=False):
     script_tail = '''
 })();
 </script>
-<script type="text/javascript" src="%(base)sajax/simile-ajax-api.js%(params)s"></script>
+<script type="text/javascript" '''\
+'''src="%(base)sajax/simile-ajax-api.js%(params)s"></script>
 ''' % {'base': simileurl, 'params': ajax_params}
     loaders = []
     next = None
@@ -48,7 +49,9 @@ def simile(parser, token, apps, forceBundle=False):
         if next is not None:
             loaders += ['  window.SimileAjax_onLoad = load_%s;' % next]
         loaders += [
-            '  SimileAjax.includeJavascriptFile(document, "%(base)s%(app)s/%(app)s-api.js%(params)s");' % {'base': simileurl, 'app': app, 'params': params},
+            '  SimileAjax.includeJavascriptFile(document, "%(base)s%(app)s/'\
+            '%(app)s-api.js%(params)s");' % \
+            {'base': simileurl, 'app': app, 'params': params},
             '};']
         next = app
         params = ajax_params
@@ -70,4 +73,4 @@ def timeplot(parser, token):
 
     Includes timeline.
     """
-    return simile(parser, token, ('timeline','timeplot'), forceBundle=True)
+    return simile(parser, token, ('timeline', 'timeplot'), forceBundle=True)

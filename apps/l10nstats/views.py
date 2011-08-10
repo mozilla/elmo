@@ -48,7 +48,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template.loader import render_to_string
 from django.template import RequestContext
 from django.http import (HttpResponse, HttpResponseNotFound,
-                         HttpResponseNotModified, Http404)
+                         Http404)
 from django.db.models import Min, Max
 from django.views.decorators.cache import cache_control
 from django.utils import simplejson
@@ -57,6 +57,7 @@ from django.utils.safestring import mark_safe
 
 from l10nstats.models import *
 from tinder.views import generateLog
+
 
 def getRunsBefore(tree, stamp, locales):
     """Get the latest run for each of the given locales and tree.
@@ -68,7 +69,7 @@ def getRunsBefore(tree, stamp, locales):
     while True:
         q = Run.objects.filter(tree=tree, locale__in=locales,
                                srctime__lt=stamp)
-        q = q.order_by('-srctime')[:len(locales)*2]
+        q = q.order_by('-srctime')[:len(locales) * 2]
         q = q.select_related('locale')
         if q.count() == 0:
             return runs
@@ -159,7 +160,8 @@ schema = {
         }
     }
 
-@cache_control(max_age=5*60)
+
+@cache_control(max_age=5 * 60)
 def status_json(request):
     """The json output for the builds.
 
@@ -176,6 +178,7 @@ def status_json(request):
              'missing', 'missingInFiles', 'report', 'warnings',
              'errors', 'unchanged', 'total', 'obsolete', 'changed',
              'completion']
+
     def toExhibit(d):
         missing = d['missing'] + d['missingInFiles']
         result = 'success'
@@ -185,21 +188,22 @@ def status_json(request):
             result = 'failure'
         elif d['obsolete']:
             result = 'warnings'
-        rd =  {'id': '%s/%s' % (tree, locale),
-                'runid': d['id'],
-                'label': locale,
-                'locale': locale,
-                'tree': tree,
-                'type': 'Build',
-                'result': result,
-                'missing': missing,
-                'report': d['report'],
-                'warnings': d['warnings'],
-                'changed': d['changed'],
-                'unchanged': d['unchanged'],
-                'total': d['total'],
-                'completion': d['completion']
-                }
+
+        rd = {'id': '%s/%s' % (tree, locale),
+              'runid': d['id'],
+              'label': locale,
+              'locale': locale,
+              'tree': tree,
+              'type': 'Build',
+              'result': result,
+              'missing': missing,
+              'report': d['report'],
+              'warnings': d['warnings'],
+              'changed': d['changed'],
+              'unchanged': d['unchanged'],
+              'total': d['total'],
+              'completion': d['completion']
+              }
         if 'errors' in d and d['errors']:
             rd['errors'] = d['errors']
         if 'obsolete' in d and d['obsolete']:
@@ -221,9 +225,8 @@ def homesnippet(request):
             })
 
 
-
 def teamsnippet(request, loc):
-    act = Run.objects.filter(locale = loc, active__isnull=False)
+    act = Run.objects.filter(locale=loc, active__isnull=False)
     week_ago = datetime.utcnow() - timedelta(7)
     act = act.filter(srctime__gt=week_ago)
     act = act.order_by('tree__code').select_related('tree')
@@ -264,6 +267,7 @@ def history_plot(request):
             p = q2.filter(srctime__lt=starttime).order_by('-srctime')[0]
         except IndexError:
             pass
+
         def runs(_q, p):
             if p is not None:
                 yield {'srctime': starttime,
@@ -290,8 +294,8 @@ def history_plot(request):
         stamps = {}
         stamps['start'] = int(time.mktime(starttime.timetuple()))
         stamps['end'] = int(time.mktime(endtime.timetuple()))
-        stamps['previous'] = stamps['start']*2 - stamps['end']
-        stamps['next'] = stamps['end']*2 - stamps['start']
+        stamps['previous'] = stamps['start'] * 2 - stamps['end']
+        stamps['next'] = stamps['end'] * 2 - stamps['start']
         return render_to_response('l10nstats/history.html',
                                   {'locale': locale.code,
                                    'tree': tree.code,
@@ -301,6 +305,7 @@ def history_plot(request):
                                    'runs': runs(q2, p)},
                                   context_instance=RequestContext(request))
     return HttpResponseNotFound("sorry, gimme tree and locale")
+
 
 def tree_progress(request, tree):
     """Progress of all locales on a tree.
@@ -331,7 +336,9 @@ def tree_progress(request, tree):
 
     if 'starttime' in request.GET:
         try:
-            starttime = datetime.utcfromtimestamp(int(request.GET['starttime']))
+            starttime = datetime.utcfromtimestamp(
+              int(request.GET['starttime'])
+            )
         except Exception:
             pass
         if starttime < allStart:
@@ -351,12 +358,15 @@ def tree_progress(request, tree):
 
     initial_runs = getRunsBefore(tree, starttime,
                                  locales)
-    results = {}
     datadict = defaultdict(dict)
     for loc, r in initial_runs.iteritems():
-        datadict[starttime][loc] = r.missing + r.missingInFiles + r.report
+        datadict[starttime][loc] = (r.missing +
+                                    r.missingInFiles +
+                                    r.report)
     for r in q2:
-        datadict[r.srctime][r.locale.code] = r.missing + r.missingInFiles + r.report
+        datadict[r.srctime][r.locale.code] = (r.missing +
+                                              r.missingInFiles +
+                                              r.report)
     data = [{'srctime': t, 'locales': simplejson.dumps(datadict[t])}
             for t in sorted(datadict.keys())]
 
@@ -420,12 +430,15 @@ def grid(request):
         en = tuple(en)
         x.add(l10n)
         y.add(en)
-        table[(l10n,en)].append(run)
+        table[(l10n, en)].append(run)
+
     X = sorted(x, key=lambda cs: cs.push and cs.push.push_date or epoch)
-    Y = sorted(y, key=lambda t: map(lambda cs: cs.push and cs.push.push_date or epoch, t))
+    Y = sorted(y, key=lambda t: map(lambda cs: cs.push and
+                                               cs.push.push_date or
+                                               epoch, t))
     rows = []
     for y in Y:
-        row = [(x,y) in table and table[(x,y)] or None for x in X]
+        row = [(x, y) in table and table[(x, y)] or None for x in X]
         rows.append(row)
     return render_to_response('l10nstats/grid.html',
                               {'X': X,
@@ -462,21 +475,25 @@ class JSONAdaptor(object):
                      for e in self.value.get('obsoleteEntity', [])]
                 entities.sort(key=lambda d: d['key'])
                 self.entities = errors + warnings + entities
+
     @classmethod
     def adaptChildren(cls, _lst, base=''):
         for node in _lst:
             yield JSONAdaptor(node, base)
+
     def __iter__(self):
         if self.base:
             base = self.base + '/' + self.fragment
         else:
             base = self.fragment
         return self.adaptChildren(self.children, base)
+
     @property
     def path(self):
         if self.base:
             return self.base + '/' + self.fragment
         return self.fragment
+
 
 def compare(request):
     """HTML pretty-fied output of compare-locales.
@@ -495,10 +512,9 @@ def compare(request):
     if 'keys' not in summary:
         summary['keys'] = 0
     # create table widths for the progress bar
-    _width = 300
     widths = {}
     for k in ('changed', 'missing', 'missingInFiles', 'report', 'unchanged'):
-        widths[k] = summary.get(k, 0)*300/summary['total']
+        widths[k] = summary.get(k, 0) * 300 / summary['total']
     return render_to_response('l10nstats/compare.html',
                               {'run': run,
                                'nodes': nodes,

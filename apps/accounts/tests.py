@@ -40,9 +40,9 @@ from urlparse import urlparse
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
-from django.conf import settings
 from django.utils import simplejson as json
 from nose.tools import eq_, ok_
+
 
 class AccountsTestCase(TestCase):
 
@@ -127,7 +127,7 @@ class AccountsTestCase(TestCase):
         assert self.client.login(username=user.username,
                                  password='secret')
 
-        response = self.client.get(url) # note: it's GET
+        response = self.client.get(url)  # note: it's GET
         eq_(response.status_code, 302)
         path = urlparse(response['Location']).path
         eq_(path, '/')

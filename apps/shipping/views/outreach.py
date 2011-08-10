@@ -95,11 +95,18 @@ def data(request):
     except (ValueError, TypeError):
         raise Http404("missing betadate, or doesn't match %s" % _dateformat)
 
+    branches = request.GET.getlist('branch')
+
     f_aurora = Forest.objects.get(name='releases/l10n/mozilla-aurora')
     f_beta = Forest.objects.get(name='releases/l10n/mozilla-beta')
+    forests = []
+    if 'aurora' in branches:
+        forests.append(f_aurora)
+    if 'beta' in branches:
+        forests.append(f_beta)
     appvers = (AppVersion.objects.
                filter(app__in=list(beta_apps.values_list('id', flat=True)),
-                      tree__l10n__in=[f_aurora, f_beta])
+                      tree__l10n__in=forests)
                .order_by('code')
                .select_related('app', 'tree'))
     appvers = list(appvers)

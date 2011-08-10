@@ -37,6 +37,7 @@
 
 from forms import AuthenticationForm
 
+
 def accounts(request):
     login_form = AuthenticationForm()
     return {'login_form': login_form}
