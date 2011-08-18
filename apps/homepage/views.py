@@ -37,11 +37,38 @@
 '''Views for the main navigation pages.
 '''
 
+import sys
+from django.http import Http404
 from django.shortcuts import render_to_response, redirect
 from django.utils.safestring import mark_safe
 from django.template import RequestContext
+from django.conf import settings
+from django.views.defaults import page_not_found, server_error
+import django_arecibo.wrapper
 
 from life.models import Locale
+
+
+def handler404(request):
+    if getattr(settings, 'ARECIBO_SERVER_URL', None):
+        # Make a distinction between Http404 and Resolver404.
+        # Http404 is an explicity exception raised from within the views which
+        # might indicate the wrong usage of arguments to a view for example.
+        # Resolver404 is an implicit exception that Django raises when it can't
+        # resolve a URL to an appropriate view or handler.
+        # We're not interested in sending Arecibo exceptions on URLs like
+        # /blablalb/junk/junk
+        # but we might be interested in /dashboard?from=20LL-02-31
+        exception = sys.exc_info()[0]
+        if isinstance(exception, Http404) or exception is Http404:
+            django_arecibo.wrapper.post(request, 404)
+    return page_not_found(request)
+
+
+def handler500(request):
+    if getattr(settings, 'ARECIBO_SERVER_URL', None):
+        django_arecibo.wrapper.post(request, 500)
+    return server_error(request)
 
 
 def index(request):

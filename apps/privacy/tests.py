@@ -40,11 +40,17 @@ from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.contrib.auth.models import User, Permission
 from django.contrib.admin.models import LogEntry, CHANGE
+from django.conf import settings
 from models import Policy, Comment
 from commons.tests.mixins import EmbedsTestCaseMixin
 
 
 class PrivacyTestCase(TestCase, EmbedsTestCaseMixin):
+
+    def setUp(self):
+        super(PrivacyTestCase, self).setUp()
+        # ensure that no arecibo is set up
+        settings.ARECIBO_SERVER_URL = None
 
     def test_render_show_policy(self):
         url = reverse('privacy.views.show_policy')

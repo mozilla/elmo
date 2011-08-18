@@ -38,6 +38,7 @@
 import re
 from urlparse import urlparse
 from django.test import TestCase
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 from django.utils import simplejson as json
@@ -45,6 +46,11 @@ from nose.tools import eq_, ok_
 
 
 class AccountsTestCase(TestCase):
+
+    def setUp(self):
+        super(AccountsTestCase, self).setUp()
+        # ensure that no arecibo is set up
+        settings.ARECIBO_SERVER_URL = None
 
     def test_login_long_username(self):
         url = reverse('accounts.views.login')

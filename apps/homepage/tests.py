@@ -35,15 +35,20 @@
 #
 # ***** END LICENSE BLOCK *****
 
+from mock import patch
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.conf import settings
+from django.http import Http404
+from django.test.client import RequestFactory
+from django.core.urlresolvers import Resolver404
 from nose.tools import eq_, ok_
 from life.models import Locale
 from commons.tests.mixins import EmbedsTestCaseMixin
 
 
 class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
+
     def setUp(self):
         super(HomepageTestCase, self).setUp()
 
@@ -59,9 +64,91 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
           'django.contrib.auth.backends.ModelBackend',
         )
 
+        # make sure this is always set to something and iff the mocking of
+        # django_arecibo was to fail at least it won't send anything to a real
+        # arecibo server
+        settings.ARECIBO_SERVER_URL = 'http://arecibo/'
+
     def tearDown(self):
         super(HomepageTestCase, self).tearDown()
         settings.AUTHENTICATION_BACKENDS = self._original_auth_backends
+
+    def test_handler404(self):
+        # import the root urlconf like django does when it starts up
+        root_urlconf = __import__(settings.ROOT_URLCONF,
+                                  globals(), locals(), ['urls'], -1)
+        # ...so that we can access the 'handler404' defined in there
+        par, end = root_urlconf.handler404.rsplit('.', 1)
+        # ...which is an importable reference to the real handler404 function
+        views = __import__(par, globals(), locals(), [end], -1)
+        # ...and finally we the handler404 function at hand
+        handler404 = getattr(views, end)
+
+        # to call this view function we need a mock request object
+        fake_request = RequestFactory().request(**{'wsgi.input': None})
+
+        # the reason for first causing an exception to be raised is because
+        # the handler404 function is only called by django when an exception
+        # has been raised which means sys.exc_info() is something.
+        try:
+            raise Http404("something bad")
+        except Http404:
+            # mock the django_arecibo wrapper so it doesn't actually
+            # call out on the network
+            with patch('django_arecibo.wrapper') as m:
+                # do this inside a frame that has a sys.exc_info()
+                response = handler404(fake_request)
+                eq_(response.status_code, 404)
+                ok_('Page not found' in response.content)
+                eq_(m.post.call_count, 1)
+
+        try:
+            # raise an error but this time withou a message
+            raise Http404
+        except Http404:
+            with patch('django_arecibo.wrapper') as m:
+                response = handler404(fake_request)
+                eq_(response.status_code, 404)
+                ok_('Page not found' in response.content)
+                eq_(m.post.call_count, 1)
+
+        try:
+            # Resolver404 is a subclass of Http404 that is raised by django
+            # when it can't match a URL to a view
+            raise Resolver404("/never/heard/of/")
+        except Resolver404:
+            with patch('django_arecibo.wrapper') as m:
+                response = handler404(fake_request)
+                eq_(response.status_code, 404)
+                ok_('Page not found' in response.content)
+                eq_(m.post.call_count, 0)
+
+    def test_handler500(self):
+        # import the root urlconf like django does when it starts up
+        root_urlconf = __import__(settings.ROOT_URLCONF,
+                                  globals(), locals(), ['urls'], -1)
+        # ...so that we can access the 'handler500' defined in there
+        par, end = root_urlconf.handler500.rsplit('.', 1)
+        # ...which is an importable reference to the real handler500 function
+        views = __import__(par, globals(), locals(), [end], -1)
+        # ...and finally we the handler500 function at hand
+        handler500 = getattr(views, end)
+
+        # to make a mock call to the django view functions you need a request
+        fake_request = RequestFactory().request(**{'wsgi.input': None})
+
+        # the reason for first causing an exception to be raised is because
+        # the handler500 function is only called by django when an exception
+        # has been raised which means sys.exc_info() is something.
+        try:
+            raise NameError("sloppy code!")
+        except NameError:
+            # do this inside a frame that has a sys.exc_info()
+            with patch('django_arecibo.wrapper') as m:
+                response = handler500(fake_request)
+                eq_(response.status_code, 500)
+                ok_('Oops' in response.content)
+                eq_(m.post.call_count, 1)
 
     def test_secure_session_cookies(self):
         """secure session cookies should always be 'secure' and 'httponly'"""
