@@ -158,6 +158,8 @@ MIDDLEWARE_CLASSES = (
 
     'commonware.middleware.FrameOptionsHeader',
     'commonware.middleware.HidePasswordOnException',
+
+    'django_arecibo.middleware.AreciboMiddleware',
 )
 
 ROOT_URLCONF = '%s.urls' % ROOT_PACKAGE
@@ -167,7 +169,7 @@ INSTALLED_APPS = (
     'commons',  # Content common to most playdoh-based apps.
     'tower',  # for ./manage.py extract (L10n)
     'nashvegas',
-
+    'django_arecibo',
 
     # We need this so the jsi18n view will pick up our locale directory.
     ROOT_PACKAGE,
@@ -244,6 +246,15 @@ SESSION_COOKIE_HTTPONLY = True
 ## Tests
 #TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
 TEST_RUNNER = 'test_utils.runner.RadicalTestSuiteRunner' # same as playdoh
+
+## Arecibo
+# See http://readthedocs.org/docs/mozweb/en/latest/errors.html
+ARECIBO_PUBLIC_ACCOUNT_NUMBER = ""  # not needed behind firewall
+ARECIBO_SERVER_URL = ""
+
+ARECIBO_SETTINGS = {
+    'EXCLUDED_POST_VARS': ['password',],
+}
 
 ## Celery
 # commented out because it's not being used

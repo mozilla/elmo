@@ -61,8 +61,10 @@ class Command(BaseCommand):
             pull_args = ['--rebase']
         elif update:
             pull_args = ['-u']
+        else:
+            pull_args = []
         from life.models import Repository, Changeset
-        from mercurial.dispatch import dispatch as hgdispatch
+        from pushes.management import hgcompat
         import os.path
         from django.conf import settings
 
@@ -91,8 +93,8 @@ class Command(BaseCommand):
                     except Exception, e:
                         print "\n\nFailed to prepare for clone, %s\n\n" % str(e)
                         continue
-                hgdispatch(['clone', str(url), repopath])
+                hgcompat.dispatch(['clone', str(url), repopath])
             else:
-                hgdispatch(['pull', '-R', repopath] + pull_args)
+                hgcompat.dispatch(['pull', '-R', repopath] + pull_args)
 
         open(resolve('.latest_cs'),'w').write('%i\n' % latest_cs)

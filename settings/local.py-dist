@@ -34,4 +34,7 @@ MANAGERS = ADMINS
 DEBUG = TEMPLATE_DEBUG = True
 #TEMPLATE_STRING_IF_INVALID = '!{ %s }'
 #REPOSITORY_BASE = '/home/peterbe/dev/MOZILLA/ELMO/repos'
-SESSION_COOKIE_SECURE = False 
+SESSION_COOKIE_SECURE = False
+
+# if you want to test the Arecibo
+#ARECIBO_SERVER_URL = "http://amckay-arecibo.khan.mozilla.org/"

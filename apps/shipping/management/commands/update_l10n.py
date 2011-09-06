@@ -75,8 +75,8 @@ class Command(BaseCommand):
         sos=dict(sos.values_list('locale__code', 'push_id'))
         tips = dict(Push.objects.filter(id__in=sos.values()).annotate(tip=Max('changesets__id')).values_list('id', 'tip'))
         revs = dict(Changeset.objects.filter(id__in=tips.values()).values_list('id','revision'))
-        from mercurial.dispatch import dispatch as hgdispatch
+        from pushes.management import hgcompat
         for loc in sorted(sos.keys()):
             repopath = resolve(loc)
             rev = revs[tips[sos[loc]]]
-            hgdispatch(['update', '-R', repopath, '-r', rev])
+            hgcompat.dispatch(['update', '-R', repopath, '-r', rev])
