@@ -70,7 +70,7 @@ var SEARCH = {
   FROM: {% if search.from %}'{{ search.from }}'{% else %}null{% endif %}
 , UNTIL: {% if search.until %}'{{ search.until }}'{% else %}null{% endif %}
 };
-var DIFF_APP_URL = '{% url shipping.views.diff_app %}';
+var DIFF_APP_URL = '{% url pushes.views.diff %}';
 </script>
 {% compress js %}
 <script type="application/javascript" src="{{ STATIC_URL }}pushes/js/widgets.js"></script>

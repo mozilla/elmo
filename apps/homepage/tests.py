@@ -46,6 +46,7 @@ from django.core.urlresolvers import Resolver404
 from nose.tools import eq_, ok_
 from life.models import Locale
 from commons.tests.mixins import EmbedsTestCaseMixin
+import urlparse
 
 
 class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
@@ -275,3 +276,29 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         # it should also say "Swedish" in the <h1>
         h1_text = re.findall('<h1[^>]*>(.*?)</h1>', response.content)[1]
         ok_('Swedish' in h1_text)
+
+    def test_pushes_redirect(self):
+        """test if the old /pushes url redirects to /source/pushes"""
+        old_response = self.client.get('/pushes/repo?path=query')
+        eq_(old_response.status_code, 301)
+        target_url = reverse('pushes.views.pushlog', kwargs={'repo_name': 'repo'})
+        new_response = self.client.get(target_url, {'path': 'query'})
+        eq_(new_response.status_code, 200)
+        eq_(urlparse.urlparse(old_response['Location'])[2:],
+            ('/source/pushes/repo', '', 'path=query', ''))
+
+    def test_diff_redirect(self):
+        """test if the old /pushes url redirects to /source/pushes"""
+        old_response = self.client.get('/shipping/diff?to=62f87d2952f4&from=fc700f4da954&tree=fx_beta&repo=some_repo&url=&locale=')
+        eq_(old_response.status_code, 301)
+        target_url = reverse('pushes.views.diff')
+        # not testing response, as we don't have a repo to back this up
+        opath, oparam, oquery, ohash = \
+            urlparse.urlparse(old_response['Location'])[2:]
+        eq_((opath, oparam), urlparse.urlparse(target_url)[2:4])
+        eq_(urlparse.parse_qs(oquery),
+            {
+                'to': ['62f87d2952f4'],
+                'from': ['fc700f4da954'],
+                'tree': ['fx_beta'],
+                'repo': ['some_repo']})

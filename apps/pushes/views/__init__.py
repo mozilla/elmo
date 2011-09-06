@@ -42,6 +42,7 @@ from django.db.models import Max
 from life.models import Repository
 
 from pushlog import pushlog
+from diff import diff
 
 
 def homesnippet(request):

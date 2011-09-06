@@ -57,7 +57,7 @@ var diffData = {
   tree: "{{tree}}",
   repo: "{{repo.name}}",
   locale: "{{lang.code}}",
-  url: "{% url shipping.views.diff_app %}?"
+  url: "{% url pushes.views.diff %}"
 };
 var permissions = {
   canAddSignoff: {{ perms.shipping.add_signoff|yesno:"true,false" }},

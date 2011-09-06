@@ -42,7 +42,6 @@ from django.conf.urls.defaults import *
 urlpatterns = patterns('shipping.views',
     (r'^\/?$', 'index'),
     (r'^\/dashboard\/?$', 'dashboard'),
-    (r'^\/diff$', 'diff_app'),
     (r'^\/milestones$', 'milestones'),
     (r'^\/stones-data$', 'stones_data'),
     (r'^\/open-mstone$', 'open_mstone'),
