@@ -335,8 +335,8 @@ class ApiActionTest(TestCase):
 
     def test_count(self):
         """Test that we have the right amount of Signoffs and Actions"""
-        eq_(Signoff.objects.count(), 3)
-        eq_(Action.objects.count(), 5)
+        eq_(Signoff.objects.count(), 5)
+        eq_(Action.objects.count(), 8)
 
     def test_accepted(self):
         """Test for the german accepted signoff"""
@@ -373,9 +373,12 @@ class ApiActionTest(TestCase):
         eq_(so.action_set.count(), 2)
 
     def test_getlist(self):
-        """Test that the list returns on accepted and one pending signoff."""
+        """Test that the list returns the right flags."""
         flags = flag_lists(appversions={"code": "fx1.0"})
-        eq_(flags, {("fx", "pl"): [0], ("fx", "de"): [1], ("fx", "fr"): [2]})
+        eq_(flags, {("fx", "pl"): [0],
+                     ("fx", "de"): [1],
+                     ("fx", "fr"): [2],
+                     ("fx", "da"): [1, 0]})
 
 
 class SignOffTest(TestCase, EmbedsTestCaseMixin):
@@ -390,7 +393,8 @@ class SignOffTest(TestCase, EmbedsTestCaseMixin):
         url += '?av=fx1.0'
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        eq_(response.content, """de l10n de 0002
+        eq_(response.content, """da l10n da 0003
+de l10n de 0002
 """)
 
     def test_shipped_locales(self):
@@ -399,7 +403,8 @@ class SignOffTest(TestCase, EmbedsTestCaseMixin):
         url += '?av=fx1.0'
         response = self.client.get(url)
         eq_(response.status_code, 200)
-        eq_(response.content, """de
+        eq_(response.content, """da
+de
 en-US
 """)
 
@@ -412,7 +417,7 @@ en-US
         data = json.loads(response.content)
         ok_('items' in data)
         items = data['items']
-        eq_(len(items), 4)
+        eq_(len(items), 5)
         sos = {}
         avt = None
         for item in items:
@@ -424,6 +429,11 @@ en-US
                 eq_(item, None)
         eq_(avt['appversion'], 'fx1.0')
         eq_(avt['label'], 'fx')
+        ok_('fx/da' in sos)
+        so = sos['fx/da']
+        eq_(so['signoff'], ['accepted', 'pending'])
+        eq_(so['apploc'], 'fx::da')
+        eq_(so['tree'], 'fx')
         ok_('fx/de' in sos)
         so = sos['fx/de']
         eq_(so['signoff'], ['accepted'])
@@ -464,7 +474,7 @@ en-US
         eq_(response.status_code, 302)
         mile = self.av.milestone_set.all()[0]  # refresh mile from the db
         eq_(mile.status, Milestone.SHIPPED)
-        eq_(mile.signoffs.count(), 1)
+        eq_(mile.signoffs.count(), 2)
         # now that it's shipped, it should error to ship again
         response = self.client.post(ship, {'ms': mile.code})
         eq_(response.status_code, 403)
@@ -472,22 +482,27 @@ en-US
         url = reverse('shipping.views.status.l10n_changesets')
         response = self.client.get(url, {'ms': mile.code})
         eq_(response.status_code, 200)
-        eq_(response.content, "de l10n de 0002\n")
+        eq_(response.content, "da l10n da 0003\nde l10n de 0002\n")
         url = reverse('shipping.views.milestone.json_changesets')
         response = self.client.get(url, {'ms': mile.code,
                                          'platforms': 'windows, linux'})
         eq_(response.status_code, 200)
         json_changes = json.loads(response.content)
         eq_(json_changes, {'de':
-                           {
-                               'revision': 'l10n de 0002',
+                            {
+                                'revision': 'l10n de 0002',
+                                'platforms': ['windows', 'linux']
+                            },
+                            'da':
+                            {
+                               'revision': 'l10n da 0003',
                                'platforms': ['windows', 'linux']
-                               }
+                            }
                            })
         url = reverse('shipping.views.status.shipped_locales')
         response = self.client.get(url, {'ms': mile.code})
         eq_(response.status_code, 200)
-        eq_(response.content, "de\nen-US\n")
+        eq_(response.content, "da\nde\nen-US\n")
 
 
     def test_dashboard_static_files(self):

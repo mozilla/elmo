@@ -66,7 +66,7 @@ def signoff_actions(locales=None, appversions=None, chunks=100):
         # now we know which locales to check for this version, go for Actions
         actions = (Action.objects
                    .filter(signoff__appversion=appversion)
-                   .order_by('-id')
+                   .order_by('-signoff__id', '-id')
                    .values_list('id',
                                 'flag',
                                 'signoff_id',

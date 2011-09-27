@@ -28,6 +28,13 @@
     }
   },
   {
+    "pk": 5,
+    "model": "auth.user",
+    "fields": {
+      "username": "localizer_da"
+    }
+  },
+  {
     "pk": 1,
     "model": "life.tree",
     "fields": {
@@ -88,6 +95,28 @@
     }
   },
   {
+    "pk": 4,
+    "model": "shipping.signoff",
+    "fields": {
+      "push": ["l10n/da", "l10n da 0003"],
+      "appversion": ["fx1.0"],
+      "author": 5,
+      "when": "2000-01-05 18:00",
+      "locale": ["da"]
+    }
+  },
+  {
+    "pk": 5,
+    "model": "shipping.signoff",
+    "fields": {
+      "push": ["l10n/da", "l10n da 0004"],
+      "appversion": ["fx1.0"],
+      "author": 5,
+      "when": "2000-01-06 18:00",
+      "locale": ["da"]
+    }
+  },
+  {
     "pk": 1,
     "model": "shipping.action",
     "fields": {
@@ -136,6 +165,36 @@
       "author": 1,
       "comment": "rejecting this sign-off",
       "when": "2000-01-07 00:01"
+    }
+  },
+  {
+    "pk": 6,
+    "model": "shipping.action",
+    "fields": {
+      "signoff": 4,
+      "flag": 0,
+      "author": 5,
+      "when": "2000-01-05 18:00"
+    }
+  },
+  {
+    "pk": 7,
+    "model": "shipping.action",
+    "fields": {
+      "signoff": 5,
+      "flag": 0,
+      "author": 5,
+      "when": "2000-01-06 18:00"
+    }
+  },
+  {
+    "pk": 8,
+    "model": "shipping.action",
+    "fields": {
+      "signoff": 4,
+      "flag": 1,
+      "author": 1,
+      "when": "2000-01-07 12:00"
     }
   }
 ]

@@ -75,5 +75,27 @@
       "push_date": "2000-01-05 00:00",
       "push_id": 1
     }
+  },
+  {
+    "pk": 8,
+    "model": "life.push",
+    "fields": {
+      "repository": ["l10n/da"],
+      "changesets": [["l10n da 0002"],["l10n da 0003"]],
+      "user": "da@ldap.l10n.tld",
+      "push_date": "2000-01-05 01:00",
+      "push_id": 1
+    }
+  },
+  {
+    "pk": 9,
+    "model": "life.push",
+    "fields": {
+      "repository": ["l10n/da"],
+      "changesets": [["l10n da 0004"]],
+      "user": "da@ldap.l10n.tld",
+      "push_date": "2000-01-06 00:00",
+      "push_id": 2
+    }
   }
 ]
