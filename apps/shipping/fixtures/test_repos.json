@@ -21,6 +21,13 @@
     }
   },
   {
+    "pk": 4,
+    "model": "life.locale",
+    "fields": {
+      "code": "da"
+    }
+  },
+  {
     "pk": 2,
     "model": "life.changeset",
     "fields": {
@@ -120,6 +127,39 @@
     }
   },
   {
+    "pk": 11,
+    "model": "life.changeset",
+    "fields": {
+      "revision": "l10n da 0002",
+      "user": "danish localizer",
+      "description": "first da commit",
+      "files": [],
+      "parents": [["000000000000"]]
+    }
+  },
+  {
+    "pk": 12,
+    "model": "life.changeset",
+    "fields": {
+      "revision": "l10n da 0003",
+      "user": "danish localizer",
+      "description": "second da commit",
+      "files": [],
+      "parents": [["l10n da 0002"]]
+    }
+  },
+  {
+    "pk": 13,
+    "model": "life.changeset",
+    "fields": {
+      "revision": "l10n da 0004",
+      "user": "danish localizer",
+      "description": "third da commit",
+      "files": [],
+      "parents": [["l10n da 0003"]]
+    }
+  },
+  {
     "pk": 1, 
     "model": "life.forest", 
     "fields": {
@@ -184,6 +224,22 @@
 	["l10n fr 0003"]
       ], 
       "name": "l10n/fr", 
+      "forest": ["l10n"]
+    }
+  }, 
+  {
+    "pk": 5, 
+    "model": "life.repository", 
+    "fields": {
+      "url": "http://localhost:8001/l10n/da/", 
+      "locale": ["da"], 
+      "changesets": [
+        ["000000000000"],
+	["l10n da 0002"],
+	["l10n da 0003"],
+	["l10n da 0004"]
+      ], 
+      "name": "l10n/da", 
       "forest": ["l10n"]
     }
   }
