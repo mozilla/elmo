@@ -1,5 +1,6 @@
-from life.models import Tree, Repository, Locale, Forest
+from models import Tree, Repository, Locale, Forest
 from django.contrib import admin
+
 
 class RepositoryAdmin(admin.ModelAdmin):
     exclude = ('changesets',)

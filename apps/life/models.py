@@ -41,9 +41,11 @@ most notable locales and hg repositories.
 from django.db import models
 from django.conf import settings
 
+
 class LocaleManager(models.Manager):
     def get_by_natural_key(self, code):
         return self.get(code=code)
+
 
 class Locale(models.Model):
     """stores list of locales and their names
@@ -54,9 +56,9 @@ class Locale(models.Model):
     native -- native name in locale's script
     """
     objects = LocaleManager()
-    code = models.CharField(max_length = 30, unique = True)
-    name = models.CharField(max_length = 100, blank = True, null = True)
-    native = models.CharField(max_length = 100, blank = True, null = True)
+    code = models.CharField(max_length=30, unique=True)
+    name = models.CharField(max_length=100, blank=True, null=True)
+    native = models.CharField(max_length=100, blank=True, null=True)
 
     def __unicode__(self):
         if self.name:
@@ -72,6 +74,7 @@ class Branch(models.Model):
     """mercurial in-repo branch
     """
     name = models.TextField(help_text="name of the branch")
+
     def __unicode__(self):
         return self.name
 
@@ -82,7 +85,9 @@ else:
     class File(models.Model):
         class Meta:
             db_table = 'mbdb_file'
+
         path = models.CharField(max_length=400, db_index=True)
+
         def __unicode__(self):
             return self.path
 
@@ -90,6 +95,7 @@ else:
 class ChangesetManager(models.Manager):
     def get_by_natural_key(self, rev):
         return self.get(revision__startswith=rev)
+
 
 class Changeset(models.Model):
     """stores list of changsets
@@ -105,7 +111,7 @@ class Changeset(models.Model):
     objects = ChangesetManager()
     revision = models.CharField(max_length=40, db_index=True, unique=True)
     user = models.CharField(max_length=200, db_index=True, default='')
-    description = models.TextField(null = True, default='')
+    description = models.TextField(null=True, default='')
     files = models.ManyToManyField(File)
     branch = models.ForeignKey(Branch, default=1, related_name='changesets')
     parents = models.ManyToManyField("self", symmetrical=False,
@@ -117,18 +123,21 @@ class Changeset(models.Model):
 
     @property
     def children(self):
-        return self._children.exclude(revision=40*'0')
+        return self._children.exclude(revision='0' * 40)
 
     def url(self):
         try:
-            return self.pushes.order_by('push_date')[0].repository.url + "rev/" + self.shortrev
+            return (self.pushes.order_by('push_date')[0].repository.url
+                    + "rev/" + self.shortrev)
         except IndexError:
             pass
         try:
             return self.repositories.all()[0].url + "rev/" + self.shortrev
         except IndexError:
             return "urn:x-changeset:" + self.shortrev
+
     __unicode__ = url
+
     def natural_key(self):
         return (self.shortrev,)
 
@@ -136,6 +145,7 @@ class Changeset(models.Model):
 class ForestManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
+
 
 class Forest(models.Model):
     """stores set of trees
@@ -150,8 +160,10 @@ class Forest(models.Model):
     objects = ForestManager()
     name = models.CharField(max_length=100, unique=True)
     url = models.URLField()
+
     def __unicode__(self):
         return self.name
+
     def natural_key(self):
         return (self.name,)
 
@@ -159,6 +171,7 @@ class Forest(models.Model):
 class RepositoryManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
+
 
 class Repository(models.Model):
     """stores set of repositories
@@ -177,29 +190,36 @@ class Repository(models.Model):
     forest = models.ForeignKey(Forest, null=True, blank=True,
                                related_name='repositories')
     locale = models.ForeignKey(Locale, null=True, blank=True)
+
     def last_known_push(self):
         try:
             return self.push_set.order_by('-push_id')[0].push_id
         except IndexError:
             # no push in repo, return 0
             return 0
+
     def save(self, *args, **kwargs):
-        # do we need an initial changeset? self.id will be set in super().save()
+        # do we need an initial changeset? self.id will be set
+        # in super().save()
         needsInitialChangeset = self.id is None
         # Call the "real" save() method.
         super(Repository, self).save(*args, **kwargs)
         if needsInitialChangeset:
-            cs = Changeset.objects.get(revision='0'*40)
+            cs = Changeset.objects.get(revision='0' * 40)
             self.changesets.add(cs)
+
     def __unicode__(self):
         return self.name
+
     def natural_key(self):
         return (self.name,)
 
 
 class PushManager(models.Manager):
     def get_by_natural_key(self, repo_name, rev):
-        return self.get(repository__name=repo_name, changesets__revision__startswith=rev)
+        return self.get(repository__name=repo_name,
+                        changesets__revision__startswith=rev)
+
 
 class Push(models.Model):
     """stores context of who pushed what when
@@ -228,10 +248,10 @@ class Push(models.Model):
     def __unicode__(self):
         tip = self.tip.shortrev
         return self.repository.url + 'pushloghtml?changeset=' + tip
-        #return 'Push to %s by %s [%s]' % (self.repository.name, self.user, self.push_date)
 
     def natural_key(self):
         return (self.repository.name, self.tip.shortrev)
+
 
 class Push_Changesets(models.Model):
     """helper model for queries over the ManyToMany between Push and Changeset.
@@ -239,14 +259,16 @@ class Push_Changesets(models.Model):
     """
     push = models.ForeignKey(Push)
     changeset = models.ForeignKey(Changeset)
+
     class Meta:
-        unique_together = (('push','changeset'),)
+        unique_together = (('push', 'changeset'),)
         managed = False
 
 
 class TreeManager(models.Manager):
     def get_by_natural_key(self, code):
         return self.get(code=code)
+
 
 class Tree(models.Model):
     """stores unique repositories combination
@@ -262,7 +284,7 @@ class Tree(models.Model):
     l10n -- forest that is assigned to this tree
     """
     objects = TreeManager()
-    code = models.CharField(max_length = 50, unique=True)
+    code = models.CharField(max_length=50, unique=True)
     repositories = models.ManyToManyField(Repository)
     l10n = models.ForeignKey(Forest)
 
