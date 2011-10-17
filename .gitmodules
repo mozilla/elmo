@@ -13,3 +13,6 @@
 [submodule "vendor-local/src/nashvegas"]
 	path = vendor-local/src/nashvegas
 	url = git://github.com/paltman/nashvegas.git
+[submodule "vendor-local/src/django-pylibmc"]
+	path = vendor-local/src/django-pylibmc
+	url = git://github.com/jbalogh/django-pylibmc.git

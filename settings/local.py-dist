@@ -25,6 +25,14 @@ DATABASES = {
     },
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'elmo'
+        }
+    }
+}
+
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
 )
