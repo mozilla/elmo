@@ -36,7 +36,10 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
+{% load compress %}
 {% block head_matter %}
+
+{% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.core.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.resizable.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.accordion.css" type="text/css">
@@ -46,6 +49,7 @@
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.datepicker.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.progressbar.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.theme.css" type="text/css">
+{% endcompress %}
 
 <style>
 #new_milestone {
@@ -58,12 +62,14 @@
 {% endblock %}
 
 {% block javascript_matter %}
-<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.core.js"></script>
-<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.draggable.js"></script>
-<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.resizable.js"></script>
-<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.dialog.js"></script>
-<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.slider.js"></script>
-<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.accordion.js"></script>
+{% compress js %}
+<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.core.js"></script>
+<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.draggable.js"></script>
+<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.resizable.js"></script>
+<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.dialog.js"></script>
+<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.slider.js"></script>
+<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.accordion.js"></script>
+{% endcompress %}
 <script>
 // XXX (peter, 17 may 2011) Is this still in use? I can't find id="new_milestone" anywhere
 $(document).ready(function() {

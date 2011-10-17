@@ -37,6 +37,7 @@
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
 {% load simile %}
+{% load compress %}
 
 {% block title_matter %}Milestones{% endblock %}
 
@@ -46,7 +47,9 @@
 {% endblock %}
 
 {% block javascript_matter %}
+{% compress js %}
 <script src="{{ STATIC_URL }}shipping/js/milestones.js"></script>
+{% endcompress %}
 {% endblock %}
 
 {% block content %}

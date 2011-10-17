@@ -37,9 +37,12 @@
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
 {% load build_extras %}
+{% load compress %}
 {% block title_matter %}Waterfall{% endblock %}
 {% block head_matter %}
+{% compress css %}
 <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}tinder/css/waterfall.css">
+{% endcompress %}
 {% endblock %}
 {% block content %}
 <h1>Waterfall</h1>

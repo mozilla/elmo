@@ -36,9 +36,15 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
+{% load compress %}
 {% block title_matter %}Revision history of Privacy Policies{% endblock %}
 {% block head_matter %}
+
+{% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}privacy/css/privacy.css" type="text/css">
+{% endcompress %}
+
+{% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.core.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.resizable.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.accordion.css" type="text/css">
@@ -48,16 +54,21 @@
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.datepicker.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.progressbar.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.theme.css" type="text/css">
+{% endcompress %}
 {% endblock %}
 
 {% block javascript_matter %}
+{% compress js %}
 <script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.core.js"></script>
 <script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.draggable.js"></script>
 <script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.resizable.js"></script>
 <script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.dialog.js"></script>
 <script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.slider.js"></script>
 <script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.accordion.js"></script>
+{% endcompress %}
+{% compress js %}
 <script src="{{ STATIC_URL }}privacy/js/versions.js"></script>
+{% endcompress %}
 {% endblock %}
 
 {% block content %}

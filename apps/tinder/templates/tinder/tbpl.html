@@ -36,13 +36,19 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
+{% load compress %}
 {% load build_extras %}
+
 {% block title_matter %}Builds{% endblock %}
+
 {% block head_matter %}
+{% compress css %}
 <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}tinder/css/tbpl.css">
+{% endcompress %}
 {% endblock %}
+
 {% block javascript_matter %}
-<script type="application/javascript">
+<script>
 var delay = 5*60*1000;
 var random = 0;
 var maxrows = 50;

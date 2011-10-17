@@ -38,14 +38,19 @@
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
 
+{% load compress %}
 {% block title_matter %}Outreach data{% endblock %}
 
 {% block head_matter %}
+{% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/outreach.css" type="text/css">
+{% endcompress %}
 {% endblock %}
 
 {% block javascript_matter %}
+{% compress js %}
 <script src="{{ STATIC_URL }}shipping/js/outreach.js"></script>
+{% endcompress %}
 {% endblock %}
 
 {% block content %}

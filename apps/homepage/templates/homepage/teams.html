@@ -36,9 +36,12 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
+{% load compress %}
 {% block title_matter %}Mozilla Localization Teams{% endblock %}
 {% block javascript_matter %}
+{% compress js %}
 <script src="{{ STATIC_URL }}homepage/js/teams.js"></script>
+{% endcompress %}
 {% endblock %}
 {% block content %}
 <h1>Mozilla Localization Teams</h1>

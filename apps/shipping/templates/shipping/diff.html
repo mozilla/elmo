@@ -38,16 +38,34 @@
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
 {% load recurse %}
+{% load compress %}
 
 {% block title_matter %}{% if given_title %}{{given_title}}{% else %}{{repo}} from {{old_rev}} to {{new_rev}}{% endif %}{% endblock %}
 
 {% block head_matter %}
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.all.css" type="text/css">
+
+{# this is now exactly the same as on confirm-drill.html so the cache can be re-used #}
+{% compress css %}
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.core.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.resizable.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.accordion.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.dialog.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.slider.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.tabs.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.datepicker.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.progressbar.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.theme.css" type="text/css">
+{% endcompress %}
+
+{% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/diff.css" type="text/css">
+{% endcompress %}
 {% endblock %}
 
 {% block javascript_matter %}
+{% compress js %}
 <script src="{{ STATIC_URL }}shipping/js/diff.js"></script>
+{% endcompress %}
 {% endblock %}
 
 {% block content %}

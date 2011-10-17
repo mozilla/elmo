@@ -37,10 +37,13 @@
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
 {% load recurse %}
+{% load compress %}
 {% block title_matter %}
 Comparison for {{ run.tree.code }}-{{run.locale.code }} ({{ run.build.buildnumber }}) {% endblock %}
 {% block head_matter %}
+{% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}l10nstats/css/compare.css" type="text/css">
+{% endcompress %}
 {% endblock %}
 {% block content %}
 <h1>Comparison for {{ run.tree.code }}-{{ run.locale.code }}</h1>

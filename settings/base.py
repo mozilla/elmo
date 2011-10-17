@@ -170,6 +170,7 @@ INSTALLED_APPS = (
     'tower',  # for ./manage.py extract (L10n)
     'nashvegas',
     'django_arecibo',
+    'compressor',
 
     # We need this so the jsi18n view will pick up our locale directory.
     ROOT_PACKAGE,
@@ -280,6 +281,21 @@ CACHES = {
 # using the cache backend
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
+## django_compressor
+COMPRESS = True  # defaults to `not DEBUG`
+COMPRESS_OFFLINE = True  # make sure you run `./manage.py compress` upon deployment
+COMPRESS_CSS_FILTERS = (
+  'compressor.filters.css_default.CssAbsoluteFilter',
+  'compressor.filters.cssmin.CSSMinFilter',
+)
+COMPRESS_JS_FILTERS = (
+  'filters.void_js_filter.VoidJSFilter',
+)
+STATICFILES_FINDERS = (
+  'django.contrib.staticfiles.finders.FileSystemFinder',
+  'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+  'compressor.finders.CompressorFinder',
+)
 
 try:
     import ldap_settings

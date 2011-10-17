@@ -36,9 +36,12 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
+{% load compress %}
 {% block title_matter %}Privacy Policy{% endblock %}
 {% block head_matter %}
+{% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}privacy/css/privacy.css" type="text/css">
+{% endcompress %}
 {% endblock %}
 
 {% block content %}

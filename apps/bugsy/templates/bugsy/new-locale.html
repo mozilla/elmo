@@ -36,6 +36,7 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
+{% load compress %}
 {% block title_matter %}Bugs for a new localization{% endblock %}
 {% block head_matter %}
 <style type="text/css">
@@ -53,7 +54,9 @@
 <script>
 var NEW_LOCALE_URL = '{% url bugsy.views.new_locale_bugs %}';
 </script>
+{% compress js %}
 <script src="{{ STATIC_URL }}bugsy/js/new_locale.js"></script>
+{% endcompress %}
 {% endblock %}
 {% block content %}
 <h1>File bugs for a new localization</h1>
