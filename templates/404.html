@@ -40,9 +40,12 @@
     Page not found (Error 404)
 {% endblock %}
 {% block content %}
-<h1>Hmmm, we’re having trouble finding that one.</h1>
+<h1>Oops! Page not found</h1>
     <p>The page you requested could not be found. Sorry about that.</p>
-    <p>Click the Back button in your browser to try again or go to the <a href="{% url homepage.views.index %}">index page</a> to start over.</p>
-    <p>If you think there really should be something right here, please send us an <a href="mailto:l10n@mozilla.com">e-mail</a> or ping us in <a href="irc://irc.mozilla.org/#l10n">#l10n</a>.</p>
+    <p>Click the Back button to try again or go to the 
+    <a href="{% url homepage.views.index %}">home page</a> to start over.</p>
+    <p>If you think there really should be something right here, please send us an 
+    <a href="mailto:l10n@mozilla.com">e-mail</a> or ping us in 
+    <a href="irc://irc.mozilla.org/#elmo">#elmo</a>.</p>
 
 {% endblock%}
