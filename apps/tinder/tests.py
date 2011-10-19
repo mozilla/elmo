@@ -200,9 +200,15 @@ class ViewsTestCase(TestCase):
         self.temp_directory = os.path.join(gettempdir(), 'test-builds')
         if not os.path.isdir(self.temp_directory):
             os.mkdir(self.temp_directory)
+        self.old_mounts = getattr(settings, 'LOG_MOUNTS', None)
+        setattr(settings, 'LOG_MOUNTS', {})
 
     def tearDown(self):
         super(ViewsTestCase, self).tearDown()
+        if self.old_mounts is None:
+            del settings.LOG_MOUNTS
+        else:
+            setattr(settings, 'LOG_MOUNTS', self.old_mounts)
         import shutil
         shutil.rmtree(self.temp_directory)
 
