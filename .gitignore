@@ -1,5 +1,6 @@
 settings/local*.py
 settings/ldap_settings.py
+settings/mounts_local.py
 env
 *.pyc
 .coverage
