@@ -10,6 +10,10 @@ import re
 from django.contrib import admin
 admin.autodiscover()
 
+## Monkeypatches:
+## Here's the ideal place to put them if you need to monkeypatches anything
+## during Django's start-up.
+## ...
 
 urlpatterns = patterns('',
     # Example:

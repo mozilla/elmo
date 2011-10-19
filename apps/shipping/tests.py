@@ -84,6 +84,13 @@ class ShippingTestCaseBase(TestCase, EmbedsTestCaseMixin):
 
 class ShippingTestCase(ShippingTestCaseBase):
 
+    def test_basic_render_index_page(self):
+        """render the shipping index page"""
+        url = reverse('shipping.views.index')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        self.assert_all_embeds(response.content)
+
     def test_basic_render_app_changes(self):
         """render shipping.views.app.changes"""
         url = reverse('shipping.views.app.changes',

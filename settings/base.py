@@ -267,6 +267,25 @@ ARECIBO_SETTINGS = {
 #CELERY_RESULT_BACKEND = 'amqp'
 #CELERY_IGNORE_RESULT = True
 
+# Default settings taken from https://github.com/jbalogh/django-pylibmc
+CACHES = {
+    'default': {
+        'BACKEND': 'django_pylibmc.memcached.PyLibMCCache',
+        'LOCATION': 'localhost:11211',
+        'TIMEOUT': 500,
+        'BINARY': True,
+        'OPTIONS': {  # Maps to pylibmc "behaviors"
+            'tcp_nodelay': True,
+            'ketama': True
+        },
+        'KEY_PREFIX': 'elmo',
+    }
+}
+
+# When we have a good cache backend, we can get much faster session storage
+# using the cache backend
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+
 
 try:
     import ldap_settings

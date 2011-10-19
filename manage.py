@@ -33,13 +33,5 @@ sys.path[:0] = new_sys_path
 from django.core.management import execute_manager
 import settings
 
-# Configure Celery
-import djcelery
-djcelery.setup_loader()
-
 if __name__ == "__main__":
     execute_manager(settings)
-
-    # Monkey-patch django forms to avoid having to use Jinja2's |safe everywhere.
-    import safe_django_forms
-    safe_django_forms.monkeypatch()

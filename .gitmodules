@@ -1,6 +1,18 @@
 [submodule "vendor"]
 	path = vendor
 	url = git://github.com/mozilla/playdoh-lib.git
-[submodule "vendor-local"]
-	path = vendor-local
-	url = git://github.com/mozilla/elmo-lib.git
+[submodule "vendor-local/src/compare-locales"]
+	path = vendor-local/src/compare-locales
+	url = git://github.com/Pike/compare-locales.git
+[submodule "vendor-local/src/bleach"]
+	path = vendor-local/src/bleach
+	url = git://github.com/jsocol/bleach.git
+[submodule "vendor-local/src/django-arecibo"]
+	path = vendor-local/src/django-arecibo
+	url = git://github.com/andymckay/django-arecibo.git
+[submodule "vendor-local/src/nashvegas"]
+	path = vendor-local/src/nashvegas
+	url = git://github.com/paltman/nashvegas.git
+[submodule "vendor-local/src/django-pylibmc"]
+	path = vendor-local/src/django-pylibmc
+	url = git://github.com/jbalogh/django-pylibmc.git

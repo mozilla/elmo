@@ -80,7 +80,7 @@ def index(request):
     return render_to_response('shipping/index.html', {
         'locales': locales,
         'avs': avs,
-    })
+    }, context_instance=RequestContext(request))
 
 def homesnippet(request):
     q = AppVersion.objects.filter(milestone__status=1).select_related('app')
@@ -146,7 +146,7 @@ def diff_app(request):
                                             or request.GET['to']),
                                     'class': action})
                 continue
-                
+
         if action == 'removed':
             c_entities = []
             c_map = {}
