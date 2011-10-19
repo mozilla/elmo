@@ -31,6 +31,12 @@ DATABASES = {
         'TEST_COLLATION': 'utf8_general_ci',
     },
 }
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'elmo'
+    }
+}
 " > settings/local.py
 # the file settings/ldap_settings.py must exist
 cp settings/ldap_settings.py-dist settings/ldap_settings.py

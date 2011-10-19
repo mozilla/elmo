@@ -2,5 +2,6 @@
 nashvegas
 bleach
 html5lib
-django-pylibmc
+python-memcached
+
 

@@ -267,17 +267,11 @@ ARECIBO_SETTINGS = {
 #CELERY_RESULT_BACKEND = 'amqp'
 #CELERY_IGNORE_RESULT = True
 
-# Default settings taken from https://github.com/jbalogh/django-pylibmc
 CACHES = {
     'default': {
-        'BACKEND': 'django_pylibmc.memcached.PyLibMCCache',
-        'LOCATION': 'localhost:11211',
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',  # fox2mike suggest to use IP instead of localhost
         'TIMEOUT': 500,
-        'BINARY': True,
-        'OPTIONS': {  # Maps to pylibmc "behaviors"
-            'tcp_nodelay': True,
-            'ketama': True
-        },
         'KEY_PREFIX': 'elmo',
     }
 }
