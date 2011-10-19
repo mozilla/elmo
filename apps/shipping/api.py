@@ -45,7 +45,7 @@ from life.models import Locale
 from shipping.models import AppVersion, Signoff, Action
 
 
-def signoff_actions(locales=None, appversions=None, chunks=100):
+def signoff_actions(locales=None, appversions=None, chunk_size=100):
     if locales is None:
         locales = {}
     if appversions is None:
@@ -71,16 +71,14 @@ def signoff_actions(locales=None, appversions=None, chunks=100):
                                 'flag',
                                 'signoff_id',
                                 'signoff__locale_id'))
-        latest = None
+        i = 0
         while inc_locales:
-            actions_chunk = actions.filter(signoff__locale__in=inc_locales.keys())
-            if latest is not None:
-                actions_chunk = actions_chunk.filter(id__lt=latest)
+            actions_chunk = actions[chunk_size * i:chunk_size * (i + 1)]
             had_action = False
+            i += 1
             for (action_id, action_flag,
-                 signoff_id, loc_id) in actions_chunk[:chunks]:
+                 signoff_id, loc_id) in actions_chunk:
                 had_action = True
-                latest = action_id
                 if loc_id not in inc_locales:
                     # we handled this locale in this chunk, ignore it
                     continue
@@ -107,10 +105,10 @@ def signoff_actions(locales=None, appversions=None, chunks=100):
                 break
 
 
-def flag_lists(locales=None, appversions=None, chunks=100):
+def flag_lists(locales=None, appversions=None, chunk_size=100):
     actions = dict(signoff_actions(locales=locales,
                                    appversions=appversions,
-                                   chunks=chunks))
+                                   chunk_size=chunk_size))
     flags = defaultdict(list)
     actions = Action.objects.filter(id__in=actions.keys())
     for tree, loc, f in actions.values_list('signoff__appversion__tree__code',
