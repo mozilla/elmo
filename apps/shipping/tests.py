@@ -382,10 +382,12 @@ class ApiActionTest(TestCase):
     def test_getlist(self):
         """Test that the list returns the right flags."""
         flags = flag_lists(appversions={"code": "fx1.0"})
-        eq_(flags, {("fx", "pl"): [0],
-                     ("fx", "de"): [1],
-                     ("fx", "fr"): [2],
-                     ("fx", "da"): [1, 0]})
+        # note that the flags below are [1, 0] (and not [0, 1])
+        # which means the ACCEPTED comes *before* PENDING
+        eq_(flags, {("fx", "pl"): [Action.PENDING],
+                     ("fx", "de"): [Action.ACCEPTED],
+                     ("fx", "fr"): [Action.REJECTED],
+                     ("fx", "da"): [Action.ACCEPTED, Action.PENDING]})
 
 
 class SignOffTest(TestCase, EmbedsTestCaseMixin):
