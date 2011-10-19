@@ -44,6 +44,7 @@ from tempfile import gettempdir
 from nose.tools import eq_, ok_
 from django.test import TestCase
 
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from mbdb.models import (Build, Change, Master, Log, Property, SourceStamp,
                          Builder, Slave)
@@ -305,14 +306,8 @@ class ViewsTestCase(TestCase):
                       args=[master.name, log.filename])
         with file(os.path.join(self.temp_directory, log.filename), 'w') as f:
             f.write(SAMPLE_BUILD_LOG_PAYLOAD)
-        webhead = WebHead.objects.create(
-          name='head 1',
-        )
-        MasterMap.objects.create(
-          master=master,
-          webhead=webhead,
-          logmount=self.temp_directory,
-        )
+
+        settings.LOG_MOUNTS[master.name] = self.temp_directory
         response = self.client.get(url)
         content = response.content
         content = content.split('<h1', 1)[1].split('id="page_footer"')[0]
