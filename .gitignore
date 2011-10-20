@@ -2,6 +2,7 @@ settings/local*.py
 settings/ldap_settings.py
 settings/mounts_local.py
 env
+@elmo
 *.pyc
 .coverage
 cover/
