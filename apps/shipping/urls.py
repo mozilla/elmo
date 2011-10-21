@@ -55,7 +55,7 @@ urlpatterns = patterns('shipping.views',
 urlpatterns += patterns('shipping.views.status',
     (r'^/l10n-changesets$', 'l10n_changesets'),
     (r'^/shipped-locales$', 'shipped_locales'),
-    (r'^/api/signoffs$', 'signoff_json'),
+    (r'^/api/status$', 'status_json'),
 )
 
 urlpatterns += patterns('shipping.views.outreach',

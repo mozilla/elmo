@@ -36,6 +36,7 @@
 # ***** END LICENSE BLOCK *****
 
 import datetime
+from urlparse import urlparse
 from nose.tools import eq_, ok_
 from django.core.urlresolvers import reverse
 from apps.shipping.tests import ShippingTestCaseBase
@@ -103,47 +104,9 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
 
         self.assert_all_embeds(response.content)
 
-    def test_render_index_static_files(self):
-        """make sure all static files can be reached on the l10nstats index
-        page"""
+    def test_render_index_legacy(self):
+        """the old dashboard should redirect to the shipping dashboard"""
         url = reverse('l10nstats.views.index')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
-        self.assert_all_embeds(response.content)
-
-    def test_index_with_wrong_args(self):
-        """index() view takes arguments 'locale' and 'tree' and if these
-        aren't correct that view should raise a 404"""
-        url = reverse('l10nstats.views.index')
-        response = self.client.get(url, {'locale': 'xxx'})
-        eq_(response.status_code, 404)
-
-        locale, __ = Locale.objects.get_or_create(
-          code='en-US',
-          name='English',
-        )
-
-        locale, __ = Locale.objects.get_or_create(
-          code='jp',
-          name='Japanese',
-        )
-
-        response = self.client.get(url, {'locale': ['en-US', 'xxx']})
-        eq_(response.status_code, 404)
-
-        response = self.client.get(url, {'locale': ['en-US', 'jp']})
-        eq_(response.status_code, 200)
-
-        # test the tree argument now
-        response = self.client.get(url, {'tree': 'xxx'})
-        eq_(response.status_code, 404)
-
-        self._create_appver_milestone()
-        assert Tree.objects.all().exists()
-        tree, = Tree.objects.all()
-
-        response = self.client.get(url, {'tree': ['xxx', tree.code]})
-        eq_(response.status_code, 404)
-
-        response = self.client.get(url, {'tree': [tree.code]})
-        eq_(response.status_code, 200)
+        eq_(response.status_code, 302)
+        ok_(reverse('shipping.views.index') in urlparse(response['location']).path)

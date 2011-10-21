@@ -1,4 +1,4 @@
-{% extends "l10nstats/index.html" %}
+{% extends "base.html" %}
 <!-- {% comment %}
    - ***** BEGIN LICENSE BLOCK *****
    - Version: MPL 1.1/GPL 2.0/LGPL 2.1
@@ -36,15 +36,68 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
+{% load simile %}
 {% block title_matter %}Signoffs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}
-{% block h1_matter %}Signoffs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}
-{% block extra_data %}<link href="{% url shipping.views.status.signoff_json %}?{{query}}" type="application/json" rel="exhibit/data"/>{% endblock %}
 
-{% block extra_query_options %}EX_OPTIONS.push("signoff");{% endblock %}
+{% block head_matter %}
+<link href="{% url webdashboard path="json/?tag=URGENT" %}" type="application/json" rel="exhibit/data" />
+<link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/dashboard.css" type="text/css">
+<link href="{% url shipping.views.status.status_json %}?{{ query }}" type="application/json" rel="exhibit/data"/>
+{% exhibit autoCreate=false %}
+<script>
+var EX_OPTIONS = ["tree", "result", "locale", "shipping", "signoff"];
+</script>
+{% endblock %}
 
-{% block extra_labels %}, Sign-off{% endblock %}
-{% block extra_columns %}, .locale.signoff{% endblock %}
-{% block extra_cells %}<td>
+{% block javascript_matter %}
+<script src="{{ STATIC_URL }}shipping/js/dashboard.js"></script>
+{% endblock %}
+
+{% block content %}
+
+ <h1>Signoffs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}</h1>
+
+
+ <div ex:role="collection" ex:itemTypes="Build"></div>
+ <table width="100%">
+   <tr valign="top">
+     <td ex:role="viewPanel" ex:showAll="true">
+       <span ex:role="lens" class="comparison" ex:itemTypes="Comparison"style="display:none">
+         <span  ex:content=".label"></span>
+         <span ex:if-exists=".bug" class="bug"> (<a ex:href-subcontent="https://bugzilla.mozilla.org/show_bug.cgi?id={&#123;.bug}}" target="_blank">buglink</a>)</span>
+
+         <span ex:if-exists=".comment" class="comment"> (<em ex:content=".comment"></em>)</span>
+       </span>
+    <div ex:role="view" ex:viewClass="Tabular"
+      ex:collectionID="buids"
+      ex:columnLabels="Locale, Tree, %, Errors, Missing, Warnings, Reported, Obsolete, Unchanged, Web bugs, Stats, Status, Sign-off"
+      ex:columns=".locale, .tree, .completion, .errors, .missing, .warnings, .report, .obsolete,  .unchanged, .locale.missing_webbugs, .locale, .changed, .locale.signoff"
+      ex:cellSpacing="0">
+      <table>
+    <tr>
+      <td class="locale_cell" ex:content=".locale"></td>
+      <td ex:content=".tree" ex:class-subcontent="tree_cell {&#123;.result}}"></td>
+
+      <td class="completion_cell" ex:content=".completion"></td>
+      <td class="coverage_cell" ex:content=".errors"></td>
+      <td class="coverage_cell" ex:content=".missing"></td>
+      <td class="coverage_cell" ex:content=".warnings"></td>
+      <td class="coverage_cell" ex:content=".report"></td>
+      <td class="coverage_cell" ex:content=".obsolete"></td>
+      <td class="coverage_cell" ex:content=".unchanged"></td>
+     <td class="bugs_cell"><a ex:href-subcontent="http://l10n.mozilla.org/webdashboard/?locale={&#123;.locale}}" target="_blank" ex:content=".locale.missing_webbugs"></a> (<span ex:content=".locale.total_webbugs"></span>)</td>
+      <td><a title="History" ex:href-subcontent="{% url l10nstats.views.history_plot %}?tree={&#123;.tree}}&locale={&#123;.locale}}" target="_blank">H</a>/<a title="Comparison" ex:href-subcontent="{% url compare_locales %}?run={&#123;.runid}}" target="_blank">C</a></td>
+
+      <td>
+        <table class="stats">
+               <tr>
+                 <td title="changed" class="status changed" ex:width-subcontent="{&#123;.completion }}px"></td>
+                 <td title="missing" class="status missing" ex:width-subcontent="{&#123;100 * .missing / .total}}px"></td>
+                 <td title="unchanged" class="status unchanged" ex:width-subcontent="{&#123;100 * .unchanged / .total}}px"></td>
+               </tr>
+             </table>
+       </td>
+<td>
   <span ex:if="exists(.tree.appversion)">
   <span>
   <a ex:href-subcontent="{% url shipping.views.signoff.signoff "&#123;&#123;.locale&#125;&#125;" "&#123;&#123;.tree.appversion&#125;&#125;" %}">
@@ -55,8 +108,39 @@
   </a>
   </span>
   </span>
-</td>{% endblock %}
-{% block extra_facets %}
-<div ex:role="facet" ex:expression=".signoff"
-  ex:facetLabel="Sign-off" id="signoff-facet"></div>
+</td>
+    </tr>
+      </table>
+    </div>
+     </td>
+     <td width="25%">
+       <div ex:role="facet" ex:expression=".result" ex:facetLabel="Result"
+         id="result-facet"
+         ex:fixedOrder="success;warnings;failure;exception"></div>
+       <div ex:role="facet" ex:facetLabel="Missing"
+         ex:expression=".missing"
+         ex:facetClass="Slider">
+       </div>
+       <div ex:role="facet" ex:facetLabel="Warnings"
+         ex:expression=".warnings"
+         ex:facetClass="Slider">
+       </div>
+       <div ex:role="facet" ex:facetLabel="Reported"
+         ex:expression=".report"
+         ex:facetClass="Slider">
+       </div>
+       <div ex:role="facet" ex:expression=".locale.tier" ex:facetLabel="Tier"
+         ex:fixedOrder="1;2"></div>
+       <div ex:role="facet" ex:expression=".tree" ex:facetLabel="Tree"
+         id="tree-facet"
+         ex:fixedOrder="trunk;incubator"></div>
+       <div ex:role="facet" ex:expression=".locale" ex:facetLabel="Locale"
+         id="locale-facet"></div>
+
+       <div ex:role="facet" ex:expression=".locale.missing_webbugs" ex:facetLabel="Web bugs"></div>
+       <div ex:role="facet" ex:expression=".apploc.shipped" ex:facetLabel="Shipped in ..." id="shipping-facet"></div>
+       <div ex:role="facet" ex:expression=".signoff" ex:facetLabel="Sign-off" id="signoff-facet"></div>
+     </td>
+   </tr>
+ </table>
 {% endblock %}

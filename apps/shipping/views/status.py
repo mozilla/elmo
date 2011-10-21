@@ -42,6 +42,7 @@ from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from django.views.generic import View
 from life.models import Changeset
+from l10nstats.models import Run
 from shipping.api import accepted_signoffs, flag_lists
 from shipping.models import (Milestone, Signoff, Action,
                              Application, AppVersion)
@@ -134,13 +135,131 @@ class ShippedLocales(SignoffDataView):
 shipped_locales = cache_control(max_age=60)(ShippedLocales.as_view())
 
 
-class SignoffJSON(SignoffDataView):
+class StatusJSON(SignoffDataView):
+
+    EXHIBIT_SCHEMA = {
+    "types": {
+        "Build": {
+            "pluralLabel": "Builds"
+            },
+        "Priority": {
+            "pluralLabel": "Priorities"
+            }
+        },
+    "properties": {
+        "completion": {
+            "valueType": "number"
+            },
+        "changed": {
+            "valueType": "number"
+            },
+        "missing": {
+            "valueType": "number"
+            },
+        "report": {
+            "valueType": "number"
+            },
+        "warnings": {
+            "valueType": "number"
+            },
+        "errors": {
+            "valueType": "number"
+            },
+        "obsolete": {
+            "valueType": "number"
+            },
+        "unchanged": {
+            "valueType": "number"
+            },
+        "starttime": {
+            "valueType": "date"
+            },
+        "endtime": {
+            "valueType": "date"
+            }
+        }
+    }
+
+
     def process_request(self, request, *args, **kwargs):
         """Get hold of potential locale argument"""
-        self.locale = request.GET.get('locale')
-        return super(SignoffJSON, self).process_request(request)
+        self.locales = request.GET.getlist('locale')
+        self.trees = request.GET.getlist('tree')
+        self.avs = request.GET.getlist('av')
 
-    def data_for_avq(self, avq):
+        if self.avs:
+            # make sure its tree is in self.trees
+            for appver in AppVersion.objects.filter(code__in=self.avs):
+                if appver.tree.code not in self.trees:
+                    self.trees.append(appver.tree.code)
+
+        if self.trees:
+            # make sure its appversion is in self.avs
+            for appver in AppVersion.objects.filter(tree__code__in=self.trees):
+                if appver.code not in self.avs:
+                    self.avs.append(appver.code)
+
+    def get_data(self):
+        runs = self.get_runs()
+        signoffs = self.get_signoffs()
+        return (runs + signoffs,)
+
+    def get_runs(self):
+        q = (Run.objects.filter(active__isnull=False)
+                        .order_by('tree__code', 'locale__code'))
+        if self.trees:
+            q = q.filter(tree__code__in=self.trees)
+        if self.locales:
+            q = q.filter(locale__code__in=self.locales)
+        leafs = ['tree__code', 'locale__code', 'id',
+                 'missing', 'missingInFiles', 'report', 'warnings',
+                 'errors', 'unchanged', 'total', 'obsolete', 'changed',
+                 'completion']
+
+        def toExhibit(d):
+            missing = d['missing'] + d['missingInFiles']
+            result = 'success'
+            tree = d['tree__code']
+            locale = d['locale__code']
+            if missing or ('errors' in d and d['errors']):
+                result = 'failure'
+            elif d['obsolete']:
+                result = 'warnings'
+
+            rd = {'id': '%s/%s' % (tree, locale),
+                  'runid': d['id'],
+                  'label': locale,
+                  'locale': locale,
+                  'tree': tree,
+                  'type': 'Build',
+                  'result': result,
+                  'missing': missing,
+                  'report': d['report'],
+                  'warnings': d['warnings'],
+                  'changed': d['changed'],
+                  'unchanged': d['unchanged'],
+                  'total': d['total'],
+                  'completion': d['completion']
+                  }
+            if 'errors' in d and d['errors']:
+                rd['errors'] = d['errors']
+            if 'obsolete' in d and d['obsolete']:
+                rd['obsolete'] = d['obsolete']
+            return rd
+        return map(toExhibit, q.values(*leafs))
+
+    def get_signoffs(self):
+        avq = defaultdict(set)
+        if self.avs:
+            for appver in (AppVersion.objects
+                           .filter(code__in=self.avs).values('id')):
+                avq['id__in'].add(appver['id'])
+
+        if self.trees:
+            for appver in (AppVersion.objects
+                           .filter(tree__code__in=self.trees).values('id')):
+                avq['id__in'].add(appver['id'])
+
         apps = list(AppVersion.objects
                     .filter(**avq)
                     .values_list('app', flat=True)
@@ -154,22 +273,10 @@ class SignoffJSON(SignoffDataView):
         else:
             appvers = AppVersion.objects.all()
         lq = {}
-        if self.locale is not None:
-            lq['code'] = self.locale
-        return flag_lists(locales=lq, appversions=avq), appvers, given_app
+        if self.locales:
+            lq['code__in'] = self.locales
 
-    def data_for_milestone(self, mile):
-        appvers = AppVersion.objects.filter(app=mile.appver.app)
-        given_app = mile.appver.app.code
-        tree = mile.appver.tree or mile.appver.lasttree
-        sos = mile.signoffs
-        if self.locale is not None:
-            sos.filter(locale__code=self.locale)
-        return dict.fromkeys(((tree.code, loc) for loc in
-                              sos.values_list('locale__code')),
-                             [Action.ACCEPTED]), appvers, given_app
-
-    def content(self, request, lsd, appvers, given_app):
+        lsd = flag_lists(locales=lq, appversions=avq)
         tree_avs = appvers.exclude(tree__isnull=True)
         tree2av = dict(tree_avs.values_list("tree__code", "code"))
         tree2app = dict(tree_avs.values_list("tree__code", "app__code"))
@@ -189,10 +296,11 @@ class SignoffJSON(SignoffDataView):
                 continue
             app = _av.app.code
             _sos = _ms.signoffs
-            if self.locale is not None:
-                _sos = _sos.filter(locale__code=self.locale)
+            if self.locales:
+                _sos = _sos.filter(locale__code__in=self.locales)
             for loc in _sos.values_list('locale__code', flat=True):
                 shipped_in[(app, loc)].append(_av.code)
+
         # make a list now
         items = [{"type": "SignOff",
                   "label": "%s/%s" % (tree, locale),
@@ -210,7 +318,12 @@ class SignoffJSON(SignoffDataView):
                    "label": tree,
                    "appversion": av}
                   for tree, av in tree2av.iteritems()]
-        return simplejson.dumps({'items': items}, indent=2)
+        return items
+
+    def content(self, request, items):
+        data = self.EXHIBIT_SCHEMA.copy()
+        data['items'] = items
+        return simplejson.dumps(data, indent=2)
 
 
-signoff_json = cache_control(max_age=60)(SignoffJSON.as_view())
+status_json = cache_control(max_age=60)(StatusJSON.as_view())

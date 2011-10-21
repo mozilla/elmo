@@ -44,16 +44,14 @@ import time
 from urllib2 import urlopen
 from urlparse import urljoin
 
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 from django.template import RequestContext
-from django.http import (HttpResponse, HttpResponseNotFound,
-                         Http404)
+from django.http import HttpResponse, HttpResponseNotFound
 from django.db.models import Min, Max
 from django.views.decorators.cache import cache_control
 from django.utils import simplejson
-from django.utils.http import urlencode
-from django.utils.safestring import mark_safe
 
 from l10nstats.models import *
 from tinder.views import generateLog
@@ -80,28 +78,10 @@ def getRunsBefore(tree, stamp, locales):
 
 
 def index(request):
-    """The main dashboard entry page.
-
-    Implemented with a Simile Exhibit.
+    """redirect to the new improved dashboard which had all the features of the
+    l10nstats dashboard.
     """
-    args = []
-    if request.GET.get('locale'):
-        locales_list = request.GET.getlist('locale')
-        locales = Locale.objects.filter(code__in=locales_list)
-        locales = locales.values_list('code', flat=True)
-        if len(locales) != len(locales_list):
-            raise Http404("Invalid list of locales")
-        args += [('locale', loc) for loc in locales]
-    if request.GET.get('tree'):
-        trees_list = request.GET.getlist('tree')
-        trees = Tree.objects.filter(code__in=trees_list)
-        trees = trees.values_list('code', flat=True)
-        if len(trees) != len(trees_list):
-            raise Http404("Invalid list of trees")
-        args += [('tree', t) for t in trees]
-    return render_to_response('l10nstats/index.html',
-                              {'args': mark_safe(urlencode(args))},
-                              context_instance=RequestContext(request))
+    return redirect(reverse('shipping.views.dashboard'))
 
 
 def proxy(request, path=None, base=None):
@@ -115,104 +95,6 @@ def proxy(request, path=None, base=None):
     r = urlopen(u)
     ct = r.info().getheaders('Content-Type')[0]
     return HttpResponse(r.read(), mimetype=ct)
-
-
-schema = {
-    "types": {
-        "Build": {
-            "pluralLabel": "Builds"
-            },
-        "Priority": {
-            "pluralLabel": "Priorities"
-            }
-        },
-    "properties": {
-        "completion": {
-            "valueType": "number"
-            },
-        "changed": {
-            "valueType": "number"
-            },
-        "missing": {
-            "valueType": "number"
-            },
-        "report": {
-            "valueType": "number"
-            },
-        "warnings": {
-            "valueType": "number"
-            },
-        "errors": {
-            "valueType": "number"
-            },
-        "obsolete": {
-            "valueType": "number"
-            },
-        "unchanged": {
-            "valueType": "number"
-            },
-        "starttime": {
-            "valueType": "date"
-            },
-        "endtime": {
-            "valueType": "date"
-            }
-        }
-    }
-
-
-@cache_control(max_age=5 * 60)
-def status_json(request):
-    """The json output for the builds.
-
-    Used by the main dashboard page Exhibit.
-    """
-
-    q = Run.objects.filter(active__isnull=False).order_by('tree__code',
-                                                          'locale__code')
-    if 'tree' in request.GET:
-        q = q.filter(tree__code__in=request.GET.getlist('tree'))
-    if 'locale' in request.GET:
-        q = q.filter(locale__code__in=request.GET.getlist('locale'))
-    leafs = ['tree__code', 'locale__code', 'id',
-             'missing', 'missingInFiles', 'report', 'warnings',
-             'errors', 'unchanged', 'total', 'obsolete', 'changed',
-             'completion']
-
-    def toExhibit(d):
-        missing = d['missing'] + d['missingInFiles']
-        result = 'success'
-        tree = d['tree__code']
-        locale = d['locale__code']
-        if missing or ('errors' in d and d['errors']):
-            result = 'failure'
-        elif d['obsolete']:
-            result = 'warnings'
-
-        rd = {'id': '%s/%s' % (tree, locale),
-              'runid': d['id'],
-              'label': locale,
-              'locale': locale,
-              'tree': tree,
-              'type': 'Build',
-              'result': result,
-              'missing': missing,
-              'report': d['report'],
-              'warnings': d['warnings'],
-              'changed': d['changed'],
-              'unchanged': d['unchanged'],
-              'total': d['total'],
-              'completion': d['completion']
-              }
-        if 'errors' in d and d['errors']:
-            rd['errors'] = d['errors']
-        if 'obsolete' in d and d['obsolete']:
-            rd['obsolete'] = d['obsolete']
-        return rd
-    items = map(toExhibit, q.values(*leafs))
-    data = {'items': items}
-    data.update(schema)
-    return HttpResponse(simplejson.dumps(data, indent=2))
 
 
 def homesnippet(request):
@@ -390,59 +272,6 @@ def tree_progress(request, tree):
                                context_instance=RequestContext(request))
 
 
-def grid(request):
-    """View to show which runs are against which revisions.
-
-    Parameters are locale and tree. If not given, shows a selection
-    page.
-
-    Experimental, might not stay.
-    """
-    trees = request.GET.getlist('tree')
-    locales = request.GET.getlist('locale')
-    if not (trees and locales):
-        # hook up template here
-        return HttpResponse("specify locale and tree")
-    epoch = datetime.utcfromtimestamp(0)
-    tree = trees[0]
-    locale = locales[0]
-
-    # find the runs for this locale and tree
-    runs = Run.objects.filter(locale__code=locale,
-                              tree__code=tree)[:100]
-    changesets = Changeset.objects.filter(run__in=runs).distinct()
-    changesets = changesets.order_by('push__push_date')
-    changesets = changesets.select_related('push__repository')
-
-    table = defaultdict(list)
-    x = set()
-    y = set()
-    for run in runs:
-        revs = run.revisions.all()
-        l10n = None
-        en = []
-        for rev in revs:
-            if rev.repository.forest_id is not None:
-                l10n = rev
-            else:
-                en.append(rev)
-        en.sort(key=lambda _rev: _rev.repository.name)
-        en = tuple(en)
-        x.add(l10n)
-        y.add(en)
-        table[(l10n, en)].append(run)
-
-    X = sorted(x, key=lambda cs: cs.push and cs.push.push_date or epoch)
-    Y = sorted(y, key=lambda t: map(lambda cs: cs.push and
-                                               cs.push.push_date or
-                                               epoch, t))
-    rows = []
-    for y in Y:
-        row = [(x, y) in table and table[(x, y)] or None for x in X]
-        rows.append(row)
-    return render_to_response('l10nstats/grid.html',
-                              {'X': X,
-                               'rows': zip(Y, rows)})
 
 
 class JSONAdaptor(object):
