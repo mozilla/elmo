@@ -43,11 +43,16 @@
 <script src="{{ STATIC_URL }}bugsy/js/bugcount.js"></script>
 {% endcompress %}
 {% endblock %}
+{% block head_matter %}
+{% compress css %}
+<link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/dashboard.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/snippet.css" type="text/css">
+{% endcompress %}
+{% endblock %}
 {% block content %}
 <small>&lt; Back to <a href="{% url homepage.views.teams %}">all teams</a></small>
 <h1>Mozilla Localization Team {{ locale_name }}</h1>
 <p>Contact the team on it's page on <a href="https://wiki.mozilla.org/L10n:Teams:{{locale.code}}">wikimo</a>.</p>
-<p>{{ l10nstats }}</p>
-<p>{{ shipping }}</p>
-<p>{{ bugs }}</p>
+{{ shipping }}
+{{ bugs }}
 {% endblock %}

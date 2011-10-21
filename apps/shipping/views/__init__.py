@@ -43,8 +43,9 @@ from django.template.loader import render_to_string
 from django.http import (HttpResponseRedirect, HttpResponse, Http404,
                          HttpResponseNotAllowed, HttpResponseForbidden)
 from life.models import Repository, Locale, Tree
-from shipping.models import Milestone, Signoff, AppVersion, Action
-from shipping.api import signoff_actions, flag_lists, accepted_signoffs
+from shipping.models import Milestone, Signoff, AppVersion, Action, Application
+from shipping.api import (signoff_actions, flag_lists, accepted_signoffs,
+                          signoff_summary, annotated_pushes)
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.views.decorators.cache import cache_control
@@ -90,10 +91,94 @@ def homesnippet(request):
             })
 
 
+class Run(dict):
+    def __getattr__(self, key):  # for dot notation
+        return self[key]
+
+
 def teamsnippet(request, loc):
-    return render_to_string('shipping/team-snippet.html', {
-            'locale': loc,
-            })
+    runs = loc.run_set.filter(active__isnull=False).select_related('tree') \
+                       .order_by('tree__code')
+
+    _application_codes = [(x.code, x) for x in Application.objects.all()]
+    # sort their keys so that the longest application codes come first
+    # otherwise, suppose we had these keys:
+    #   'fe', 'foo', 'fennec' then when matching against a tree code called
+    #   'fennec_10x' then, it would "accidentally" match on 'fe' and not
+    #   'fennec'.
+    _application_codes.sort(lambda x, y: -cmp(len(x[0]), len(y[0])))
+
+    # Create these two based on all appversions attached to a tree so that in
+    # the big loop on runs we don't need to make excessive queries for
+    # appversions and applications
+    _trees_to_appversions = {}
+    for appver in (AppVersion.objects
+                   .exclude(tree__isnull=True)
+                   .select_related('tree')):
+        _trees_to_appversions[appver.tree] = appver
+
+    def tree_to_application(tree):
+        for key, app in _application_codes:
+            if tree.code.startswith(key):
+                return app
+
+    def tree_to_appversion(tree):
+        return _trees_to_appversions.get(tree)
+
+    applications = defaultdict(list)
+    for run_ in runs:
+        # copy the Run instance into a fancy dict but only copy those whose
+        # key doesn't start with an underscore
+        run = Run(dict((k, getattr(run_, k))
+                       for k in run_.__dict__
+                       if not k.startswith('_')))
+        run.allmissing = run_.allmissing  # a @property of the Run model
+        run.tree = run_.tree  # foreign key lookup
+        application = tree_to_application(run_.tree)
+        run.changed_ratio = run.completion
+        run.unchanged_ratio = 100 * run.unchanged / run.total
+        run.missing_ratio = 100 * run.allmissing / run.total
+        # cheat a bit and make sure that the red stripe on the chart is at
+        # least 1px wide
+        if run.allmissing and run.missing_ratio == 0:
+            run.missing_ratio = 1
+            for ratio in (run.changed_ratio, run.unchanged_ratio):
+                if ratio:
+                    ratio -= 1
+                    break
+
+        appversion = tree_to_appversion(run.tree)
+        if appversion:
+            run.appversion = appversion
+
+            actions = [action_id for action_id, flag
+                       in signoff_actions(
+                          appversions={'id': run.appversion.id},
+                          locales={'id': loc.id})]
+            actions = Action.objects.filter(id__in=actions) \
+                                    .select_related('signoff__push')
+            # get current status of signoffs
+            run.pending, run.rejected, run.accepted, __ = \
+              signoff_summary(actions)
+
+            # get the suggested signoff
+            forest = run.tree.l10n
+            repo = get_object_or_404(Repository, locale=loc, forest=forest)
+            __, __, run.suggested_shortrev = \
+              annotated_pushes(repo, run.appversion, loc, actions)
+        else:
+            # because Django templates (stupidly) swallows lookup errors we
+            # have to apply the missing defaults too
+            run.pending = run.rejected = run.accepted = \
+              run.suggested_shortrev = None
+
+        applications[application].append(run)
+    applications = ((k, v) for (k, v) in applications.items())
+
+    return render_to_string('shipping/team-snippet.html',
+                            {'locale': loc,
+                             'applications': applications,
+                            }, context_instance=RequestContext(request))
 
 
 def _universal_newlines(content):

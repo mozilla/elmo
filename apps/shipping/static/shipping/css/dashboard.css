@@ -45,7 +45,6 @@ div.thumbnail {border: solid black 1px; margin: 2px;}
 .tree_cell.failure {background-color: rgba(255, 0, 0, 0.5);}
 
 .stats {
-    background-color: white;
     cell-padding:0px;
     border-spacing:0px;
     padding: 3px;
