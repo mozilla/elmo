@@ -36,6 +36,7 @@
 # ***** END LICENSE BLOCK *****
 
 import re
+import os
 from mock import patch
 from test_utils import TestCase
 from django.core.urlresolvers import reverse
@@ -70,6 +71,12 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         # django_arecibo was to fail at least it won't send anything to a real
         # arecibo server
         settings.ARECIBO_SERVER_URL = 'http://arecibo/'
+
+        settings.L10N_FEED_URL = self._local_feed_url('test_rss20.xml')
+
+    def _local_feed_url(self, filename):
+        filepath = os.path.join(os.path.dirname(__file__), filename)
+        return 'file://' + filepath
 
     def tearDown(self):
         super(HomepageTestCase, self).tearDown()
@@ -179,7 +186,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
            'password': 'secret'},
           **{'X-Requested-With': 'XMLHttpRequest'})
         eq_(response.status_code, 200)
-        ok_('class="errorlist"' in response.content)
+        ok_('class="error' in response.content)
 
         from django.contrib.auth.models import User
         user = User.objects.create(username='peterbe',
@@ -219,6 +226,30 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         response = self.client.get(url)
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
+
+    def test_index_page_feed_reader(self):
+        url = reverse('homepage.views.index')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        content = response.content
+        if isinstance(content, str):
+            content = unicode(content, 'utf-8')
+
+        # because I know what's in test_rss20.xml I can
+        # check for it here
+        import feedparser
+        assert settings.L10N_FEED_URL.startswith('file:///')
+        parsed = feedparser.parse(settings.L10N_FEED_URL)
+        entries = list(parsed.entries)
+        first = entries[0]
+
+        ok_(first['title'] in content)
+        ok_('href="%s"' % first['link'] in content)
+
+        second = parsed.entries[1]
+        ok_(second['title'] in content)
+        ok_('href="%s"' % second['link'] in content)
 
     def test_teams_page(self):
         """check that the teams page renders correctly"""

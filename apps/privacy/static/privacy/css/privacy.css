@@ -64,10 +64,15 @@ table#policy_versions {
   border-spacing: 0px;
   border-collapse: collapse;
   empty-cells: show;
+  width: 100%;
 }
 table#policy_versions th, table#policy_versions td {
   border: solid black 1px;
   padding: 2px;
+}
+/* moved gradient from row to cell level */
+#policy_versions td {
+  background-image: -moz-linear-gradient(center top , white, #EEEEEE);
 }
 
 .notice {

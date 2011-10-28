@@ -173,6 +173,10 @@ STATICFILES_FINDERS = (
   'compressor.finders.CompressorFinder',
 )
 
+## Feeds
+L10N_FEED_URL = 'http://planet.mozilla.org/l10n/atom.xml'
+HOMEPAGE_FEED_SIZE = 5
+
 try:
     import ldap_settings
 except ImportError:

@@ -176,7 +176,7 @@ class AccountsTestCase(TestCase):
         response = self.client.post(url, {'username': user.username,
                                           'password': 'wrong'})
         eq_(response.status_code, 200)
-        ok_('errorlist' in response.content)
+        ok_('error' in response.content)
         ok_('value="%s"' % user.username in response.content)
         ok_('text/html' in response['Content-Type'])
 
@@ -185,7 +185,7 @@ class AccountsTestCase(TestCase):
                                           'password': 'wrong'},
                                     HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         eq_(response.status_code, 200)
-        ok_('errorlist' in response.content)
+        ok_('error' in response.content)
         ok_('value="%s"' % user.username in response.content)
 
         # but get it right and as AJAX and you get JSON back

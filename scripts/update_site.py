@@ -31,6 +31,7 @@ NASHVEGAS_LIST = "./manage.py upgradedb --path migrations --list"
 NASHVEGAS_EXEC = "./manage.py upgradedb --path migrations --execute"
 STATICFILES_COLLECT_EXEC = "./manage.py collectstatic --noinput"
 DJANGOCOMPRESSOR_COMPRESS_EXEC = "./manage.py compress"
+REFRESH_FEEDS_EXEC = "./manage.py refresh_feeds -v 2"
 
 EXEC = 'exec'
 CHDIR = 'chdir'
@@ -63,6 +64,11 @@ def update_site(env, debug):
     commands += [
         (CHDIR, here),
         (EXEC, DJANGOCOMPRESSOR_COMPRESS_EXEC),
+    ]
+
+    commands += [
+        (CHDIR, here),
+        (EXEC, REFRESH_FEEDS_EXEC),
     ]
 
     for cmd, cmd_args in commands:

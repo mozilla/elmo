@@ -38,6 +38,7 @@
 '''
 
 import sys
+import feedparser  # vendor-local
 from django.core.urlresolvers import reverse
 from django.http import (HttpResponsePermanentRedirect, Http404,
                          HttpResponseServerError)
@@ -45,7 +46,9 @@ from django.shortcuts import render, redirect
 from django.utils.safestring import mark_safe
 from django.template import RequestContext, loader
 from django.conf import settings
+from django.shortcuts import render
 from django.views.defaults import page_not_found, server_error
+from django.core.cache import cache
 import django_arecibo.wrapper
 
 from life.models import Locale
@@ -79,21 +82,41 @@ def handler500(request):
 
 
 def index(request):
-    from shipping.views import homesnippet as shipping_snippet
-    from pushes.views import homesnippet as pushes_snippet
-    from l10nstats.views import homesnippet as stats_snippet
-    from bugsy.views import homesnippet as bugs_snippet
+    split = 6
+    locales = Locale.objects.filter(name__isnull=False).order_by('name')
 
-    shipping_div = mark_safe(shipping_snippet())
-    pushes_div = mark_safe(pushes_snippet())
-    l10nstats_div = mark_safe(stats_snippet())
-    bugs_div = mark_safe(bugs_snippet())
-    return render(request, 'homepage/index.html', {
-                   'shipping': shipping_div,
-                   'pushes': pushes_div,
-                   'l10nstats': l10nstats_div,
-                   'bugs': bugs_div,
-                 })
+    feed_items = get_feed_items()
+
+    options = {
+      'feed_items': feed_items,
+      'locales_first_half': locales[:split],
+      'locales_second_half': locales[split:split * 2 - 1],
+      'locales_rest_count': locales.count() - split * 2 - 1,
+    }
+    return render(request, 'homepage/index.html', options)
+
+
+def get_feed_items(max_count=settings.HOMEPAGE_FEED_SIZE,
+                   force_refresh=False):
+    cache_key = 'feed_items:%s' % max_count
+    if not force_refresh:
+        items = cache.get(cache_key, None)
+        if items is not None:
+            return items
+
+    parsed = feedparser.parse(settings.L10N_FEED_URL)
+
+    items = []
+    for item in parsed.entries:
+        url = item['link']
+        title = item['title']
+        if url and title:
+            items.append(dict(url=url, title=title))
+            if len(items) >= max_count:
+                break
+
+    cache.set(cache_key, items, 60 * 60)
+    return items
 
 
 def teams(request):

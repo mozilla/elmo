@@ -37,12 +37,98 @@
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
 {% block title_matter %}Mozilla Localization{% endblock %}
+{% block body_tag %}id="home"{% endblock %}
+
+{% block header_content_extra %}
+<p><!--Welcome to mozilla Localization! This is where mozilla starts to speak internationalism--></p>
+{% endblock %}
+
 {% block content %}
-<h1>Mozilla Localizations</h1>
-<div>Learn more about our <a href="{% url homepage.views.teams %}">Localization
-  teams</a>.</div>
-<div>{{pushes}}</div>
-<div>{{l10nstats}}</div>
-<div>{{shipping}}</div>
-<div>{{bugs}}</div>
+
+<section>
+	<article class="introduction full">
+		<h1>Getting started with Localization (L10n)</h1>
+		<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam. </p>
+		<ul>
+			<li><a href="">Lorem ipsum</a></li>
+			<li><a href="">Lorem ipsum</a></li>
+			<li><a href="">Lorem ipsum</a></li>
+			<li><a href="">More frequently asked questions...</a></li>
+		</ul>
+	</article>
+</section>
+
+<section>
+	<article>
+		<h1>Localization Teams</h1>
+		<p>Every language is a localization team, here are just some of them...</p>
+
+		<ul class="double">
+                        {% for loc in locales_first_half %}
+                        <li><a href="{% url homepage.views.locale_team loc.code %}">{% if loc.name %}{{loc.name}}{% else %}{{loc.code}}{% endif %}</a></li>
+                        {% endfor %}
+		</ul>
+		<ul class="double">
+                        {% for loc in locales_second_half %}
+                        <li><a href="{% url homepage.views.locale_team loc.code %}">{% if loc.name %}{{loc.name}}{% else %}{{loc.code}}{% endif %}</a></li>
+                        {% endfor %}
+			<li><a href="{% url homepage.views.teams %}">And {{ locales_rest_count }} more...</a></li>
+		</ul>
+	</article>
+	<article>
+		<h1>Projects to Localize</h1>
+		<p>Jeff jeff Jeff!</p>
+	</article>
+</section>
+<section>
+	<article>
+		<h1>Learn About Localization</h1>
+		<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam. </p>
+	</article>
+	<article>
+		<h1>Join the Community</h1>
+		<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam. </p>
+	</article>
+</section>
+<section>
+	<article class="full">
+		<h1>For Developers</h1>
+		<p>All projects at Mozilla are Open Source. This site, for example, is available
+                on <a href="https://github.com/mozilla/elmo">Github</a> for you to check out
+                and help contribute to.</p>
+	</article>
+</section>
+
+
+{% endblock %}
+
+{% block aside %}
+<div>
+<aside>
+	<section>
+		<h1>
+			<a href="XXXINSERT FEED URL HERE"><img src="{{ STATIC_URL }}img/icons/feed.png" alt="Subscribe to our feed" /></a>Mozilla L10n Blog
+		</h1>
+		<ul class="blog-links">
+            {% for item in feed_items %}
+		    <li><a href="{{ item.url }}">{{ item.title|truncatewords:8 }}</a></li>
+            {% endfor %}
+         </ul>
+	</section>
+	{% comment %}
+	<section>
+		<header>
+			<a href="http://twitter.com/mozilla_l10n"><img src="images/icons/twitter.png" alt="" /></a>
+			<h1>Follow @mozilla_l10n</h1>
+		</header>
+			<p><a href="">Lorem ipsum dolor sit amet, consectetuer adipiscing elit.</a></p>
+		<p><a href="">Vestibulum ultrices semper. </a></p>
+		<p><a href="">Sed nec lacus a turpis consequat fermentum eu eget felis. </a></p>
+		<p><a href="">Curabitur nisi mauris, gravida volutpat ullamcorper sit amet, congue in dui. </a></p>
+		<p><a href="">Nulla vel sapien vitae urna ullamcorper rutrum!</a></p>
+	</section>
+	{% endcomment %}
+</aside>
+</div>
+
 {% endblock %}

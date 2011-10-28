@@ -15,11 +15,10 @@
 #
 # The Initial Developer of the Original Code is
 # Mozilla Foundation.
-# Portions created by the Initial Developer are Copyright (C) 2011
+# Portions created by the Initial Developer are Copyright (C) 2010
 # the Initial Developer. All Rights Reserved.
 #
 # Contributor(s):
-#    Peter Bengtsson <peterbe@mozilla.com>
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -34,17 +33,29 @@
 # the terms of any one of the MPL, the GPL or the LGPL.
 #
 # ***** END LICENSE BLOCK *****
+"""This managment commands runs all the functions again that pull feeds (parses
+them and stores its results in a cache).
 
-from django import forms
-import django.contrib.auth.forms
+Ideally this management command should be run every hour. That prevents the
+home page view from having to block on network problems.
+"""
+
+import time
+import logging
+from django.conf import settings
+from django.core.management.base import BaseCommand
+from homepage.views import get_feed_items
 
 
-class AuthenticationForm(django.contrib.auth.forms.AuthenticationForm):
-    """override the authentication form because we use the email address as the
-    key to authentication."""
-    username = forms.CharField(label="Username", max_length=75)
+class Command(BaseCommand):  # pragma: no cover
 
-    def __init__(self, *args, **kwargs):
-        super(AuthenticationForm, self).__init__(*args, **kwargs)
-        self.fields['username'].widget.attrs['placeholder'] = 'Email'
-        self.fields['password'].widget.attrs['placeholder'] = 'Password'
+    def handle(self, **options):
+        verbose = int(options['verbosity']) > 1
+        t0 = time.time()
+        get_feed_items(force_refresh=True)
+        t1 = time.time()
+        note = 'Took %.4f to parse %s' % (t1 - t0, settings.L10N_FEED_URL)
+        logging.info(note)
+        if verbose:
+            print get_feed_items
+            print "\t", note

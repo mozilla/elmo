@@ -1,0 +1,179 @@
+<?xml version="1.0"?>
+<rss version="2.0"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+>
+
+<channel>
+	<title>Planet Mozilla</title>
+	<link>http://planet.mozilla.org/</link>
+	<language>en</language>
+	<description>Planet Mozilla - http://planet.mozilla.org/</description>
+	<atom:link rel="self" href="http://planet.mozilla.org/rss20.xml" type="application/rss+xml"/>
+
+<item>
+	<title>David Mandelin: JS Team Update 11/1</title>
+	<guid isPermaLink="false">http://blog.mozilla.com/dmandelin/?p=320</guid>
+	<link>http://blog.mozilla.com/dmandelin/2011/11/01/js-team-update-111/</link>
+	<description>&lt;p&gt;For a while, I was pretty swamped, with not enough time to do a regular team newsletter. And then, I figured I’d have to go back over the past 2 months of activity to sort out everything that happened so I could write a proper giant update. But, I realize that’s way too hard and I’ll never get to it, so instead I’ll just do a brief update as of today:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;b&gt;Terrance Cole&lt;/b&gt; joined the team to work on GC efforts. As his first key project, he’s been working on a patch to release pages of the JS heap that are not in use back to the OS, to reduce memory fragmentation.&lt;/li&gt;
+&lt;li&gt;&lt;b&gt;Jan de Mooij&lt;/b&gt; just joined the IonMonkey team as a full-time employee working out of the Netherlands. Jan, of course, was a key volunteer contributor to both the JägerMonkey and Type Inference (TI) projects.&lt;/li&gt;
+&lt;li&gt;Speaking of TI, it’s about to go to Beta and everything looks good, in both performance and stability. Brian Hackett has been working hard to fix critical bugs and performance regressions that were discovered in Nightly and Aurora.&lt;/li&gt;
+&lt;li&gt;Brian also did work in the JM branch to make objects and functions smaller, which will help a bit with memory usage, but mostly for performance–less data to initialize and being able to hold more objects in cache. This is waiting for incremental GC before landing to mozilla-central.&lt;/li&gt;
+&lt;li&gt;Incremental GC is getting close–it’s planned to land by the end of 2011. GC tuning and memory reporter improvements continue.&lt;/li&gt;
+&lt;li&gt;IonMonkey, finishing ES5 compat, finishing new debugger support, and the JS stack profiler are all ongoing.&lt;/li&gt;
+&lt;li&gt;We are spinning up work on ECMAScript Harmony–Jason Orendorff is starting with modules. He’s doing some front-end refactoring first to ease the path.&lt;/li&gt;&lt;/ul&gt;</description>
+	<pubDate>Tue, 01 Nov 2011 21:47:24 +0000</pubDate>
+	<dc:creator>dmandelin</dc:creator>
+</item>
+<item>
+	<title>Joe Stagner: Speaking at Conferences – a New Beginning !</title>
+	<guid isPermaLink="false">http://www.misfitgeek.com/?p=4432</guid>
+	<link>http://www.misfitgeek.com/2011/11/speaking-at-conference-a-new-beginning/</link>
+	<description>&lt;p&gt;&lt;img alt=&quot;&quot; class=&quot;alignnone&quot; height=&quot;450&quot; src=&quot;http://misfitgeek.com/postimages/ConferenceBadges2011.png&quot; title=&quot;ConferenceBadges2011.png&quot; width=&quot;456&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;On the right side you see badges from the conferences I was involved with at Microsoft.&lt;/p&gt;
+&lt;p&gt;On the left – my first badge as a Mozilla employee.&lt;/p&gt;
+&lt;p&gt;I’m leading a developer engagement initiative at Mozilla that is focusing on “App Building” using HTML5 and other standards based technologies.&lt;/p&gt;
+&lt;p&gt;Got a conference? Let me know !!&lt;/p&gt;
+&lt;hr /&gt;</description>
+	<pubDate>Tue, 01 Nov 2011 21:43:58 +0000</pubDate>
+	<dc:creator>JoeStagner</dc:creator>
+</item>
+<item>
+	<title>Heather Arthur: New Mozregression Owner: Jeff Hammel</title>
+	<guid isPermaLink="false">http://harthur.wordpress.com/?p=691</guid>
+	<link>http://harthur.wordpress.com/2011/11/01/new-mozregression-owner/</link>
+	<description>&lt;p&gt;I’m no longer maintaining &lt;a href=&quot;http://mozilla.github.com/mozregression&quot;&gt;mozregression&lt;/a&gt;, Jeff Hammel is!&lt;/p&gt;
+&lt;p&gt;The &lt;a href=&quot;http://github.com/mozilla/mozregression&quot;&gt;GitHub repository&lt;/a&gt; has been transfered to the Mozilla organization. File issues on the new GitHub repo or ping jhammel in #ateam on irc.mozilla.org for any suggestions or concerns.&lt;/p&gt;
+&lt;br /&gt;  &lt;a href=&quot;http://feeds.wordpress.com/1.0/gocomments/harthur.wordpress.com/691/&quot; rel=&quot;nofollow&quot;&gt;&lt;img alt=&quot;&quot; border=&quot;0&quot; src=&quot;http://feeds.wordpress.com/1.0/comments/harthur.wordpress.com/691/&quot; /&gt;&lt;/a&gt; &lt;a href=&quot;http://feeds.wordpress.com/1.0/godelicious/harthur.wordpress.com/691/&quot; rel=&quot;nofollow&quot;&gt;&lt;img alt=&quot;&quot; border=&quot;0&quot; src=&quot;http://feeds.wordpress.com/1.0/delicious/harthur.wordpress.com/691/&quot; /&gt;&lt;/a&gt; &lt;a href=&quot;http://feeds.wordpress.com/1.0/gofacebook/harthur.wordpress.com/691/&quot; rel=&quot;nofollow&quot;&gt;&lt;img alt=&quot;&quot; border=&quot;0&quot; src=&quot;http://feeds.wordpress.com/1.0/facebook/harthur.wordpress.com/691/&quot; /&gt;&lt;/a&gt; &lt;a href=&quot;http://feeds.wordpress.com/1.0/gotwitter/harthur.wordpress.com/691/&quot; rel=&quot;nofollow&quot;&gt;&lt;img alt=&quot;&quot; border=&quot;0&quot; src=&quot;http://feeds.wordpress.com/1.0/twitter/harthur.wordpress.com/691/&quot; /&gt;&lt;/a&gt; &lt;a href=&quot;http://feeds.wordpress.com/1.0/gostumble/harthur.wordpress.com/691/&quot; rel=&quot;nofollow&quot;&gt;&lt;img alt=&quot;&quot; border=&quot;0&quot; src=&quot;http://feeds.wordpress.com/1.0/stumble/harthur.wordpress.com/691/&quot; /&gt;&lt;/a&gt; &lt;a href=&quot;http://feeds.wordpress.com/1.0/godigg/harthur.wordpress.com/691/&quot; rel=&quot;nofollow&quot;&gt;&lt;img alt=&quot;&quot; border=&quot;0&quot; src=&quot;http://feeds.wordpress.com/1.0/digg/harthur.wordpress.com/691/&quot; /&gt;&lt;/a&gt; &lt;a href=&quot;http://feeds.wordpress.com/1.0/goreddit/harthur.wordpress.com/691/&quot; rel=&quot;nofollow&quot;&gt;&lt;img alt=&quot;&quot; border=&quot;0&quot; src=&quot;http://feeds.wordpress.com/1.0/reddit/harthur.wordpress.com/691/&quot; /&gt;&lt;/a&gt; &lt;img alt=&quot;&quot; border=&quot;0&quot; height=&quot;1&quot; src=&quot;http://stats.wordpress.com/b.gif?host=harthur.wordpress.com&amp;amp;blog=4513688&amp;amp;post=691&amp;amp;subd=harthur&amp;amp;ref=&amp;amp;feed=1&quot; width=&quot;1&quot; /&gt;</description>
+	<pubDate>Tue, 01 Nov 2011 21:19:46 +0000</pubDate>
+	<dc:creator>Heather Arthur</dc:creator>
+</item>
+<item>
+	<title>Jeff Griffiths: FSOSS Rocked!</title>
+	<guid isPermaLink="false">http://canuckistani.ca/55 at http://canuckistani.ca</guid>
+	<link>http://canuckistani.ca/jeff/blog/fsoss-rocked</link>
+	<description>&lt;p&gt;This past week/end I was fortunate to be able to attend Seneca College's awesome annual Free Software &amp;amp; Open Source Symposium ( FSOSS for short ). This year marked ten years of FSOSS, and I was really impressed with the diversity of talks presented, as well as the irrepressible energy of the Seneca students participating and volunteering. I'd like to thank all of the students and staff for putting in the time to produce a great event; I know how gruelling this can be but it was totally worth it!&lt;/p&gt;
+
+&lt;p&gt;On Friday I arrived early and meet up with fellow Mozillian &lt;a href=&quot;http://twitter.com/#!/armenzg&quot;&gt;Armen Zambrano&lt;/a&gt; to set up and man the Mozilla table:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://www.flickr.com/photos/anisotropic/6288443683/in/photostream/&quot; target=&quot;_blank&quot;&gt;&lt;img src=&quot;http://farm7.static.flickr.com/6051/6288443683_fa60b2f72e_d.jpg&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;See all that swag on the table? It was gone quite quickly, especially the hacky sacks. Armen and I were at the table all day talking to students and attendees, engaging with them on questions ranging from Thunderbird UX and rapid release schedules to Mozilla's various student-focused programs such as internships, recent-grad positions and &lt;a href=&quot;http://studentreps.mozilla.org/en/&quot;&gt;Student Reps&lt;/a&gt;. Rarely was it quiet:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://www.flickr.com/photos/anisotropic/6298846643/in/photostream&quot; target=&quot;_blank&quot;&gt;&lt;img src=&quot;http://farm7.static.flickr.com/6103/6298846643_df1737cc5c_d.jpg&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;On Saturday we decided not to man the table - because we were out of swag! Also, Armen and I were both speaking in the morning. For Armen's perspective, please check out his blog post here:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://armenzg.blogspot.com/2011/11/how-fsoss-was-for-me.html&quot;&gt;http://armenzg.blogspot.com/2011/11/how-fsoss-was-for-me.html&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;At 10AM I gave a talk to about 30 people introducing them to the SDK and it's various features. If you're curious the slides are here:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://talks.canuckistani.ca/fsoss/&quot;&gt;http://talks.canuckistani.ca/fsoss/&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;FSOSS volunteers recorded the talk, so hopefully I'll get a copy back to hook up with my slides using &lt;a href=&quot;http://popcornjs.org/&quot;&gt;popcorn.js&lt;/a&gt;. As well, the demos included in the talk will only work if you are running Firefox 7+ and have installed this helper add-on:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://talks.canuckistani.ca/fsoss/addon/fsoss-example.xpi&quot;&gt;http://talks.canuckistani.ca/fsoss/addon/fsoss-example.xpi&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;There were a number of other talks by Mozillians:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Ehsan Akhgari: &lt;a href=&quot;http://fsoss.senecac.on.ca/2011/node/113&quot;&gt;How Web Browsers Work&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Lawrence Mandel: &lt;a href=&quot;http://fsoss.senecac.on.ca/2011/node/58&quot;&gt;XBMC&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;David Seifried: &lt;a href=&quot;http://fsoss.senecac.on.ca/2011/node/79&quot;&gt;Popcorn.js &amp;amp; Popcorn-Maker&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Armen Zambrano: &lt;a href=&quot;http://fsoss.senecac.on.ca/2011/node/108&quot;&gt;How to ship Open Source software to half a billion users&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;On Saturday afternoon Ehsan, Lawrence and I helped facilitate a Mozilla-focused BOF session during the 'unconference' section of the schedule. The conference was interesting and free-wheeling, covering such topics as #OWS, rapid release, enterprise support and how Mozilla works with Linux distributions.&lt;/p&gt;
+
+&lt;p&gt;The thing that impressed me the most about FSOSS was learning more from the Seneca students &amp;amp; faculty about their programs; I wish more educational institutions would follow their lead and get their students.&lt;/p&gt;</description>
+	<pubDate>Tue, 01 Nov 2011 21:02:18 +0000</pubDate>
+	<dc:creator>jeff</dc:creator>
+</item>
+<item>
+	<title>about:mozilla: Future of Video, Native Interface and more…</title>
+	<guid isPermaLink="false">http://blog.mozilla.com/about_mozilla/?p=1626</guid>
+	<link>http://blog.mozilla.com/about_mozilla/2011/11/01/future-of-video-native-interface-and-more/</link>
+	<description>&lt;p&gt;about:mozilla is a weekly round-up of news and contribution opportunities. Here’s what’s happening this week.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Future of Online Video&lt;/strong&gt;&lt;br /&gt;
+Popcorn has been getting some media attention lately, with Wired and Fast Company both calling it the &lt;a href=&quot;http://openmatt.wordpress.com/2011/10/26/press-calls-mozilla-popcorn-the-future-of-online-video/&quot;&gt;future of online video&lt;/a&gt;.  Read more about Popcorn and other media projects on the &lt;a href=&quot;https://mozillafestival.org/category/mozfest/&quot;&gt;Mozilla Festival blog&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Native Interface on Android&lt;/strong&gt;&lt;br /&gt;
+&lt;a href=&quot;http://blog.mozilla.com/about_mozilla/files/2011/10/Birch-nightly-v10.qrcode.png&quot;&gt;&lt;img alt=&quot;&quot; class=&quot;aligncenter size-full wp-image-1630&quot; height=&quot;249&quot; src=&quot;http://blog.mozilla.com/about_mozilla/files/2011/10/Birch-nightly-v10.qrcode.png&quot; title=&quot;Birch-nightly-v10.qrcode&quot; width=&quot;249&quot; /&gt;&lt;/a&gt;&lt;br /&gt;
+Firefox for Mobile is moving towards a native front-end using Java that will make start-up and browsing faster.  Test a Nightly build by using the QR code above or &lt;a href=&quot;http://ftp.mozilla.org/pub/mozilla.org/mobile/nightly/latest-birch-android/&quot;&gt;download a build&lt;/a&gt; from FTP.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Air Mozilla Stage Hands&lt;/strong&gt;&lt;br /&gt;
+Mozilla IT is looking for volunteers to join the team and help behind the scenes to make live Air Mozilla events more successful.  You will volunteer onsite at MozSpaces and offsite at Mozilla-related events. &lt;a href=&quot;http://blog.mozilla.com/mrz/2011/10/26/step-2-01-air-mozilla-stage-hands-opportunity/&quot;&gt;Learn more about this role and apply&lt;/a&gt;.  &lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Editing Webpages in 3D&lt;/strong&gt;&lt;br /&gt;
+Tilt, a Firefox extension that creates a 3D visualization of a webpage, is now an active Developer Tools project.  Read more about the &lt;a href=&quot;http://hacks.mozilla.org/2011/10/debugging-and-editing-webpages-in-3d/&quot;&gt;new developer-oriented features&lt;/a&gt;, such as a Minidom map and realtime editing, that have been added.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Dev Derby Winners&lt;/strong&gt;&lt;br /&gt;
+Jay Patel has announced the &lt;a href=&quot;http://hacks.mozilla.org/2011/10/located-winners-of-the-september-dev-derby-on-geolocation/&quot;&gt;winners of the Geolocation Dev Derby&lt;/a&gt;.  Check out the winners to see how location information can enhance your web experience and get your Canvas demos ready for November’s Dev Derby.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Upcoming events&lt;/strong&gt;&lt;br /&gt;
+* November 2, Dublin, Ireland, &lt;a href=&quot;http://brian.kingsonline.net/talk/2011/10/meetup-in-dublin-mozilla-ireland/&quot;&gt;Meetup in Dublin – Mozilla Ireland&lt;/a&gt;&lt;br /&gt;
+* November 3, online, &lt;a href=&quot;http://davidwboswell.wordpress.com/2011/10/31/getting-more-contributors-involved-with-mozilla-brown-bag/&quot;&gt;Getting More Contributors Involved with Mozilla Brown Bag&lt;/a&gt;&lt;br /&gt;
+* November 4 – 6, London, England, &lt;a href=&quot;https://festival.mozilla.org&quot;&gt;Mozilla Festival — Media, Freedom and the Web&lt;/a&gt;&lt;br /&gt;
+* November 12 – 13, Berlin, Germany, &lt;a href=&quot;http://standblog.org/blog/post/2011/08/16/Mozilla-Camp-Europe-2011-save-the-date&quot;&gt;Mozilla Camp Europe 2011&lt;/a&gt;&lt;br /&gt;
+* November 19 – 20, Kuala Lumpur, &lt;a href=&quot;http://blog.mozilla.com/gen/2011/08/16/save-the-date-mozilla-camp-asia-2011-kuala-lumpur-nov-19-20/&quot;&gt;Mozilla Camp Asia 2011&lt;/a&gt;&lt;br /&gt;
+* See more on the &lt;a href=&quot;http://wiki.mozilla.org/Community_Calendar&quot;&gt;Mozilla Community Calendar&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Get Involved&lt;/strong&gt;&lt;br /&gt;
+These are just some of the available contribution opportunities. Learn more about other &lt;a href=&quot;http://www.mozilla.org/contribute/&quot;&gt;ways to get involved&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;About about:mozilla&lt;/strong&gt;&lt;br /&gt;
+The newsletter is written by Mozilla’s &lt;a href=&quot;https://wiki.mozilla.org/ContributorEngagement&quot;&gt;contributor engagement team&lt;/a&gt; and is published every Tuesday. &lt;a href=&quot;http://www.youtube.com/user/mozillians&quot;&gt;Watch the team status updates&lt;/a&gt; for more information.&lt;/p&gt;
+&lt;p&gt;If you have anything you would like to include in our next issue, please contact: about-mozilla[at]mozilla.com.&lt;/p&gt;
+&lt;p&gt;You can also subscribe to the &lt;a href=&quot;http://www.mozilla.com/en-US/newsletter/about_mozilla/&quot;&gt;email version&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Have a good week folks and keep rocking the web!&lt;/p&gt;</description>
+	<pubDate>Tue, 01 Nov 2011 20:10:50 +0000</pubDate>
+	<dc:creator>David Boswell</dc:creator>
+</item>
+<item>
+	<title>Web FWD: User Research: It's Key for Startups</title>
+	<guid isPermaLink="true">http://blog.webfwd.org/post/12205546599</guid>
+	<link>http://blog.webfwd.org/post/12205546599</link>
+	<description>&lt;p&gt;Today at our weekly LearnFWD session, we discovered why startups at every stage need to do user research. Distinct from market research and usability testing, user research isn’t about broad trends or feature tweaking. It IS all about the users of a product: what they like, what they do, and how this will impact your project. And best of all for startups: it doesn’t need to be complicated.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://twitter.com/dianeloviglio&quot;&gt;Diane Loviglio&lt;/a&gt; and &lt;a href=&quot;http://www.twitter.com/jinghuaz&quot;&gt;Jinghua Zhang&lt;/a&gt; - both Mozillians, WebFWD mentors and experts in User Research - walked us through various options. They advise all startups to do a deep dive - with simplicity - that will save them tremendous amounts of pain later in their product development.&lt;/p&gt;
+
+&lt;p&gt;Like many excellent presentations, the value of what Diane and Jinghua prescribed was immediately obvious, yet rarely practiced. We could go on and on about doing the right thing, no matter how early along you are, but we’ll let the presenters tell you themselves:&lt;/p&gt;
+
+&lt;div class=&quot;video-js-box&quot;&gt;
+&lt;video class=&quot;video-js&quot; controls=&quot;controls&quot; height=&quot;450&quot; width=&quot;600&quot;&gt;&lt;source src=&quot;http://videos.mozilla.org/serv/webfwd/2011-10-user_testing.mp4&quot; type=&quot;video/mp4; codecs=&amp;quot;avc1.42e01e, mp4a.40.2&amp;quot;&quot; /&gt;&lt;source src=&quot;http://videos.mozilla.org/serv/webfwd/2011-10-user_testing.webm&quot; type=&quot;video/webm; codecs=&amp;quot;vp8, vorbis&amp;quot;&quot; /&gt;&lt;source src=&quot;http://videos.mozilla.org/serv/webfwd/2011-10-user_testing.ogv&quot; type=&quot;video/ogg; codecs=&amp;quot;theora, vorbis&amp;quot;&quot; /&gt;&lt;img alt=&quot;Poster Image&quot; height=&quot;450&quot; src=&quot;http://videos.mozilla.org/serv/webfwd/2011-10-user_testing.jpg&quot; title=&quot;No video playback capabilities.&quot; width=&quot;600&quot; /&gt;&lt;/video&gt;&lt;p class=&quot;vjs-no-video&quot;&gt;&lt;strong&gt;Download Video:&lt;/strong&gt;
+&lt;a href=&quot;http://videos.mozilla.org/serv/webfwd/2011-10-user_testing.mp4&quot;&gt;MP4&lt;/a&gt;,
+&lt;a href=&quot;http://videos.mozilla.org/serv/webfwd/2011-10-user_testing.webm&quot;&gt;WebM&lt;/a&gt;,
+&lt;a href=&quot;http://videos.mozilla.org/serv/webfwd/2011-10-user_testing.ogv&quot;&gt;Ogg&lt;/a&gt;&lt;br /&gt;&lt;a href=&quot;http://videojs.com&quot;&gt;HTML5 Video Player&lt;/a&gt; by VideoJS
+&lt;/p&gt;
+&lt;/div&gt;</description>
+	<pubDate>Tue, 01 Nov 2011 19:41:42 +0000</pubDate>
+</item>
+<item>
+	<title>hacks.mozilla.org: Webinar: Canvas with Rob Hawkes</title>
+	<guid isPermaLink="false">http://hacks.mozilla.org/?p=10011</guid>
+	<link>http://hacks.mozilla.org/2011/11/webinar-canvas-with-rob-hawkes/</link>
+	<description>&lt;p&gt;Please join us on Tuesday, November 8th at 17:00 UTC (&lt;a href=&quot;http://www.timeanddate.com/worldclock/converter.html?year=2011&amp;amp;month=11&amp;amp;day=8&amp;amp;hour=17&amp;amp;min=0&amp;amp;sec=0&amp;amp;p1=0&amp;amp;p2=24&quot;&gt;convert to your local time&lt;/a&gt;) for a webinar on using the &lt;a href=&quot;https://developer.mozilla.org/en/HTML/Canvas&quot;&gt;Canvas API&lt;/a&gt;, with our own &lt;a href=&quot;http://hacks.mozilla.org/author/robhawkes/&quot;&gt;Rob Hawkes&lt;/a&gt;, author of &lt;cite&gt;&lt;a href=&quot;http://rawkes.com/foundationcanvas&quot;&gt;Foundation HTML5 Canvas&lt;/a&gt;&lt;/cite&gt;. &lt;/p&gt;
+&lt;p&gt;Canvas is the topic for the November &lt;a href=&quot;https://developer.mozilla.org/en-US/demos/devderby&quot;&gt;Dev Derby&lt;/a&gt;. Rob is planning to show how to make an image editor for avatars using Canvas. Spark your imagination with the webinar, create some new and amazing use of Canvas, and &lt;a href=&quot;https://developer.mozilla.org/en-US/demos/submit?tags=challenge%3A2011%3Anovember&quot;&gt;submit it to the Dev Derby&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;We will use &lt;a href=&quot;http://bigbluebutton.org/&quot;&gt;BigBlueButton&lt;/a&gt; for web-conferencing, and will avoid using the feature that led to the server problems with the September webinar. We will be recording the session, and I promise to double- and triple-check the recording set-up in advance :-)&lt;/p&gt;
+&lt;p&gt;Add this event to your calendar:&lt;br /&gt;
+&lt;a href=&quot;https://www.google.com/calendar/event?action=TEMPLATE&amp;amp;tmeid=Mzd2bnR0dTUybmxobnRuc2RnNzg3bGg4ODAgN2F0Z2Qyb3Z0dGRpZWExYThwNmZrc2tzZjhAZw&amp;amp;tmsrc=7atgd2ovttdiea1a8p6fksksf8%40group.calendar.google.com&quot; target=&quot;_blank&quot;&gt;&lt;img border=&quot;0&quot; src=&quot;http://www.google.com/calendar/images/ext/gc_button1_en.gif&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;We’d like to get a rough estimate of how many people will be attending. If you happen to use Plancast, and you plan to attend the seminar, please &lt;a href=&quot;http://plancast.com/p/898j&quot;&gt;join the event on Plancast&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;To join the webinar:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Go to the &lt;a href=&quot;http://mozilla.bigbluebutton.org/mozilla/&quot;&gt;BigBlueButton server for Mozilla&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;For Full Name, enter your name.&lt;/li&gt;
+&lt;li&gt;Select “Mozilla Developer Network” in the Room list.&lt;/li&gt;
+&lt;li&gt;For Password, enter MDNHacks.&lt;/li&gt;
+&lt;p&gt;Note: Big Blue Button uses Flash, so make sure you have the latest version installed, especially if you are running Mac OS X Lion.&lt;/p&gt;&lt;/ol&gt;</description>
+	<pubDate>Tue, 01 Nov 2011 19:38:17 +0000</pubDate>
+	<dc:creator>Janet Swisher</dc:creator>
+</item>
+<item>
+	<title>Firefox Support Blog: SUMO Day on Thursday Nov. 3rd</title>
+	<guid isPermaLink="false">http://blog.mozilla.com/sumo/?p=1905</guid>
+	<link>http://blog.mozilla.com/sumo/2011/11/01/sumo-day-on-thursday-nov-3rd/</link>
+	<description>&lt;p&gt;Thursday is SUMO Day! Myself and Rebecca Billings will help moderate the support forum from 9am to 5pm PDT this Thursday to encourage new forum helpers with &lt;a href=&quot;http://support.mozilla.com/kb/answering-questions-support-forum&quot;&gt;answering support questions&lt;/a&gt;. We’ll be available on the &lt;a href=&quot;https://www.mibbit.com/?server=irc.mozilla.org&amp;amp;channel=%23sumo&quot;&gt;&lt;code&gt;#sumo&lt;/code&gt;&lt;/a&gt; IRC channel, &lt;code&gt;michelleluna&lt;/code&gt; and &lt;code&gt;rbillings&lt;/code&gt;, or by private message to &lt;a href=&quot;http://support.mozilla.com/en-US/messages/new?to=mluna&quot;&gt;myself&lt;/a&gt; or &lt;a href=&quot;http://support.mozilla.com/en-US/messages/new?to=rbillings&quot;&gt;Rebecca&lt;/a&gt; using the SUMO web site.&lt;/p&gt;
+&lt;p&gt;Just &lt;a href=&quot;https://support.mozilla.com/en-US/users/register&quot;&gt;create an account&lt;/a&gt; and then take some time on Thursday to help with &lt;a href=&quot;http://support.mozilla.com/questions?filter=no-replies&quot;&gt;unanswered questions&lt;/a&gt;. &lt;strong&gt;Our goal is to answer 200 additional questions throughout the day&lt;/strong&gt; as this is the average number of questions each day that go unanswered. We need your help!&lt;/p&gt;
+&lt;p&gt;We have a group of &lt;strong&gt;champions&lt;/strong&gt; who answer a large number of questions and we want to ask everyone who doesn’t regularly answer forum support questions about Firefox, to join us on Thursday for a sprint to relieve some of the fatigue our SUMO forum superstars and moderators feel each week. &lt;/p&gt;
+&lt;p&gt;It is a very rewarding contribution that will instantly put you in touch with Firefox users! Even just 30 minutes of your time would help us immensely! And you’ll feel good afterward. Put it on your calendar and contribute your expertise. &lt;/p&gt;</description>
+	<pubDate>Tue, 01 Nov 2011 18:52:28 +0000</pubDate>
+	<dc:creator>mluna</dc:creator>
+</item>
+
+</channel>
+</rss>

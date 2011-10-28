@@ -80,3 +80,27 @@ div.thumbnail {border: solid black 1px; margin: 2px;}
 .bugfield_short_desc {
   padding-left: 1em;
 }
+
+
+/* override of exhibit CSS effect
+  (done here rather than editing exhibit-bundle.css)
+*/
+table.exhibit-tabularView-body tr {
+        background-color:                       #eee; /* fallback color if gradients are not supported */
+
+                background-image:       -webkit-gradient(linear, left top, left bottom, from(white), to(#eee));
+                background-image:       -webkit-linear-gradient(top, white, #eee);
+                background-image:      -moz-linear-gradient(top, white, #eee);
+                background-image:       -ms-linear-gradient(top, white, #eee);
+                background-image:        -o-linear-gradient(top, white, #eee);
+                background-image:               linear-gradient(top, white, #eee);
+}
+table.exhibit-tabularView-body td.bugs_cell span { 
+    display: inline; 
+}
+.exhibit-tabularView-columnHeader,
+.exhibit-tabularView-columnHeader-sorted {
+    padding: .5em;
+    min-width: 30px;
+    font-size: .8em;
+}

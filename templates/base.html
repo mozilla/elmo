@@ -46,28 +46,63 @@
     {% compress css %}
     <link rel="stylesheet" href="{{ STATIC_URL }}css/style.css" type="text/css">
     {% endcompress %}
+    <style type="text/css">
+    /* MetaWebPro font family licensed from fontshop.com. WOFF-FTW! */
+    @font-face {
+        font-family: 'MetaBold';
+	src: url('//www.mozilla.com/img/fonts/MetaWebPro-Bold.eot');
+	src: local({% if debug %}'{{ STATIC_URL }}fonts/MetaWebPro-Bold.woff'{% else %}'☺'{% endif %}), url('//www.mozilla.com/img/fonts/MetaWebPro-Bold.woff') format('woff');
+        font-weight: bold;
+   }
+   </style>
 <title>{% block title_matter %}{% endblock %}</title>
 {% block head_matter %}{% endblock %}
 </head>
 
-<body>
-<div id="menu">
- <div id="auth">
-   {% include "accounts/user_forms.html" %}
-   <noscript>Not logged in</noscript>
- </div>
- <ul>
-   <li>Mozilla Localization</li>
-   <li><a href="{% url homepage.views.index %}">Home</a></li>
-   <li><a href="{% url homepage.views.teams %}">Teams</a></li>
-   <li><a href="https://wiki.mozilla.org/L10n">Documentation</a></li>
-   {% block extra_nav_list_items %}{% endblock %}
- </ul>
- <br>
+<body {% block body_tag %}{% endblock %}>
+<div id="wrapper">
+		<nav>
+
+			<div id="auth">
+				{% include "accounts/user_forms.html" %}
+				<noscript>Not logged in</noscript>
+			</div>
+
+
+			<ul>
+				<li><a href="{% url homepage.views.index %}" class="homepage-link">Home</a></li>
+				<li><a href="{% url homepage.views.teams %}">Teams</a></li>
+				<li><a href="https://wiki.mozilla.org/L10n">Documentation</a></li>
+				{% block extra_nav_list_items %}{% endblock %}
+
+			</ul>
+
+		</nav>
+
+		<header>
+			<h1>{% block header_h1 %}<a href="/" title="Back to home page">{% block header_h1_inner %}mozilla Localization{% endblock %}</a>{% endblock %}</h1>
+            {% block header_content_extra %}
+            {% endblock %}
+		</header>
+		<div id="body-content" class="{% block body_content_class %}page-standard{% endblock %}">
+			<div id="main-content">
+			{% block content %}{% endblock %}
+			</div>
+                        {% block aside %}{% endblock %}
+
+
+			
+		</div>
 </div>
-<h1></h1>
-{% block content %}{% endblock %}
-<div id="page_footer"><a href="{% url privacy.views.show_policy %}">Privacy policy</a></div>
+		<footer>
+			<div id="footer-background"></div>
+			<div id="footer-content">
+				<div><img src="{{ STATIC_URL }}img/logo_footer.png" alt="Mozilla"></div>
+				<p>Except where otherwise <a href="">noted</a>, content on this site is licensed under the <a href="">Creative Commons Attribution Share-Alike License v3.0</a> or any later version. </p>
+				<p class="notices"><a href="{% url privacy.views.show_policy %}">Privacy Policy</a> | <a href="">Legal Notices (XXX)</a></p>
+			</div>
+            <div id="template-bottom-background"></div>
+		</footer>
 
 <script>
 var CONFIG = {USER_URL: '{% url accounts.views.user_json %}',
@@ -82,5 +117,5 @@ var CONFIG = {USER_URL: '{% url accounts.views.user_json %}',
 <script src="{{ STATIC_URL }}js/base.js"></script>
 {% endcompress %}
 {% block javascript_matter %}{% endblock %}
-</body>
+	</body>
 </html>
