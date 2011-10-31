@@ -109,6 +109,7 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
         """the old dashboard should redirect to the shipping dashboard"""
         url = reverse('l10nstats.views.index')
         response = self.client.get(url)
+
         eq_(response.status_code, 301)
         ok_(reverse('shipping.views.index') in
              urlparse(response['location']).path)
@@ -121,3 +122,18 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
         eq_(qd['av'], 'fx 1.0')
         ok_(reverse('shipping.views.index') in
              urlparse(response['location']).path)
+
+    def test_compare_with_invalid_id(self):
+        """trying to run a compare with an invalid Run ID shouldn't cause a 500
+        error. Instead it should return a 400 error.
+
+        See https://bugzilla.mozilla.org/show_bug.cgi?id=698634
+        """
+
+        url = reverse('l10nstats.views.compare')
+        response = self.client.get(url, {'run': 'xxx'})
+        eq_(response.status_code, 400)
+
+        # and sane but unknown should be 404
+        response = self.client.get(url, {'run': 123})
+        eq_(response.status_code, 404)

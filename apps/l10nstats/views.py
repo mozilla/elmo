@@ -49,7 +49,8 @@ from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 from django.template import RequestContext
 from django.http import (HttpResponse, HttpResponseNotFound,
-                         HttpResponsePermanentRedirect)
+                         HttpResponsePermanentRedirect,
+                         HttpResponseBadRequest)
 from django.db.models import Min, Max
 from django.views.decorators.cache import cache_control
 from django.utils import simplejson
@@ -331,7 +332,10 @@ class JSONAdaptor(object):
 def compare(request):
     """HTML pretty-fied output of compare-locales.
     """
-    run = Run.objects.get(id=request.GET['run'])
+    try:
+        run = get_object_or_404(Run, id=request.GET['run'])
+    except ValueError:
+        return HttpResponseBadRequest('Invalid ID')
     json = ''
     for step in run.build.steps.filter(name__startswith='moz_inspectlocales'):
         for log in step.logs.all():
