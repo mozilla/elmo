@@ -38,6 +38,7 @@
 import datetime
 from urlparse import urlparse
 from nose.tools import eq_, ok_
+from django.http import QueryDict
 from django.core.urlresolvers import reverse
 from apps.shipping.tests import ShippingTestCaseBase
 from apps.life.models import Tree, Locale
@@ -108,5 +109,15 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
         """the old dashboard should redirect to the shipping dashboard"""
         url = reverse('l10nstats.views.index')
         response = self.client.get(url)
-        eq_(response.status_code, 302)
-        ok_(reverse('shipping.views.index') in urlparse(response['location']).path)
+        eq_(response.status_code, 301)
+        ok_(reverse('shipping.views.index') in
+             urlparse(response['location']).path)
+
+        # now try it with a query string as well
+        response = self.client.get(url, {'av': 'fx 1.0'})
+        eq_(response.status_code, 301)
+
+        qd = QueryDict(urlparse(response['location']).query)
+        eq_(qd['av'], 'fx 1.0')
+        ok_(reverse('shipping.views.index') in
+             urlparse(response['location']).path)

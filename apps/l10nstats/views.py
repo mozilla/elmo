@@ -48,7 +48,8 @@ from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 from django.template import RequestContext
-from django.http import HttpResponse, HttpResponseNotFound
+from django.http import (HttpResponse, HttpResponseNotFound,
+                         HttpResponsePermanentRedirect)
 from django.db.models import Min, Max
 from django.views.decorators.cache import cache_control
 from django.utils import simplejson
@@ -81,7 +82,10 @@ def index(request):
     """redirect to the new improved dashboard which had all the features of the
     l10nstats dashboard.
     """
-    return redirect(reverse('shipping.views.dashboard'))
+    url = reverse('shipping.views.dashboard')
+    if request.META.get('QUERY_STRING'):
+        url += '?' + request.META.get('QUERY_STRING')
+    return HttpResponsePermanentRedirect(url)
 
 
 def proxy(request, path=None, base=None):
