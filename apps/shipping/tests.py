@@ -348,6 +348,17 @@ class ShippingTestCase(ShippingTestCaseBase):
         struct = json.loads(response.content)
         ok_(struct['items'])
 
+    def test_status_json_by_treeless_appversion(self):
+        url = reverse('shipping.views.status.status_json')
+        appver, milestone = self._create_appver_milestone()
+        appver.tree = None
+        appver.save()
+        response = self.client.get(url, {'av': appver.code})
+
+        eq_(response.status_code, 200)
+        struct = json.loads(response.content)
+        eq_(struct['items'], [])
+
     def test_status_json_multiple_locales_multiple_trees(self):
         url = reverse('shipping.views.status.status_json')
 

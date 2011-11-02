@@ -190,7 +190,7 @@ class StatusJSON(SignoffDataView):
         if self.avs:
             # make sure its tree is in self.trees
             for appver in AppVersion.objects.filter(code__in=self.avs):
-                if appver.tree.code not in self.trees:
+                if appver.tree and appver.tree.code not in self.trees:
                     self.trees.append(appver.tree.code)
 
         if self.trees:
