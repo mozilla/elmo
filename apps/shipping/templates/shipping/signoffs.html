@@ -37,20 +37,36 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
-
+{% load compress %}
 {% block title_matter %}Sign-offs for {{appver}} in {{language}}{% endblock %}
 
 {% block head_matter %}
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.all.css" type="text/css">
+{% compress css %}
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.core.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.resizable.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.accordion.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.dialog.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.slider.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.tabs.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.datepicker.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.progressbar.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.theme.css" type="text/css">
+{% endcompress %}
+{% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/signoffs.css" type="text/css">
+{% endcompress %}
 {% endblock %}
 
 {% block javascript_matter %}
+{% compress js %}
 <script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.core.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.resizable.js"></script>
 <script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.draggable.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.droppable.js"></script>
+<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.resizable.js"></script>
 <script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.dialog.js"></script>
+<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.slider.js"></script>
+<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.accordion.js"></script>
+{% endcompress %}
+
 <script>
 var diffData = {
   tree: "{{tree}}",
@@ -64,7 +80,9 @@ var permissions = {
 };
 var signoffDetailsURL = "{% url shipping.views.signoff.signoff_details language.code appver.code %}";
 </script>
+{% compress js %}
 <script src="{{ STATIC_URL }}shipping/js/signoffs.js"></script>
+{% endcompress %}
 {% endblock %}
 
 

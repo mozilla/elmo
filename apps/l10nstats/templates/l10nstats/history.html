@@ -37,6 +37,7 @@
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
 {% load simile %}
+{% load compress %}
 {% block title_matter %}[{{ locale}}, {{ tree }}] l10n stats{% endblock %}
 
 {% block head_matter %}
@@ -44,7 +45,9 @@
 {% endblock %}
 
 {% block javascript_matter %}
+{% compress js %}
 <script src="{{ STATIC_URL }}l10nstats/js/history.js"></script>
+{% endcompress %}
 {% endblock %}
 
 {% block content %}

@@ -1,0 +1,7 @@
+REPOSITORY_BASE = '/path/to/stage/repos/'
+
+_log_base = '/path/to/stage/builds/'
+LOG_MOUNTS = {
+  'l10n-master': _log_base + 'l10n-master',
+  'test-master': _log_base + 'test-master',
+}

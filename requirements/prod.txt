@@ -2,5 +2,8 @@
 nashvegas
 bleach
 html5lib
-django-pylibmc
+python-memcached
+django_compressor
+django-appconf
+versiontools
 

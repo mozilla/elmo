@@ -110,7 +110,10 @@ def flag_lists(locales=None, appversions=None, chunk_size=100):
                                    appversions=appversions,
                                    chunk_size=chunk_size))
     flags = defaultdict(list)
-    actions = Action.objects.filter(id__in=actions.keys())
+
+    # ordering by `-id` means that the most *recent* actions appear first
+    actions = Action.objects.filter(id__in=actions.keys()).order_by('-id')
+
     for tree, loc, f in actions.values_list('signoff__appversion__tree__code',
                                             'signoff__locale__code',
                                             'flag'):

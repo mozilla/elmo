@@ -36,9 +36,12 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
+
+{% load compress %}
 {% block title_matter %}Pushes{% endblock %}
 {% block head_matter %}
-<link rel="stylesheet" href="{{ STATIC_URL }}pushes/css/style-gitweb.css" %}" type="text/css">
+
+{% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.core.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.resizable.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.accordion.css" type="text/css">
@@ -48,6 +51,10 @@
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.datepicker.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.progressbar.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.theme.css" type="text/css">
+{% endcompress %}
+{% compress css %}
+<link rel="stylesheet" href="{{ STATIC_URL }}pushes/css/style-gitweb.css" type="text/css">
+{% endcompress %}
 
 <style type="text/css">
 table.ui-widget {padding: 0px;}
@@ -65,13 +72,14 @@ table.ui-widget {padding: 0px;}
 </style>
 {% endblock %}
 {% block javascript_matter %}
+{% compress js %}
 <script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.core.js"></script>
 <script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.draggable.js"></script>
 <script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.resizable.js"></script>
 <script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.dialog.js"></script>
 <script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.slider.js"></script>
 <script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.accordion.js"></script>
-<script type="application/javascript" src="{{ STATIC_URL }}pushes/js/widgets.js"></script>
+{% endcompress %}
 <script>
 var SEARCH = {
   FROM: {% if search.from %}'{{ search.from }}'{% else %}null{% endif %}
@@ -79,7 +87,10 @@ var SEARCH = {
 };
 var DIFF_APP_URL = '{% url shipping.views.diff_app %}';
 </script>
+{% compress js %}
+<script type="application/javascript" src="{{ STATIC_URL }}pushes/js/widgets.js"></script>
 <script type="application/javascript" src="{{ STATIC_URL }}pushes/js/pushlog.js"></script>
+{% endcompress %}
 {% endblock %}
 
 {% block content %}

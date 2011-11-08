@@ -15,10 +15,11 @@
 #
 # The Initial Developer of the Original Code is
 # Mozilla Foundation.
-# Portions created by the Initial Developer are Copyright (C) 2010
+# Portions created by the Initial Developer are Copyright (C) 2011
 # the Initial Developer. All Rights Reserved.
 #
 # Contributor(s):
+#   Peter Bengtsson <peterbe@mozilla.com>
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -34,14 +35,27 @@
 #
 # ***** END LICENSE BLOCK *****
 
-'''URL mappings for l10nstats application.
-'''
+"""
+This callback is created so that we don't actually do anything with the
+Javascript files are they are passed around by django_compressor.
 
-from django.conf.urls.defaults import patterns
+Once we're confident that django_compressor works we can disable this
+filter and start using a real compressor package.
 
-urlpatterns = patterns('l10nstats.views',
-    (r'^$', 'index'),
-    (r'^history$', 'history_plot'),
-    (r'^compare$', 'compare', {}, 'compare_locales'),
-    (r'^tree-status/([^/]+)$', 'tree_progress'),
-)
+To use this filter set this in your settings:
+
+    COMPRESS_JS_FILTERS = (
+      'filters.void_js_filter.VoidJSFilter',
+    )
+
+"""
+
+from compressor.filters import CallbackOutputFilter
+
+
+class VoidJSFilter(CallbackOutputFilter):
+    callback = "filters.void_js_filter.jsvoid"
+
+
+def jsvoid(content):
+    return content

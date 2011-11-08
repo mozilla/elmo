@@ -37,12 +37,12 @@
 '''Views for managing sign-offs and shipping metrics.
 '''
 
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.http import (HttpResponseRedirect, HttpResponse, Http404,
                          HttpResponseNotAllowed, HttpResponseForbidden)
-from life.models import Repository, Locale
+from life.models import Repository, Locale, Tree
 from shipping.models import Milestone, Signoff, AppVersion, Action
 from shipping.api import signoff_actions, flag_lists, accepted_signoffs
 from django.conf import settings
@@ -212,32 +212,40 @@ def diff_app(request):
 
 
 def dashboard(request):
-    args = [] # params to pass to l10nstats json
-    query = [] # params to pass to shipping json
-    subtitles = []
+    # legacy parameter. It's better to use the About milestone page for this.
     if 'ms' in request.GET:
-        mstone = get_object_or_404(Milestone, code=request.GET['ms'])
-        args.append(('tree', mstone.appver.tree.code))
-        subtitles.append(str(mstone))
-        query.append(('ms', mstone.code))
-    elif 'av' in request.GET:
-        appver = get_object_or_404(AppVersion, code=request.GET['av'])
-        args.append(('tree', (appver.tree is not None and appver.tree.code)
-                     or appver.lasttree.code))
-        subtitles.append(str(appver))
-        query.append(('av', appver.code))
+        url = reverse('shipping.views.milestone.about',
+                      args=[request.GET['ms']])
+        return redirect(url)
 
-    # sanitize the list of locales to those that are actually on the dashboard
-    locales = Locale.objects.filter(code__in=request.GET.getlist('locale'))
-    locales = locales.values_list('code', flat=True)
-    args += [("locale", loc) for loc in locales]
-    query += [("locale", loc) for loc in locales]
-    subtitles += list(locales)
+    query = defaultdict(list)
+    subtitles = []
+
+    if request.GET.get('av'):
+        appver = get_object_or_404(AppVersion, code=request.GET['av'])
+        subtitles.append(str(appver))
+        query['av'].append(appver.code)
+
+    if request.GET.get('locale'):
+        locales_list = request.GET.getlist('locale')
+        locales = (Locale.objects.filter(code__in=locales_list)
+                   .values_list('code', flat=True))
+        if len(locales) != len(locales_list):
+            raise Http404("Invalid list of locales")
+        query['locale'].extend(locales)
+        subtitles += list(locales)
+
+    if request.GET.get('tree'):
+        trees_list = request.GET.getlist('tree')
+        trees = (Tree.objects.filter(code__in=trees_list)
+                 .values_list('code', flat=True))
+        if len(trees) != len(trees_list):
+            raise Http404("Invalid list of trees")
+        query['tree'].extend(trees)
 
     return render_to_response('shipping/dashboard.html', {
             'subtitles': subtitles,
-            'query': mark_safe(urlencode(query)),
-            'args': mark_safe(urlencode(args)),
+            'query': mark_safe(urlencode(query, True)),
             }, context_instance=RequestContext(request))
 
 

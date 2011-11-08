@@ -36,12 +36,14 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
+{% load compress %}
 {% load simile %}
 {% block title_matter %}{{ tree }} l10n stats{% endblock %}
 {% block head_matter %}
 
 
 {% timeplot autoCreate=false %}
+{% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.core.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.resizable.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.accordion.css" type="text/css">
@@ -51,16 +53,21 @@
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.datepicker.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.progressbar.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.theme.css" type="text/css">
+{% endcompress %}
+{% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}l10nstats/css/tree_progress.css" type="text/css">
+{% endcompress %}
 {% endblock %}
 
 {% block javascript_matter %}
+{% compress js %}
 <script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.core.js"></script>
 <script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.draggable.js"></script>
 <script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.resizable.js"></script>
 <script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.dialog.js"></script>
 <script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.slider.js"></script>
 <script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.accordion.js"></script>
+{% endcompress %}
 <script>
 var SHOW_BAD = {{ showBad|yesno:"true,false" }}
 var BOUND = {{ bound }};
@@ -84,8 +91,10 @@ for (var i=0, len=_locale_data_list.length; i<len; i++) {
                     locales: _locale_data_list[i][1]});
 }
 </script>
+{% compress js %}
 <script src="{{ STATIC_URL }}l10nstats/js/clusterer.js"></script>
 <script src="{{ STATIC_URL }}l10nstats/js/tree_progress.js"></script>
+{% endcompress %}
 {% endblock %}
 
 {% block content %}

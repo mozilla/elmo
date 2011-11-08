@@ -36,9 +36,12 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
+{% load compress %}
 {% block title_matter %}Mozilla Localization Team {{name}}{% endblock %}
 {% block javascript_matter %}
+{% compress js %}
 <script src="{{ STATIC_URL }}bugsy/js/bugcount.js"></script>
+{% endcompress %}
 {% endblock %}
 {% block content %}
 <small>&lt; Back to <a href="{% url homepage.views.teams %}">all teams</a></small>

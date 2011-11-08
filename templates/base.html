@@ -36,12 +36,16 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
+
+{% load compress %}
 <html lang="{{ LANG }}" dir="{{ DIR }}">
   <head>
     <meta charset="utf-8">
     <link rel="shortcut icon" href="{{ STATIC_URL }}img/favicon.ico" type="image/x-icon">
     <link rel="icon" href="{{ STATIC_URL }}img/favicon.ico" type="image/x-icon">
+    {% compress css %}
     <link rel="stylesheet" href="{{ STATIC_URL }}css/style.css" type="text/css">
+    {% endcompress %}
 <title>{% block title_matter %}{% endblock %}</title>
 {% block head_matter %}{% endblock %}
 </head>
@@ -73,8 +77,10 @@ var CONFIG = {USER_URL: '{% url accounts.views.user_json %}',
               };
 </script>
 
+{% compress js %}
 <script src="{{ STATIC_URL }}js/libs/jquery-1.6.2.min.js"></script>
 <script src="{{ STATIC_URL }}js/base.js"></script>
+{% endcompress %}
 {% block javascript_matter %}{% endblock %}
 </body>
 </html>

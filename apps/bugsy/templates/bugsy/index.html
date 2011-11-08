@@ -37,10 +37,16 @@
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
 {% load simile %}
+{% load compress %}
 {% block title_matter %}Localization bugs{% endblock %}
 {% block head_matter %}
 {% exhibit %}
+{% endblock %}
+
+{% block javascript_matter %}
+{% compress js %}
 <script src="{{ STATIC_URL }}bugsy/js/index.js"></script>
+{% endcompress %}
 {% endblock %}
 {% block content %}
 <h1>Localization bugs</h1>

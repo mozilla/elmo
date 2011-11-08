@@ -170,6 +170,7 @@ INSTALLED_APPS = (
     'tower',  # for ./manage.py extract (L10n)
     'nashvegas',
     'django_arecibo',
+    'compressor',
 
     # We need this so the jsi18n view will pick up our locale directory.
     ROOT_PACKAGE,
@@ -267,17 +268,11 @@ ARECIBO_SETTINGS = {
 #CELERY_RESULT_BACKEND = 'amqp'
 #CELERY_IGNORE_RESULT = True
 
-# Default settings taken from https://github.com/jbalogh/django-pylibmc
 CACHES = {
     'default': {
-        'BACKEND': 'django_pylibmc.memcached.PyLibMCCache',
-        'LOCATION': 'localhost:11211',
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',  # fox2mike suggest to use IP instead of localhost
         'TIMEOUT': 500,
-        'BINARY': True,
-        'OPTIONS': {  # Maps to pylibmc "behaviors"
-            'tcp_nodelay': True,
-            'ketama': True
-        },
         'KEY_PREFIX': 'elmo',
     }
 }
@@ -286,6 +281,21 @@ CACHES = {
 # using the cache backend
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
+## django_compressor
+COMPRESS = True  # defaults to `not DEBUG`
+COMPRESS_OFFLINE = True  # make sure you run `./manage.py compress` upon deployment
+COMPRESS_CSS_FILTERS = (
+  'compressor.filters.css_default.CssAbsoluteFilter',
+  'compressor.filters.cssmin.CSSMinFilter',
+)
+COMPRESS_JS_FILTERS = (
+  'filters.void_js_filter.VoidJSFilter',
+)
+STATICFILES_FINDERS = (
+  'django.contrib.staticfiles.finders.FileSystemFinder',
+  'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+  'compressor.finders.CompressorFinder',
+)
 
 try:
     import ldap_settings

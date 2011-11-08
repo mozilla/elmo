@@ -39,6 +39,7 @@
 '''
 
 import os
+import os.path
 
 from buildbot.status.base import StatusReceiverMultiService, StatusReceiver
 from buildbot.scheduler import BaseScheduler
@@ -204,12 +205,10 @@ def setupBridge(master, settings, config):
         requestsForBuild = defaultdict(list)
         def setServiceParent(self, parent):
             StatusReceiverMultiService.setServiceParent(self, parent)
-            self.basedir = None
             self.setup()
         def setup(self):
             log.msg("mbdb subscribing")
             status = self.parent.getStatus()
-            self.basedir = status.basedir
             status.subscribe(self)
 
         @transaction.commit_on_success
@@ -270,7 +269,9 @@ def setupBridge(master, settings, config):
             dbbuild.save()
             transaction.commit()
 
-            return BuildReceiver(dbbuild, self.basedir)
+            basedir = os.path.join(build.getBuilder().basedir, '..')
+
+            return BuildReceiver(dbbuild, basedir)
 
         @transaction.commit_on_success
         def buildFinished(self, builderName, build, results):
