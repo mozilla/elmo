@@ -50,4 +50,8 @@ pip install -r requirements/compiled.txt
 # dependencies for running the tests
 pip install -r requirements/dev.txt
 
+# do the offline compression
+python manage.py collectstatic --noinput
+python manage.py compress
+
 FORCE_DB=true python manage.py test --noinput
