@@ -73,12 +73,13 @@ table.ui-widget {padding: 0px;}
 {% endblock %}
 {% block javascript_matter %}
 {% compress js %}
-<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.core.js"></script>
-<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.draggable.js"></script>
-<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.resizable.js"></script>
-<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.dialog.js"></script>
-<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.slider.js"></script>
-<script type="application/javascript" src="{{ STATIC_URL }}js/jquery.ui/ui/ui.accordion.js"></script>
+<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.core.js"></script>
+<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.draggable.js"></script>
+<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.droppable.js"></script>
+<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.resizable.js"></script>
+<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.dialog.js"></script>
+<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.slider.js"></script>
+<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.accordion.js"></script>
 {% endcompress %}
 <script>
 var SEARCH = {
