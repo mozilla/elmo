@@ -38,10 +38,10 @@
 '''
 
 import sys
-from django.http import Http404
+from django.http import Http404, HttpResponseServerError
 from django.shortcuts import render_to_response, redirect
 from django.utils.safestring import mark_safe
-from django.template import RequestContext
+from django.template import RequestContext, loader
 from django.conf import settings
 from django.views.defaults import page_not_found, server_error
 import django_arecibo.wrapper
@@ -68,7 +68,12 @@ def handler404(request):
 def handler500(request):
     if getattr(settings, 'ARECIBO_SERVER_URL', None):
         django_arecibo.wrapper.post(request, 500)
-    return server_error(request)
+    # unlike the default django.views.default.server_error view function we
+    # want one that passes a RequestContext so that we can have 500.html
+    # template that uses '{% extends "base.html" %}' which depends on various
+    # context variables to be set
+    t = loader.get_template('500.html')
+    return HttpResponseServerError(t.render(RequestContext(request)))
 
 
 def index(request):

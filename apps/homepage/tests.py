@@ -124,31 +124,49 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
                 eq_(m.post.call_count, 0)
 
     def test_handler500(self):
-        # import the root urlconf like django does when it starts up
-        root_urlconf = __import__(settings.ROOT_URLCONF,
-                                  globals(), locals(), ['urls'], -1)
-        # ...so that we can access the 'handler500' defined in there
-        par, end = root_urlconf.handler500.rsplit('.', 1)
-        # ...which is an importable reference to the real handler500 function
-        views = __import__(par, globals(), locals(), [end], -1)
-        # ...and finally we the handler500 function at hand
-        handler500 = getattr(views, end)
-
-        # to make a mock call to the django view functions you need a request
-        fake_request = RequestFactory().request(**{'wsgi.input': None})
-
-        # the reason for first causing an exception to be raised is because
-        # the handler500 function is only called by django when an exception
-        # has been raised which means sys.exc_info() is something.
+        # The reason for doing this COMPRESS_DEBUG_TOGGLE "hack" is because
+        # our 500.html extends "base.html" which uses ``compress`` blocks.
+        # A way of switching that off entirely is to set COMPRESS_DEBUG_TOGGLE
+        # and then match that with a GET variable with the same value.
+        # That does the same as running django_compressor in offline mode
+        # which is to basically do nothing and assume the compressed file just
+        # exists.
+        _previous_setting = getattr(settings, 'COMPRESS_DEBUG_TOGGLE', None)
+        settings.COMPRESS_DEBUG_TOGGLE = 'no-compression'
         try:
-            raise NameError("sloppy code!")
-        except NameError:
-            # do this inside a frame that has a sys.exc_info()
-            with patch('django_arecibo.wrapper') as m:
-                response = handler500(fake_request)
-                eq_(response.status_code, 500)
-                ok_('Oops' in response.content)
-                eq_(m.post.call_count, 1)
+            # import the root urlconf like django does when it starts up
+            root_urlconf = __import__(settings.ROOT_URLCONF,
+                                      globals(), locals(), ['urls'], -1)
+            # ...so that we can access the 'handler500' defined in there
+            par, end = root_urlconf.handler500.rsplit('.', 1)
+            # ...which is an importable reference to the real handler500 function
+            views = __import__(par, globals(), locals(), [end], -1)
+            # ...and finally we the handler500 function at hand
+            handler500 = getattr(views, end)
+
+            # to make a mock call to the django view functions you need a request
+            fake_request = RequestFactory().get('/', {'no-compression': 'true'})
+
+            # the reason for first causing an exception to be raised is because
+            # the handler500 function is only called by django when an exception
+            # has been raised which means sys.exc_info() is something.
+            try:
+                raise NameError("sloppy code!")
+            except NameError:
+                # do this inside a frame that has a sys.exc_info()
+                with patch('django_arecibo.wrapper') as m:
+                    response = handler500(fake_request)
+                    eq_(response.status_code, 500)
+                    ok_('Oops' in response.content)
+                    eq_(m.post.call_count, 1)
+        finally:
+            # If this was django 1.4 I would do:
+            #   from django.test.utils import override_settings
+            #   ...
+            #   @override_settings(COMPRESS_DEBUG_TOGGLE='...')
+            #   def test_handler500(self):
+            #       ...
+            settings.COMPRESS_DEBUG_TOGGLE = _previous_setting
 
     def test_secure_session_cookies(self):
         """secure session cookies should always be 'secure' and 'httponly'"""
