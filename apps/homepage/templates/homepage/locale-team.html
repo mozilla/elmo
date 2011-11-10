@@ -37,7 +37,7 @@
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
 {% load compress %}
-{% block title_matter %}Mozilla Localization Team {{name}}{% endblock %}
+{% block title_matter %}Mozilla Localization Team {{ locale_name }}{% endblock %}
 {% block javascript_matter %}
 {% compress js %}
 <script src="{{ STATIC_URL }}bugsy/js/bugcount.js"></script>
@@ -45,7 +45,7 @@
 {% endblock %}
 {% block content %}
 <small>&lt; Back to <a href="{% url homepage.views.teams %}">all teams</a></small>
-<h1>Mozilla Localization Team {{name}}</h1>
+<h1>Mozilla Localization Team {{ locale_name }}</h1>
 <p>Contact the team on it's page on <a href="https://wiki.mozilla.org/L10n:Teams:{{locale.code}}">wikimo</a>.</p>
 <p>{{ l10nstats }}</p>
 <p>{{ shipping }}</p>

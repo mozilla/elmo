@@ -35,6 +35,7 @@
 #
 # ***** END LICENSE BLOCK *****
 
+import re
 from mock import patch
 from django.test import TestCase
 from django.core.urlresolvers import reverse
@@ -233,3 +234,6 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
         ok_('Swedish' in response.content)
+        # it should also say "Swedish" in the <h1>
+        h1_text = re.findall('<h1[^>]*>(.*?)</h1>', response.content)[1]
+        ok_('Swedish' in h1_text)
