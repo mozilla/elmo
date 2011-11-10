@@ -223,19 +223,39 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         """check that the teams page renders correctly"""
         Locale.objects.create(
           code='en-US',
-          name='English',
+          name=None,
+        )
+        Locale.objects.create(
+          code='fr',
+          name='French',
         )
         Locale.objects.create(
           code='sv-SE',
           name='Swedish',
+        )
+        Locale.objects.create(
+          code='br-BR',
+          name=None,
         )
 
         url = reverse('homepage.views.teams')
         response = self.client.get(url)
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
-        ok_(-1 < response.content.find('English')
-               < response.content.find('Swedish'))
+        content = response.content.split('id="teams"')[1]
+
+        url_fr = reverse('homepage.views.locale_team', args=['fr'])
+        url_sv = reverse('homepage.views.locale_team', args=['sv-SE'])
+        url_br = reverse('homepage.views.locale_team', args=['br-BR'])
+        ok_(url_fr in content)
+        ok_(url_sv in content)
+        ok_(url_br in content)
+        url_en = reverse('homepage.views.locale_team', args=['en-US'])
+        ok_(url_en not in content)
+        ok_(-1 < content.find('br-BR')
+               < content.find('French')
+               < content.find('Swedish'))
+        ok_('en-US' not in content)
 
     def test_team_page(self):
         """test a team (aka. locale) page"""

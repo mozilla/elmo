@@ -95,7 +95,10 @@ def index(request):
 
 
 def teams(request):
-    locs = Locale.objects.order_by('name')
+    locs = Locale.objects.all().order_by('name')
+    # This is an artifact of the addon trees
+    # see https://bugzilla.mozilla.org/show_bug.cgi?id=701218
+    locs = locs.exclude(code='en-US')
     return render_to_response('homepage/teams.html', {
             'locales': locs,
             }, context_instance=RequestContext(request))
