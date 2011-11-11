@@ -42,15 +42,7 @@
 
 {% block head_matter %}
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.core.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.resizable.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.accordion.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.dialog.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.slider.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.tabs.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.datepicker.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.progressbar.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.theme.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/smoothness/jquery-ui-1.8.16.custom.css" type="text/css">
 {% endcompress %}
 {% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/signoffs.css" type="text/css">
@@ -58,15 +50,7 @@
 {% endblock %}
 
 {% block javascript_matter %}
-{% compress js %}
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.core.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.draggable.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.droppable.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.resizable.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.dialog.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.slider.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.accordion.js"></script>
-{% endcompress %}
+<script src="{{ STATIC_URL }}js/jquery.ui/jquery-ui-1.8.16.custom.min.js"></script>
 
 <script>
 var diffData = {
