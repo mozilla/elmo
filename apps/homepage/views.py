@@ -120,7 +120,7 @@ def locale_team(request, code):
 
     return render_to_response('homepage/locale-team.html', {
             'locale': loc,
-            'name': name,
+            'locale_name': name,
             'l10nstats': l10nstats_div,
             'shipping': ship_div,
             'bugs': bug_div,
