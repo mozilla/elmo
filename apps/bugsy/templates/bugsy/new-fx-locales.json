@@ -2,9 +2,9 @@
 ***** BEGIN LICENSE BLOCK *****
 Version: MPL 1.1/GPL 2.0/LGPL 2.1
 
-The contents of this file are subject to the Mozilla Public License Version 
-1.1 (the "License"); you may not use this file except in compliance with 
-the License. You may obtain a copy of the License at 
+The contents of this file are subject to the Mozilla Public License Version
+1.1 (the "License"); you may not use this file except in compliance with
+the License. You may obtain a copy of the License at
 http://www.mozilla.org/MPL/
 
 Software distributed under the License is distributed on an "AS IS" basis,
@@ -49,7 +49,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
     "blocked": "fx-l10n-tracker"
   }, 
   {
-    "comment": "We need a bugzilla component for the {{ loc }} Localization.  We'll start off with the current scheme and then migrate the existing bugs once we change over to the new scheme.\n\n\nProduct: Mozilla Localizations\nComponent: {{ loc }} / {{ language }}\nDescription: {{ language }} Localization (...)\n\nAssignee: nobody\nQA Contact: {{ loc }}@localization.bugs\n\n{{ name }}, could you provide a utf-8 encoded translation of '{{ language }} Localization' to include in the component description? In preparation of the new scheme, fill out the descriptions for Firefox on https://localize.mozilla.org/{{ loc }}/bugzilla_components/, too? You'll be able to log in with your ldap credentials once you have them (along with your hg access), or create an account there. Either way, I'll need to grant you permissions on the server, so poke me with your account details for that.\n\nOnce we have the description, this bug will be fixed by mozilla staff.", 
+    "comment": "We need a bugzilla component for the {{ loc }} Localization.  We'll start off with the current scheme and then migrate the existing bugs once we change over to the new scheme.\n\n\nProduct: Mozilla Localizations\nComponent: {{ loc }} / {{ language }}\nDescription: {{ language }} Localization (...)\n\nAssignee: nobody\nQA Contact: {{ loc }}@localization.bugs\n\n{{ name }}, could you provide a utf-8 encoded translation of '{{ language }} Localization' to include in the component description? In preparation of the new scheme, fill out the descriptions for Firefox on https://localize.mozilla.org/{{ loc }}/bugzilla_components/, too? You'll be able to log in with your ldap credentials once you have them (along with your hg access), or create an account there. Either way, I'll need to grant you permissions on the server, so poke me with your account details for that.\n\nOnce we have the description, this bug will be fixed by Mozilla staff.", 
     "product": "bugzilla.mozilla.org", 
     "title": "bugzilla", 
     "cc": "{{ bugmail }},l10n@mozilla.com", 
@@ -60,7 +60,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "Please create a new releases/l10n/mozilla-aurora hg repository for a new Firefox localization. The repository should be releases/l10n/mozilla-aurora/{{ loc }}/, with the common l10n permissions and hooks, both python:mozhghooks.pushlog and python:mozhghooks.single_head_per_branch.hook.\n\nPlease make sure that mxr is updated to pick up the new repo.\n\nPS: to be clear to the localization team, this bug is handled by mozilla staff.", 
+    "comment": "Please create a new releases/l10n/mozilla-aurora hg repository for a new Firefox localization. The repository should be releases/l10n/mozilla-aurora/{{ loc }}/, with the common l10n permissions and hooks, both python:mozhghooks.pushlog and python:mozhghooks.single_head_per_branch.hook.\n\nPlease make sure that mxr is updated to pick up the new repo.\n\nPS: to be clear to the localization team, this bug is handled by Mozilla staff.", 
     "product": "mozilla.org", 
     "title": "hg_repo", 
     "cc": "l10n@mozilla.com", 
@@ -71,7 +71,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "We need to add {{ loc }} to browser/locales/all-locales on mozilla-aurora.\n\nPS: to be clear to the localization team, this bug is handled by mozilla staff.", 
+    "comment": "We need to add {{ loc }} to browser/locales/all-locales on mozilla-aurora.\n\nPS: to be clear to the localization team, this bug is handled by Mozilla staff.", 
     "product": "Firefox", 
     "title": "build", 
     "cc": "l10n@mozilla.com", 
@@ -82,7 +82,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "We need to add {{ loc }} to the Firefox Aurora l10n builds.\n\nPS: to be clear to the localization team, this bug is handled by mozilla staff.", 
+    "comment": "We need to add {{ loc }} to the Firefox Aurora l10n builds.\n\nPS: to be clear to the localization team, this bug is handled by Mozilla staff.", 
     "product": "mozilla.org", 
     "title": "releng", 
     "cc": "l10n@mozilla.com", 
@@ -93,7 +93,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "We want to ship Firefox a good list of search engines for {{ language }}. \n\nWe're going to work towards this in three phases. First, the localization team and Milos (Milos Dinic) will look at the market for the language and come up with a good set of search providers. {{ name }}, we'll need your input on this, the guidelines for making recommendations are on <https://wiki.mozilla.org/L10n:Firefox/Productization>. \n\nFor en-US, we currently use this set, to which we can fall back in the case of lacking localized alternatives:\nGoogle, Yahoo!, Bing, Amazon, eBay, Wikipedia\n\nAfter we decided on a particular search engine, Milos will contact the owner and ask for permission, and for specifics like proper search flags. {{ name }}, we'll likely need your help to at least get the contact information.\n\nOnce we have a specification on what the searchengines for {{ language }} should look like, the localization team and Milos will work on an implementation on that. This should happen by the localization team creating and attaching patches for the desired changes, and requesting review from Milos. After a successful review, the localization team will land them.\n\nPlease don't commit any modifications in browser/searchplugins to the hg repository without a patch reviewed by Milos, Stas, Axel or someone else appointed by Milos. The data here is sensitive to users and our search partners, thus the extra care here.\n\nThe {{ language }} team will be driving this bug to completion.", 
+    "comment": "We want to ship Firefox with a good list of search engines for {{ language }}. \n\nWe're going to work towards this in three phases. First, the localization team and Milos (Milos Dinic) will look at the market for the language and come up with a good set of search providers. {{ name }}, we'll need your input on this, the guidelines for making recommendations are on <https://wiki.mozilla.org/L10n:Firefox/Productization>. \n\nFor en-US, we currently use this set, to which we can fall back in the case of lacking localized alternatives:\nGoogle, Yahoo!, Bing, Amazon, eBay, Wikipedia\n\nAfter we decided on a particular search engine, Milos will contact the owner and ask for permission, and for specifics like proper search flags. {{ name }}, we'll likely need your help to at least get the contact information.\n\nOnce we have a specification on what the searchengines for {{ language }} should look like, the localization team and Milos will work on an implementation on that. This should happen by the localization team creating and attaching patches for the desired changes, and requesting review from Milos. After a successful review, the localization team will land them.\n\nPlease don't commit any modifications in browser/searchplugins to the hg repository without a patch reviewed by Milos, Stas, Axel or someone else appointed by Milos. The data here is sensitive to users and our search partners, thus the extra care here.\n\nThe {{ language }} team will be driving this bug to completion.", 
     "product": "Mozilla Localizations", 
     "title": "search", 
     "cc": "l10n@mozilla.com,stas@moz,{{ bugmail }},milos@moz", 
@@ -119,7 +119,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "News readers are web services allowing users to subscribe to RSS/ATOM feeds online and view them. If Firefox detects a feed, it offers the user to subscribe to it, either as a live bookmark or via one of the web services.\n\nThe current News Readers in en-US are Google and My Yahoo!.\n\nWe want to ship a good set of defaults for {{ language }}, and will work towards that in three stages.\n\nFirst, the localization team and Milos (Milos Dinic) will look at the market for the language and come up with a good candidates. {{ name }}, we'll need your input on this, the guidelines for making recommendations are on <https://wiki.mozilla.org/L10n:Firefox/Productization>. After we decided on a particular news reader, Milos will contact the owner and ask for permission. {{ name }}, we'll likely need your help to at least get the contact information.\n\nOnce we have a specification on what the set of news readers for {{ language }} should look like, the localization team and Milos will work on an implementation on that. This should happen by the localization team creating and attaching patches for the desired changes, and requesting review from Milos. After a successful review, the localization team will land them. If you're not feeling comfortable with creating those changes, ask Milos to help out.\n\nPlease don't commit any modifications in browser/chrome/browser-region/region.properties to the hg repository without a patch reviewed by Milos, Stas, Axel or someone else appointed by Milos/Stas. The data here is sensitive to users and our search partners, thus the extra care here.\n\nThe {{ language }} team will be driving this bug to completion.", 
+    "comment": "News readers are web services allowing users to subscribe to RSS/ATOM feeds online and view them. If Firefox detects a feed, it offers the user the option to subscribe to it, either as a live bookmark or via one of the web services.\n\nThe current News Readers in en-US are Google and My Yahoo!.\n\nWe want to ship a good set of defaults for {{ language }}, and will work towards that in three stages.\n\nFirst, the localization team and Milos (Milos Dinic) will look at the market for the language and come up with a good candidates. {{ name }}, we'll need your input on this, the guidelines for making recommendations are on <https://wiki.mozilla.org/L10n:Firefox/Productization>. After we decided on a particular news reader, Milos will contact the owner and ask for permission. {{ name }}, we'll likely need your help to at least get the contact information.\n\nOnce we have a specification on what the set of news readers for {{ language }} should look like, the localization team and Milos will work on an implementation on that. This should happen by the localization team creating and attaching patches for the desired changes, and requesting review from Milos. After a successful review, the localization team will land them. If you're not feeling comfortable with creating those changes, ask Milos to help out.\n\nPlease don't commit any modifications in browser/chrome/browser-region/region.properties to the hg repository without a patch reviewed by Milos, Stas, Axel or someone else appointed by Milos/Stas. The data here is sensitive to users and our search partners, thus the extra care here.\n\nThe {{ language }} team will be driving this bug to completion.", 
     "product": "Mozilla Localizations", 
     "title": "readers", 
     "cc": "stas@moz,l10n@mozilla.com,{{ bugmail }},milos@moz", 
@@ -132,7 +132,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "A new Firefox profile includes a link to the \"Getting started\" page on the Bookmarks toolbar. The objective of this page is to provide the users with a few task-based starting points. They could use them to enjoy the web and discover sites that will help them get the most out of Firefox, and the Internet in general. This page will be aimed towards beginning and intermediate Web users. We want to promote community/user oriented collaborative sites with good user experience in your region and language, and good standards support.\n\nThe current en-GB defaults for this page are:\n The 'Work' category: Google Docs, Remember the Milk, LinkedIn, Clipmarks Add-on\n The 'Learn' category: Wikipedia, Topix, HowStuffWorks.com, Answers Add-on\n The 'Play' category: YouTube, Hype Machine, Miro, PicLens Add-on\n The 'Connect' category: Criagslist, Yelp, Facebook, Shareaholic Add-on \n\n(See the en-GB page at http://www.mozilla.com/en-GB/firefox/central/.)\n\nWe would like to provide a good set of links on this page for our {{ language }} users.\n\nFirst, the localization team and Milos (Milos Dinic) will look at the market for your language and come up with a good candidates. {{ name }}, we'll need your input on this, of course. The guidelines for making recommendations are on <https://wiki.mozilla.org/L10n:Firefox/Productization>.\n\nSecond, once we have a good list of candidates, your localization team will localize the 'Getting Started' index.html file which can be found here: http://viewvc.svn.mozilla.org/vc/projects/mozilla.com/trunk/en-GB/firefox/central/index.html?content-type=text%2Fplain&view=co changing the en-GB default as agreed in the first step.\n\nThe logos should be named sites-<sitename>.png and should be 110px wide and 65px high on white or transparent background. Milos can help on getting the logos from the website owners.\n\nThe localized index.html and the logos should be then attached in a ZIP archive to this bug, and a review should be requested from Milos (milos@mozilla.com) and Pascal (pascalc@gmail.com). Once the review have been granted, Pascal will take over to push the localized page on the server.\n\nThe {{ language }} team will be driving this bug to completion.\n\nThank you.", 
+    "comment": "A new Firefox profile includes a link to the \"Getting started\" page on the Bookmarks toolbar. The objective of this page is to provide the users with a few task-based starting points. They could use them to enjoy the web and discover sites that will help them get the most out of Firefox and the Internet in general. This page will be aimed towards beginning and intermediate Web users. We want to promote community/user oriented collaborative sites with good user experience in your region and language, and good standards support.\n\nThe current en-GB defaults for this page are:\n The 'Work' category: Google Docs, Remember the Milk, LinkedIn, Clipmarks Add-on\n The 'Learn' category: Wikipedia, Topix, HowStuffWorks.com, Answers Add-on\n The 'Play' category: YouTube, Hype Machine, Miro, PicLens Add-on\n The 'Connect' category: Criagslist, Yelp, Facebook, Shareaholic Add-on \n\n(See the en-GB page at http://www.mozilla.com/en-GB/firefox/central/.)\n\nWe would like to provide a good set of links on this page for our {{ language }} users.\n\nFirst, the localization team and Milos (Milos Dinic) will look at the market for your language and come up with a good candidates. {{ name }}, we'll need your input on this, of course. The guidelines for making recommendations are on <https://wiki.mozilla.org/L10n:Firefox/Productization>.\n\nSecond, once we have a good list of candidates, your localization team will localize the 'Getting Started' index.html file which can be found here: http://viewvc.svn.mozilla.org/vc/projects/mozilla.com/trunk/en-GB/firefox/central/index.html?content-type=text%2Fplain&view=co changing the en-GB default as agreed in the first step.\n\nThe logos should be named sites-<sitename>.png and should be 110px wide and 65px high on white or transparent background. Milos can help on getting the logos from the website owners.\n\nThe localized index.html and the logos should be then attached in a ZIP archive to this bug, and a review should be requested from Milos (milos@mozilla.com) and Pascal (pascalc@gmail.com). Once the review have been granted, Pascal will take over to push the localized page on the server.\n\nThe {{ language }} team will be driving this bug to completion.\n\nThank you.", 
     "product": "Mozilla Localizations", 
     "title": "gettingstarted", 
     "cc": "pascalc@gmail,stas@moz,{{ bugmail }},milos@moz,l10n@mozilla.com", 
@@ -158,9 +158,9 @@ the terms of any one of the MPL, the GPL or the LGPL.
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "Part of a complete Firefox localization are the promotions and informations we have on our websites around Firefox. This is tracked on the webdashboard, which will have a page for each localization.\n\nMilos, Pascal, please set up the webdashboard for {{ language }}.\n\n{{ name }}, you can already look at http://l10n.mozilla.org/webdashboard/ to see how those pages look for other localizations.\n\nPS: to be clear to the localization team, this bug is handled by mozilla staff.", 
+    "comment": "Part of a complete Firefox localization are the promotions and informations we have on our websites around Firefox. This is tracked on the webdashboard, which will have a page for each localization.\n\nMilos, Pascal, please set up the webdashboard for {{ language }}, and add web pages to this locale's folder\n on mozilla.org.\n\n{{ name }}, you can already look at http://l10n.mozilla.org/webdashboard/ to see how those pages look for other localizations.\n\nPS: to be clear to the localization team, this bug is handled by Mozilla staff.", 
     "product": "Mozilla Localizations", 
-    "title": "webparts", 
+    "title": "webdashboard", 
     "cc": "stas@moz,pascalc@gmail,{{ bugmail }},milos@moz,l10n@mozilla.com", 
     "rep_platform": "All", 
     "short_desc": "[{{ loc }}] Add {{ language }} to the web dashboard", 
@@ -169,7 +169,18 @@ the terms of any one of the MPL, the GPL or the LGPL.
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "We need to enable the localization of SUMO in {{ language }} [{{ loc }}].\n\n{{ name }}, this is one of the better places to get the community to help out directly.\n\nAnd, {{ name }}, we'd need \"{{ language }}\" in {{ language }} again to set this up, please add that here, utf-8 encoded. Thanks.\n\nOnce we have the description, this bug will be fixed by mozilla staff.", 
+    "comment": "To release Firefox in {{ language }}, we need a way to promote it. We do that via http://www.mozilla.org/firefox/ web pages. There's a set of pages that are essential to having a successful Firefox localization and promotion, and those depend on the files listed below. All the files can be found on Mozilla's SVN server, and they will be added in your locale folder in webdashboard bug. Files that need to be translated are, namely:\n\n* /firefox/index.html\n* /firefox/4/firstrun/index.html\n* /firefox/4/firstrun/fallback.inc.html\n* /included/l10n/snippets.lang\n* /includes/l10n/main.lang\n* /includes/l10n/newsletter.lang\n* /download/index.html\n* /download/content.inc.html\n* /plugincheck/index.html\n* /plugincheck/content.inc.html\n* /firefox/channel/index.html\n* /firefox/channel/content.inc.html\n\nBesides those, it would be nice to following page(s) translated:\n\n* /about/\n\nbut it's not required. Also, the \"Getting Started\" bug deals with\n* /firefox/central/\n\nThe {{ language }} team will be driving this bug to completion.", 
+    "product": "Websites", 
+    "title": "webparts", 
+    "cc": "stas@moz,pascalc@gmail,{{ bugmail }},milos@moz,l10n@mozilla.com", 
+    "rep_platform": "All", 
+    "short_desc": "[{{ loc }}] Firefox initial web parts for {{ language }}", 
+    "component": "www.mozilla.org/firefox/", 
+    "op_sys": "All", 
+    "blocked": "fx-l10n-{{ loc }}"
+  }, 
+  {
+    "comment": "We need to enable the localization of SUMO in {{ language }} [{{ loc }}].\n\n{{ name }}, this is one of the better places to get the community to help out directly.\n\nAnd, {{ name }}, we'd need \"{{ language }}\" in {{ language }} again to set this up, please add that here, utf-8 encoded. Thanks.\n\nOnce we have the description, this bug will be fixed by Mozilla staff.", 
     "product": "support.mozilla.com", 
     "title": "sumo", 
     "cc": "{{ bugmail }}", 
