@@ -20,7 +20,7 @@ _BASE_BACKUP = None
 
 def setUpModule():
     """Create some fake repositories, we'll need that"""
-    _BASE_BACKUP = settings.REPOSITORY_BASE
+    _BASE_BACKUP = getattr(settings, 'REPOSITORY_BASE', None)
     base = settings.REPOSITORY_BASE = tempfile.mkdtemp()
     ui = _ui()
     hgcommands.init(ui, os.path.join(base, 'orig'))
@@ -78,7 +78,8 @@ def tearDownModule():
         # we probably failed to create the repo base in the first place,
         # don't fail now
         pass
-    settings.REPOSITORY_BASE = _BASE_BACKUP
+    if _BASE_BACKUP is not None:
+        settings.REPOSITORY_BASE = _BASE_BACKUP
 
 
 class RepoTest(TestCase, EmbedsTestCaseMixin):
