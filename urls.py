@@ -67,7 +67,8 @@ urlpatterns += staticfiles_urlpatterns()
 
 # Proxy the webdashboard
 urlpatterns += patterns('',
-                        (r'^webdashboard/(?P<path>.*)$',
-                         'l10nstats.views.proxy',
-                         {'base': 'http://l10n.mozilla.org/webdashboard/'}, 'webdashboard'),
-                        )
+  (r'^webdashboard/(?P<path>.*)$',
+   'l10nstats.views.proxy',
+   {'base': 'http://l10n.mozilla-community.org/webdashboard/'},
+   'webdashboard'),
+)
