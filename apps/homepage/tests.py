@@ -37,7 +37,7 @@
 
 import re
 from mock import patch
-from django.test import TestCase
+from test_utils import TestCase
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.http import Http404

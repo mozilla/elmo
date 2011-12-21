@@ -41,7 +41,7 @@
 
 import re
 from urlparse import urlparse
-from django.test import TestCase
+from test_utils import TestCase
 from django.core.urlresolvers import reverse
 from shipping.models import Milestone, Application, AppVersion, Signoff, Action
 from shipping.api import signoff_actions, flag_lists
@@ -52,6 +52,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils import simplejson as json
 from commons.tests.mixins import EmbedsTestCaseMixin
 from nose.tools import eq_, ok_
+from django.test import TestCase
 
 
 class ShippingTestCaseBase(TestCase, EmbedsTestCaseMixin):

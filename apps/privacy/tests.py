@@ -37,7 +37,7 @@
 
 from nose.tools import eq_, ok_
 from django.core.urlresolvers import reverse
-from django.test import TestCase
+from test_utils import TestCase
 from django.contrib.auth.models import User, Permission
 from django.contrib.admin.models import LogEntry, CHANGE
 from django.conf import settings

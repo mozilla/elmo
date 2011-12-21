@@ -31,13 +31,8 @@ DATABASES = {
         'TEST_COLLATION': 'utf8_general_ci',
     },
 }
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'elmo'
-    }
-}
 " > settings/local.py
+
 # the file settings/ldap_settings.py must exist
 cp settings/ldap_settings.py-dist settings/ldap_settings.py
 
@@ -49,9 +44,5 @@ pip install -r requirements/compiled.txt
 
 # dependencies for running the tests
 pip install -r requirements/dev.txt
-
-# do the offline compression
-python manage.py collectstatic --noinput
-python manage.py compress
 
 FORCE_DB=true python manage.py test --noinput

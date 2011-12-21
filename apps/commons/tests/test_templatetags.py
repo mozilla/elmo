@@ -39,7 +39,7 @@
 
 from django.template import Template
 from django.template import Context
-from django.test import TestCase
+from test_utils import TestCase
 from nose.tools import eq_, ok_
 
 class TemplatetagsTestCase(TestCase):

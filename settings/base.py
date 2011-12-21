@@ -282,7 +282,7 @@ CACHES = {
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
 ## django_compressor
-COMPRESS = True  # defaults to `not DEBUG`
+COMPRESS_ENABLED = True  # defaults to `not DEBUG`
 COMPRESS_OFFLINE = True  # make sure you run `./manage.py compress` upon deployment
 COMPRESS_CSS_FILTERS = (
   'compressor.filters.css_default.CssAbsoluteFilter',
@@ -300,7 +300,8 @@ STATICFILES_FINDERS = (
 try:
     import ldap_settings
 except ImportError:
-    pass
+    import warnings
+    warnings.warn("ldap_settings not importable. No LDAP authentication")
 else:
     # all these must exist and be set to something
     for each in 'LDAP_HOST', 'LDAP_DN', 'LDAP_PASSWORD':

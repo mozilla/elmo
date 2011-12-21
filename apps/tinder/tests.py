@@ -42,7 +42,7 @@ import os
 import datetime
 from tempfile import gettempdir
 from nose.tools import eq_, ok_
-from django.test import TestCase
+from test_utils import TestCase
 
 from django.conf import settings
 from django.core.urlresolvers import reverse

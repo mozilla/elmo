@@ -36,7 +36,7 @@
 # ***** END LICENSE BLOCK *****
 
 from nose.tools import eq_, ok_
-from django.test import TestCase
+from test_utils import TestCase
 from django.core.urlresolvers import reverse
 from commons.tests.mixins import EmbedsTestCaseMixin
 
