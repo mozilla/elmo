@@ -45,6 +45,7 @@ import shutil
 import tempfile
 import functools
 import codecs
+import base64
 from urlparse import urlparse
 from django.test import TestCase
 from django.core.urlresolvers import reverse
@@ -62,33 +63,6 @@ from mercurial import commands as hgcommands
 from mercurial.hg import repository
 from mercurial.ui import ui as hg_ui
 from mercurial.error import RepoError
-
-
-import base64
-GIF_DATA = base64.b64decode(
-  'R0lGODlhAQABAJEAAJnMzJnMzP4BAgAAACH5BAQUAP8ALAAAAAABAAEAAAICRAEAOw=='
-)
-
-class _ui(hg_ui):
-    def write(self, *msg):
-        pass
-
-
-def repository_base_wrapper(func):
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        old_repository_base = getattr(settings, 'REPOSITORY_BASE', None)
-        base = settings.REPOSITORY_BASE = tempfile.mkdtemp()
-        self.repo_name = 'mozilla-central'
-        self.repo = os.path.join(base, self.repo_name)
-        try:
-            return func(self)
-        finally:
-            if os.path.isdir(base):
-                shutil.rmtree(base)
-            if old_repository_base is not None:
-                settings.REPOSITORY_BASE = old_repository_base
-    return wrapper
 
 
 class ShippingTestCaseBase(TestCase, EmbedsTestCaseMixin):
@@ -122,25 +96,30 @@ class ShippingTestCaseBase(TestCase, EmbedsTestCaseMixin):
         return appver, milestone
 
 
-class ShippingDiffTestCase(ShippingTestCaseBase):
+class DiffTestCase(TestCase):
+
+    class _ui(hg_ui):
+        def write(self, *msg):
+            pass
 
     def setUp(self):
-        super(ShippingTestCaseBase, self).setUp()
+        super(DiffTestCase, self).setUp()
         self._old_repository_base = getattr(settings, 'REPOSITORY_BASE', None)
         self._base = settings.REPOSITORY_BASE = tempfile.mkdtemp()
         self.repo_name = 'mozilla-central'
         self.repo = os.path.join(self._base, self.repo_name)
 
     def tearDown(self):
-        super(ShippingTestCaseBase, self).tearDown()
+        super(DiffTestCase, self).tearDown()
         if os.path.isdir(self._base):
-            shutil.rmtree(self._base)
+            #shutil.rmtree(self._base)
+            pass
         if self._old_repository_base is not None:
             settings.REPOSITORY_BASE = self._old_repository_base
 
-    def test_diff_app_file_change_addition(self):
+    def test_file_entity_addition(self):
         """Change one file by adding a new line to it"""
-        ui = _ui()
+        ui = self._ui()
 
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
@@ -168,7 +147,7 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
 
         Repository.objects.create(
           name=self.repo_name,
-          url='http://localhost:8001/' + self.repo_name
+          url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('shipping.views.diff_app')
@@ -185,9 +164,9 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
         ok_(re.findall('>\s*World\s*<', html_diff))
         ok_(not re.findall('>\s*Cruel\s*<', html_diff))
 
-    def test_diff_app_file_change_modification(self):
+    def test_file_entity_modification(self):
         """Change one file by editing an existing line"""
-        ui = _ui()
+        ui = self._ui()
 
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
@@ -214,7 +193,7 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
 
         Repository.objects.create(
           name=self.repo_name,
-          url='http://localhost:8001/' + self.repo_name
+          url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('shipping.views.diff_app')
@@ -230,9 +209,9 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
         ok_('<span class="equal">Cruel</span><span class="insert">le</span>'
             in html_diff)
 
-    def test_diff_app_file_change_removal(self):
-        """same file is changed. The change is a removal of a line"""
-        ui = _ui()
+    def test_file_entity_removal(self):
+        """Change one file by removal of a line"""
+        ui = self._ui()
 
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
@@ -258,7 +237,7 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
 
         Repository.objects.create(
           name=self.repo_name,
-          url='http://localhost:8001/' + self.repo_name
+          url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('shipping.views.diff_app')
@@ -274,9 +253,9 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
         ok_(re.findall('>\s*key2\s*<', html_diff))
         ok_(re.findall('>\s*Cruel\s*<', html_diff))
 
-    def test_diff_app_new_file_change(self):
+    def test_new_file(self):
         """Change by adding a new second file"""
-        ui = _ui()
+        ui = self._ui()
 
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
@@ -303,7 +282,7 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
 
         Repository.objects.create(
           name=self.repo_name,
-          url='http://localhost:8001/' + self.repo_name
+          url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('shipping.views.diff_app')
@@ -320,9 +299,96 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
         ok_(re.findall('>\s*Monde\s*<', html_diff))
         ok_(not re.findall('>\s*Hello\s*<', html_diff))
 
-    def test_diff_app_file_only_renamed(self):
+    def test_remove_file(self):
+        """Change by removing a file, with parser"""
+        ui = self._ui()
+
+        hgcommands.init(ui, self.repo)
+        hgrepo = repository(ui, self.repo)
+        (open(hgrepo.pathto('file.dtd'), 'w')
+             .write('''
+             <!ENTITY key1 "Hello">
+             <!ENTITY key2 "Cruel">
+             '''))
+
+        hgcommands.addremove(ui, hgrepo)
+        hgcommands.commit(ui, hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="initial commit")
+        rev0 = hgrepo[0].hex()
+        hgcommands.remove(ui, hgrepo, 'path:file.dtd')
+        hgcommands.commit(ui, hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="Second commit")
+        rev1 = hgrepo[1].hex()
+
+        Repository.objects.create(
+          name=self.repo_name,
+          url='http://localhost:8001/%s/' % self.repo_name
+        )
+
+        url = reverse('shipping.views.diff_app')
+        response = self.client.get(url, {
+          'repo': self.repo_name,
+          'from': rev0,
+          'to': rev1
+        })
+        eq_(response.status_code, 200)
+        html_diff = response.content.split('Changed files:')[1]
+        ok_(re.findall('>\s*file\.dtd\s*<', html_diff))
+        # 2 entities with 2 rows each
+        eq_(html_diff.count('<tr class="line-removed">'), 4)
+        ok_(re.findall('>\s*key1\s*<', html_diff))
+        ok_(re.findall('>\s*Hello\s*<', html_diff))
+        ok_(re.findall('>\s*key2\s*<', html_diff))
+        ok_(re.findall('>\s*Cruel\s*<', html_diff))
+
+    def test_remove_file_no_parser(self):
+        """Change by removing a file, without parser"""
+        ui = self._ui()
+
+        hgcommands.init(ui, self.repo)
+        hgrepo = repository(ui, self.repo)
+        (open(hgrepo.pathto('file.txt'), 'w')
+             .write('line 1\nline 2\n'))
+
+        hgcommands.addremove(ui, hgrepo)
+        hgcommands.commit(ui, hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="initial commit")
+        rev0 = hgrepo[0].hex()
+        hgcommands.remove(ui, hgrepo, 'path:file.txt')
+        hgcommands.commit(ui, hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="Second commit")
+        rev1 = hgrepo[1].hex()
+
+        repo_url = 'http://localhost:8001/%s/' % self.repo_name
+        Repository.objects.create(
+          name=self.repo_name,
+          url=repo_url
+        )
+
+        url = reverse('shipping.views.diff_app')
+        response = self.client.get(url, {
+          'repo': self.repo_name,
+          'from': rev0,
+          'to': rev1
+        })
+        eq_(response.status_code, 200)
+        html_diff = response.content.split('Changed files:')[1]
+        ok_(re.findall('>\s*file\.txt\s*<', html_diff))
+        # 1 removed file
+        eq_(html_diff.count('<div class="diff file-removed">'), 1)
+        # also, expect a link to the old revision of the file
+        change_ref = 'href="%sfile/%s/file.txt"' % (repo_url, rev0)
+        ok_(change_ref in html_diff)
+        ok_(not re.findall('>\s*line 1\s*<', html_diff))
+        ok_(not re.findall('>\s*line 2\s*<', html_diff))
+
+    def test_file_only_renamed(self):
         """Change by doing a rename without any content editing"""
-        ui = _ui()
+        ui = self._ui()
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
         (open(hgrepo.pathto('file.dtd'), 'w')
@@ -346,7 +412,7 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
 
         Repository.objects.create(
           name=self.repo_name,
-          url='http://localhost:8001/' + self.repo_name
+          url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('shipping.views.diff_app')
@@ -361,9 +427,47 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
         ok_(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
         ok_(not re.findall('>\s*Hello\s*<', html_diff))
 
-    def test_diff_app_file_renamed_and_edited(self):
+    def test_file_only_renamed_no_parser(self):
+        """Change by doing a rename of a file without parser"""
+        ui = self._ui()
+        hgcommands.init(ui, self.repo)
+        hgrepo = repository(ui, self.repo)
+        (open(hgrepo.pathto('file.txt'), 'w')
+             .write('line 1\nline 2\n'))
+        hgcommands.addremove(ui, hgrepo)
+        hgcommands.commit(ui, hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="initial commit")
+        rev0 = hgrepo[0].hex()
+
+        hgcommands.rename(ui, hgrepo,
+                          hgrepo.pathto('file.txt'),
+                          hgrepo.pathto('newnamefile.txt'))
+        hgcommands.commit(ui, hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="Second commit")
+        rev1 = hgrepo[1].hex()
+
+        Repository.objects.create(
+          name=self.repo_name,
+          url='http://localhost:8001/%s/' % self.repo_name
+        )
+
+        url = reverse('shipping.views.diff_app')
+        response = self.client.get(url, {
+          'repo': self.repo_name,
+          'from': rev0,
+          'to': rev1
+        })
+        eq_(response.status_code, 200)
+        html_diff = response.content.split('Changed files:')[1]
+        ok_('renamed from file.txt' in re.sub('<.*?>', '', html_diff))
+        ok_(re.findall('>\s*newnamefile\.txt\s*<', html_diff))
+        ok_(not re.findall('>\s*line 1\s*<', html_diff))
+
+    def test_file_renamed_and_edited(self):
         """Change by doing a rename with content editing"""
-        ui = _ui()
+        ui = self._ui()
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
         (open(hgrepo.pathto('file.dtd'), 'w')
@@ -393,7 +497,7 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
 
         Repository.objects.create(
           name=self.repo_name,
-          url='http://localhost:8001/' + self.repo_name
+          url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('shipping.views.diff_app')
@@ -410,9 +514,9 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
         ok_(not re.findall('>\s*Cruel\s*<', html_diff))
         ok_(re.findall('>\s*World\s*<', html_diff))
 
-    def test_diff_app_file_renamed_and_edited_broken(self):
+    def test_file_renamed_and_edited_broken(self):
         """Change by doing a rename with bad content editing"""
-        ui = _ui()
+        ui = self._ui()
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
         (open(hgrepo.pathto('file.dtd'), 'w')
@@ -442,7 +546,7 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
 
         Repository.objects.create(
           name=self.repo_name,
-          url='http://localhost:8001/' + self.repo_name
+          url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('shipping.views.diff_app')
@@ -459,9 +563,9 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
         ok_(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
         ok_('Cannot parse file' in html_diff)
 
-    def test_diff_app_file_renamed_and_edited_original_broken(self):
+    def test_file_renamed_and_edited_original_broken(self):
         """Change by doing a rename on a previously broken file"""
-        ui = _ui()
+        ui = self._ui()
         hgcommands.init(ui, self.repo)
 
         hgrepo = repository(ui, self.repo)
@@ -491,7 +595,7 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
 
         Repository.objects.create(
           name=self.repo_name,
-          url='http://localhost:8001/' + self.repo_name
+          url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('shipping.views.diff_app')
@@ -509,12 +613,10 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
         ok_('Cannot parse file' in html_diff)
         eq_(html_diff.count('Cannot parse file'), 1)
         ok_('renamed from file.dtd' in re.sub('<.*?>', '', html_diff))
-        ok_('>key1<' in html_diff)
-        ok_('>key2<' in html_diff)
 
-    def test_diff_app_file_copied_and_edited_original_broken(self):
+    def test_file_copied_and_edited_original_broken(self):
         """Change by copying a broken file"""
-        ui = _ui()
+        ui = self._ui()
         hgcommands.init(ui, self.repo)
 
         hgrepo = repository(ui, self.repo)
@@ -544,7 +646,7 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
 
         Repository.objects.create(
           name=self.repo_name,
-          url='http://localhost:8001/' + self.repo_name
+          url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('shipping.views.diff_app')
@@ -562,10 +664,10 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
         ok_('Cannot parse file' in html_diff)
         eq_(html_diff.count('Cannot parse file'), 1)
 
-    def test_diff_app_error_handling(self):
+    def test_error_handling(self):
         """Test various bad request parameters to the diff_app
         and assure that it responds with the right error codes."""
-        ui = _ui()
+        ui = self._ui()
         hgcommands.init(ui, self.repo)
 
         url = reverse('shipping.views.diff_app')
@@ -588,7 +690,7 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
 
         Repository.objects.create(
           name=self.repo_name,
-          url='http://localhost:8001/' + self.repo_name
+          url='http://localhost:8001/%s/' % self.repo_name
         )
 
         # missing 'from' and 'to'
@@ -602,9 +704,9 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
         })
         eq_(response.status_code, 400)
 
-    def test_diff_app_file_only_copied(self):
+    def test_file_only_copied(self):
         """Change by copying a file with no content editing"""
-        ui = _ui()
+        ui = self._ui()
         hgcommands.init(ui, self.repo)
 
         hgrepo = repository(ui, self.repo)
@@ -628,7 +730,7 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
 
         Repository.objects.create(
           name=self.repo_name,
-          url='http://localhost:8001/' + self.repo_name
+          url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('shipping.views.diff_app')
@@ -644,9 +746,48 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
         ok_(not re.findall('>\s*Hello\s*<', html_diff))
         ok_(not re.findall('>\s*Cruel\s*<', html_diff))
 
-    def test_diff_app_file_copied_and_edited(self):
+    def test_file_only_copied_no_parser(self):
+        """Change by copying a file without parser"""
+        ui = self._ui()
+        hgcommands.init(ui, self.repo)
+
+        hgrepo = repository(ui, self.repo)
+        (open(hgrepo.pathto('file.txt'), 'w')
+             .write('line 1\nline 2\n'))
+        hgcommands.addremove(ui, hgrepo)
+        hgcommands.commit(ui, hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="initial commit")
+        rev0 = hgrepo[0].hex()
+        hgcommands.copy(ui, hgrepo,
+                          hgrepo.pathto('file.txt'),
+                          hgrepo.pathto('newnamefile.txt'))
+        hgcommands.commit(ui, hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="Second commit")
+        rev1 = hgrepo[1].hex()
+
+        Repository.objects.create(
+          name=self.repo_name,
+          url='http://localhost:8001/%s/' % self.repo_name
+        )
+
+        url = reverse('shipping.views.diff_app')
+        response = self.client.get(url, {
+          'repo': self.repo_name,
+          'from': rev0,
+          'to': rev1
+        })
+        eq_(response.status_code, 200)
+        html_diff = response.content.split('Changed files:')[1]
+        ok_('copied from file.txt' in re.sub('<.*?>', '', html_diff))
+        ok_(re.findall('>\s*newnamefile\.txt\s*<', html_diff))
+        ok_(not re.findall('>\s*line 1\s*<', html_diff))
+        ok_(not re.findall('>\s*line 2\s*<', html_diff))
+
+    def test_file_copied_and_edited(self):
         """Change by copying a file and then content editing"""
-        ui = _ui()
+        ui = self._ui()
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
         (open(hgrepo.pathto('file.dtd'), 'w')
@@ -675,7 +816,7 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
 
         Repository.objects.create(
           name=self.repo_name,
-          url='http://localhost:8001/' + self.repo_name
+          url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('shipping.views.diff_app')
@@ -695,7 +836,7 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
     def test_diff_base_against_clone(self):
         """Test that the right error is raised on trying to do a diff across
         a different divergant clone"""
-        ui = _ui()
+        ui = self._ui()
         orig = os.path.join(settings.REPOSITORY_BASE, 'orig')
         clone = os.path.join(settings.REPOSITORY_BASE, 'clone')
         hgcommands.init(ui, orig)
@@ -754,13 +895,16 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
                                 'from': rev_from[:12],
                                 'to': rev_to[:12]})
 
-    def test_diff_app_binary_file_change(self):
-        """Change is addition of a binary file"""
-        ui = _ui()
+    def test_binary_file_edited(self):
+        """Modify a binary file"""
+        ui = self._ui()
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
-        (open(hgrepo.pathto('file.gif'), 'wb')
-             .write(GIF_DATA))
+        (open(hgrepo.pathto('file.png'), 'wb')
+             .write(base64.b64decode(
+                 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAAAACklE'
+                 'QVR4nGNoAAAAggCBd81ytgAAAABJRU5ErkJggg=='
+                 )))
 
         hgcommands.addremove(ui, hgrepo)
         hgcommands.commit(ui, hgrepo,
@@ -768,8 +912,11 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
                   message="initial commit")
         rev0 = hgrepo[0].hex()
         # a bit unfair of a change but works for the tests
-        (open(hgrepo.pathto('file.gif'), 'wb')
-             .write(GIF_DATA))
+        (open(hgrepo.pathto('file.png'), 'wb')
+             .write(base64.b64decode(
+                 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAAAACklE'
+                 'QVR4nGNgAAAAAgABSK+kcQAAAABJRU5ErkJggg=='
+                 )))
 
         hgcommands.commit(ui, hgrepo,
                   user="Jane Doe <jdoe@foo.tld>",
@@ -792,12 +939,12 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
         html_diff = response.content.split('Changed files:')[1]
         ok_('Cannot parse file' in html_diff)
         # also, expect a link to this file
-        change_url = repo_url + 'file/%s/file.gif' % rev0
-        ok_('href="%s"' % change_url in html_diff)
+        change_ref = 'href="%sfile/%s/file.png"' % (repo_url, rev1)
+        ok_(change_ref in html_diff)
 
-    def test_diff_app_broken_encoding_file_add(self):
+    def test_broken_encoding_file_add(self):
         """Change by editing an already broken file"""
-        ui = _ui()
+        ui = self._ui()
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
 
@@ -839,9 +986,9 @@ class ShippingDiffTestCase(ShippingTestCaseBase):
         change_url = repo_url + 'file/%s/file.dtd' % rev1
         ok_('href="%s"' % change_url in html_diff)
 
-    def test_diff_app_broken_encoding_file_change(self):
-        """Change by editing a good with with a broken edit"""
-        ui = _ui()
+    def test_file_edited_broken_encoding(self):
+        """Change by editing a good with a broken edit"""
+        ui = self._ui()
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
 

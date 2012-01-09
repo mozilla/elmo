@@ -65,6 +65,7 @@ from mercurial.copies import copies as _copies
 from Mozilla.Parser import getParser, Junk
 from Mozilla.CompareLocales import AddRemove, Tree as DataTree
 
+
 def index(request):
     locales = Locale.objects.all().order_by('code')
     avs = AppVersion.objects.all().order_by('code')
@@ -141,75 +142,56 @@ def diff_app(request):
             copied[new_name] = old_name
 
     paths = ([(f, 'changed') for f in changed]
-             + [(f, 'removed') for f in removed]
-             + [(f, 'added') for f in added])
+             + [(f, 'removed') for f in removed
+                if f not in moved.values()]
+             + [(f,
+                 (f in moved and 'moved') or
+                 (f in copied and 'copied')
+                 or 'added') for f in added])
     diffs = DataTree(dict)
-    _broken_paths = []
     for path, action in paths:
         lines = []
         try:
             p = getParser(path)
         except UserWarning:
-            _broken_paths.append(path)
             diffs[path].update({
               'path': path,
               'isFile': True,
               'rev': ((action == 'removed') and request.GET['from']
                      or request.GET['to']),
-              'class': action
+              'class': action,
+              'renamed': moved.get(path),
+              'copied': copied.get(path)
             })
             continue
         if action == 'added':
-            if path in moved:
-                if moved[path] in _broken_paths:
-                    a_entities, a_map = [], {}
-                else:
-                    data = ctx1.filectx(moved[path]).data()
-                    data = _universal_newlines(data)
-                    p.readContents(data)
-                    a_entities, a_map = p.parse()
-
-            elif path in copied:
-                data = ctx1.filectx(copied[path]).data()
-                data = _universal_newlines(data)
-                try:
-                    p.readContents(data)
-                    a_entities, a_map = p.parse()
-                except:
-                    _broken_paths.append(path)
-                    diffs[path].update({
-                      'path': path,
-                      'isFile': True,
-                      'rev': ((action == 'removed') and request.GET['from']
-                             or request.GET['to']),
-                      'class': action,
-                      'copied': copied.get(path)
-                    })
-                    continue
-            else:
-                a_entities = []
-                a_map = {}
+            a_entities = []
+            a_map = {}
         else:
-            data = ctx1.filectx(path).data()
+            realpath = (action == 'moved' and moved[path] or
+                        action == 'copied' and copied[path] or
+                        path)
+            data = ctx1.filectx(realpath).data()
             data = _universal_newlines(data)
             try:
                 p.readContents(data)
                 a_entities, a_map = p.parse()
             except:
-                _broken_paths.append(path)
+                # consider doing something like:
+                # logging.warn('Unable to parse %s', path, exc_info=True)
                 diffs[path].update({
                   'path': path,
                   'isFile': True,
                   'rev': ((action == 'removed') and request.GET['from']
                           or request.GET['to']),
-                  'class': action
+                  'class': action,
+                  'renamed': moved.get(path),
+                  'copied': copied.get(path)
                 })
                 continue
 
         if action == 'removed':
             c_entities, c_map = [], {}
-            if path in moved.values():
-                continue
         else:
             data = ctx2.filectx(path).data()
             data = _universal_newlines(data)
@@ -280,6 +262,7 @@ def diff_app(request):
                                'new_rev': request.GET['to'],
                                'diffs': diffs},
                                context_instance=RequestContext(request))
+
 
 def dashboard(request):
     # legacy parameter. It's better to use the About milestone page for this.

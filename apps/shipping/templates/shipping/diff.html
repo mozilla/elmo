@@ -76,6 +76,12 @@ Changed files:
 {% if diff.value and diff.value.isFile %}
 <div class="diff file-{{diff.value.class}}">
   <a href="{{repo_url}}file/{{diff.value.rev}}/{{diff.value.path}}" target="_blank">{{fragment}}</a> Cannot parse file
+    {% if diff.value.renamed %}
+    <span class="renamed">(renamed from <code>{{ diff.value.renamed }}</code>)</span>
+    {% endif %}
+    {% if diff.value.copied %}
+    <span class="copied">(copied from <code>{{ diff.value.copied }}</code>)</span>
+    {% endif %}
 </div>
 {% else %}
 <div class="diff-container {{diff.value.class}} ui-accordion
