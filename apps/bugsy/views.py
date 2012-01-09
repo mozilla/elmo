@@ -58,8 +58,8 @@ def homesnippet(request):
 
 def teamsnippet(request, locale):
     bugs_url = ('https://bugzilla.mozilla.org/buglist.cgi?field0-0-0=component'
-                ';type0-0-0=regexp;value0-0-0=^%s / ;resolution=---')
-    bugs_url = bugs_url % locale.code
+                 ';type0-0-0=regexp;value0-0-0=^%s / ;resolution=---'
+                 % locale.code).replace(' ', '%20')
     return render_to_string('bugsy/team-snippet.html',
                             {'locale': locale,
                              'bugs_url': bugs_url},
