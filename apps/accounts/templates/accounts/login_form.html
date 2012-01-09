@@ -4,7 +4,7 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 
-<form {% if not form.errors %}style="display:none"{% endif %} class="site_login" method="post" action="{% url accounts.views.login %}">{% csrf_token %}
+<form {% if not form.errors %}style="display:none"{% endif %} class="site_login" method="post" action="{% url accounts.views.login %}">
 <div style="display:none"><input type="hidden" name="next" value=""></div>
 
 

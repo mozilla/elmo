@@ -65,10 +65,6 @@ TEMPLATE_CONTEXT_PROCESSORS += (
     'homepage.context_processors.webtrends',
 )
 
-TEMPLATE_CONTEXT_PROCESSORS = list(TEMPLATE_CONTEXT_PROCESSORS)
-TEMPLATE_CONTEXT_PROCESSORS.remove('session_csrf.context_processor')
-TEMPLATE_CONTEXT_PROCESSORS = tuple(TEMPLATE_CONTEXT_PROCESSORS)
-
 # This is the common prefix displayed in front of ALL static files
 STATIC_URL = '/static/'
 
@@ -86,9 +82,9 @@ STATIC_ROOT = path('collected', 'static')
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'session_csrf.CsrfMiddleware',
 
     'commonware.middleware.FrameOptionsHeader',
     'commonware.middleware.HidePasswordOnException',
@@ -129,10 +125,6 @@ INSTALLED_APPS += (
     'elmo_commons',
 
 )
-# remove some from funfactory
-INSTALLED_APPS = list(INSTALLED_APPS)
-INSTALLED_APPS.remove('session_csrf')
-INSTALLED_APPS = tuple(INSTALLED_APPS)
 
 
 ## Auth
