@@ -37,11 +37,15 @@
 '''Views for managing sign-offs and shipping metrics.
 '''
 
+from collections import defaultdict
+from difflib import SequenceMatcher
+import re
+import urllib
+
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
-from django.http import (HttpResponseRedirect, HttpResponse, Http404,
-                         HttpResponseNotAllowed, HttpResponseForbidden)
+from django import http
 from life.models import Repository, Locale, Tree
 from shipping.models import Milestone, Signoff, AppVersion, Action
 from shipping.api import signoff_actions, flag_lists, accepted_signoffs
@@ -53,14 +57,13 @@ from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
 from django.db.models import Max
 
-from collections import defaultdict
-from difflib import SequenceMatcher
-import re
-import urllib
+from mercurial.ui import ui as _ui
+from mercurial.hg import repository
+from mercurial.node import nullid
+from mercurial.copies import copies as _copies
 
 from Mozilla.Parser import getParser, Junk
 from Mozilla.CompareLocales import AddRemove, Tree as DataTree
-
 
 def index(request):
     locales = Locale.objects.all().order_by('code')
@@ -82,6 +85,7 @@ def index(request):
         'avs': avs,
     }, context_instance=RequestContext(request))
 
+
 def homesnippet(request):
     q = AppVersion.objects.filter(milestone__status=1).select_related('app')
     q = q.order_by('app__name','-version')
@@ -98,41 +102,93 @@ def teamsnippet(request, loc):
 
 def _universal_newlines(content):
     "CompareLocales reads files with universal newlines, fake that"
-    return content.replace('\r\n','\n').replace('\r','\n')
+    return content.replace('\r\n', '\n').replace('\r', '\n')
+
 
 def diff_app(request):
-    # XXX TODO: error handling
-    if 'repo' not in request.GET:
-        raise Http404("repo must be supplied")
+    if not request.GET.get('repo'):
+        return http.HttpResponseBadRequest("Missing 'repo' parameter")
     reponame = request.GET['repo']
     repopath = settings.REPOSITORY_BASE + '/' + reponame
-    repo_url = Repository.objects.filter(name=reponame).values_list('url', flat=True)[0]
-    from mercurial.ui import ui as _ui
-    from mercurial.hg import repository
+    try:
+        repo_url = Repository.objects.get(name=reponame).url
+    except Repository.DoesNotExist:
+        raise http.Http404("Repository not found")
+    if not request.GET.get('from'):
+        return http.HttpResponseBadRequest("Missing 'from' parameter")
+    if not request.GET.get('to'):
+        return http.HttpResponseBadRequest("Missing 'to' parameter")
+
     ui = _ui()
     repo = repository(ui, repopath)
-    ctx1 = repo.changectx(request.GET['from'])
-    ctx2 = repo.changectx(request.GET['to'])
-    match = None # maybe get something from l10n.ini and cmdutil
+    # Convert the 'from' and 'to' to strings (instead of unicode)
+    # in case mercurial needs to look for the key in binary data.
+    # This prevents UnicodeWarning messages.
+    ctx1 = repo.changectx(str(request.GET['from']))
+    ctx2 = repo.changectx(str(request.GET['to']))
+    copies = _copies(repo, ctx1, ctx2, repo[nullid])[0]
+    match = None  # maybe get something from l10n.ini and cmdutil
     changed, added, removed = repo.status(ctx1, ctx2, match=match)[:3]
+
+    # split up the copies info into thos that were renames and those that
+    # were copied.
+    moved = {}
+    copied = {}
+    for new_name, old_name in copies.items():
+        if old_name in removed:
+            moved[new_name] = old_name
+        else:
+            copied[new_name] = old_name
+
     paths = ([(f, 'changed') for f in changed]
              + [(f, 'removed') for f in removed]
              + [(f, 'added') for f in added])
     diffs = DataTree(dict)
+    _broken_paths = []
     for path, action in paths:
         lines = []
         try:
             p = getParser(path)
         except UserWarning:
-            diffs[path].update({'path': path,
-                                'isFile': True,
-                                'rev': ((action == 'removed') and request.GET['from']
-                                        or request.GET['to']),
-                                'class': action})
+            _broken_paths.append(path)
+            diffs[path].update({
+              'path': path,
+              'isFile': True,
+              'rev': ((action == 'removed') and request.GET['from']
+                     or request.GET['to']),
+              'class': action
+            })
             continue
         if action == 'added':
-            a_entities = []
-            a_map = {}
+            if path in moved:
+                if moved[path] in _broken_paths:
+                    a_entities, a_map = [], {}
+                else:
+                    data = ctx1.filectx(moved[path]).data()
+                    data = _universal_newlines(data)
+                    p.readContents(data)
+                    a_entities, a_map = p.parse()
+
+            elif path in copied:
+                data = ctx1.filectx(copied[path]).data()
+                data = _universal_newlines(data)
+                try:
+                    p.readContents(data)
+                    a_entities, a_map = p.parse()
+                except:
+                    _broken_paths.append(path)
+                    diffs[path].update({
+                      'path': path,
+                      'isFile': True,
+                      'rev': ((action == 'removed') and request.GET['from']
+                             or request.GET['to']),
+                      'class': action,
+                      'copied': copied.get(path)
+                    })
+                    continue
+            else:
+                a_entities = []
+                a_map = {}
         else:
             data = ctx1.filectx(path).data()
             data = _universal_newlines(data)
@@ -140,16 +196,20 @@ def diff_app(request):
                 p.readContents(data)
                 a_entities, a_map = p.parse()
             except:
-                diffs[path].update({'path': path,
-                                    'isFile': True,
-                                    'rev': ((action == 'removed') and request.GET['from']
-                                            or request.GET['to']),
-                                    'class': action})
+                _broken_paths.append(path)
+                diffs[path].update({
+                  'path': path,
+                  'isFile': True,
+                  'rev': ((action == 'removed') and request.GET['from']
+                          or request.GET['to']),
+                  'class': action
+                })
                 continue
 
         if action == 'removed':
-            c_entities = []
-            c_map = {}
+            c_entities, c_map = [], {}
+            if path in moved.values():
+                continue
         else:
             data = ctx2.filectx(path).data()
             data = _universal_newlines(data)
@@ -157,11 +217,15 @@ def diff_app(request):
                 p.readContents(data)
                 c_entities, c_map = p.parse()
             except:
-                diffs[path].update({'path': path,
-                                    'isFile': True,
-                                    'rev': ((action == 'removed') and request.GET['from']
-                                            or request.GET['to']),
-                                    'class': action})
+                # consider doing something like:
+                # logging.warn('Unable to parse %s', path, exc_info=True)
+                diffs[path].update({
+                  'path': path,
+                  'isFile': True,
+                  'rev': ((action == 'removed') and request.GET['from']
+                         or request.GET['to']),
+                  'class': action
+                })
                 continue
         a_list = sorted(a_map.keys())
         c_list = sorted(c_map.keys())
@@ -170,15 +234,19 @@ def diff_app(request):
         ar.set_right(c_list)
         for action, item_or_pair in ar:
             if action == 'delete':
-                lines.append({'class': 'removed',
-                              'oldval': [{'value':a_entities[a_map[item_or_pair]].val}],
-                              'newval': '',
-                              'entity': item_or_pair})
+                lines.append({
+                  'class': 'removed',
+                  'oldval': [{'value':a_entities[a_map[item_or_pair]].val}],
+                  'newval': '',
+                  'entity': item_or_pair
+                })
             elif action == 'add':
-                lines.append({'class': 'added',
-                              'oldval': '',
-                              'newval':[{'value': c_entities[c_map[item_or_pair]].val}],
-                              'entity': item_or_pair})
+                lines.append({
+                  'class': 'added',
+                  'oldval': '',
+                  'newval': [{'value': c_entities[c_map[item_or_pair]].val}],
+                  'entity': item_or_pair
+                })
             else:
                 oldval = a_entities[a_map[item_or_pair[0]]].val
                 newval = c_entities[c_map[item_or_pair[1]]].val
@@ -189,17 +257,20 @@ def diff_app(request):
                 newhtml = []
                 for op, o1, o2, n1, n2 in sm.get_opcodes():
                     if o1 != o2:
-                        oldhtml.append({'class':op, 'value':oldval[o1:o2]})
+                        oldhtml.append({'class': op, 'value': oldval[o1:o2]})
                     if n1 != n2:
-                        newhtml.append({'class':op, 'value':newval[n1:n2]})
-                lines.append({'class':'changed',
+                        newhtml.append({'class': op, 'value': newval[n1:n2]})
+                lines.append({'class': 'changed',
                               'oldval': oldhtml,
                               'newval': newhtml,
                               'entity': item_or_pair[0]})
         container_class = lines and 'file' or 'empty-diff'
         diffs[path].update({'path': path,
                             'class': container_class,
-                            'lines': lines})
+                            'lines': lines,
+                            'renamed': moved.get(path),
+                            'copied': copied.get(path)
+                            })
     diffs = diffs.toJSON().get('children', [])
     return render_to_response('shipping/diff.html',
                               {'given_title': request.GET.get('title', None),
@@ -209,7 +280,6 @@ def diff_app(request):
                                'new_rev': request.GET['to'],
                                'diffs': diffs},
                                context_instance=RequestContext(request))
-
 
 def dashboard(request):
     # legacy parameter. It's better to use the About milestone page for this.
@@ -231,7 +301,7 @@ def dashboard(request):
         locales = (Locale.objects.filter(code__in=locales_list)
                    .values_list('code', flat=True))
         if len(locales) != len(locales_list):
-            raise Http404("Invalid list of locales")
+            raise http.Http404("Invalid list of locales")
         query['locale'].extend(locales)
         subtitles += list(locales)
 
@@ -240,7 +310,7 @@ def dashboard(request):
         trees = (Tree.objects.filter(code__in=trees_list)
                  .values_list('code', flat=True))
         if len(trees) != len(trees_list):
-            raise Http404("Invalid list of trees")
+            raise http.Http404("Invalid list of trees")
         query['tree'].extend(trees)
 
     return render_to_response('shipping/dashboard.html', {
@@ -291,7 +361,7 @@ def stones_data(request):
                       'code': stone.code,
                       'age': age})
 
-    return HttpResponse(simplejson.dumps({'items': items}, indent=2))
+    return http.HttpResponse(simplejson.dumps({'items': items}, indent=2))
 
 def open_mstone(request):
     """Open a milestone.
@@ -309,7 +379,7 @@ def open_mstone(request):
             mstone.save()
         except:
             pass
-    return HttpResponseRedirect(reverse('shipping.views.milestones'))
+    return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
 
 def _propose_mstone(mstone):
     """Propose a new milestone based on an existing one.
@@ -342,10 +412,10 @@ def confirm_ship_mstone(request):
     Redirects to milestones() in case of trouble.
     """
     if not request.GET.get('ms'):
-        raise Http404("ms must be supplied")
+        raise http.Http404("ms must be supplied")
     mstone = get_object_or_404(Milestone, code=request.GET['ms'])
     if mstone.status != Milestone.OPEN:
-        return HttpResponseRedirect(reverse('shipping.views.milestones'))
+        return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
     statuses = flag_lists(appversions={'id': mstone.appver_id})
     pending_locs = []
     good = 0
@@ -372,15 +442,15 @@ def ship_mstone(request):
     Redirects to milestones().
     """
     if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
+        return http.HttpResponseNotAllowed(["POST"])
     if not request.user.has_perm('shipping.can_ship'):
         # XXX: personally I'd prefer if this was a raised 4xx error (peter)
         # then I can guarantee better test coverage
-        return HttpResponseRedirect(reverse('shipping.views.milestones'))
+        return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
 
     mstone = get_object_or_404(Milestone, code=request.POST['ms'])
     if mstone.status != Milestone.OPEN:
-        return HttpResponseForbidden('Can only ship open milestones')
+        return http.HttpResponseForbidden('Can only ship open milestones')
     cs = (accepted_signoffs(id=mstone.appver_id)
           .values_list('id', flat=True))
     mstone.signoffs.add(*list(cs))  # add them
@@ -388,7 +458,7 @@ def ship_mstone(request):
     # XXX create event
     mstone.save()
 
-    return HttpResponseRedirect(reverse('shipping.views.milestones'))
+    return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
 
 
 def confirm_drill_mstone(request):
@@ -399,12 +469,12 @@ def confirm_drill_mstone(request):
     Redirects to milestones() in case of trouble.
     """
     if not request.GET.get('ms'):
-        raise Http404("ms must be supplied")
+        raise http.Http404("ms must be supplied")
     if not request.user.has_perm('shipping.can_ship'):
-        return HttpResponseRedirect(reverse('shipping.views.milestones'))
+        return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
     mstone = get_object_or_404(Milestone, code=request.GET['ms'])
     if mstone.status != 1:
-        return HttpResponseRedirect(reverse('shipping.views.milestones'))
+        return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
 
     drill_base = Milestone.objects.filter(appver=mstone.appver,status=2).order_by('-pk').select_related()
     proposed = _propose_mstone(mstone)
@@ -438,4 +508,4 @@ def drill_mstone(request):
             mstone.save()
         except Exception, e:
             pass
-    return HttpResponseRedirect(reverse('shipping.views.milestones'))
+    return http.HttpResponseRedirect(reverse('shipping.views.milestones'))

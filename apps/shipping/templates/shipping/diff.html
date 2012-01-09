@@ -80,7 +80,14 @@ Changed files:
 {% else %}
 <div class="diff-container {{diff.value.class}} ui-accordion
   ui-widget ui-helper-reset"><div title="{{diff.value.path}}"
-    class="ui-accordion-header ui-helper-reset"><span class="ui-icon ui-icon-triangle-1-s"></span><a>{{fragment}}</a></div>
+    class="ui-accordion-header ui-helper-reset"><span class="ui-icon ui-icon-triangle-1-s"></span><a>{{fragment}}
+    {% if diff.value.renamed %}
+    <span class="renamed">(renamed from <code>{{ diff.value.renamed }}</code>)</span>
+    {% endif %}
+    {% if diff.value.copied %}
+    <span class="copied">(copied from <code>{{ diff.value.copied }}</code>)</span>
+    {% endif %}
+    </a></div>
   {% if diff.value %}
 <table class="diff">
   {% for line in diff.value.lines %}
