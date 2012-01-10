@@ -1,10 +1,9 @@
 import re
-from os import listdir
-from os.path import join, dirname, splitext
+import os
 
+from django.conf import settings
 import test_utils
 
-import manage
 
 
 class MigrationTests(test_utils.TestCase):
@@ -13,15 +12,15 @@ class MigrationTests(test_utils.TestCase):
     @staticmethod
     def _migrations_path():
         """Return the absolute path to the migration script folder."""
-        return manage.path('migrations')
+        return os.path.join(settings.ROOT, 'migrations')
 
     def test_unique(self):
         """Assert that the numeric prefixes of the DB migrations are unique."""
         leading_digits = re.compile(r'^\d+')
         seen_numbers = set()
         path = self._migrations_path()
-        for filename in listdir(path):
-            __, ext = splitext(filename)
+        for filename in os.listdir(path):
+            __, ext = os.path.splitext(filename)
             # prevent matching backup files (e.g. 001_foo.sql~)
             if ext not in [".sql", ".py"]: # same as nashvegas
                 continue

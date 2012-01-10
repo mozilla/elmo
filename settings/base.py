@@ -1,26 +1,15 @@
 # Django settings file for a project based on the playdoh template.
 
-import os
+from funfactory.settings_base import *
 
 from django.utils.functional import lazy
 
-# Make file paths relative to settings.
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-path = lambda *a: os.path.join(ROOT, *a)
-
-ROOT_PACKAGE = os.path.basename(ROOT)
-
-DEBUG = False
-TEMPLATE_DEBUG = DEBUG
+DEBUG = TEMPLATE_DEBUG = False
 
 ADMINS = ()
 MANAGERS = ADMINS
 
 DATABASES = {}  # See settings/local.py
-
-# Site ID is used by Django's Sites framework.
-SITE_ID = 1
-
 
 ## Internationalization.
 
@@ -35,41 +24,11 @@ TIME_ZONE = 'America/Los_Angeles'
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
-USE_I18N = True
+#USE_I18N = True
 
 # If you set this to False, Django will not format dates, numbers and
 # calendars according to the current locale
-USE_L10N = True
-
-# Gettext text domain
-TEXT_DOMAIN = 'messages'
-
-# Language code for this installation. All choices can be found here:
-# http://www.i18nguy.com/unicode/language-identifiers.html
-LANGUAGE_CODE = 'en-US'
-
-# Accepted locales
-KNOWN_LANGUAGES = ('en-US',)
-
-# List of RTL locales known to this project. Subset of LANGUAGES.
-RTL_LANGUAGES = ()  # ('ar', 'fa', 'fa-IR', 'he')
-
-LANGUAGE_URL_MAP = dict([(i.lower(), i) for i in KNOWN_LANGUAGES])
-
-# Override Django's built-in with our native names
-class LazyLangs(dict):
-    def __new__(self):
-        from product_details import product_details
-        return dict([(lang.lower(), product_details.languages[lang]['native'])
-                     for lang in KNOWN_LANGUAGES])
-
-# Where to store product details etc.
-PROD_DETAILS_DIR = path('lib/product_details_json')
-
-LANGUAGES = lazy(LazyLangs, dict)()
-
-# Paths that don't require a locale code in the URL.
-SUPPORTED_NONLOCALES = []
+#USE_L10N = True
 
 
 ## Media and templates.
@@ -77,11 +36,6 @@ SUPPORTED_NONLOCALES = []
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
 MEDIA_ROOT = path('static')
-
-# URL that handles the media served from MEDIA_ROOT. Make sure to use a
-# trailing slash if there is a path component (optional in other cases).
-# Examples: "http://media.lawrence.com", "http://example.com/media/"
-MEDIA_URL = '/media/'
 
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
@@ -98,39 +52,14 @@ TEMPLATE_LOADERS = (
 #     'django.template.loaders.eggs.Loader',
 )
 
-TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.contrib.auth.context_processors.auth',
-    'django.core.context_processors.debug',
-    'django.core.context_processors.media',
-    'django.core.context_processors.request',
-    'django.core.context_processors.csrf',
+TEMPLATE_CONTEXT_PROCESSORS += (
     'django.core.context_processors.static',
-    'django.contrib.messages.context_processors.messages',
-    'commons.context_processors.i18n',
     'accounts.context_processors.accounts',
 )
 
-TEMPLATE_DIRS = (
-    path('templates'),
-)
-
-def JINJA_CONFIG():
-    import jinja2
-    from django.conf import settings
-#    from caching.base import cache
-    config = {'extensions': ['tower.template.i18n', 'jinja2.ext.do',
-                             'jinja2.ext.with_', 'jinja2.ext.loopcontrols'],
-              'finalize': lambda x: x if x is not None else ''}
-#    if 'memcached' in cache.scheme and not settings.DEBUG:
-        # We're passing the _cache object directly to jinja because
-        # Django can't store binary directly; it enforces unicode on it.
-        # Details: http://jinja.pocoo.org/2/documentation/api#bytecode-cache
-        # and in the errors you get when you try it the other way.
-#        bc = jinja2.MemcachedBytecodeCache(cache._cache,
-#                                           "%sj2:" % settings.CACHE_PREFIX)
-#        config['cache_size'] = -1 # Never clear the cache
-#        config['bytecode_cache'] = bc
-    return config
+TEMPLATE_CONTEXT_PROCESSORS = list(TEMPLATE_CONTEXT_PROCESSORS)
+TEMPLATE_CONTEXT_PROCESSORS.remove('session_csrf.context_processor')
+TEMPLATE_CONTEXT_PROCESSORS = tuple(TEMPLATE_CONTEXT_PROCESSORS)
 
 # This is the common prefix displayed in front of ALL static files
 STATIC_URL = '/static/'
@@ -144,12 +73,9 @@ STATIC_ROOT = path('collected', 'static')
 
 ## Middlewares, apps, URL configs.
 
+# not using funfactory.settings_base.MIDDLEWARE_CLASSES here because there's
+# so few things we need and so many things we'd need to add
 MIDDLEWARE_CLASSES = (
-    # Commented out because at the moment elmo doesn't localize templates
-    # and middleware don't work when views use render_to_reponse() without
-    # a RequestContext(request) passed along.
-    #'commons.middleware.LocaleURLMiddleware',
-
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -162,35 +88,20 @@ MIDDLEWARE_CLASSES = (
     'django_arecibo.middleware.AreciboMiddleware',
 )
 
-ROOT_URLCONF = '%s.urls' % ROOT_PACKAGE
-
-INSTALLED_APPS = (
+INSTALLED_APPS += (
     # Local apps
-    'commons',  # Content common to most playdoh-based apps.
-    'tower',  # for ./manage.py extract (L10n)
+    'commons',
     'nashvegas',
     'django_arecibo',
     'compressor',
 
-    # We need this so the jsi18n view will pick up our locale directory.
-    ROOT_PACKAGE,
-
     # Third-party apps
-    'commonware.response.cookies',
-    'djcelery',
-    'django_nose',
 
     # Django contrib apps
-    'django.contrib.auth',
-    'django_sha2',  # Load after auth to monkey-patch it.
-
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
     'django.contrib.staticfiles',
     'django.contrib.admin',
 
     # L10n
-    'product_details',
 
     # elmo specific
     'accounts',
@@ -207,33 +118,11 @@ INSTALLED_APPS = (
     'webby',
 
 )
+# remove some from funfactory
+INSTALLED_APPS = list(INSTALLED_APPS)
+INSTALLED_APPS.remove('session_csrf')
+INSTALLED_APPS = tuple(INSTALLED_APPS)
 
-# Tells the extract script what files to look for L10n in and what function
-# handles the extraction. The Tower library expects this.
-DOMAIN_METHODS = {
-    'messages': [
-        ('apps/**.py',
-            'tower.management.commands.extract.extract_tower_python'),
-        ('**/templates/**.html',
-            'tower.management.commands.extract.extract_tower_template'),
-    ],
-
-    ## Use this if you have localizable HTML files:
-    #'lhtml': [
-    #    ('**/templates/**.lhtml',
-    #        'tower.management.commands.extract.extract_tower_template'),
-    #],
-
-    ## Use this if you have localizable JS files:
-    #'javascript': [
-        # Make sure that this won't pull in strings from external libraries you
-        # may use.
-    #    ('media/js/**.js', 'javascript'),
-    #],
-}
-
-# Path to Java. Used for compress_assets.
-JAVA_BIN = '/usr/bin/java'
 
 ## Auth
 PWD_ALGORITHM = 'bcrypt'
@@ -245,8 +134,6 @@ SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 
 ## Tests
-#TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
-TEST_RUNNER = 'test_utils.runner.RadicalTestSuiteRunner' # same as playdoh
 
 ## Arecibo
 # See http://readthedocs.org/docs/mozweb/en/latest/errors.html
@@ -256,17 +143,6 @@ ARECIBO_SERVER_URL = ""
 ARECIBO_SETTINGS = {
     'EXCLUDED_POST_VARS': ['password',],
 }
-
-## Celery
-# commented out because it's not being used
-#BROKER_HOST = 'localhost'
-#BROKER_PORT = 5672
-#BROKER_USER = 'playdoh'
-#BROKER_PASSWORD = 'playdoh'
-#BROKER_VHOST = 'playdoh'
-#BROKER_CONNECTION_TIMEOUT = 0.1
-#CELERY_RESULT_BACKEND = 'amqp'
-#CELERY_IGNORE_RESULT = True
 
 CACHES = {
     'default': {
