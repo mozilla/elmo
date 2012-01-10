@@ -37,9 +37,9 @@
 """Views centric around AppVersion data.
 """
 
-from django.shortcuts import render_to_response, get_object_or_404
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404
 from shipping.models import *
+
 
 def changes(request, app_code):
     """Show which milestones on the given appversion took changes for which
@@ -85,8 +85,7 @@ def changes(request, app_code):
         changes += [(loc, 'dropped') for loc in latest.iterkeys()]
         changes.sort(key=lambda t: t[0])
 
-    return render_to_response('shipping/app-changes.html',
-                              {'appver': av,
-                               'rows': rows,
-                               },
-                               context_instance=RequestContext(request))
+    return render(request, 'shipping/app-changes.html', {
+                    'appver': av,
+                    'rows': rows,
+                  })

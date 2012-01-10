@@ -39,8 +39,8 @@
 
 from django.core.urlresolvers import reverse
 from django.db.models import Count
-from django.shortcuts import render_to_response, get_object_or_404
-from django.template import RequestContext
+from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404
 from django.http import (HttpResponseRedirect,
                          HttpResponseForbidden, Http404)
 from django.utils.encoding import force_unicode
@@ -72,8 +72,8 @@ def show_policy(request, id=None):
         activation = logs.values_list('action_time', flat=True)[0]
     else:
         activation = None
-    c = RequestContext(request, {"policy": p, "activation": activation})
-    return render_to_response("privacy/show-policy.html", c)
+    c = {"policy": p, "activation": activation}
+    return render(request, 'privacy/show-policy.html', c)
 
 
 def versions(request):
@@ -111,8 +111,8 @@ def versions(request):
             _d.update(_details[str(_p.id)])
             _d['comments'] = _p.comments.all()
             yield _d
-    c = RequestContext(request, {"policies": do_policies(policies, details)})
-    return render_to_response("privacy/versions.html", c)
+    c = {"policies": do_policies(policies, details)}
+    return render(request, 'privacy/versions.html', c)
 
 
 def add_policy(request):
@@ -127,8 +127,7 @@ def add_policy(request):
         current = Policy.objects.get(active=True).text
     except:
         current = ''
-    c = RequestContext(request, {'current': current})
-    return render_to_response("privacy/add.html", c)
+    return render(request, 'privacy/add.html', {'current': current})
 
 
 def post_policy(request):
@@ -146,8 +145,8 @@ def post_policy(request):
                                 Comment.contenttype().id, c.id,
                                 force_unicode(c), ADDITION)
 
-    return HttpResponseRedirect(reverse('privacy.views.show_policy',
-                                        kwargs={'id': p.id}))
+    return redirect(reverse('privacy.views.show_policy',
+                            kwargs={'id': p.id}))
 
 
 def activate_policy(request):
@@ -198,4 +197,4 @@ def add_comment(request):
         LogEntry.objects.log_action(request.user.id,
                                     Comment.contenttype().id, c.id,
                                     force_unicode(c), ADDITION)
-    return HttpResponseRedirect(reverse('privacy.views.versions'))
+    return redirect(reverse('privacy.views.versions'))

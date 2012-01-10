@@ -37,6 +37,7 @@
 
 from nose.tools import eq_, ok_
 from django.core.urlresolvers import reverse
+from django.utils import simplejson as json
 from test_utils import TestCase
 from commons.tests.mixins import EmbedsTestCaseMixin
 
@@ -61,3 +62,13 @@ class BugsyTestCase(TestCase, EmbedsTestCaseMixin):
         response = self.client.get(url)
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
+
+    def test_new_locale_bugs_for_fx(self):
+        url = reverse('bugsy.views.new_locale_bugs')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        eq_(response['Content-Type'], 'application/javascript')
+        struct = json.loads(response.content)
+        ok_(struct)
+        item = struct[0]
+        ok_(item['product'])  # one of many

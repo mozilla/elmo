@@ -40,8 +40,7 @@
 from django.conf import settings
 from django.db.models import Max
 from django.http import HttpResponse
-from django.shortcuts import render_to_response, get_object_or_404
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404
 from django.utils import simplejson
 from django.views.decorators.cache import cache_control
 
@@ -81,13 +80,12 @@ def about(request, ms_code):
               mss.values_list('appver__lasttree__code','appver__lasttree__l10n__name',
                               'appver__lasttree__l10n__url')[0]
 
-    return render_to_response('shipping/about-milestone.html',
-                              {'ms': ms,
-                               'tree': tree,
-                               'forestname': forestname,
-                               'foresturl': foresturl,
-                               },
-                               context_instance=RequestContext(request))
+    return render(request, 'shipping/about-milestone.html', {
+                    'ms': ms,
+                    'tree': tree,
+                    'forestname': forestname,
+                    'foresturl': foresturl,
+                  })
 
 def statuses(req, ms_code):
     """JSON work horse for the about() view.
@@ -235,7 +233,7 @@ class JSONChangesets(SignoffDataView):
                         extra_plats[loc].append(plat)
                 except:
                     pass
-    
+
         tmpl = '''  "%(loc)s": {
     "revision": "%(rev)s",
     "platforms": ["%(plats)s"]

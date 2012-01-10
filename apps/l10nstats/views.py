@@ -44,15 +44,13 @@ import time
 from urllib2 import urlopen
 from urlparse import urljoin
 
-from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
-from django.template import RequestContext
 from django.http import (HttpResponse, HttpResponseNotFound,
                          HttpResponsePermanentRedirect,
                          HttpResponseBadRequest)
 from django.db.models import Min, Max
-from django.views.decorators.cache import cache_control
 from django.utils import simplejson
 
 from l10nstats.models import *
@@ -183,14 +181,14 @@ def history_plot(request):
         stamps['end'] = int(time.mktime(endtime.timetuple()))
         stamps['previous'] = stamps['start'] * 2 - stamps['end']
         stamps['next'] = stamps['end'] * 2 - stamps['start']
-        return render_to_response('l10nstats/history.html',
-                                  {'locale': locale.code,
-                                   'tree': tree.code,
-                                   'starttime': starttime,
-                                   'endtime': endtime,
-                                   'stamps': stamps,
-                                   'runs': runs(q2, p)},
-                                  context_instance=RequestContext(request))
+        return render(request, 'l10nstats/history.html', {
+                        'locale': locale.code,
+                        'tree': tree.code,
+                        'starttime': starttime,
+                        'endtime': endtime,
+                        'stamps': stamps,
+                        'runs': runs(q2, p)
+                      })
     return HttpResponseNotFound("sorry, gimme tree and locale")
 
 
@@ -257,26 +255,23 @@ def tree_progress(request, tree):
     data = [{'srctime': t, 'locales': simplejson.dumps(datadict[t])}
             for t in sorted(datadict.keys())]
 
-    bound = request.GET.get("bound", "0")
     try:
-        bound = int(bound)
-    except:
+        bound = int(request.GET.get('bound', 0))
+    except ValueError:
         bound = 0
 
-    return render_to_response('l10nstats/tree_progress.html',
-                              {'tree': tree.code,
-                               'bound': bound,
-                               'showBad': 'hideBad' not in request.GET,
-                               'startTime': starttime,
-                               'endTime': endtime,
-                               'explicitEnd': 'endtime' in request.GET,
-                               'explicitStart': 'starttime' in request.GET,
-                               'allStart': allStart,
-                               'allEnd': displayEnd,
-                               'data': data},
-                               context_instance=RequestContext(request))
-
-
+    return render(request, 'l10nstats/tree_progress.html', {
+                    'tree': tree.code,
+                    'bound': bound,
+                    'showBad': 'hideBad' not in request.GET,
+                    'startTime': starttime,
+                    'endTime': endtime,
+                    'explicitEnd': 'endtime' in request.GET,
+                    'explicitStart': 'starttime' in request.GET,
+                    'allStart': allStart,
+                    'allEnd': displayEnd,
+                    'data': data
+                  })
 
 
 class JSONAdaptor(object):
@@ -352,9 +347,9 @@ def compare(request):
     widths = {}
     for k in ('changed', 'missing', 'missingInFiles', 'report', 'unchanged'):
         widths[k] = summary.get(k, 0) * 300 / summary['total']
-    return render_to_response('l10nstats/compare.html',
-                              {'run': run,
-                               'nodes': nodes,
-                               'widths': widths,
-                               'summary': summary},
-                              context_instance=RequestContext(request))
+    return render(request, 'l10nstats/compare.html', {
+                    'run': run,
+                    'nodes': nodes,
+                    'widths': widths,
+                    'summary': summary,
+                  })

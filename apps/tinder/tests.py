@@ -43,7 +43,7 @@ import datetime
 from tempfile import gettempdir
 from nose.tools import eq_, ok_
 from test_utils import TestCase
-
+from commons.tests.mixins import EmbedsTestCaseMixin
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from mbdb.models import (Build, Change, Master, Log, Property, SourceStamp,
@@ -192,7 +192,7 @@ class timedelta(TestCase):
         self.assertEqual(build_extras.timedelta(start, end), "3 second(s)")
 
 
-class ViewsTestCase(TestCase):
+class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
     fixtures = ['one_started_l10n_build.json']
 
     def setUp(self):
@@ -214,7 +214,6 @@ class ViewsTestCase(TestCase):
 
     def test_pmap(self):
         from views import pmap
-
 
         prop1 = Property.objects.create(
           name='gender',
@@ -321,6 +320,23 @@ class ViewsTestCase(TestCase):
         ok_('<span class="pre stdout">stdout content\n</span>' in content)
         ok_('<span class="pre stderr">stderr content\n</span>' in content)
         ok_('json' not in content)
+
+    def test_render_tbpl(self):
+        url = reverse('tinder.views.tbpl')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        self.assert_all_embeds(response)
+
+    def test_render_showbuild(self):
+        build, = Build.objects.all()[:1]
+        builder = build.builder
+        url = reverse('tinder.views.showbuild',
+                      args=[builder.name, build.buildnumber])
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        self.assert_all_embeds(response)
+
+
 
 SAMPLE_BUILD_LOG_PAYLOAD = '''16:2header content
 ,16:1stderr content

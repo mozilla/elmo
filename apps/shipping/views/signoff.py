@@ -41,8 +41,7 @@
 
 from django.db.models import Max
 from django.http import HttpResponseRedirect, Http404
-from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404, redirect
 from django.conf import settings
 # TODO: from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_POST, etag
@@ -115,25 +114,24 @@ def signoff(request, locale_code, app_code):
     # get current status of signoffs
     pending, rejected, accepted, initial_diff = signoff_summary(actions)
 
-    pushes, currentpush, suggested_signoff = annotated_pushes(repo, appver, 
+    pushes, currentpush, suggested_signoff = annotated_pushes(repo, appver,
                                                               lang, actions,
                                                               initial_diff)
 
-    return render_to_response('shipping/signoffs.html',
-                              {'appver': appver,
-                               'language': lang,
-                               'pushes': pushes,
-                               'current': currentpush,
-                               'pending': pending,
-                               'rejected': rejected,
-                               'accepted': accepted,
-                               'tree': appver.tree.code,
-                               'repo': repo,
-                               'suggested_signoff': suggested_signoff,
-                               'login_form_needs_reload': True,
-                               'request': request,
-                               },
-                              context_instance=RequestContext(request))
+    return render(request, 'shipping/signoffs.html', {
+                    'appver': appver,
+                    'language': lang,
+                    'pushes': pushes,
+                    'current': currentpush,
+                    'pending': pending,
+                    'rejected': rejected,
+                    'accepted': accepted,
+                    'tree': appver.tree.code,
+                    'repo': repo,
+                    'suggested_signoff': suggested_signoff,
+                    'login_form_needs_reload': True,
+                    'request': request,
+                  })
 
 
 def signoff_details(request, locale_code, app_code):
@@ -198,13 +196,12 @@ def signoff_details(request, locale_code, app_code):
                         good = False
             newer = sorted(newer)
 
-    return render_to_response('shipping/signoff-details.html',
-                              {
-                                  'run': run,
-                                  'good': good,
-                                  'doubled': doubled,
-                                  'newer': newer,
-                               })
+    return render(request, 'shipping/signoff-details.html', {
+                    'run': run,
+                    'good': good,
+                    'doubled': doubled,
+                    'newer': newer,
+                  })
 
 @require_POST
 def add_signoff(request, locale_code, app_code):

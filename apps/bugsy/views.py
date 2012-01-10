@@ -38,37 +38,33 @@
 '''
 
 from django.http import HttpResponse
-from django.shortcuts import render_to_response
-from django.template import Context, Template, RequestContext
-from django.template.loader import render_to_string
+from django.template import Context, Template
+from django.shortcuts import render
 from django.utils import simplejson
 
 from life.models import Locale
 
 
 def index(request):
-    return render_to_response('bugsy/index.html', {
-            }, context_instance=RequestContext(request))
+    return render(request, 'bugsy/index.html')
 
 
 def homesnippet(request):
-    return render_to_string('bugsy/snippet.html', {
-            }, context_instance=RequestContext(request))
+    return render(request, 'bugsy/snippet.html')
 
 
 def teamsnippet(request, locale):
     bugs_url = ('https://bugzilla.mozilla.org/buglist.cgi?field0-0-0=component'
                  ';type0-0-0=regexp;value0-0-0=^%s / ;resolution=---'
                  % locale.code).replace(' ', '%20')
-    return render_to_string('bugsy/team-snippet.html',
-                            {'locale': locale,
-                             'bugs_url': bugs_url},
-                            context_instance=RequestContext(request))
+    return render(request, 'bugsy/team-snippet.html', {
+                    'locale': locale,
+                    'bugs_url': bugs_url,
+                  })
 
 
 def file_bugs(request):
-    return render_to_response('bugsy/file-bugs.html', {
-            }, context_instance=RequestContext(request))
+    return render(request, 'bugsy/file-bugs.html')
 
 
 def get_bug_links(request):
@@ -90,13 +86,11 @@ def get_bug_links(request):
 
 
 def new_locale(request):
-    return render_to_response('bugsy/new-locale.html', {
-            }, context_instance=RequestContext(request))
+    return render(request, 'bugsy/new-locale.html')
 
 
 def new_locale_bugs(request):
     alias = request.GET.get('app', 'fx')
-    return render_to_response('bugsy/new-%s-locales.json' % alias,
-                              request.GET,
-                              mimetype="application/javascript",
-                              context_instance=RequestContext(request))
+    return render(request, 'bugsy/new-%s-locales.json' % alias,
+                  request.GET,
+                  content_type='application/javascript')

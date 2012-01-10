@@ -43,10 +43,8 @@ import operator
 import os.path
 from time import mktime
 
-from django.http import HttpResponse
-from django.template import RequestContext
 from django.template.loader import render_to_string
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render, get_object_or_404
 from django.db.models import Q, Max
 
 from pushes.models import *
@@ -54,6 +52,7 @@ from django.conf import settings
 
 from mercurial.hg import repository
 from mercurial.ui import ui as _ui
+
 
 def pushlog(request, repo_name):
     try:
@@ -77,47 +76,48 @@ def pushlog(request, repo_name):
     search = {}
     q = Push.objects
     if startTime is not None:
-        q = q.filter(push_date__gte = startTime)
+        q = q.filter(push_date__gte=startTime)
         search['from'] = startTime
     if endTime is not None:
-        q = q.filter(push_date__lte = endTime)
+        q = q.filter(push_date__lte=endTime)
         search['until'] = endTime
     if repo_name is not None:
-        q = q.filter(repository__name__startswith = repo_name)
+        q = q.filter(repository__name__startswith=repo_name)
     elif repo_parts:
-        repo_parts = map(lambda s:Q(repository__name__contains = s), repo_parts)
+        repo_parts = map(lambda s: Q(repository__name__contains=s), repo_parts)
         if len(repo_parts) == 1:
             q = q.filter(repo_parts[0])
         else:
             q = q.filter(reduce(operator.or_, repo_parts))
         search['repo'] = repo_parts
     if excludes:
-        q = q.exclude(repository__name__in = excludes)
+        q = q.exclude(repository__name__in=excludes)
     for p in paths:
         q = q.filter(changesets__files__path__contains=p)
     if paths:
         search['path'] = paths
     pushes = q.distinct().order_by('-push_date')[start:]
     if limit is not None:
-        pushes = pushes[:(start+limit)]
+        pushes = pushes[:(start + limit)]
     pushrows = [{'push': p,
                  'tip': p.changesets.order_by('-pk')[0],
                  'changesets': p.changesets.order_by('-pk')[1:],
                  'class': 'parity%d' % odd,
                  'span': p.changesets.count(),
                  }
-                for p, odd in zip(pushes, cycle([1,0]))]
+                for p, odd in zip(pushes, cycle([1, 0]))]
     if pushrows:
         timespan = (int(mktime(pushrows[-1]['push'].push_date.timetuple())),
                     int(mktime(pushrows[0]['push'].push_date.timetuple())))
     else:
         timespan = None
-    return render_to_response('pushes/pushlog.html',
-                              {'pushes': pushrows,
-                               'limit': limit,
-                               'search': search,
-                               'timespan': timespan,
-                               }, context_instance=RequestContext(request))
+    return render(request, 'pushes/pushlog.html', {
+                    'pushes': pushrows,
+                    'limit': limit,
+                    'search': search,
+                    'timespan': timespan,
+                  })
+
 
 def homesnippet(request):
     repos = Repository.objects.filter(forest__isnull=False)

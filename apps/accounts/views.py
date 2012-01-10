@@ -39,7 +39,8 @@
 
 
 from django.contrib.auth.views import REDIRECT_FIELD_NAME
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponse
+from django.shortcuts import redirect
 from django.views.decorators import cache
 from django.core.context_processors import csrf
 from django.utils import simplejson as json
@@ -79,4 +80,4 @@ def logout(request, redirect_field_name=REDIRECT_FIELD_NAME):
     from django.contrib.auth import logout
     logout(request)
     redirect_to = request.REQUEST.get(redirect_field_name, '')
-    return HttpResponseRedirect(redirect_to or '/')
+    return redirect(redirect_to or '/')

@@ -42,7 +42,7 @@ from difflib import SequenceMatcher
 import re
 import urllib
 
-from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django import http
@@ -82,10 +82,10 @@ def index(request):
         else:
             i.status = 'unknown'
 
-    return render_to_response('shipping/index.html', {
-        'locales': locales,
-        'avs': avs,
-    }, context_instance=RequestContext(request))
+    return render(request, 'shipping/index.html', {
+                    'locales': locales,
+                    'avs': avs,
+                  })
 
 
 def homesnippet(request):
@@ -339,14 +339,14 @@ def diff_app(request):
                             'copied': copied.get(path)
                             })
     diffs = diffs.toJSON().get('children', [])
-    return render_to_response('shipping/diff.html',
-                              {'given_title': request.GET.get('title', None),
-                               'repo': reponame,
-                               'repo_url': repo_url,
-                               'old_rev': request.GET['from'],
-                               'new_rev': request.GET['to'],
-                               'diffs': diffs},
-                               context_instance=RequestContext(request))
+    return render(request, 'shipping/diff.html', {
+                    'given_title': request.GET.get('title', None),
+                    'repo': reponame,
+                    'repo_url': repo_url,
+                    'old_rev': request.GET['from'],
+                    'new_rev': request.GET['to'],
+                    'diffs': diffs
+                  })
 
 
 def dashboard(request):
@@ -381,10 +381,10 @@ def dashboard(request):
             raise http.Http404("Invalid list of trees")
         query['tree'].extend(trees)
 
-    return render_to_response('shipping/dashboard.html', {
-            'subtitles': subtitles,
-            'query': mark_safe(urlencode(query, True)),
-            }, context_instance=RequestContext(request))
+    return render(request, 'shipping/dashboard.html', {
+                    'subtitles': subtitles,
+                    'query': mark_safe(urlencode(query, True)),
+                  })
 
 
 def milestones(request):
@@ -401,11 +401,11 @@ def milestones(request):
         urllib.always_safe = always_safe + '{}'
     else:
         always_safe = None
-    r =  render_to_response('shipping/milestones.html',
-                            {'login_form_needs_reload': True,
-                             'request': request,
-                             },
-                            context_instance=RequestContext(request))
+    # XXX this should have some sort of try:finally: to safely restore urllib
+    r =  render(request, 'shipping/milestones.html', {
+                  'login_form_needs_reload': True,
+                  'request': request,
+                })
     if always_safe is not None:
         urllib.always_safe = always_safe
     return r
@@ -495,14 +495,14 @@ def confirm_ship_mstone(request):
             # good
             good += 1
     pending_locs.sort()
-    return render_to_response('shipping/confirm-ship.html',
-                              {'mstone': mstone,
-                               'pending_locs': pending_locs,
-                               'good': good,
-                               'login_form_needs_reload': True,
-                               'request': request,
-                             },
-                              context_instance=RequestContext(request))
+    return render(request, 'shipping/confirm-ship.html', {
+                  'mstone': mstone,
+                  'pending_locs': pending_locs,
+                  'good': good,
+                  'login_form_needs_reload': True,
+                  'request': request,
+                  })
+
 
 def ship_mstone(request):
     """The actual worker method to ship a milestone.
@@ -546,15 +546,14 @@ def confirm_drill_mstone(request):
 
     drill_base = Milestone.objects.filter(appver=mstone.appver,status=2).order_by('-pk').select_related()
     proposed = _propose_mstone(mstone)
+    return render(request, 'shipping/confirm-drill.html', {
+                    'mstone': mstone,
+                    'older': drill_base[:3],
+                    'proposed': proposed,
+                    'login_form_needs_reload': True,
+                    'request': request,
+                  })
 
-    return render_to_response('shipping/confirm-drill.html',
-                              {'mstone': mstone,
-                               'older': drill_base[:3],
-                               'proposed': proposed,
-                               'login_form_needs_reload': True,
-                               'request': request,
-                               },
-                              context_instance=RequestContext(request))
 
 def drill_mstone(request):
     """The actual worker method to ship a milestone.
@@ -575,5 +574,6 @@ def drill_mstone(request):
             # XXX create event
             mstone.save()
         except Exception, e:
+            # XXX should deal better with this error
             pass
-    return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
+    return redirect(reverse('shipping.views.milestones'))

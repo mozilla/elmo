@@ -39,7 +39,7 @@
 
 import sys
 from django.http import Http404, HttpResponseServerError
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render, redirect
 from django.utils.safestring import mark_safe
 from django.template import RequestContext, loader
 from django.conf import settings
@@ -86,12 +86,12 @@ def index(request):
     pushes_div = mark_safe(pushes_snippet(request))
     l10nstats_div = mark_safe(stats_snippet(request))
     bugs_div = mark_safe(bugs_snippet(request))
-    return render_to_response('homepage/index.html', {
-            'shipping': shipping_div,
-            'pushes': pushes_div,
-            'l10nstats': l10nstats_div,
-            'bugs': bugs_div,
-            }, context_instance=RequestContext(request))
+    return render(request, 'homepage/index.html', {
+                   'shipping': shipping_div,
+                   'pushes': pushes_div,
+                   'l10nstats': l10nstats_div,
+                   'bugs': bugs_div,
+                 })
 
 
 def teams(request):
@@ -99,9 +99,9 @@ def teams(request):
     # This is an artifact of the addon trees
     # see https://bugzilla.mozilla.org/show_bug.cgi?id=701218
     locs = locs.exclude(code='en-US')
-    return render_to_response('homepage/teams.html', {
-            'locales': locs,
-            }, context_instance=RequestContext(request))
+    return render(request, 'homepage/teams.html', {
+                    'locales': locs,
+                  })
 
 
 def locale_team(request, code):
@@ -121,10 +121,10 @@ def locale_team(request, code):
 
     name = loc.name or loc.code
 
-    return render_to_response('homepage/locale-team.html', {
-            'locale': loc,
-            'locale_name': name,
-            'l10nstats': l10nstats_div,
-            'shipping': ship_div,
-            'bugs': bug_div,
-            }, context_instance=RequestContext(request))
+    return render(request, 'homepage/locale-team.html', {
+                    'locale': loc,
+                    'locale_name': name,
+                    'l10nstats': l10nstats_div,
+                    'shipping': ship_div,
+                    'bugs': bug_div,
+                  })

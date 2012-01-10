@@ -42,8 +42,7 @@ import datetime
 
 from django.db.models import Q
 from django.http import Http404
-from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.shortcuts import render
 
 from life.models import Locale, Forest
 from shipping.models import Application, AppVersion, Signoff, Action
@@ -69,12 +68,11 @@ def select_apps(request):
     sixweeks = (n - epoch).days / (6 * 7)
     auroradate = epoch + sixweeks * datetime.timedelta(6 * 7)
     betadate = auroradate - datetime.timedelta(6 * 7)
-    return render_to_response('shipping/out-select-apps.html',
-                              {'apps': beta_apps,
-                               'auroradate': auroradate.strftime(_dateformat),
-                               'betadate': betadate.strftime(_dateformat),
-                               },
-                              context_instance=RequestContext(request))
+    return render(request, 'shipping/out-select-apps.html', {
+                    'apps': beta_apps,
+                    'auroradate': auroradate.strftime(_dateformat),
+                    'betadate': betadate.strftime(_dateformat),
+                  })
 
 
 def data(request):
@@ -159,11 +157,10 @@ def data(request):
     rows = [{'loc':loc, 'entries': matrix[id4loc[loc]]}
             for loc in sorted(id4loc.keys())]
 
-    return render_to_response('shipping/out-data.html',
-                              {'apps': beta_apps,
-                               'appvers': appvers,
-                               'rows': rows,
-                               'auroradate': auroradate.strftime(_dateformat),
-                               'betadate': betadate.strftime(_dateformat),
-                               },
-                              context_instance=RequestContext(request))
+    return render(request, 'shipping/out-data.html', {
+                    'apps': beta_apps,
+                    'appvers': appvers,
+                    'rows': rows,
+                    'auroradate': auroradate.strftime(_dateformat),
+                    'betadate': betadate.strftime(_dateformat),
+                  })
