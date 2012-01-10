@@ -100,7 +100,7 @@ class ShippingTestCaseBase(TestCase, EmbedsTestCaseMixin):
 class DiffTestCase(TestCase):
 
     class _ui(hg_ui):
-        def write(self, *msg):
+        def write(self, *msg, **opts):
             pass
 
     def setUp(self):
