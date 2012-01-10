@@ -41,7 +41,7 @@
 .diff {
   padding-left: 2ex;
 }
-.line-added, .file-added {
+.line-added, .file-added, .file-copied {
   color: green;
 }
 .line-removed, .file-removed {
@@ -58,4 +58,7 @@
 }
 .insert {
   background-color: #66ff00;
+}
+.renamed, .copied {
+  font-size: small;
 }
