@@ -41,8 +41,13 @@ import shutil
 import tempfile
 import codecs
 import base64
+try:
+    import json
+except:
+    from django.utils import simplejson as json
 from nose.tools import eq_, ok_
 from test_utils import TestCase
+from django import http
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from mercurial import commands as hgcommands
@@ -51,8 +56,10 @@ from mercurial.ui import ui as hg_ui
 from mercurial.error import RepoError
 
 from commons.tests.mixins import EmbedsTestCaseMixin
-from life.models import Repository
-
+from life.models import Repository, Changeset
+from pushes import repo_fixtures
+from pushes.utils import getChangeset
+from pushes.views.api import jsonify
 
 class PushesTestCase(TestCase, EmbedsTestCaseMixin):
 
@@ -997,3 +1004,75 @@ class DiffTestCase(TestCase):
         # also, expect a link to this file
         change_url = repo_url + 'file/%s/file.dtd' % rev1
         ok_('href="%s"' % change_url in html_diff)
+
+
+class JSONifyTestCase(TestCase):
+    def test_json(self):
+        ref = {
+            'foo': [1, 2, 3],
+            '12': "string"
+            }
+        response = jsonify(lambda r: r)(ref)
+        ok_(isinstance(response, http.HttpResponse))
+        ok_(response.status_code, 200)
+        eq_(response["Access-Control-Allow-Origin"], "*")
+        r_data = json.loads(response.content)
+        eq_(r_data, ref)
+
+    def test_fail(self):
+        ref = http.HttpResponseBadRequest('oh picky')
+        response = jsonify(lambda r: r)(ref)
+        eq_(response["Access-Control-Allow-Origin"], "*")
+        eq_(ref, response)
+
+
+class ApiTestCase(TestCase):
+
+    def setUp(self):
+        super(ApiTestCase, self).setUp()
+        self._old_repository_base = getattr(settings, 'REPOSITORY_BASE', None)
+        self._base = settings.REPOSITORY_BASE = tempfile.mkdtemp()
+        self.repo_data = repo_fixtures.network(self._base)
+        for name, hgrepo in self.repo_data['repos'].iteritems():
+            dbrepo = Repository.objects.create(
+                name=name,
+                url='http://localhost:8001/%s/' % name
+            )
+            for i in hgrepo:
+                getChangeset(dbrepo, hgrepo, hgrepo[i].hex())
+
+    def tearDown(self):
+        super(ApiTestCase, self).tearDown()
+        if os.path.isdir(self._base):
+            shutil.rmtree(self._base)
+        if self._old_repository_base is not None:
+            settings.REPOSITORY_BASE = self._old_repository_base
+
+    def test_network(self):
+        '''test the basic output of the network api'''
+        url = reverse('pushes.views.api.network')
+        response = self.client.get(url, {
+            'revision': self.repo_data['forks'][0]
+            })
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        id4rev = dict((c['revision'], c['id'])
+                      for c in data['changesets'].itervalues())
+        ref_forks = map(lambda r: str(id4rev[r]), self.repo_data['forks'])
+        children = data['children']
+        for f in ref_forks:
+            ok_(len(children[f]) > 1)
+
+        ref_heads = map(lambda r: str(id4rev[r]), self.repo_data['heads'])
+        for h in ref_heads:
+            ok_(h not in children)
+
+    def test_fork(self):
+        '''test the basic output of the network api'''
+        repo = self.repo_data['repos'].keys()[0]
+        url = reverse('pushes.views.api.forks', args=[repo])
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        data = json.loads(response.content)
+        eq_(data['repo'], repo)
+        ok_(data['revision'] in self.repo_data['heads'])

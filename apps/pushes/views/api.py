@@ -51,6 +51,9 @@ from life.models import Repository, Changeset, Push, Branch
 def jsonify(_v):
     def _wrapped(request, *args, **kwargs):
         rv = _v(request, *args, **kwargs)
+        if isinstance(rv, http.HttpResponse):
+            rv["Access-Control-Allow-Origin"] = "*"
+            return rv
         response = http.HttpResponse(json.dumps(rv, indent=2),
                                      content_type="text/plain")
         response["Access-Control-Allow-Origin"] = "*"
@@ -88,15 +91,18 @@ def network(request):
     down = 10
     newchanges = set(changesets)
     while down and newchanges:
+        roots = set(newchanges)
         down -= 1
         cp = change_parents.filter(from_changeset__in=newchanges)
         new_ids = set()
         for pid, cid in cp.values_list('to_changeset_id', 'from_changeset_id'):
-            new_ids.add(pid)
+            if pid != 1:
+                # exclude the global 12*'0' changeset
+                new_ids.add(pid)
         newchanges = set(change_objects.filter(id__in=new_ids)) - changesets
         changesets |= newchanges
-    roots = set(newchanges)
     found_children = set()
+    newchanges = roots
     up = 20
     while up and newchanges:
         up -= 1
