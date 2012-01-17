@@ -41,8 +41,13 @@ from django.db.models import Max
 
 from life.models import Repository
 
+# make our view functions easy to reference as
+# pushes.views.diff and .pushlog instead of .diff.diff
 from pushlog import pushlog
 from diff import diff
+# make pyflakes happy
+diff = diff
+pushlog = pushlog
 
 
 def homesnippet(request):

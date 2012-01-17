@@ -1,2 +1,1 @@
-from life.models import Branch, Forest, Repository, Locale, Push, \
-    File, Changeset, models
+# no explicit models for the pushes app, those are in life.

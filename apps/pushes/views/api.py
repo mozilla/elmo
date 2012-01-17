@@ -42,7 +42,7 @@ from django import http
 from django.shortcuts import get_object_or_404
 try:
     import json
-except:
+except ImportError:
     from django.utils import simplejson as json
 
 from life.models import Repository, Changeset, Push, Branch

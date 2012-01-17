@@ -45,7 +45,6 @@ import sys
 from mercurial import commands as hgcommands
 from mercurial.hg import repository
 from mercurial.ui import ui as hg_ui
-from mercurial.error import RepoError
 
 
 class api:

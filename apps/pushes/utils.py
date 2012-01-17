@@ -39,10 +39,6 @@
 
 from datetime import datetime
 import os.path
-try:
-    import json
-except ImportError:
-    import simplejson as json
 
 from mercurial.hg import repository
 from mercurial.ui import ui as _ui
@@ -52,10 +48,11 @@ except ImportError:
     from mercurial.error import RepoError
 from mercurial.commands import pull, update, clone
 
-from pushes.models import Repository, Push, Changeset, Branch, File
+from life.models import Repository, Push, Changeset, Branch, File
 from django.conf import settings
 from django.db import connection
 from django.db import transaction
+
 
 def getURL(repo, limit):
     lkp = repo.last_known_push()
@@ -69,12 +66,14 @@ class PushJS(object):
         self.date = jsfrag['date']
         self.changesets = jsfrag['changesets']
         self.user = jsfrag['user']
+
     def __str__(self):
         return '<Push: %d>' % self.id
 
+
 def getChangeset(repo, hgrepo, revision):
     try:
-        cs = Changeset.objects.get(revision = revision)
+        cs = Changeset.objects.get(revision=revision)
         repo.changesets.add(cs)
         return cs
     except Changeset.DoesNotExist:
@@ -82,12 +81,14 @@ def getChangeset(repo, hgrepo, revision):
     # create the changeset, but first, let's see if we need the parents
     ctx = hgrepo.changectx(revision)
     parents = map(lambda _cx: _cx.hex(), ctx.parents())
-    p_dict = dict(Changeset.objects.filter(revision__in=parents).values_list('revision','id'))
+    p_dict = dict(Changeset.objects
+                  .filter(revision__in=parents)
+                  .values_list('revision', 'id'))
     for p in parents:
         if p not in p_dict:
             p_cs = getChangeset(repo, hgrepo, p)
             p_dict[p_cs.revision] = p_cs.id
-    cs = Changeset(revision = revision)
+    cs = Changeset(revision=revision)
     cs.user = ctx.user().decode('utf-8', 'replace')
     cs.description = ctx.description().decode('utf-8', 'replace')
     branch = ctx.branch()
@@ -109,7 +110,7 @@ def getChangeset(repo, hgrepo, revision):
         if len(goodfiles) % chunk_size:
             chunk_size += 1
         for i in xrange(chunk_count):
-            good_chunk = goodfiles[i*chunk_size:(i+1)*chunk_size]
+            good_chunk = goodfiles[i * chunk_size:(i + 1) * chunk_size]
             existingfiles = File.objects.filter(path__in=good_chunk)
             existingpaths = existingfiles.values_list('path',
                                                       flat=True)
@@ -117,7 +118,8 @@ def getChangeset(repo, hgrepo, revision):
             missingpaths = filter(lambda p: p not in existingpaths,
                                   good_chunk)
             cursor = connection.cursor()
-            rv = cursor.executemany('INSERT INTO %s (path) VALUES (%%s)' % 
+            # XXX rv not checked, pyflakes complains. Probably rightfully so
+            rv = cursor.executemany('INSERT INTO %s (path) VALUES (%%s)' %
                                     File._meta.db_table,
                                     map(lambda p: (p,), missingpaths))
             good_ids = File.objects.filter(path__in=good_chunk)
@@ -127,23 +129,24 @@ def getChangeset(repo, hgrepo, revision):
         # hack around mysql ignoring trailing ' ', and some
         # of our localizers checking in files with trailing ' '.
         f = filter(lambda fo: fo.path == path,
-                   File.objects.filter(path = path))
+                   File.objects.filter(path=path))
         if f:
             cs.files.add(f[0])
         else:
-            f = File.objects.create(path = path)
+            f = File.objects.create(path=path)
             cs.files.add(f)
             f.save()
     cs.save()
     return cs
 
-    
+
 @transaction.commit_manually
 def handlePushes(repo_id, submits, do_update=True):
     if not submits:
         return
     repo = Repository.objects.get(id=repo_id)
-    revisions = reduce(lambda r,l: r+l,
+    # XXX pyflakes complains, unused? needs tests before removal
+    revisions = reduce(lambda r, l: r + l,
                        [p.changesets for p in submits],
        [])
     ui = _ui()
@@ -168,7 +171,7 @@ def handlePushes(repo_id, submits, do_update=True):
         try:
             hgrepo.changectx(cs)
         except RepoError:
-            pull(ui, hgrepo, source = str(repo.url),
+            pull(ui, hgrepo, source=str(repo.url),
                  force=False, update=False,
                  rev=[])
             if do_update:
@@ -184,10 +187,9 @@ def handlePushes(repo_id, submits, do_update=True):
                 transaction.rollback()
                 raise
                 print repo.name, e
-        p = Push.objects.create(repository = repo,
-                                push_id = data.id, user = data.user,
-                                push_date =
-                                datetime.utcfromtimestamp(data.date))
+        p = Push.objects.create(repository=repo,
+                                push_id=data.id, user=data.user,
+                                push_date=datetime.utcfromtimestamp(data.date))
         p.changesets = changesets
         p.save()
         transaction.commit()

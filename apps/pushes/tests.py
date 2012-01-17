@@ -56,10 +56,11 @@ from mercurial.ui import ui as hg_ui
 from mercurial.error import RepoError
 
 from commons.tests.mixins import EmbedsTestCaseMixin
-from life.models import Repository, Changeset
+from life.models import Repository
 from pushes import repo_fixtures
 from pushes.utils import getChangeset
 from pushes.views.api import jsonify
+
 
 class PushesTestCase(TestCase, EmbedsTestCaseMixin):
 

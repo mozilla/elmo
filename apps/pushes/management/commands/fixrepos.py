@@ -35,17 +35,12 @@
 #
 # ***** END LICENSE BLOCK *****
 
-'''Command to fix any of the repositories in the database miss changeset mappings.
+'''Command to fix any of the repositories in the database
+that miss changeset mappings.
 '''
 
 from optparse import make_option
 
-from django.core.management.base import BaseCommand, CommandError
-
-from optparse import make_option
-import sys
-
-from django.core.management.base import CommandError
 from ..base import RepositoryCommand
 # XXX Achtung, Baby, django internals used here
 from django.db.models.sql import InsertQuery
@@ -53,10 +48,12 @@ from django.db import router, transaction, connections
 
 from life.models import Changeset
 
+
 class Command(RepositoryCommand):
     option_list = RepositoryCommand.option_list + (
-        make_option('--chunk-size', type = 'int', default=50,
-                    help = 'Specify the chunk size to use for changeset queries [default=50]'),
+        make_option('--chunk-size', type='int', default=50,
+                    help='Specify the chunk size to use for '\
+                    'changeset queries [default=50]'),
         )
     help = 'Find repositories with missing changeset entries in the db.'
 
@@ -76,11 +73,12 @@ class Command(RepositoryCommand):
         using = router.db_for_write(dbrepo.__class__, instance=dbrepo)
         connection = connections[using]
         ins = InsertQuery(through)
-        ins.insert_values([(through.repository.field, None), (through.changeset.field, None)])
+        ins.insert_values([(through.repository.field, None),
+                           (through.changeset.field, None)])
         comp = ins.get_compiler(using)
         comp.return_id = False
         sqlinsert, _params = comp.as_sql()
-        
+
         self.verbose("%s\t%d missing" % (dbrepo.name, missing))
         for revisions in self.chunk(self.nodes(hgrepo)):
             self.progress()
@@ -97,9 +95,9 @@ class Command(RepositoryCommand):
         self.normal("%s\tadded %d changesets" % (dbrepo.name, cnt))
         return
 
-    chunksize=50
+    chunksize = 50
+
     def chunk(self, _iter):
-        i = 0
         while True:
             chunk = []
             for o in _iter:
