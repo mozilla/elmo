@@ -62,13 +62,13 @@ class Command(BaseCommand):
         cut = aq.values_list('when', flat=True)[0]
         while cut is not None:
             try:
-                next_cut = (aq.filter(when__lte=cut)
+                next_cut = (aq.filter(when__lt=cut)
                             .values_list('when', flat=True)[100])
             except IndexError:
                 next_cut = None
             slice = aq.filter(when__lte=cut)
             if next_cut is not None:
-                slice = slice.filter(when__gt=next_cut)
+                slice = slice.filter(when__gte=next_cut)
             c = defaultdict(list)
             for a in slice:
                 c[(a.when, a.author_id, a.signoff_id, a.flag)].append(a.id)
