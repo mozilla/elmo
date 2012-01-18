@@ -38,7 +38,8 @@
 '''
 
 from django.http import HttpResponse
-from django.template import Context, Template
+from django.template import Context, Template, RequestContext
+from django.template.loader import render_to_string
 from django.shortcuts import render
 from django.utils import simplejson
 
@@ -49,15 +50,15 @@ def index(request):
     return render(request, 'bugsy/index.html')
 
 
-def homesnippet(request):
-    return render(request, 'bugsy/snippet.html')
+def homesnippet():
+    return render_to_string('bugsy/snippet.html')
 
 
-def teamsnippet(request, locale):
+def teamsnippet(locale):
     bugs_url = ('https://bugzilla.mozilla.org/buglist.cgi?field0-0-0=component'
                  ';type0-0-0=regexp;value0-0-0=^%s / ;resolution=---'
                  % locale.code).replace(' ', '%20')
-    return render(request, 'bugsy/team-snippet.html', {
+    return render_to_string('bugsy/team-snippet.html', {
                     'locale': locale,
                     'bugs_url': bugs_url,
                   })

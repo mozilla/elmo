@@ -85,7 +85,7 @@ def index(request):
     shipping_div = mark_safe(shipping_snippet(request))
     pushes_div = mark_safe(pushes_snippet(request))
     l10nstats_div = mark_safe(stats_snippet(request))
-    bugs_div = mark_safe(bugs_snippet(request))
+    bugs_div = mark_safe(bugs_snippet())
     return render(request, 'homepage/index.html', {
                    'shipping': shipping_div,
                    'pushes': pushes_div,
@@ -117,7 +117,7 @@ def locale_team(request, code):
     ship_div = mark_safe(ship_snippet(request, loc))
 
     from bugsy.views import teamsnippet as bug_snippet
-    bug_div = mark_safe(bug_snippet(request, loc))
+    bug_div = mark_safe(bug_snippet(loc))
 
     name = loc.name or loc.code
 
