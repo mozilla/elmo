@@ -35,8 +35,41 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
-<h2>Bugs</h2>
-There are <a href="{{ bugs_url }}"><span id="bugcount">?</span> open bugs</a>.
+
 <script>
 var LOCALE_CODE = '{{ locale.code }}';
 </script>
+
+<div id="bugzilla">
+  <h2>Bugzilla</h2>
+  <p>Mozilla is using bugs in Bugzilla to track the development
+  and progress of our projects.</p>
+
+  <div class="loaded" style="display:none">
+    <p>There are
+    <a href="{{ bugs_url }}"><span class="bug-count">?</span> open bugs </a>
+    specific to {{ locale.name }}. Here are a few open bugs that changed
+    recently:</p>
+
+    <table class="recent-bugs trees" style="display:none" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Summary</th>
+          <th>Last Changed</th>
+          <th>Filed</th>
+        </tr>
+      </thead>
+    </table>
+  </div>
+
+  <div class="loading">
+    <p><em>Please wait, loading bugs...</em></p>
+  </div>
+
+  <div class="failed" style="display:none">
+    <p><em><strong>Sorry.</strong><br>
+       Unable to load the bugs. Try reloading a little later.</em></p>
+  </div>
+
+</div>

@@ -102,7 +102,7 @@
         color: #ff6c00;
     }
 
-    .trees .signoffstatus {
+    .trees tbody td:last-child {
         border-right: 1px solid #d3d3d3;
     }
 
