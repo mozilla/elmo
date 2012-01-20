@@ -43,7 +43,6 @@ import re
 import urllib
 
 from django.shortcuts import render, get_object_or_404, redirect
-from django.template import RequestContext
 from django.template.loader import render_to_string
 from django import http
 from life.models import Repository, Locale, Tree
@@ -88,7 +87,7 @@ def index(request):
                   })
 
 
-def homesnippet(request):
+def homesnippet():
     q = AppVersion.objects.filter(milestone__status=1).select_related('app')
     q = q.order_by('app__name','-version')
     return render_to_string('shipping/snippet.html', {
@@ -101,7 +100,7 @@ class Run(dict):
         return self[key]
 
 
-def teamsnippet(request, loc):
+def teamsnippet(loc):
     runs = loc.run_set.filter(active__isnull=False).select_related('tree') \
                        .order_by('tree__code')
 
@@ -183,8 +182,7 @@ def teamsnippet(request, loc):
     return render_to_string('shipping/team-snippet.html',
                             {'locale': loc,
                              'applications': applications,
-                            }, context_instance=RequestContext(request))
-
+                            })
 
 def _universal_newlines(content):
     "CompareLocales reads files with universal newlines, fake that"

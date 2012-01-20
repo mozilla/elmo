@@ -119,7 +119,7 @@ def pushlog(request, repo_name):
                   })
 
 
-def homesnippet(request):
+def homesnippet():
     repos = Repository.objects.filter(forest__isnull=False)
     repos = repos.annotate(lpd=Max('push__push_date'))
     repos = repos.order_by('-lpd')

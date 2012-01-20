@@ -100,7 +100,7 @@ def proxy(request, path=None, base=None):
     return HttpResponse(r.read(), mimetype=ct)
 
 
-def homesnippet(request):
+def homesnippet():
     week_ago = datetime.utcnow() - timedelta(7)
     act = Active.objects.filter(run__srctime__gt=week_ago)
     act = act.order_by('run__tree__code')
@@ -110,7 +110,7 @@ def homesnippet(request):
             })
 
 
-def teamsnippet(request, loc):
+def teamsnippet(loc):
     act = Run.objects.filter(locale=loc, active__isnull=False)
     week_ago = datetime.utcnow() - timedelta(7)
     act = act.filter(srctime__gt=week_ago)
