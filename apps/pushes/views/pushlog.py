@@ -112,12 +112,3 @@ def pushlog(request, repo_name):
                     'search': search,
                     'timespan': timespan,
                   })
-
-
-def homesnippet(request):
-    repos = Repository.objects.filter(forest__isnull=False)
-    repos = repos.annotate(lpd=Max('push__push_date'))
-    repos = repos.order_by('-lpd')
-    return render_to_string('pushes/snippet.html', {
-            'repos': repos[:5],
-            })

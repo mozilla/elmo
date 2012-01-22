@@ -1,8 +1,7 @@
 from django.conf.urls.defaults import *
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf import settings
-from django.core.urlresolvers import reverse
-from django.http import HttpResponse, HttpResponsePermanentRedirect
+from django.http import HttpResponse
 import base64
 import re
 
@@ -24,15 +23,7 @@ urlpatterns = patterns('',
                        (r'^builds/',
                         include('tinder.urls')),
                        (r'^source/', include('pushes.urls')),
-                       (r'^pushes/(.*)$',
-                        lambda r, path: HttpResponsePermanentRedirect(
-                            reverse('pushes.views.pushlog.pushlog',
-                                    kwargs={'repo_name': path}) + '?' + r.GET.urlencode())),
                        (r'^dashboard/', include('l10nstats.urls')),
-                       (r'^shipping/diff$',
-                        lambda r: HttpResponsePermanentRedirect(
-                            reverse('pushes.views.diff') +
-                            '?' + r.GET.urlencode())),
                        (r'^shipping',
                             include('shipping.urls')),
                        (r'^bugs/',

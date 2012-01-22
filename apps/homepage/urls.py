@@ -43,4 +43,6 @@ urlpatterns = patterns('homepage.views',
                        (r'^$', 'index'),
                        (r'^teams/$', 'teams'),
                        (r'^teams/(.*)$', 'locale_team'),
+                       (r'^pushes/(.*)$', 'pushlog_redirect'),
+                       (r'^shipping/diff$', 'diff_redirect'),
                        )
