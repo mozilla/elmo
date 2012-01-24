@@ -70,7 +70,7 @@ var SEARCH = {
   FROM: {% if search.from %}'{{ search.from }}'{% else %}null{% endif %}
 , UNTIL: {% if search.until %}'{{ search.until }}'{% else %}null{% endif %}
 };
-var DIFF_APP_URL = '{% url shipping.views.diff_app %}';
+var DIFF_APP_URL = '{% url pushes.views.diff %}';
 </script>
 {% compress js %}
 <script type="application/javascript" src="{{ STATIC_URL }}pushes/js/widgets.js"></script>
@@ -130,7 +130,7 @@ var DIFF_APP_URL = '{% url shipping.views.diff_app %}';
 	  {% for push in pushes %}
 	  <tr class="{{push.class}}" repo="{{push.push.repository.name}}">
 	    <td rowspan="{{push.span}}"><cite>{{push.push.user}}<br /><span class="date">{{push.push.push_date}}</span></cite></td>
-	    <td rowspan="{{push.span}}"><a href="{% url pushlog %}{{push.push.repository.name}}">{{push.push.repository.name}}</a></td>
+	    <td rowspan="{{push.span}}"><a href="{% url pushes.views.pushlog %}{{push.push.repository.name}}">{{push.push.repository.name}}</a></td>
 	    <td class="age">
 	      <a href="{{push.push.repository.url}}rev/{{push.tip.revision|slice:":12"}}"
 	      target="_blank">

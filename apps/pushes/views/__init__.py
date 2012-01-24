@@ -35,20 +35,25 @@
 #
 # ***** END LICENSE BLOCK *****
 
-'''Command to check if any of the repositories in the database
-that miss changeset mappings.
-'''
 
-from ..base import RepositoryCommand
+from django.template.loader import render_to_string
+from django.db.models import Max
+
+from life.models import Repository
+
+# make our view functions easy to reference as
+# pushes.views.diff and .pushlog instead of .diff.diff
+from pushlog import pushlog
+from diff import diff
+# make pyflakes happy
+diff = diff
+pushlog = pushlog
 
 
-class Command(RepositoryCommand):
-    help = 'Find repositories with missing changeset entries in the db.'
-
-    def handleRepoWithCounts(self, dbrepo, hgrepo, dbcount, hgcount):
-        """Just check if changesets counts in db and hg are the same
-        """
-        self.verbose("Checking " + dbrepo.name)
-        if dbcount != hgcount:
-            self.minimal("%s:\thg: %d\tdb: %d" %
-                         (dbrepo.name, hgcount, dbcount))
+def homesnippet():
+    repos = Repository.objects.filter(forest__isnull=False)
+    repos = repos.annotate(lpd=Max('push__push_date'))
+    repos = repos.order_by('-lpd')
+    return render_to_string('pushes/snippet.html', {
+            'repos': repos[:5],
+            })

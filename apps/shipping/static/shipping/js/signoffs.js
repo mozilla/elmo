@@ -62,15 +62,12 @@ $(document).ready(function() {
     var dfs = $('.diffanchor').parent().prev().find('.shortrev');
     if (dfs.length < 2 || dfs[0].textContent == dfs[1].textContent) return;
     var params = {
-      to: dfs[0].textContent,
       from: dfs[1].textContent,
-      tree: diffData.tree,
-      repo: diffData.repo,
-      url: '',
-      locale: diffData.locale
+      to: dfs[0].textContent,
+      repo: diffData.repo
     };
     params = $.param(params);
-    window.open(diffData.url + params);
+    window.open(diffData.url + "?" + params);
   });
 
   function hoverSO(showOrHide) {

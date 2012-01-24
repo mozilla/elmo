@@ -38,7 +38,9 @@
 '''
 
 import sys
-from django.http import Http404, HttpResponseServerError
+from django.core.urlresolvers import reverse
+from django.http import (HttpResponsePermanentRedirect, Http404,
+                         HttpResponseServerError)
 from django.shortcuts import render, redirect
 from django.utils.safestring import mark_safe
 from django.template import RequestContext, loader
@@ -128,3 +130,18 @@ def locale_team(request, code):
                     'shipping': ship_div,
                     'bugs': bug_div,
                   })
+
+# redirects for moves within pushes app, and moving the diff view
+# from shipping to pushes.
+# XXX Revisit how long we need to keep those
+
+
+def pushlog_redirect(request, path):
+    return HttpResponsePermanentRedirect(
+        reverse('pushes.views.pushlog.pushlog',
+                kwargs={'repo_name': path}) + '?' + request.GET.urlencode())
+
+
+def diff_redirect(request):
+    return HttpResponsePermanentRedirect(
+        reverse('pushes.views.diff') + '?' + request.GET.urlencode())

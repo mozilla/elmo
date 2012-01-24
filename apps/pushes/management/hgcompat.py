@@ -40,7 +40,7 @@ mercurial.
 """
 
 from mercurial import dispatch as _dispatch
-if hasattr(_dispatch, 'request'): 
+if hasattr(_dispatch, 'request'):
     def dispatch(*args):
         return _dispatch.dispatch(_dispatch.request(*args))
 else:

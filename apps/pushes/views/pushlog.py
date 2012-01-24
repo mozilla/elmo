@@ -40,18 +40,13 @@
 from itertools import cycle
 from datetime import datetime
 import operator
-import os.path
 from time import mktime
 
 from django.template.loader import render_to_string
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render
 from django.db.models import Q, Max
 
-from pushes.models import *
-from django.conf import settings
-
-from mercurial.hg import repository
-from mercurial.ui import ui as _ui
+from life.models import Push, Repository
 
 
 def pushlog(request, repo_name):
@@ -117,12 +112,3 @@ def pushlog(request, repo_name):
                     'search': search,
                     'timespan': timespan,
                   })
-
-
-def homesnippet():
-    repos = Repository.objects.filter(forest__isnull=False)
-    repos = repos.annotate(lpd=Max('push__push_date'))
-    repos = repos.order_by('-lpd')
-    return render_to_string('pushes/snippet.html', {
-            'repos': repos[:5],
-            })
