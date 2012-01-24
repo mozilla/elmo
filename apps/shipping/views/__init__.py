@@ -45,7 +45,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django import http
 from life.models import Repository, Locale, Tree
-from shipping.models import Milestone, Signoff, AppVersion, Action, Application
+from shipping.models import Milestone, AppVersion, Action, Application
 from shipping.api import (signoff_actions, flag_lists, accepted_signoffs,
                           signoff_summary, annotated_pushes)
 from django.core.urlresolvers import reverse
@@ -53,7 +53,6 @@ from django.views.decorators.cache import cache_control
 from django.utils import simplejson
 from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
-from django.db.models import Max
 
 
 def index(request):
@@ -61,7 +60,10 @@ def index(request):
     avs = AppVersion.objects.all().order_by('code')
 
     for i in avs:
-        statuses = Milestone.objects.filter(appver=i.id).values_list('status', flat=True).distinct()
+        statuses = (Milestone.objects
+                    .filter(appver=i.id)
+                    .values_list('status', flat=True)
+                    .distinct())
         if 1 in statuses:
             i.status = 'open'
         elif 0 in statuses:
@@ -78,8 +80,10 @@ def index(request):
 
 
 def homesnippet():
-    q = AppVersion.objects.filter(milestone__status=1).select_related('app')
-    q = q.order_by('app__name','-version')
+    q = (AppVersion.objects
+         .filter(milestone__status=1)
+         .select_related('app'))
+    q = q.order_by('app__name', '-version')
     return render_to_string('shipping/snippet.html', {
             'appvers': q,
             })
@@ -174,6 +178,7 @@ def teamsnippet(loc):
                              'applications': applications,
                             })
 
+
 def dashboard(request):
     # legacy parameter. It's better to use the About milestone page for this.
     if 'ms' in request.GET:
@@ -227,13 +232,14 @@ def milestones(request):
     else:
         always_safe = None
     # XXX this should have some sort of try:finally: to safely restore urllib
-    r =  render(request, 'shipping/milestones.html', {
+    r = render(request, 'shipping/milestones.html', {
                   'login_form_needs_reload': True,
                   'request': request,
                 })
     if always_safe is not None:
         urllib.always_safe = always_safe
     return r
+
 
 @cache_control(max_age=60)
 def stones_data(request):
@@ -256,6 +262,7 @@ def stones_data(request):
 
     return http.HttpResponse(simplejson.dumps({'items': items}, indent=2))
 
+
 def open_mstone(request):
     """Open a milestone.
 
@@ -273,6 +280,7 @@ def open_mstone(request):
         except:
             pass
     return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
+
 
 def _propose_mstone(mstone):
     """Propose a new milestone based on an existing one.
@@ -369,7 +377,10 @@ def confirm_drill_mstone(request):
     if mstone.status != 1:
         return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
 
-    drill_base = Milestone.objects.filter(appver=mstone.appver,status=2).order_by('-pk').select_related()
+    drill_base = (Milestone.objects
+                  .filter(appver=mstone.appver, status=2)
+                  .order_by('-pk')
+                  .select_related())
     proposed = _propose_mstone(mstone)
     return render(request, 'shipping/confirm-drill.html', {
                     'mstone': mstone,
@@ -398,7 +409,7 @@ def drill_mstone(request):
             mstone.status = 2
             # XXX create event
             mstone.save()
-        except Exception, e:
+        except Exception:
             # XXX should deal better with this error
             pass
     return redirect(reverse('shipping.views.milestones'))

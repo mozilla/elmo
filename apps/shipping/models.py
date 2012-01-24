@@ -38,41 +38,42 @@
 which locales shipped in what.
 '''
 
+import datetime
 from django.db import models
-from django.forms import ModelForm, Select
+from django.forms import ModelForm
 from django.contrib.auth.models import User
 from l10nstats.models import Run
 from life.models import Tree, Locale, Push
 
-from datetime import datetime
 
 class Application(models.Model):
     """ stores applications
     """
-    name = models.CharField(max_length = 50)
-    code = models.CharField(max_length = 30)
+    name = models.CharField(max_length=50)
+    code = models.CharField(max_length=30)
 
     def __unicode__(self):
         return self.name
 
+
 class AppVersionManager(models.Manager):
     def get_by_natural_key(self, code):
         return self.get(code=code)
+
 
 class AppVersion(models.Model):
     """ stores application versions
     """
     objects = AppVersionManager()
     app = models.ForeignKey(Application)
-    version = models.CharField(max_length = 10)
-    code = models.CharField(max_length = 20, blank = True)
-    codename = models.CharField(max_length = 30, blank = True, null = True)
+    version = models.CharField(max_length=10)
+    code = models.CharField(max_length=20, blank=True)
+    codename = models.CharField(max_length=30, blank=True, null=True)
     # tree can be null for shipped appversions in the rapid release cadence
     tree = models.ForeignKey(Tree, blank=True, null=True)
     # ... but then we should keep track of that in lasttree
     lasttree = models.ForeignKey(Tree, related_name='legacy_appversions',
                                  blank=True, null=True)
-
 
     def save(self, *args, **kwargs):
         if not self.code:
@@ -88,10 +89,12 @@ class AppVersion(models.Model):
 
 class Signoff(models.Model):
     push = models.ForeignKey(Push)
-    appversion = models.ForeignKey(AppVersion, related_name = 'signoffs')
+    appversion = models.ForeignKey(AppVersion, related_name='signoffs')
     author = models.ForeignKey(User)
-    when = models.DateTimeField('signoff timestamp', default=datetime.now)
+    when = models.DateTimeField('signoff timestamp',
+                                default=datetime.datetime.now)
     locale = models.ForeignKey(Locale)
+
     class Meta:
         permissions = (('review_signoff', 'Can review a Sign-off'),)
 
@@ -112,7 +115,8 @@ class Signoff(models.Model):
         return dict(Action._meta.get_field('flag').flatchoices)[self.status]
 
     def __unicode__(self):
-        return 'Signoff for %s %s by %s [%s]' % (self.appversion, self.locale.code, self.author, self.when)
+        return ('Signoff for %s %s by %s [%s]' %
+                (self.appversion, self.locale.code, self.author, self.when))
 
 
 class Action(models.Model):
@@ -129,23 +133,28 @@ class Action(models.Model):
     signoff = models.ForeignKey(Signoff)
     flag = models.IntegerField(choices=FLAG_CHOICES)
     author = models.ForeignKey(User)
-    when = models.DateTimeField('signoff action timestamp', default=datetime.now)
+    when = models.DateTimeField('signoff action timestamp',
+                                default=datetime.datetime.now)
     comment = models.TextField(blank=True, null=True)
 
     def __unicode__(self):
-        return '%s action for [Signoff %s] by %s [%s]' % (self.get_flag_display(), self.signoff.id, self.author, self.when)
+        return ('%s action for [Signoff %s] by %s [%s]' %
+                 (self.get_flag_display(), self.signoff.id,
+                  self.author, self.when))
 
 TEST_CHOICES = (
     (0, Run),
 )
 
+
 class SnapshotManager(models.Manager):
     def create(self, **kwargs):
         if 'test' in kwargs and not isinstance(kwargs['test'], int):
             for i in TEST_CHOICES:
-                kwargs['test']=i[0]
+                kwargs['test'] = i[0]
                 break
         super(SnapshotManager, self).create(**kwargs)
+
 
 class Snapshot(models.Model):
     signoff = models.ForeignKey(Signoff)
@@ -155,7 +164,7 @@ class Snapshot(models.Model):
 
     def instance(self):
         for i in TEST_CHOICES:
-            if i[0]==self.test:
+            if i[0] == self.test:
                 return i[1].objects.get(id=self.tid)
 
 STATUS_CHOICES = (
@@ -164,16 +173,19 @@ STATUS_CHOICES = (
     (2, 'shipped'),
 )
 
+
 class Milestone(models.Model):
     """ stores unique milestones like fx35b4
     The milestone is open for signoff between string_freeze and code
     """
     UPCOMING, OPEN, SHIPPED = range(3)
-    code = models.CharField(max_length = 30)
-    name = models.CharField(max_length = 50)
+    code = models.CharField(max_length=30)
+    name = models.CharField(max_length=50)
     appver = models.ForeignKey(AppVersion)
-    signoffs = models.ManyToManyField(Signoff, related_name='shipped_in', null=True, blank=True)
+    signoffs = models.ManyToManyField(Signoff, related_name='shipped_in',
+                                      null=True, blank=True)
     status = models.IntegerField(choices=STATUS_CHOICES, default=0)
+
     class Meta:
         permissions = (('can_open', 'Can open a Milestone for sign-off'),
                        ('can_ship', 'Can ship a Milestone'))
@@ -214,8 +226,9 @@ class Milestone_Signoffs(models.Model):
     """
     milestone = models.ForeignKey(Milestone)
     signoff = models.ForeignKey(Signoff)
+
     class Meta:
-        unique_together = (('milestone','signoff'),)
+        unique_together = (('milestone', 'signoff'),)
         managed = False
 
 
@@ -224,8 +237,9 @@ TYPE_CHOICES = (
     (1, 'signoff end'),
 )
 
+
 class Event(models.Model):
-    name = models.CharField(max_length = 50)
+    name = models.CharField(max_length=50)
     type = models.IntegerField(choices=TYPE_CHOICES)
     date = models.DateField()
     milestone = models.ForeignKey(Milestone, related_name='events')
@@ -239,7 +253,8 @@ class SignoffForm(ModelForm):
         model = Signoff
         fields = ('push',)
 
+
 class ActionForm(ModelForm):
     class Meta:
         model = Action
-        fields = ('signoff','flag','author', 'comment')
+        fields = ('signoff', 'flag', 'author', 'comment')

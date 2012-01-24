@@ -138,21 +138,24 @@ def signoff_summary(actions):
     for action in all_actions:
         flag = action.flag
         _so = action.signoff
-        if flag == Action.PENDING: # keep if there's no pending or rejected
+        if flag == Action.PENDING:  # keep if there's no pending or rejected
             if pending is None and rejected is None:
                 pending = _so.push
-                if len(initial_diff) < 2:initial_diff.append(_so.id)
+                if len(initial_diff) < 2:
+                    initial_diff.append(_so.id)
             continue
-        elif flag == Action.ACCEPTED: # store and don't look any further
+        elif flag == Action.ACCEPTED:  # store and don't look any further
             accepted = _so.push
-            if len(initial_diff) < 2:initial_diff.append(_so.id)
+            if len(initial_diff) < 2:
+                initial_diff.append(_so.id)
             break
-        elif flag == Action.REJECTED: # keep, if there's no rejected
+        elif flag == Action.REJECTED:  # keep, if there's no rejected
             if rejected is None:
                 rejected = _so.push
-                if len(initial_diff) < 2:initial_diff.append(_so.id)
+                if len(initial_diff) < 2:
+                    initial_diff.append(_so.id)
             continue
-        elif flag == Action.OBSOLETED: # obsoleted, stop looking
+        elif flag == Action.OBSOLETED:  # obsoleted, stop looking
             break
         else:
             # flag == Action.CANCELED, ignore, keep looking
@@ -161,7 +164,8 @@ def signoff_summary(actions):
 
 
 class _RowCollector:
-    """Helper class to collect all the rows and tests etc for a Push_Changesets query.
+    """Helper class to collect all the rows and tests etc for a
+    Push_Changesets query.
     """
     def __init__(self, pcs, actions4push):
         """Create _RowCollector and do the work. Result is in self.pushes.
@@ -169,14 +173,14 @@ class _RowCollector:
         pcs is a Push_Changesets queryset, ordered by -push_date, -changeset_id
         actions4push is a dict mapping push ids to lists of action objects
 
-        The result is a list of dictionaries, describing the table rows to be shown for each push,
-        as well as the detail information within.
+        The result is a list of dictionaries, describing the table rows to be
+        shown for each push, as well as the detail information within.
         """
         self.actions4push = actions4push
         self.pushes = []
         self._prev = None
         self.rowcount = 0
-        for _pc in pcs.select_related('push__repository','changeset'):
+        for _pc in pcs.select_related('push__repository', 'changeset'):
             push = _pc.push
             cs = _pc.changeset
             if self._prev != push.id:
@@ -184,6 +188,7 @@ class _RowCollector:
             self.rowcount += 1
             self.pushes[-1]['changes'].append(cs)
         self.wrapup()
+
     def wrapup(self, push=None, cs=None):
         """Actual worker"""
         if self._prev is not None:
@@ -199,7 +204,7 @@ class _RowCollector:
             self.pushes[-1]['signoffs'] = signoffs
             self.pushes[-1]['rows'] = self.rowcount + len(signoffs)
         if push is not None:
-            self.pushes.append({'changes':[],
+            self.pushes.append({'changes': [],
                                 'who': push.user,
                                 'when': push.push_date,
                                 'url': push.repository.url,
@@ -211,7 +216,9 @@ class _RowCollector:
 def annotated_pushes(repo, appver, loc, actions, initial_diff=None, count=10):
     if initial_diff == None:
         initial_diff = []
-    pushes_q = Push.objects.order_by('-push_date').filter(changesets__branch__id=1)
+    pushes_q = (Push.objects
+                .filter(changesets__branch__id=1)
+                .order_by('-push_date'))
     pushes_q = pushes_q.filter(repository=repo)
     current_so = currentpush = None
     actions4push = defaultdict(list)
@@ -221,13 +228,17 @@ def annotated_pushes(repo, appver, loc, actions, initial_diff=None, count=10):
             currentpush = current_so.push_id
         actions4push[action.signoff.push_id].append(action)
     if current_so is not None:
-        pushes_q = pushes_q.filter(push_date__gte=current_so.push.push_date).distinct()
+        pushes_q = (pushes_q
+                    .filter(push_date__gte=current_so.push.push_date)
+                    .distinct())
     else:
         pushes_q = pushes_q.distinct()[:count]
 
     # get pushes, changesets and signoffs/actions
-    _p = list(pushes_q.values_list('id',flat=True))
-    pcs = Push_Changesets.objects.filter(push__in=_p).order_by('-push__push_date','-changeset__id')
+    _p = list(pushes_q.values_list('id', flat=True))
+    pcs = (Push_Changesets.objects
+           .filter(push__in=_p)
+           .order_by('-push__push_date', '-changeset__id'))
 
     pushes = _RowCollector(pcs, actions4push).pushes
 

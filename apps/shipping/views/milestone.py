@@ -48,8 +48,8 @@ from collections import defaultdict
 import re
 import os.path
 
-from life.models import Locale, Push, Changeset, Tree
-from shipping.models import Milestone, Signoff, Milestone_Signoffs, Snapshot
+from life.models import Push, Changeset
+from shipping.models import Milestone, Milestone_Signoffs, Snapshot
 from l10nstats.models import Run, Run_Revisions
 
 from shipping.views.status import SignoffDataView
@@ -73,11 +73,13 @@ def about(request, ms_code):
     mss = Milestone.objects.filter(id=ms.id)
     try:
         tree, forestname, foresturl = \
-              mss.values_list('appver__tree__code','appver__tree__l10n__name',
+              mss.values_list('appver__tree__code',
+                              'appver__tree__l10n__name',
                               'appver__tree__l10n__url')[0]
     except IndexError:
         tree, forestname, foresturl = \
-              mss.values_list('appver__lasttree__code','appver__lasttree__l10n__name',
+              mss.values_list('appver__lasttree__code',
+                              'appver__lasttree__l10n__name',
                               'appver__lasttree__l10n__url')[0]
 
     return render(request, 'shipping/about-milestone.html', {
@@ -86,6 +88,7 @@ def about(request, ms_code):
                     'forestname': forestname,
                     'foresturl': foresturl,
                   })
+
 
 def statuses(req, ms_code):
     """JSON work horse for the about() view.
@@ -103,19 +106,20 @@ def statuses(req, ms_code):
         tree = ms.appver.lasttree
 
     if ms.status == Milestone.SHIPPED:
-        sos_vals = ms.signoffs.values_list('id','push__id', 'locale__code')
+        sos_vals = ms.signoffs.values_list('id', 'push__id', 'locale__code')
     else:
         sos_vals = (accepted_signoffs(id=ms.appver.id)
-                    .values_list('id','push__id', 'locale__code'))
+                    .values_list('id', 'push__id', 'locale__code'))
     sos = dict(d[:2] for d in sos_vals)
     loc2push = dict((d[2], d[1]) for d in sos_vals)
     locales = sorted(d[2] for d in sos_vals)
     allpushes = sos.values()
 
     def runs2dict(rs, prefix=''):
-        fields = [prefix + f for f in ['locale__code']+Run.dfields]
+        fields = [prefix + f for f in ['locale__code'] + Run.dfields]
         dcs = Run.to_class_string(runs.values(*fields), prefix)
-        return dict((d[prefix+'locale__code'], {'class': cls, 'val': strval})
+        return dict((d[prefix + 'locale__code'],
+                     {'class': cls, 'val': strval})
                     for d, cls, strval in dcs)
 
     # if the milestone is not shipped, let's check the active Runs, too
@@ -127,7 +131,7 @@ def statuses(req, ms_code):
 
     # if we have a previously shipped milestone, check the diffs
     previous = {}
-    so_ids = dict((d[2], d[0]) for d in sos_vals) # current signoff ids
+    so_ids = dict((d[2], d[0]) for d in sos_vals)  # current signoff ids
     pso = Milestone_Signoffs.objects.filter(milestone__id__lt=ms.id,
                                             milestone__appver__milestone=ms.id)
     pso = pso.order_by('milestone__id')
@@ -138,7 +142,7 @@ def statuses(req, ms_code):
         previous[loc] = {'signoff': sid, 'push': pid, 'stone': mcode}
     # whatever is in so_ids but not in previous is added
     added = [loc for loc in so_ids.iterkeys() if loc not in previous]
-    removed = [] # not yet used
+    removed = []  # not yet used
     # drop those from previous that we're shipping in the same rev
     for loc, details in previous.items():
         if loc in so_ids:
@@ -150,21 +154,23 @@ def statuses(req, ms_code):
 
     # get the most recent result for the signed off stamps
     cs = Changeset.objects.filter(pushes__id__in=sos.values())
-    cs_ids = list(cs.values_list('id',flat=True))
+    cs_ids = list(cs.values_list('id', flat=True))
     runs = Run_Revisions.objects.filter(changeset__id__in=cs_ids,
                                         run__tree=tree)
     latest = runs2dict(runs, 'run__')
 
     # get the snapshots from the sign-offs
     snaps = Snapshot.objects.filter(signoff__id__in=sos.keys(), test=0)
-    runs = Run.objects.filter(id__in=list(snaps.values_list('tid',flat=True)))
+    runs = Run.objects.filter(id__in=list(snaps.values_list('tid', flat=True)))
     snapshots = runs2dict(runs)
 
     # get the shortrev's for all pushes, current sign-offs and previous
     pushes = Push.objects.annotate(tip=Max('changesets__id'))
     pushes = pushes.filter(id__in=allpushes)
     tips = dict(pushes.values_list('id', 'tip'))
-    revmap = dict(Changeset.objects.filter(id__in=tips.values()).values_list('id', 'revision'))
+    revmap = dict(Changeset.objects
+                  .filter(id__in=tips.values())
+                  .values_list('id', 'revision'))
 
     # generator to convert the various information to exhibit json
     def items():
@@ -206,7 +212,9 @@ class JSONChangesets(SignoffDataView):
     def content(self, request, signoffs):
         sos = signoffs.annotate(tip=Max('push__changesets__id'))
         tips = dict(sos.values_list('locale__code', 'tip'))
-        revmap = dict(Changeset.objects.filter(id__in=tips.values()).values_list('id', 'revision'))
+        revmap = dict(Changeset.objects
+                      .filter(id__in=tips.values())
+                      .values_list('id', 'revision'))
         platforms = re.split('[ ,]+', request.GET['platforms'])
         multis = defaultdict(dict)
         for k, v in request.GET.iteritems():
@@ -224,7 +232,8 @@ class JSONChangesets(SignoffDataView):
             for plat in sorted(multis.keys()):
                 try:
                     props = multis[plat]
-                    path = os.path.join(settings.REPOSITORY_BASE, props['repo'])
+                    path = os.path.join(settings.REPOSITORY_BASE,
+                                        props['repo'])
                     repo = repository(_ui(), path)
                     ctx = repo[props['rev']]
                     fctx = ctx.filectx(props['path'])
@@ -238,14 +247,16 @@ class JSONChangesets(SignoffDataView):
     "revision": "%(rev)s",
     "platforms": ["%(plats)s"]
   }'''
-        content = ('{\n' +
-                   ',\n'.join(tmpl % {'loc': l,
-                                      'rev': revmap[tips[l]][:12],
-                                      'plats': '", "'.join(platforms+extra_plats[l])
-                                      }
+        content = [
+          '{\n',
+          ',\n'.join(tmpl % {'loc': l,
+                             'rev': revmap[tips[l]][:12],
+                             'plats': '", "'.join(platforms + extra_plats[l])}
                               for l in sorted(tips.keys())
-                              ) +
-                   '\n}\n')
+                              ),
+          '\n}\n'
+        ]
+        content = ''.join(content)
         return content
 
 json_changesets = cache_control(max_age=60)(JSONChangesets.as_view())

@@ -44,7 +44,7 @@ from django.views.generic import View
 from life.models import Changeset
 from l10nstats.models import Run
 from shipping.api import accepted_signoffs, flag_lists
-from shipping.models import (Milestone, Signoff, Action,
+from shipping.models import (Milestone, Action,
                              Application, AppVersion)
 from django.views.decorators.cache import cache_control
 from django.utils import simplejson
@@ -179,7 +179,6 @@ class StatusJSON(SignoffDataView):
             }
         }
     }
-
 
     def process_request(self, request, *args, **kwargs):
         """Get hold of potential locale argument"""

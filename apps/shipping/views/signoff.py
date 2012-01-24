@@ -40,9 +40,8 @@
 
 
 from django.db.models import Max
-from django.http import HttpResponseRedirect, Http404
+from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
-from django.conf import settings
 # TODO: from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_POST, etag
 from django.views.decorators import cache
@@ -96,8 +95,8 @@ def etag_signoff(request, locale_code, app_code):
 def signoff(request, locale_code, app_code):
     """View to show recent sign-offs and opportunities to sign off.
 
-    This view is the main entry point to localizers to add sign-offs and to review
-    what they're shipping.
+    This view is the main entry point to localizers to add sign-offs and to
+    review what they're shipping.
     It's also the entry point for drivers to review existing sign-offs.
     """
     appver = get_object_or_404(AppVersion, code=app_code)
@@ -140,8 +139,9 @@ def signoff_details(request, locale_code, app_code):
     Requires 'rev' in the query string, supports explicitly passing a 'run'.
     """
     try:
-        # rev query arg is required, it's not a url param for caching, and because it's dynamic
-        # in the js code, so the {% url %} tag prefers this
+        # rev query arg is required, it's not a url param for caching, and
+        # because it's dynamic in the js code, so the {% url %} tag prefers
+        # this
         rev = request.GET['rev']
     except:
         raise Http404
@@ -162,7 +162,8 @@ def signoff_details(request, locale_code, app_code):
     except Changeset.DoesNotExist:
         cs = None
     if cs is not None:
-        runs = Run.objects.order_by('-pk').filter(tree=appver.tree_id, locale=lang, revisions=cs)
+        runs = (Run.objects.order_by('-pk')
+                .filter(tree=appver.tree_id, locale=lang, revisions=cs))
         if runid is not None:
             try:
                 run = runs.get(id=runid)
@@ -203,26 +204,34 @@ def signoff_details(request, locale_code, app_code):
                     'newer': newer,
                   })
 
+
 @require_POST
 def add_signoff(request, locale_code, app_code):
     """Actual worker to add a sign-off to the database.
     Requires shipping.add_signoff permission.
     """
-    _redirect = redirect('shipping.views.signoff.signoff', locale_code, app_code)
+    _redirect = redirect('shipping.views.signoff.signoff',
+                         locale_code, app_code)
     if request.user.has_perm("shipping.add_signoff"):
         # permissions are cool, let's check the data
         try:
             lang = Locale.objects.get(code=locale_code)
-            appver = AppVersion.objects.select_related('tree').get(code=app_code)
-            repo = Repository.objects.get(locale=lang, forest=appver.tree.l10n_id)
+            appver = (AppVersion.objects
+                      .select_related('tree')
+                      .get(code=app_code))
+            repo = Repository.objects.get(locale=lang,
+                                          forest=appver.tree.l10n_id)
             rev = request.POST['revision']
-            push = Push.objects.get(repository=repo, changesets__revision__startswith=rev)
+            push = Push.objects.get(repository=repo,
+                                    changesets__revision__startswith=rev)
             if push.signoff_set.filter(appversion=appver).count():
                 # there's already an existing sign-off, bail
-                # messages.info(request, "There is already an existing sign-off for this revision.")
+                # messages.info(request, "There is already an existing
+                # sign-off for this revision.")
                 return _redirect
             # find a run, hopefully the one provided by the form
             runs = push.tip.run_set
+            # XXX FIXME: this `run` instance is never used
             try:
                 runid = int(request.POST['run'])
                 try:
@@ -245,13 +254,17 @@ def review_signoff(request, locale_code, app_code):
     """Actual worker to review a sign-off.
     Requires shipping.review_signoff permission.
     """
-    _redirect = redirect('shipping.views.signoff.signoff', locale_code, app_code)
+    _redirect = redirect('shipping.views.signoff.signoff',
+                         locale_code, app_code)
     if request.user.has_perm("shipping.review_signoff"):
         # permissions are cool, let's check the data
         try:
             lang = Locale.objects.get(code=locale_code)
-            appver = AppVersion.objects.select_related('tree').get(code=app_code)
-            repo = Repository.objects.get(locale=lang, forest=appver.tree.l10n_id)
+            appver = (AppVersion.objects
+                      .select_related('tree')
+                      .get(code=app_code))
+            Repository.objects.get(locale=lang,
+                                   forest=appver.tree.l10n_id)
             action = request.POST['action']
             signoff_id = int(request.POST['signoff_id'])
             flag = action == "accept" and Action.ACCEPTED or Action.REJECTED
@@ -268,15 +281,19 @@ def review_signoff(request, locale_code, app_code):
             print 'no such signoff'
             return _redirect
         comment = request.POST.get('comment', '')
-        clean_old = flag is Action.REJECTED and request.POST.get("clear_old", "no") == "yes"
+        clean_old = (flag is Action.REJECTED and
+                     request.POST.get("clear_old", "no") == "yes")
 
         # actually do the work
         so.action_set.create(flag=flag, author=request.user, comment=comment)
         if clean_old:
-            for _so in appver.signoffs.filter(locale=lang, id__lt=signoff_id).order_by('-pk'):
-                _status = _so.status # dynamic property, cache here
+            for _so in (appver.signoffs
+                        .filter(locale=lang, id__lt=signoff_id)
+                        .order_by('-pk')):
+                _status = _so.status  # dynamic property, cache here
                 if _status == Action.PENDING:
-                    _so.action_set.create(flag=Action.CANCELED, author=request.user)
+                    _so.action_set.create(flag=Action.CANCELED,
+                                          author=request.user)
                 else:
                     break
     return _redirect
