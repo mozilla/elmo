@@ -55,7 +55,7 @@ def jsonify(_v):
             rv["Access-Control-Allow-Origin"] = "*"
             return rv
         response = http.HttpResponse(json.dumps(rv, indent=2),
-                                     content_type="text/plain")
+                                     content_type="application/json")
         response["Access-Control-Allow-Origin"] = "*"
         return response
     return _wrapped
