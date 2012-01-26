@@ -85,9 +85,10 @@ for (var i=0, len=_locale_data_list.length; i<len; i++) {
 
 {% block header_h1 %}Statistics for {{ tree }}{% endblock %}
 {% block header_content_extra %}<p>String completeness for {{ tree }} localizations over time.</p>{% endblock %}
+{% block body_content_class %}page-wider{% endblock %}
 
 {% block content %}
-<div id="my-timeplot" style="height: 350px;"></div>
+<div id="my-timeplot"></div>
 <div id="time-slider"></div>
 <div class="legend" style="float:right">
   <input type="checkbox" onchange="update({showBad:event.target.checked});" id="showBadField">red area: locales with missing strings<br>
@@ -95,6 +96,6 @@ for (var i=0, len=_locale_data_list.length; i<len; i++) {
   green area: good locales
 </div>
 <p>Move sliders on the history of the tree to change the displayed time window, or double click on the plot to drill into a time window.</p>
-<div id="histogram" style="height:100px">
+<div id="histogram">
 </div>
 {% endblock %}

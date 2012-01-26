@@ -40,20 +40,30 @@
 {% block body_tag %}id="home"{% endblock %}
 
 {% block header_content_extra %}
-<p><!--Welcome to mozilla Localization! This is where mozilla starts to speak internationalism--></p>
+<p>Users first, no matter where they are.</p>
 {% endblock %}
+
+{% block main_content_class %}left-floated-container{% endblock %}
 
 {% block content %}
 
 <section>
 	<article class="introduction full">
 		<h1>Getting started with Localization (L10n)</h1>
-		<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam. </p>
+		<p>No matter where you live, your contributions can open the web to the world.
+		Everything you want to know about getting involved in our L10n effort, your L10n team's
+		progress, each mozilla project's overall progress, the mozilla L10n process, and
+		joining the growing community of Mozillians is at your fingertips. Feel free to explore,
+		share, and get involved!</p>
+		<p>Are you new to L10n? Visit these links to start localizing:</p>
 		<ul>
-			<li><a href="">Lorem ipsum</a></li>
-			<li><a href="">Lorem ipsum</a></li>
-			<li><a href="">Lorem ipsum</a></li>
-			<li><a href="">More frequently asked questions...</a></li>
+			<li><a href="https://wiki.mozilla.org/L10n:Contribute">How and where we need your help.
+			</a></li>
+			<li><a href="https://developer.mozilla.org/en/Localization_Quick_Start_Guide">Our
+			technical quick start guide.</a></li>
+			<li><a href="https://wiki.mozilla.org/L10n:Overview">Learn about the L10n process.
+			</a></li>
+			<li><a href="https://wiki.mozilla.org/L10n:Home_Page">More frequently asked questions...</a></li>
 		</ul>
 	</article>
 </section>
@@ -61,7 +71,8 @@
 <section>
 	<article>
 		<h1>Localization Teams</h1>
-		<p>Every language is a localization team, here are just some of them...</p>
+		<p>We speak 90+ languages, how about you? Each language listed here represents the efforts
+		of a L10n team. See what your language is working on here: </p>
 
 		<ul class="double">
                         {% for loc in locales_first_half %}
@@ -77,25 +88,53 @@
 	</article>
 	<article>
 		<h1>Projects to Localize</h1>
-		<p>Jeff jeff Jeff!</p>
+		<p>We track the L10n progress of Firefox and other mozilla applications here. 
+		You can also see and make contributions to mozilla web projects below.</p>
+		<ul>
+			<li><a href="https://localize.mozilla.org">View the status of mozilla web projects.</a></li>
+			<li><a href="https://support.mozilla.org/en-US/kb/localize-firefox-help">Translate
+			support articles on SUMO.</a></li>
+			<li><a href="https://developer.mozilla.org/Project:en/Localization_Projects">Translate
+			developer articles on the MDN.</a></li>
+			<li><a href="http://babelzilla.org/">Localize add-ons here.</a></li>
+		</ul>
 	</article>
 </section>
+
 <section>
 	<article>
 		<h1>Learn About Localization</h1>
-		<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam. </p>
+		<p>Is L10n a foreign concept? Everything you need to know about L10n at mozilla can be
+		found here:</p>
+		<ul>
+			<li><a href="https://wiki.mozilla.org/L10n:Localizing_Overview">A down-to-basics guide
+			to localizing.</a></li>
+			<li><a href="https://wiki.mozilla.org/L10n:Localization_Process">How we localize at
+			mozilla.</a></li>
+			<li><a href="https://blog.mozilla.com/l10n">The official Mozilla L10n blog.</a></li>
+			<li><a href="https://wiki.mozilla.org/L10n:Resources">Resources for localizers.</a></li>
+		</ul>
 	</article>
 	<article>
 		<h1>Join the Community</h1>
-		<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam. </p>
+		<p>Our Mozillian L10n community is legendary! Become part of the legend here:</p>
+		<ul>
+			<li><a href="https://mozillians.org/en-US/">Add yourself to Mozillians here!</a></li>
+			<li><a href="http://www.mozilla.org/about/forums/#dev-l10n-new-locales">Do you
+			want to start a new L10n community?</a></li>
+			<li><a href="http://www.mozilla.org/about/forums/#dev-l10n">Get in on the
+			discussion with all of mozilla L10n.</a></li>
+			<li><a href="http://www.mozilla.org/about/forums/#dev-l10n-web">Tell us what you know
+			about web L10n.
+			</a></li>
+		</ul>
 	</article>
 </section>
 <section>
 	<article class="full">
 		<h1>For Developers</h1>
-		<p>All projects at Mozilla are Open Source. This site, for example, is available
-                on <a href="https://github.com/mozilla/elmo">Github</a> for you to check out
-                and help contribute to.</p>
+		<p>All projects at mozilla are Open Source, even this one! You can find it
+                on <a href="https://github.com/mozilla/elmo">Github</a> and make it even better.</p>
 	</article>
 </section>
 
@@ -103,11 +142,11 @@
 {% endblock %}
 
 {% block aside %}
-<div>
+<div id="blogroll">
 <aside>
 	<section>
 		<h1>
-			<a href="XXXINSERT FEED URL HERE"><img src="{{ STATIC_URL }}img/icons/feed.png" alt="Subscribe to our feed" /></a>Mozilla L10n Blog
+			<a href="http://planet.mozilla.org/l10n/" class="rss-icon"><img src="{{ STATIC_URL }}img/icons/feed.png" alt="Subscribe to our feed" /></a>Mozilla L10n Blog
 		</h1>
 		<ul class="blog-links">
             {% for item in feed_items %}
@@ -115,19 +154,6 @@
             {% endfor %}
          </ul>
 	</section>
-	{% comment %}
-	<section>
-		<header>
-			<a href="http://twitter.com/mozilla_l10n"><img src="images/icons/twitter.png" alt="" /></a>
-			<h1>Follow @mozilla_l10n</h1>
-		</header>
-			<p><a href="">Lorem ipsum dolor sit amet, consectetuer adipiscing elit.</a></p>
-		<p><a href="">Vestibulum ultrices semper. </a></p>
-		<p><a href="">Sed nec lacus a turpis consequat fermentum eu eget felis. </a></p>
-		<p><a href="">Curabitur nisi mauris, gravida volutpat ullamcorper sit amet, congue in dui. </a></p>
-		<p><a href="">Nulla vel sapien vitae urna ullamcorper rutrum!</a></p>
-	</section>
-	{% endcomment %}
 </aside>
 </div>
 

@@ -36,8 +36,8 @@
 """This managment commands runs all the functions again that pull feeds (parses
 them and stores its results in a cache).
 
-Ideally this management command should be run every hour. That prevents the
-home page view from having to block on network problems.
+Ideally this management command should run in sync with the update job on
+planet, but at least every hour.
 """
 
 import time

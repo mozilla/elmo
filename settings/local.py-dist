@@ -47,7 +47,7 @@ SESSION_COOKIE_SECURE = False
 #ARECIBO_SERVER_URL = "http://amckay-arecibo.khan.mozilla.org/"
 
 # Feed for example, to avoid having to do a HTTP call for the feed use:
-#L10N_FEED_URL = 'file:///Users/peterbe/dev/MOZILLA/ELMO/elmo/apps/homepage/test_rss20.xml'
+#L10N_FEED_URL = 'file://' + os.path.abspath('apps/homepage/test_rss20.xml')
 
 try:
     from .mounts_local import *

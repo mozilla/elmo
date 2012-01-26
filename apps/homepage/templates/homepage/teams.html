@@ -57,7 +57,7 @@
 
 <p class="highlight"><em>Don't find your Language?</em> You may want to check the list of
 <a href="https://wiki.mozilla.org/L10n:Teams">existing and upcoming teams</a> on our wiki, or
-<a href="https://developer.mozilla.org/en/Create_a_new_localization">start a new localization</a>.</p>
+<a href="https://developer.mozilla.org/en/Localization_Quick_Start_Guide">start a new localization</a>.</p>
 <p>Search for name or locale code: <input type="text" id="id_locale_code"></p>
 <ul id="teams">{% for loc in locales %}
   <li class="{{ loc.code|lower }} {{ loc.name|lower|default:"" }}"><a href="{% url homepage.views.locale_team loc.code %}">

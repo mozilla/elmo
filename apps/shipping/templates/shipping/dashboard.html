@@ -55,16 +55,14 @@ var EX_OPTIONS = ["tree", "result", "locale", "shipping", "signoff"];
 {% block title_matter %}Signoffs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}
 {% block header_h1 %}Signoffs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}
 
-{% block body_content_class %}page-dashboard{% endblock %}
+{% block body_content_class %}page-wider{% endblock %}
+
 {% block content %}
-
-
-
  <div ex:role="collection" ex:itemTypes="Build"></div>
  <table width="100%">
    <tr valign="top">
      <td ex:role="viewPanel" ex:showAll="true">
-       <span ex:role="lens" class="comparison" ex:itemTypes="Comparison"style="display:none">
+       <span ex:role="lens" class="comparison" ex:itemTypes="Comparison" style="display:none">
          <span  ex:content=".label"></span>
          <span ex:if-exists=".bug" class="bug"> (<a ex:href-subcontent="https://bugzilla.mozilla.org/show_bug.cgi?id={&#123;.bug}}" target="_blank">buglink</a>)</span>
 

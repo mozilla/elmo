@@ -36,7 +36,7 @@
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
 <h2>Applications &amp; Signoffs</h2>
-<div><em>See it all <a href="{% url shipping.views.dashboard %}?locale={{locale.code}}">on the dashboard &rarr;</a>.</em></div>
+<p><em>See it all <a href="{% url shipping.views.dashboard %}?locale={{locale.code}}">on the dashboard &rarr;</a>.</em></p>
 
 {% for application, runs in applications %}
 <h2>{{ application.name }}</h2>

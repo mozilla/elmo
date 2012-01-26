@@ -31,7 +31,7 @@ NASHVEGAS_LIST = "./manage.py upgradedb --path migrations --list"
 NASHVEGAS_EXEC = "./manage.py upgradedb --path migrations --execute"
 STATICFILES_COLLECT_EXEC = "./manage.py collectstatic --noinput"
 DJANGOCOMPRESSOR_COMPRESS_EXEC = "./manage.py compress"
-REFRESH_FEEDS_EXEC = "./manage.py refresh_feeds -v 2"
+REFRESH_FEEDS_EXEC = "./manage.py refresh_feeds"
 
 EXEC = 'exec'
 CHDIR = 'chdir'

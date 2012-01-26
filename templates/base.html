@@ -50,8 +50,8 @@
     /* MetaWebPro font family licensed from fontshop.com. WOFF-FTW! */
     @font-face {
         font-family: 'MetaBold';
-	src: url('//www.mozilla.com/img/fonts/MetaWebPro-Bold.eot');
-	src: local({% if debug %}'{{ STATIC_URL }}fonts/MetaWebPro-Bold.woff'{% else %}'☺'{% endif %}), url('//www.mozilla.com/img/fonts/MetaWebPro-Bold.woff') format('woff');
+	src: url('{{ STATIC_URL }}fonts/MetaWebPro-Bold.eot');
+	src: local('☺'), url('{{ STATIC_URL }}fonts/MetaWebPro-Bold.woff') format('woff');
         font-weight: bold;
    }
    </style>
@@ -85,7 +85,7 @@
             {% endblock %}
 		</header>
 		<div id="body-content" class="{% block body_content_class %}page-standard{% endblock %}">
-			<div id="main-content">
+			<div id="main-content" class="{% block main_content_class %}{% endblock %}">
 			{% block content %}{% endblock %}
 			</div>
                         {% block aside %}{% endblock %}
@@ -95,13 +95,10 @@
 		</div>
 </div>
 		<footer>
-			<div id="footer-background"></div>
-			<div id="footer-content">
-				<div><img src="{{ STATIC_URL }}img/logo_footer.png" alt="Mozilla"></div>
-				<p>Except where otherwise <a href="">noted</a>, content on this site is licensed under the <a href="">Creative Commons Attribution Share-Alike License v3.0</a> or any later version. </p>
-				<p class="notices"><a href="{% url privacy.views.show_policy %}">Privacy Policy</a> | <a href="">Legal Notices (XXX)</a></p>
-			</div>
-            <div id="template-bottom-background"></div>
+		    <p><img src="{{ STATIC_URL }}img/logo_footer.png" alt="Mozilla" /></p>
+           <p>Except where otherwise <a href="http://www.mozilla.org/en-US/about/legal.html#site">noted</a>,
+                content on this site is licensed under the <a href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons Attribution Share-Alike License v3.0</a> or any later version. </p>
+                <p class="notices"><a href="{% url privacy.views.show_policy %}">Privacy Policy</a> | <a href="http://www.mozilla.org/en-US/about/legal.html">Legal Notices</a></p>
 		</footer>
 
 <script>

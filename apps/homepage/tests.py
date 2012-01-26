@@ -244,11 +244,14 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         entries = list(parsed.entries)
         first = entries[0]
 
-        ok_(first['title'] in content)
+        # because the titles are truncated in the template
+        # we need to do the same here
+        from django.template.defaultfilters import truncatewords
+        ok_(truncatewords(first['title'], 8) in content)
         ok_('href="%s"' % first['link'] in content)
 
         second = parsed.entries[1]
-        ok_(second['title'] in content)
+        ok_(truncatewords(second['title'], 8) in content)
         ok_('href="%s"' % second['link'] in content)
 
     def test_teams_page(self):
@@ -275,6 +278,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
         content = response.content.split('id="teams"')[1]
+        content = content.split('<footer')[0]
 
         url_fr = reverse('homepage.views.locale_team', args=['fr'])
         url_sv = reverse('homepage.views.locale_team', args=['sv-SE'])
@@ -305,7 +309,9 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         self.assert_all_embeds(response.content)
         ok_('Swedish' in response.content)
         # it should also say "Swedish" in the <h1>
-        h1_text = re.findall('<h1[^>]*>(.*?)</h1>', response.content)[1]
+        h1_text = re.findall('<h1[^>]*>(.*?)</h1>',
+                             response.content,
+                             re.M | re.DOTALL)[0]
         ok_('Swedish' in h1_text)
 
     def test_pushes_redirect(self):
@@ -333,3 +339,30 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
                 'from': ['fc700f4da954'],
                 'tree': ['fx_beta'],
                 'repo': ['some_repo']})
+
+    def test_get_homepage_locales(self):
+        for i in range(1, 40 + 1):
+            loc = Locale.objects.create(
+              name='Language-%d' % i,
+              code='L%d' % i
+            )
+        assert Locale.objects.all().count() == 40
+        # add one that doesn't count
+        Locale.objects.create(
+          name=None,
+          code='en-us'
+        )
+
+        from homepage.views import get_homepage_locales
+        first, second, rest = get_homepage_locales(4)
+        eq_(len(first), 4)
+        eq_(len(second), 4 - 1)
+        eq_(rest, 40 - len(first) - len(second))
+
+        # if you want to split by the first 30
+        # which, doubled, is more than the total number of locales,
+        # it gets reduced to the minimum which is 20
+        first, second, rest = get_homepage_locales(30)
+        eq_(len(first), 20)
+        eq_(len(second), 20 - 1)
+        eq_(rest, 1)

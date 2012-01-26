@@ -56,12 +56,9 @@ Mozilla Localization Team {{ locale.name }}
 <span class="lang">({{ locale.code }})</span>
 {% endblock %}
 
-{% block header_content_extra %}
-<p>Contact the team on it's page on <a href="https://wiki.mozilla.org/L10n:Teams:{{locale.code}}">wikimo</a>.</p>
-{% endblock %}
-
 {% block content %}
-<small>&lt; Back to <a href="{% url homepage.views.teams %}">all teams</a></small>
+<p>&lt; Back to <a href="{% url homepage.views.teams %}">all teams</a></p>
+<p>Contact the team on it's page on <a href="https://wiki.mozilla.org/L10n:Teams:{{locale.code}}">wikimo</a>.</p>
 <p>{{ shipping }}</p>
 <p>{{ bugs }}</p>
 {% endblock %}
