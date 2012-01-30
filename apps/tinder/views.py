@@ -729,7 +729,7 @@ def showbuild(request, buildername, buildnumber):
         buildnumber = int(buildnumber)
         build = builder.builds.get(buildnumber=buildnumber)
     except (ValueError, Build.DoesNotExist):
-        return HttpResonseNotFound("No such build")
+        return HttpResponseNotFound("No such build")
 
     steps = build.steps.order_by('pk')
     props = build.propertiesAsList()
