@@ -336,6 +336,21 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         eq_(response.status_code, 200)
         self.assert_all_embeds(response)
 
+    def test_render_showbuild_bad_buildername(self):
+        build, = Build.objects.all()[:1]
+        url = reverse('tinder.views.showbuild',
+                      args=['junkjunk', build.buildnumber])
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
+    def test_render_showbuild_bad_buildnumber(self):
+        build, = Build.objects.all()[:1]
+        builder = build.builder
+        url = reverse('tinder.views.showbuild',
+                      args=[builder.name, 666])
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
 
 
 SAMPLE_BUILD_LOG_PAYLOAD = '''16:2header content
