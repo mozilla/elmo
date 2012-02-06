@@ -39,9 +39,8 @@
 
 from datetime import datetime
 import os.path
-
 from mercurial.hg import repository
-from mercurial.ui import ui as _ui
+from mercurial.ui import ui
 try:
     from mercurial.repo import RepoError
 except ImportError:
@@ -71,7 +70,7 @@ class PushJS(object):
         return '<Push: %d>' % self.id
 
 
-def getChangeset(repo, hgrepo, revision):
+def get_or_create_changeset(repo, hgrepo, revision):
     try:
         cs = Changeset.objects.get(revision=revision)
         repo.changesets.add(cs)
@@ -86,7 +85,7 @@ def getChangeset(repo, hgrepo, revision):
                   .values_list('revision', 'id'))
     for p in parents:
         if p not in p_dict:
-            p_cs = getChangeset(repo, hgrepo, p)
+            p_cs = get_or_create_changeset(repo, hgrepo, p)
             p_dict[p_cs.revision] = p_cs.id
     cs = Changeset(revision=revision)
     cs.user = ctx.user().decode('utf-8', 'replace')
@@ -94,14 +93,17 @@ def getChangeset(repo, hgrepo, revision):
     branch = ctx.branch()
     if branch != 'default':
         # 'default' is already set in the db, only change if needed
-        dbb, created = \
-            Branch.objects.get_or_create(name=branch)
+        dbb, __ = Branch.objects.get_or_create(name=branch)
         cs.branch = dbb
+
+    # because the many-to-many relationships etc don't work until the object
+    # has an ID
     cs.save()
+
     cs.parents = p_dict.values()
     repo.changesets.add(cs, *(p_dict.values()))
-    spacefiles = filter(lambda p: p.endswith(' '), ctx.files())
-    goodfiles = filter(lambda p: not p.endswith(' '), ctx.files())
+    spacefiles = [p for p in ctx.files() if p.endswith(' ')]
+    goodfiles = [p for p in ctx.files() if not p.endswith(' ')]
     if goodfiles:
         # chunk up the work on files,
         # mysql doesn't like them all at once
@@ -118,13 +120,11 @@ def getChangeset(repo, hgrepo, revision):
             missingpaths = filter(lambda p: p not in existingpaths,
                                   good_chunk)
             cursor = connection.cursor()
-            # XXX rv not checked, pyflakes complains. Probably rightfully so
-            rv = cursor.executemany('INSERT INTO %s (path) VALUES (%%s)' %
-                                    File._meta.db_table,
-                                    map(lambda p: (p,), missingpaths))
+            cursor.executemany('INSERT INTO %s (path) VALUES (%%s)' %
+                               File._meta.db_table,
+                               map(lambda p: (p,), missingpaths))
             good_ids = File.objects.filter(path__in=good_chunk)
-            cs.files.add(*list(good_ids.values_list('pk',
-                                                    flat=True)))
+            cs.files.add(*list(good_ids.values_list('pk', flat=True)))
     for path in spacefiles:
         # hack around mysql ignoring trailing ' ', and some
         # of our localizers checking in files with trailing ' '.
@@ -140,59 +140,54 @@ def getChangeset(repo, hgrepo, revision):
     return cs
 
 
-@transaction.commit_manually
+@transaction.commit_on_success
 def handlePushes(repo_id, submits, do_update=True):
     if not submits:
         return
     repo = Repository.objects.get(id=repo_id)
-    # XXX pyflakes complains, unused? needs tests before removal
-    revisions = reduce(lambda r, l: r + l,
-                       [p.changesets for p in submits],
-       [])
-    ui = _ui()
-    repopath = os.path.join(settings.REPOSITORY_BASE,
-                            repo.name)
+    hgrepo = _hg_repository_sync(repo.name, repo.url, submits,
+                                 do_update=do_update)
+    for data in submits:
+        changesets = []
+        for revision in data.changesets:
+            cs = get_or_create_changeset(repo, hgrepo, revision)
+            changesets.append(cs)
+        p, __ = Push.objects.get_or_create(
+          repository=repo,
+          push_id=data.id, user=data.user,
+          push_date=datetime.utcfromtimestamp(data.date)
+        )
+        p.changesets = changesets
+        p.save()
+    repo.save()
+    return len(submits)
+
+
+def _hg_repository_sync(name, url, submits, do_update=True):
+    ui_ = ui()
+    repopath = os.path.join(settings.REPOSITORY_BASE, name)
     configpath = os.path.join(repopath, '.hg', 'hgrc')
     if not os.path.isfile(configpath):
         if not os.path.isdir(os.path.dirname(repopath)):
             os.makedirs(os.path.dirname(repopath))
-        clone(ui, str(repo.url), str(repopath),
+        clone(ui_, str(url), str(repopath),
               pull=False, uncompressed=False, rev=[],
               noupdate=False)
         cfg = open(configpath, 'a')
-        cfg.write('default-push = ssh%s\n' % str(repo.url)[4:])
+        cfg.write('default-push = ssh%s\n' % str(url)[4:])
         cfg.close()
-        ui.readconfig(configpath)
-        hgrepo = repository(ui, repopath)
+        ui_.readconfig(configpath)
+        hgrepo = repository(ui_, repopath)
     else:
-        ui.readconfig(configpath)
-        hgrepo = repository(ui, repopath)
+        ui_.readconfig(configpath)
+        hgrepo = repository(ui_, repopath)
         cs = submits[-1].changesets[-1]
         try:
             hgrepo.changectx(cs)
         except RepoError:
-            pull(ui, hgrepo, source=str(repo.url),
+            pull(ui_, hgrepo, source=str(url),
                  force=False, update=False,
                  rev=[])
             if do_update:
-                update(ui, hgrepo)
-    for data in submits:
-        changesets = []
-        for revision in data.changesets:
-            try:
-                cs = getChangeset(repo, hgrepo, revision)
-                transaction.commit()
-                changesets.append(cs)
-            except Exception, e:
-                transaction.rollback()
-                raise
-                print repo.name, e
-        p = Push.objects.create(repository=repo,
-                                push_id=data.id, user=data.user,
-                                push_date=datetime.utcfromtimestamp(data.date))
-        p.changesets = changesets
-        p.save()
-        transaction.commit()
-    repo.save()
-    transaction.commit()
-    return len(submits)
+                update(ui_, hgrepo)
+    return hgrepo

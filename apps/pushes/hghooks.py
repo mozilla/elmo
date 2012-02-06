@@ -51,7 +51,7 @@ if not settings.configured:
 
 from django.db import transaction
 from life.models import Repository, Forest, Push
-from pushes.utils import getChangeset
+from pushes.utils import get_or_create_changeset
 
 
 @transaction.commit_manually
@@ -86,7 +86,7 @@ def add_push(ui, repo, node, **kwargs):
         tip = repo.changectx('tip').rev()
         for i in range(rev, tip + 1):
             ctx = repo.changectx(i)
-            cs = getChangeset(dbrepo, repo, ctx.hex())
+            cs = get_or_create_changeset(dbrepo, repo, ctx.hex())
             transaction.commit()
             changesets.append(cs)
         p = Push.objects.create(repository=dbrepo,

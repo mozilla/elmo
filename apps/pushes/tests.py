@@ -41,6 +41,8 @@ import shutil
 import tempfile
 import codecs
 import base64
+import datetime
+import time
 try:
     import json
 except:
@@ -53,13 +55,19 @@ from django.conf import settings
 from mercurial import commands as hgcommands
 from mercurial.hg import repository
 from mercurial.ui import ui as hg_ui
-from mercurial.error import RepoError
+from mercurial.error import RepoError, RepoLookupError
 
 from commons.tests.mixins import EmbedsTestCaseMixin
-from life.models import Repository
+from life.models import Repository, Push, Branch, File
 from pushes import repo_fixtures
-from pushes.utils import getChangeset
+from pushes.utils import get_or_create_changeset
 from pushes.views.api import jsonify
+from pushes.utils import handlePushes, PushJS
+
+
+class mock_ui(hg_ui):
+    def write(self, *msg, **opts):
+        pass
 
 
 class PushesTestCase(TestCase, EmbedsTestCaseMixin):
@@ -75,7 +83,7 @@ class PushesTestCase(TestCase, EmbedsTestCaseMixin):
 
 class DiffTestCase(TestCase):
 
-    class _ui(hg_ui):
+    class xxx_ui(hg_ui):
         def write(self, *msg, **opts):
             pass
 
@@ -95,7 +103,7 @@ class DiffTestCase(TestCase):
 
     def test_file_entity_addition(self):
         """Change one file by adding a new line to it"""
-        ui = self._ui()
+        ui = mock_ui()
 
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
@@ -142,7 +150,7 @@ class DiffTestCase(TestCase):
 
     def test_file_entity_modification(self):
         """Change one file by editing an existing line"""
-        ui = self._ui()
+        ui = mock_ui()
 
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
@@ -187,7 +195,7 @@ class DiffTestCase(TestCase):
 
     def test_file_entity_removal(self):
         """Change one file by removal of a line"""
-        ui = self._ui()
+        ui = mock_ui()
 
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
@@ -231,7 +239,7 @@ class DiffTestCase(TestCase):
 
     def test_new_file(self):
         """Change by adding a new second file"""
-        ui = self._ui()
+        ui = mock_ui()
 
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
@@ -277,7 +285,7 @@ class DiffTestCase(TestCase):
 
     def test_remove_file(self):
         """Change by removing a file, with parser"""
-        ui = self._ui()
+        ui = mock_ui()
 
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
@@ -321,7 +329,7 @@ class DiffTestCase(TestCase):
 
     def test_remove_file_no_parser(self):
         """Change by removing a file, without parser"""
-        ui = self._ui()
+        ui = mock_ui()
 
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
@@ -364,7 +372,7 @@ class DiffTestCase(TestCase):
 
     def test_file_only_renamed(self):
         """Change by doing a rename without any content editing"""
-        ui = self._ui()
+        ui = mock_ui()
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
         (open(hgrepo.pathto('file.dtd'), 'w')
@@ -405,7 +413,7 @@ class DiffTestCase(TestCase):
 
     def test_file_only_renamed_no_parser(self):
         """Change by doing a rename of a file without parser"""
-        ui = self._ui()
+        ui = mock_ui()
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
         (open(hgrepo.pathto('file.txt'), 'w')
@@ -443,7 +451,7 @@ class DiffTestCase(TestCase):
 
     def test_file_renamed_and_edited(self):
         """Change by doing a rename with content editing"""
-        ui = self._ui()
+        ui = mock_ui()
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
         (open(hgrepo.pathto('file.dtd'), 'w')
@@ -492,7 +500,7 @@ class DiffTestCase(TestCase):
 
     def test_file_renamed_and_edited_broken(self):
         """Change by doing a rename with bad content editing"""
-        ui = self._ui()
+        ui = mock_ui()
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
         (open(hgrepo.pathto('file.dtd'), 'w')
@@ -541,7 +549,7 @@ class DiffTestCase(TestCase):
 
     def test_file_renamed_and_edited_original_broken(self):
         """Change by doing a rename on a previously broken file"""
-        ui = self._ui()
+        ui = mock_ui()
         hgcommands.init(ui, self.repo)
 
         hgrepo = repository(ui, self.repo)
@@ -592,7 +600,7 @@ class DiffTestCase(TestCase):
 
     def test_file_copied_and_edited_original_broken(self):
         """Change by copying a broken file"""
-        ui = self._ui()
+        ui = mock_ui()
         hgcommands.init(ui, self.repo)
 
         hgrepo = repository(ui, self.repo)
@@ -643,7 +651,7 @@ class DiffTestCase(TestCase):
     def test_error_handling(self):
         """Test various bad request parameters to the diff_app
         and assure that it responds with the right error codes."""
-        ui = self._ui()
+        ui = mock_ui()
         hgcommands.init(ui, self.repo)
 
         url = reverse('pushes.views.diff')
@@ -682,7 +690,7 @@ class DiffTestCase(TestCase):
 
     def test_file_only_copied(self):
         """Change by copying a file with no content editing"""
-        ui = self._ui()
+        ui = mock_ui()
         hgcommands.init(ui, self.repo)
 
         hgrepo = repository(ui, self.repo)
@@ -724,7 +732,7 @@ class DiffTestCase(TestCase):
 
     def test_file_only_copied_no_parser(self):
         """Change by copying a file without parser"""
-        ui = self._ui()
+        ui = mock_ui()
         hgcommands.init(ui, self.repo)
 
         hgrepo = repository(ui, self.repo)
@@ -763,7 +771,7 @@ class DiffTestCase(TestCase):
 
     def test_file_copied_and_edited(self):
         """Change by copying a file and then content editing"""
-        ui = self._ui()
+        ui = mock_ui()
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
         (open(hgrepo.pathto('file.dtd'), 'w')
@@ -812,7 +820,7 @@ class DiffTestCase(TestCase):
     def test_diff_base_against_clone(self):
         """Test that the right error is raised on trying to do a diff across
         a different divergant clone"""
-        ui = self._ui()
+        ui = mock_ui()
         orig = os.path.join(settings.REPOSITORY_BASE, 'orig')
         clone = os.path.join(settings.REPOSITORY_BASE, 'clone')
         hgcommands.init(ui, orig)
@@ -873,7 +881,7 @@ class DiffTestCase(TestCase):
 
     def test_binary_file_edited(self):
         """Modify a binary file"""
-        ui = self._ui()
+        ui = mock_ui()
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
         (open(hgrepo.pathto('file.png'), 'wb')
@@ -920,7 +928,7 @@ class DiffTestCase(TestCase):
 
     def test_broken_encoding_file_add(self):
         """Change by editing an already broken file"""
-        ui = self._ui()
+        ui = mock_ui()
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
 
@@ -964,7 +972,7 @@ class DiffTestCase(TestCase):
 
     def test_file_edited_broken_encoding(self):
         """Change by editing a good with a broken edit"""
-        ui = self._ui()
+        ui = mock_ui()
         hgcommands.init(ui, self.repo)
         hgrepo = repository(ui, self.repo)
 
@@ -1040,7 +1048,7 @@ class ApiTestCase(TestCase):
                 url='http://localhost:8001/%s/' % name
             )
             for i in hgrepo:
-                getChangeset(dbrepo, hgrepo, hgrepo[i].hex())
+                get_or_create_changeset(dbrepo, hgrepo, hgrepo[i].hex())
 
     def tearDown(self):
         super(ApiTestCase, self).tearDown()
@@ -1077,3 +1085,270 @@ class ApiTestCase(TestCase):
         data = json.loads(response.content)
         eq_(data['repo'], repo)
         ok_(data['revision'] in self.repo_data['heads'])
+
+
+class TestHandlePushes(TestCase):
+
+    def setUp(self):  # copied from DiffTestCase
+        super(TestHandlePushes, self).setUp()
+        self._old_repository_base = getattr(settings, 'REPOSITORY_BASE', None)
+        self._base = settings.REPOSITORY_BASE = tempfile.mkdtemp()
+        self.repo_name = 'mozilla-central-original'
+        self.repo = os.path.join(self._base, self.repo_name)
+
+    def tearDown(self):  # copied from DiffTestCase
+        super(TestHandlePushes, self).tearDown()
+        if os.path.isdir(self._base):
+            shutil.rmtree(self._base)
+        if self._old_repository_base is not None:
+            settings.REPOSITORY_BASE = self._old_repository_base
+
+    def test_handlePushes(self):
+        repo = Repository.objects.create(
+          name='mozilla-central',
+          url='file://' + self.repo
+        )
+        self.assertEqual(handlePushes(repo.pk, []), None)
+
+        ui = mock_ui()
+        hgcommands.init(ui, self.repo)
+        hgrepo = repository(ui, self.repo)
+        (open(hgrepo.pathto('file.dtd'), 'w')
+             .write('''
+             <!ENTITY key1 "Hello">
+             <!ENTITY key2 "Cruel">
+             '''))
+
+        hgcommands.addremove(ui, hgrepo)
+        hgcommands.commit(ui, hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="initial commit")
+        rev0 = hgrepo[0].hex()
+
+        timestamp = int(time.time())
+        push_id = 100
+        username = 'jdoe'
+        pushjs0 = PushJS(push_id, {
+          'date': timestamp,
+          'changesets': [rev0],
+          'user': username,
+        })
+        result = handlePushes(repo.pk, [pushjs0])
+        self.assertEqual(result, 1)
+
+        # expect all of these to have been created
+        push, = Push.objects.all()
+        branch, = Branch.objects.all()
+        changeset, = push.changesets.all()
+
+        self.assertEqual(push.repository, repo)
+        self.assertEqual(push.push_id, push_id)
+        self.assertEqual(push.user, username)
+        self.assertEqual(push.push_date.strftime('%Y%m%d%H%M'),
+                         datetime.datetime.utcnow().strftime('%Y%m%d%H%M'))
+
+        self.assertEqual(changeset.description, 'initial commit')
+        self.assertEqual(changeset.user, 'Jane Doe <jdoe@foo.tld>')
+        self.assertEqual(changeset.revision, rev0)
+        self.assertEqual(changeset.branch, branch)
+
+        self.assertEqual(branch.name, 'default')
+
+    def test_handlePushes_messedup_revisions(self):
+        repo = Repository.objects.create(
+          name='mozilla-central',
+          url='file://' + self.repo
+        )
+        self.assertEqual(handlePushes(repo.pk, []), None)
+
+        ui = mock_ui()
+
+        hgcommands.init(ui, self.repo)
+        hgrepo = repository(ui, self.repo)
+        (open(hgrepo.pathto('file.dtd'), 'w')
+             .write('''
+             <!ENTITY key1 "Hello">
+             <!ENTITY key2 "Cruel">
+             '''))
+
+        hgcommands.addremove(ui, hgrepo)
+        hgcommands.commit(ui, hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="initial commit")
+        rev0 = hgrepo[0].hex()
+
+        timestamp = int(time.time())
+        pushjs0 = PushJS(100, {
+          'date': timestamp,
+          'changesets': [rev0[::-1]],
+          'user': 'jdoe',
+        })
+        self.assertRaises(RepoLookupError, handlePushes,
+                          repo.pk, [pushjs0])
+
+    def test_handlePushes_space_files(self):
+        repo = Repository.objects.create(
+          name='mozilla-central',
+          url='file://' + self.repo
+        )
+        self.assertEqual(handlePushes(repo.pk, []), None)
+
+        ui = mock_ui()
+
+        hgcommands.init(ui, self.repo)
+        hgrepo = repository(ui, self.repo)
+        (open(hgrepo.pathto('file.dtd '), 'w')  # deliberate trailing space
+             .write('''
+             <!ENTITY key1 "Hello">
+             <!ENTITY key2 "Cruel">
+             '''))
+
+        hgcommands.addremove(ui, hgrepo)
+        hgcommands.commit(ui, hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="initial commit")
+        rev0 = hgrepo[0].hex()
+
+        timestamp = int(time.time())
+        pushjs0 = PushJS(100, {
+          'date': timestamp,
+          'changesets': [rev0],
+          'user': 'jdoe',
+        })
+        handlePushes(repo.pk, [pushjs0])
+
+        file_, = File.objects.all()
+        self.assertEqual(file_.path, 'file.dtd ')
+
+    def test_handlePushes_repeated(self):
+        repo = Repository.objects.create(
+          name='mozilla-central',
+          url='file://' + self.repo
+        )
+        self.assertEqual(handlePushes(repo.pk, []), None)
+
+        ui = mock_ui()
+
+        hgcommands.init(ui, self.repo)
+        hgrepo = repository(ui, self.repo)
+        (open(hgrepo.pathto('file.dtd'), 'w')
+             .write('''
+             <!ENTITY key1 "Hello">
+             <!ENTITY key2 "Cruel">
+             '''))
+
+        hgcommands.addremove(ui, hgrepo)
+        hgcommands.commit(ui, hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="initial commit")
+        rev0 = hgrepo[0].hex()
+
+        timestamp = int(time.time())
+        pushjs0 = PushJS(100, {
+          'date': timestamp,
+          'changesets': [rev0],
+          'user': 'jdoe',
+        })
+        # first time
+        pushes_initial = Push.objects.all().count()
+        result = handlePushes(repo.pk, [pushjs0])
+        self.assertEqual(result, 1)
+        pushes_after = Push.objects.all().count()
+        self.assertEqual(pushes_initial, pushes_after - 1)
+
+        # a second time should be harmless
+        result = handlePushes(repo.pk, [pushjs0])
+        self.assertEqual(result, 1)
+        pushes_after_after = Push.objects.all().count()
+        self.assertEqual(pushes_after, pushes_after_after)
+
+    def test_handlePushes_cause_repoerror(self):
+        repo = Repository.objects.create(
+          name='mozilla-central',
+          url='file://does/not/exist'
+        )
+        self.assertEqual(handlePushes(repo.pk, []), None)
+
+        ui = mock_ui()
+
+        hgcommands.init(ui, self.repo)
+        hgrepo = repository(ui, self.repo)
+        (open(hgrepo.pathto('file.dtd'), 'w')
+             .write('''
+             <!ENTITY key1 "Hello">
+             <!ENTITY key2 "Cruel">
+             '''))
+
+        hgcommands.addremove(ui, hgrepo)
+        hgcommands.commit(ui, hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="initial commit")
+        rev0 = hgrepo[0].hex()
+
+        timestamp = int(time.time())
+        pushjs0 = PushJS(100, {
+          'date': timestamp,
+          'changesets': [rev0],
+          'user': 'jdoe',
+        })
+        self.assertRaises(RepoError, handlePushes,
+                          repo.pk, [pushjs0])
+
+    def test_handlePushes_twice(self):
+        repo = Repository.objects.create(
+          name='mozilla-central',
+          url='file://' + self.repo
+        )
+
+        ui = mock_ui()
+        hgcommands.init(ui, self.repo)
+        hgrepo = repository(ui, self.repo)
+        (open(hgrepo.pathto('file.dtd'), 'w')
+             .write('''
+             <!ENTITY key1 "Hello">
+             <!ENTITY key2 "Cruel">
+             '''))
+
+        hgcommands.addremove(ui, hgrepo)
+        hgcommands.commit(ui, hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="initial commit")
+        rev0 = hgrepo[0].hex()
+
+        timestamp = int(time.time())
+        pushjs0 = PushJS(100, {
+          'date': timestamp,
+          'changesets': [rev0],
+          'user': 'jdoe',
+        })
+        result = handlePushes(repo.pk, [pushjs0])
+
+        (open(hgrepo.pathto('file.dtd'), 'w')
+             .write('''
+             <!ENTITY key1 "Hello">
+             <!ENTITY key2 "Cruel">
+             <!ENTITY key3 "World">
+             '''))
+        hgcommands.commit(ui, hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="Second commit")
+        rev1 = hgrepo[1].hex()
+
+        # a second time
+        timestamp = int(time.time())
+        pushjs0 = PushJS(101, {
+          'date': timestamp,
+          'changesets': [rev1],
+          'user': 'jdoe',
+        })
+
+        # re-fetch
+        repo = Repository.objects.get(pk=repo.pk)
+        self.assertEqual(repo.changesets.all().count(), 2)
+
+        result = handlePushes(repo.pk, [pushjs0])
+        self.assertEqual(result, 1)
+
+        # re-fetch
+        repo = Repository.objects.get(pk=repo.pk)
+        self.assertEqual(repo.changesets.all().count(), 3)
