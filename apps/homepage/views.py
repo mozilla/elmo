@@ -112,9 +112,6 @@ def locale_team(request, code):
     except Locale.DoesNotExist:
         return redirect('homepage.views.teams')
 
-    from l10nstats.views import teamsnippet as stats_snippet
-    l10nstats_div = mark_safe(stats_snippet(loc))
-
     from shipping.views import teamsnippet as ship_snippet
     ship_div = mark_safe(ship_snippet(loc))
 
@@ -126,7 +123,6 @@ def locale_team(request, code):
     return render(request, 'homepage/locale-team.html', {
                     'locale': loc,
                     'locale_name': name,
-                    'l10nstats': l10nstats_div,
                     'shipping': ship_div,
                     'bugs': bug_div,
                   })
