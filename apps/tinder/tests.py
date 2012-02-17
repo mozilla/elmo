@@ -315,7 +315,8 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         settings.LOG_MOUNTS[master.name] = self.temp_directory
         response = self.client.get(url)
         content = response.content
-        content = content.split('<h1', 1)[1].split('id="page_footer"')[0]
+        content = content.split('</header>')[1].split('</footer')[0]
+
         ok_('<span class="pre header">header content\n</span>' in content)
         ok_('<span class="pre stdout">stdout content\n</span>' in content)
         ok_('<span class="pre stderr">stderr content\n</span>' in content)

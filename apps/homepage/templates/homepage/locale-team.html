@@ -37,22 +37,28 @@
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
 {% load compress %}
-{% block title_matter %}Mozilla Localization Team {{ locale_name }}{% endblock %}
+{% block title_matter %}Mozilla Localization Team {{ locale.name }}{% endblock %}
 {% block javascript_matter %}
 {% compress js %}
 <script src="{{ STATIC_URL }}bugsy/js/bugcount.js"></script>
 {% endcompress %}
 {% endblock %}
+
 {% block head_matter %}
 {% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/dashboard.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/snippet.css" type="text/css">
 {% endcompress %}
 {% endblock %}
+
+{% block header_h1 %}
+Mozilla Localization Team {{ locale.name }}
+<span class="lang">({{ locale.code }})</span>
+{% endblock %}
+
 {% block content %}
-<small>&lt; Back to <a href="{% url homepage.views.teams %}">all teams</a></small>
-<h1>Mozilla Localization Team {{ locale_name }}</h1>
+<p>&lt; Back to <a href="{% url homepage.views.teams %}">all teams</a></p>
 <p>Contact the team on it's page on <a href="https://wiki.mozilla.org/L10n:Teams:{{locale.code}}">wikimo</a>.</p>
-{{ shipping }}
-{{ bugs }}
+<p>{{ shipping }}</p>
+<p>{{ bugs }}</p>
 {% endblock %}

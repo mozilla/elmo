@@ -36,6 +36,7 @@
 # ***** END LICENSE BLOCK *****
 
 import re
+import os
 from mock import patch
 from test_utils import TestCase
 from django.core.urlresolvers import reverse
@@ -70,6 +71,12 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         # django_arecibo was to fail at least it won't send anything to a real
         # arecibo server
         settings.ARECIBO_SERVER_URL = 'http://arecibo/'
+
+        settings.L10N_FEED_URL = self._local_feed_url('test_rss20.xml')
+
+    def _local_feed_url(self, filename):
+        filepath = os.path.join(os.path.dirname(__file__), filename)
+        return 'file://' + filepath
 
     def tearDown(self):
         super(HomepageTestCase, self).tearDown()
@@ -179,7 +186,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
            'password': 'secret'},
           **{'X-Requested-With': 'XMLHttpRequest'})
         eq_(response.status_code, 200)
-        ok_('class="errorlist"' in response.content)
+        ok_('class="error' in response.content)
 
         from django.contrib.auth.models import User
         user = User.objects.create(username='peterbe',
@@ -220,6 +227,33 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
 
+    def test_index_page_feed_reader(self):
+        url = reverse('homepage.views.index')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+
+        content = response.content
+        if isinstance(content, str):
+            content = unicode(content, 'utf-8')
+
+        # because I know what's in test_rss20.xml I can
+        # check for it here
+        import feedparser
+        assert settings.L10N_FEED_URL.startswith('file:///')
+        parsed = feedparser.parse(settings.L10N_FEED_URL)
+        entries = list(parsed.entries)
+        first = entries[0]
+
+        # because the titles are truncated in the template
+        # we need to do the same here
+        from django.template.defaultfilters import truncatewords
+        ok_(truncatewords(first['title'], 8) in content)
+        ok_('href="%s"' % first['link'] in content)
+
+        second = parsed.entries[1]
+        ok_(truncatewords(second['title'], 8) in content)
+        ok_('href="%s"' % second['link'] in content)
+
     def test_teams_page(self):
         """check that the teams page renders correctly"""
         Locale.objects.create(
@@ -244,6 +278,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
         content = response.content.split('id="teams"')[1]
+        content = content.split('<footer')[0]
 
         url_fr = reverse('homepage.views.locale_team', args=['fr'])
         url_sv = reverse('homepage.views.locale_team', args=['sv-SE'])
@@ -274,7 +309,9 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         self.assert_all_embeds(response.content)
         ok_('Swedish' in response.content)
         # it should also say "Swedish" in the <h1>
-        h1_text = re.findall('<h1[^>]*>(.*?)</h1>', response.content)[1]
+        h1_text = re.findall('<h1[^>]*>(.*?)</h1>',
+                             response.content,
+                             re.M | re.DOTALL)[0]
         ok_('Swedish' in h1_text)
 
     def test_pushes_redirect(self):
@@ -302,3 +339,30 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
                 'from': ['fc700f4da954'],
                 'tree': ['fx_beta'],
                 'repo': ['some_repo']})
+
+    def test_get_homepage_locales(self):
+        for i in range(1, 40 + 1):
+            loc = Locale.objects.create(
+              name='Language-%d' % i,
+              code='L%d' % i
+            )
+        assert Locale.objects.all().count() == 40
+        # add one that doesn't count
+        Locale.objects.create(
+          name=None,
+          code='en-us'
+        )
+
+        from homepage.views import get_homepage_locales
+        first, second, rest = get_homepage_locales(4)
+        eq_(len(first), 4)
+        eq_(len(second), 4 - 1)
+        eq_(rest, 40 - len(first) - len(second))
+
+        # if you want to split by the first 30
+        # which, doubled, is more than the total number of locales,
+        # it gets reduced to the minimum which is 20
+        first, second, rest = get_homepage_locales(30)
+        eq_(len(first), 20)
+        eq_(len(second), 20 - 1)
+        eq_(rest, 1)

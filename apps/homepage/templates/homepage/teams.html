@@ -38,17 +38,26 @@
 {% endcomment %} -->
 {% load compress %}
 {% block title_matter %}Mozilla Localization Teams{% endblock %}
+{% block head_matter %}
+{% compress css %}
+<link rel="stylesheet" href="{{ STATIC_URL }}homepage/css/teams.css" type="text/css">
+{% endcompress %}
+{% endblock %}
+
 {% block javascript_matter %}
 {% compress js %}
 <script src="{{ STATIC_URL }}homepage/js/teams.js"></script>
 {% endcompress %}
 {% endblock %}
+
+{% block header_h1 %}Mozilla Localization Teams{% endblock %}
+{% block header_content_extra %}<p>Find the different localization teams and the projects they work on on the pages beneath.</p>{% endblock %}
+
 {% block content %}
-<h1>Mozilla Localization Teams</h1>
-<p>Find the different localization teams and the projects they work on on the pages beneath.</p>
+
 <p class="highlight"><em>Don't find your Language?</em> You may want to check the list of
 <a href="https://wiki.mozilla.org/L10n:Teams">existing and upcoming teams</a> on our wiki, or
-<a href="https://developer.mozilla.org/en/Create_a_new_localization">start a new localization</a>.</p>
+<a href="https://developer.mozilla.org/en/Localization_Quick_Start_Guide">start a new localization</a>.</p>
 <p>Search for name or locale code: <input type="text" id="id_locale_code"></p>
 <ul id="teams">{% for loc in locales %}
   <li class="{{ loc.code|lower }} {{ loc.name|lower|default:"" }}"><a href="{% url homepage.views.locale_team loc.code %}">

@@ -39,4 +39,22 @@
 
 <form {% if not form.errors %}style="display:none"{% endif %} class="site_login" method="post" action="{% url accounts.views.login %}">{% csrf_token %}
 <div style="display:none"><input type="hidden" name="next" value=""></div>
-<ul>{{ form.as_ul }}<li><input type="submit" value="OK"></li></ul></form>
+
+
+{% for field in form %}
+<label>
+{{ field }}
+{% if field.error %}<span class="error">{{ field.error }}</span>{% endif %}
+{% if form.non_field_errors and forloop.first %}
+  {# deal with the most common error once in association with the username #}
+  <span class="error">
+  {% for error in form.non_field_errors %}
+  {{ error }}
+  {% endfor %}
+  </span>
+{% endif %}
+
+</label>
+{% endfor %}
+<button type="submit" class="button">OK</button>
+</form>
