@@ -72,6 +72,9 @@ def signoff_actions(locales=None, appversions=None, chunk_size=100):
                                 'flag',
                                 'signoff_id',
                                 'signoff__locale_id'))
+        if len(inc_locales) == 1:
+            # optimize for single-locale use to actually reduce the actions
+            actions = actions.filter(signoff__locale__id=inc_locales.keys()[0])
         i = 0
         while inc_locales:
             actions_chunk = actions[chunk_size * i:chunk_size * (i + 1)]
@@ -270,12 +273,16 @@ def annotated_pushes(repo, appver, loc, actions, initial_diff=None, count=10):
                 _r = r2r[c2r[c.id]]
                 p['run'] = _r
                 # should we suggest the latest run?
+                # keep semantics of suggestion in sync with
+                # shipping.views.teamsnippet
                 if suggested_signoff is None:
-                    if not p['signoffs'] and _r.allmissing == 0 and _r.errors == 0:
+                    if (not p['signoffs'] and
+                        _r.allmissing == 0 and _r.errors == 0):
                         # source checks are good, suggest
                         suggested_signoff = p['id']
                     else:
-                        # last push is signed off or red, don't suggest anything
+                        # last push is signed off or red,
+                        # don't suggest anything
                         suggested_signoff = False
 
     return pushes, currentpush, suggested_signoff
