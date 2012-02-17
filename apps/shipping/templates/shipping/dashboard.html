@@ -39,7 +39,7 @@
 {% load simile %}
 
 {% block head_matter %}
-<link href="{% url webdashboard path="json/?tag=URGENT" %}" type="application/json" rel="exhibit/data" />
+<link href="{{ webdashboard_url }}json/?tag=URGENT" type="application/json" rel="exhibit/data" />
 <link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/dashboard.css" type="text/css">
 <link href="{% url shipping.views.status.status_json %}?{{ query }}" type="application/json" rel="exhibit/data"/>
 {% exhibit autoCreate=false %}
@@ -85,7 +85,7 @@ var EX_OPTIONS = ["tree", "result", "locale", "shipping", "signoff"];
       <td class="coverage_cell" ex:content=".report"></td>
       <td class="coverage_cell" ex:content=".obsolete"></td>
       <td class="coverage_cell" ex:content=".unchanged"></td>
-     <td class="bugs_cell"><a ex:href-subcontent="http://l10n.mozilla.org/webdashboard/?locale={&#123;.locale}}" target="_blank" ex:content=".locale.missing_webbugs"></a> (<span ex:content=".locale.total_webbugs"></span>)</td>
+     <td class="bugs_cell"><a ex:href-subcontent="{{ webdashboard_url }}?locale={&#123;.locale}}" target="_blank" ex:content=".locale.missing_webbugs"></a> (<span ex:content=".locale.total_webbugs"></span>)</td>
       <td><a title="History" ex:href-subcontent="{% url l10nstats.views.history_plot %}?tree={&#123;.tree}}&locale={&#123;.locale}}" target="_blank">H</a>/<a title="Comparison" ex:href-subcontent="{% url compare_locales %}?run={&#123;.runid}}" target="_blank">C</a></td>
 
       <td>

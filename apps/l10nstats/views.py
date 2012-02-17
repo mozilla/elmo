@@ -41,8 +41,6 @@ and progress graphs.
 from collections import defaultdict
 from datetime import datetime, timedelta
 import time
-from urllib2 import urlopen
-from urlparse import urljoin
 
 from django.shortcuts import render, get_object_or_404
 from django.core.urlresolvers import reverse
@@ -85,19 +83,6 @@ def index(request):
     if request.META.get('QUERY_STRING'):
         url += '?' + request.META.get('QUERY_STRING')
     return HttpResponsePermanentRedirect(url)
-
-
-def proxy(request, path=None, base=None):
-    """Proxy to files from different domains.
-
-    Proxy the files served from different domains which don't allow cross
-    origin resource sharing explicitly.
-
-    """
-    u = "%s?%s" % (urljoin(base, path), request.GET.urlencode())
-    r = urlopen(u)
-    ct = r.info().getheaders('Content-Type')[0]
-    return HttpResponse(r.read(), mimetype=ct)
 
 
 def homesnippet():

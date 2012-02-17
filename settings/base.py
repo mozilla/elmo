@@ -194,3 +194,5 @@ else:
     MIDDLEWARE_CLASSES = (MIDDLEWARE_CLASSES +
       ('django.contrib.auth.middleware.RemoteUserMiddleware',))
     AUTHENTICATION_BACKENDS = ('lib.auth.backends.MozLdapBackend',)
+
+WEBDASHBOARD_URL = 'https://l10n.mozilla-community.org/webdashboard/'

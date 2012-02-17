@@ -48,6 +48,7 @@ from life.models import Repository, Locale, Tree
 from shipping.models import Milestone, AppVersion, Action, Application
 from shipping.api import (signoff_actions, flag_lists, accepted_signoffs,
                           signoff_summary, annotated_pushes)
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.views.decorators.cache import cache_control
 from django.utils import simplejson
@@ -213,6 +214,7 @@ def dashboard(request):
 
     return render(request, 'shipping/dashboard.html', {
                     'subtitles': subtitles,
+                    'webdashboard_url': settings.WEBDASHBOARD_URL,
                     'query': mark_safe(urlencode(query, True)),
                   })
 
