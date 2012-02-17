@@ -269,13 +269,13 @@ def annotated_pushes(repo, appver, loc, actions, initial_diff=None, count=10):
                 # we stored a run for a changeset in this push
                 _r = r2r[c2r[c.id]]
                 p['run'] = _r
-                # should we suggest this?
+                # should we suggest the latest run?
                 if suggested_signoff is None:
-                    if p['signoffs']:
-                        # last good push is signed off, don't suggest anything
-                        suggested_signoff = False
-                    elif _r.allmissing == 0 and _r.errors == 0:
+                    if not p['signoffs'] and _r.allmissing == 0 and _r.errors == 0:
                         # source checks are good, suggest
                         suggested_signoff = p['id']
+                    else:
+                        # last push is signed off or red, don't suggest anything
+                        suggested_signoff = False
 
     return pushes, currentpush, suggested_signoff
