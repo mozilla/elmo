@@ -52,7 +52,6 @@ def update_site(env, debug):
 
     commands += [
         (CHDIR, here),
-        (CONFIRM, NASHVEGAS_LIST),
         (EXEC, NASHVEGAS_EXEC),
     ]
 
