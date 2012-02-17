@@ -51,18 +51,30 @@ def signoff_actions(locales=None, appversions=None, chunk_size=100):
         locales = {}
     if appversions is None:
         appversions = {}
-    # go over all appversions
-    appversions = AppVersion.objects.filter(**appversions)
-    for appversion in appversions.select_related("tree"):
+
+    if isinstance(appversions, dict):
+        # it's a search
+        appversions = AppVersion.objects.filter(**appversions)
+    elif appversions and not isinstance(appversions, (tuple, list)):
+        raise NotImplementedError
+
+    for appversion in appversions:
         # all specified locales
-        locales_q = Locale.objects.filter(**locales)
-        # XXX data2: reduce to active locales for the appversion
-        active_locs = locales_q
-        # included locales for which we still need to gather more data
-        # maps locale id to signoff ids we collected, starting with an
-        # empty set
-        inc_locales = dict((_id, set())
-                           for _id in active_locs.values_list('id', flat=True))
+        if isinstance(locales, dict):
+            # it's a search!
+            locales_q = Locale.objects.filter(**locales)
+            # XXX data2: reduce to active locales for the appversion
+            active_locs = locales_q
+            # included locales for which we still need to gather more data
+            # maps locale id to signoff ids we collected, starting with an
+            # empty set
+            inc_locales = dict((_id, set())
+                               for _id in active_locs.values_list('id', flat=True))
+        elif isinstance(locales, (tuple, list)):
+            # it's a tuple/list of IDs already
+            inc_locales = dict((x, set()) for x in locales)
+        elif locales:
+            raise NotImplementedError
 
         # now we know which locales to check for this version, go for Actions
         actions = (Action.objects
@@ -72,6 +84,7 @@ def signoff_actions(locales=None, appversions=None, chunk_size=100):
                                 'flag',
                                 'signoff_id',
                                 'signoff__locale_id'))
+
         if len(inc_locales) == 1:
             # optimize for single-locale use to actually reduce the actions
             actions = actions.filter(signoff__locale__id=inc_locales.keys()[0])
@@ -164,7 +177,6 @@ def signoff_summary(actions):
             # flag == Action.CANCELED, ignore, keep looking
             pass
     return pending, rejected, accepted, initial_diff
-
 
 class _RowCollector:
     """Helper class to collect all the rows and tests etc for a
