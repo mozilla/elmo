@@ -44,12 +44,14 @@ import urllib
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django import http
-from life.models import Repository, Locale, Tree
+from life.models import Locale, Tree, Push, Changeset
+from l10nstats.models import Run_Revisions
 from shipping.models import Milestone, AppVersion, Action, Application
 from shipping.api import (signoff_actions, flag_lists, accepted_signoffs,
-                          signoff_summary, annotated_pushes)
+                          signoff_summary)
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.db.models import Max
 from django.views.decorators.cache import cache_control
 from django.utils import simplejson
 from django.utils.http import urlencode
@@ -94,10 +96,17 @@ class Run(dict):
     def __getattr__(self, key):  # for dot notation
         return self[key]
 
+    def __setattr__(self, key, value):  # for dot notation setters
+        self[key] = value
+
 
 def teamsnippet(loc):
-    runs = loc.run_set.filter(active__isnull=False).select_related('tree') \
-                       .order_by('tree__code')
+    runs = list(loc.run_set.filter(active__isnull=False).select_related('tree')
+                .order_by('tree__code'))
+
+    # this locale isn't active in our trees yet
+    if not runs:
+        return ''
 
     _application_codes = [(x.code, x) for x in Application.objects.all()]
     # sort their keys so that the longest application codes come first
@@ -124,7 +133,17 @@ def teamsnippet(loc):
     def tree_to_appversion(tree):
         return _trees_to_appversions.get(tree)
 
+    # find good revisions to sign-off, latest run needs to be green.
+    # keep in sync with api.annotated_pushes
+    suggested_runs = filter(lambda r: r.allmissing == 0 and r.errors == 0,
+                            runs)
+    suggested_rev = dict(Run_Revisions.objects
+                         .filter(run__in=suggested_runs,
+                                 changeset__repositories__locale=loc)
+                         .values_list('run_id', 'changeset__revision'))
+
     applications = defaultdict(list)
+    pushes = set()
     for run_ in runs:
         # copy the Run instance into a fancy dict but only copy those whose
         # key doesn't start with an underscore
@@ -147,31 +166,44 @@ def teamsnippet(loc):
                     break
 
         appversion = tree_to_appversion(run.tree)
+        # because Django templates (stupidly) swallows lookup errors we
+        # have to apply the missing defaults too
+        run.pending = run.rejected = run.accepted = \
+                      run.suggested_shortrev = None
         if appversion:
             run.appversion = appversion
-
             actions = [action_id for action_id, flag
                        in signoff_actions(
-                          appversions={'id': run.appversion.id},
-                          locales={'id': loc.id})]
+                          appversions=[run.appversion],
+                          locales=[loc.id])
+                          ]
             actions = Action.objects.filter(id__in=actions) \
                                     .select_related('signoff__push')
             # get current status of signoffs
+            # we really only need the shortrevs, we'll get those below
             run.pending, run.rejected, run.accepted, __ = \
               signoff_summary(actions)
+            pushes.update((run.pending, run.rejected, run.accepted))
 
             # get the suggested signoff
-            forest = run.tree.l10n
-            repo = get_object_or_404(Repository, locale=loc, forest=forest)
-            __, __, run.suggested_shortrev = \
-              annotated_pushes(repo, run.appversion, loc, actions)
-        else:
-            # because Django templates (stupidly) swallows lookup errors we
-            # have to apply the missing defaults too
-            run.pending = run.rejected = run.accepted = \
-              run.suggested_shortrev = None
+            if run_.id in suggested_rev:
+                run.suggested_shortrev = suggested_rev[run_.id][:12]
 
         applications[application].append(run)
+    # get the tip shortrevs for all our pushes
+    pushes = map(lambda p: p.id, filter(None, pushes))
+    tip4push = dict(Push.objects
+                    .annotate(tc=Max('changesets'))
+                    .filter(id__in=pushes)
+                    .values_list('id', 'tc'))
+    rev4id = dict(Changeset.objects
+                  .filter(id__in=tip4push.values())
+                  .values_list('id', 'revision'))
+    for runs in applications.itervalues():
+        for run in runs:
+            for k in ('pending', 'rejected', 'accepted'):
+                if run[k] is not None:
+                    run[k + '_rev'] = rev4id[tip4push[run[k].id]][:12]
     applications = ((k, v) for (k, v) in applications.items())
 
     return render_to_string('shipping/team-snippet.html',
