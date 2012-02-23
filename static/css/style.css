@@ -104,6 +104,7 @@ nav .error {
     margin: 3px 2px;
     padding: 3px 5px;
     position: absolute;
+    z-index: 1;
 }
 nav .error:before,
 nav .error:after {
@@ -126,6 +127,10 @@ nav .error:before {
 
     top: -16px;
     margin-left: -4px;
+}
+nav .site_login_error {
+    color: red; 
+    font-size: 0.9em;
 }
 
 #quick-search {
@@ -428,7 +433,7 @@ footer .notices {
     float: right;
 }
 /*
- * utility class, mostly used when one needs to float the 
+ * utility class, mostly used when one needs to float the
  * main-content container to the left.
  */
 .left-floated-container {
@@ -538,7 +543,7 @@ td.checked {
         float: none;
         margin-left: 61px;
     }
-    
+
     #body-content,
     #body-content aside,
     #main-content,

@@ -98,6 +98,11 @@ var AjaxLogin = (function() {
                });
              }
            }
+         }).error(function(jqXHR, textStatus, errorThrown) {
+           $('form.site_login').hide();
+           $('a.site_login').hide();
+           $('.site_login_error').show();
+           $('.site_login_error code').text(errorThrown);
          });
          return false;
        });
