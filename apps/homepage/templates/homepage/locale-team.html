@@ -39,8 +39,13 @@
 {% load compress %}
 {% block title_matter %}Mozilla Localization Team {{ locale.name }}{% endblock %}
 {% block javascript_matter %}
+<script>
+var WEBDASHBOARD_URL = '{{ webdashboard_url }}';
+var LOCALE_CODE = '{{ locale.code }}';
+</script>
 {% compress js %}
 <script src="{{ STATIC_URL }}bugsy/js/bugcount.js"></script>
+<script src="{{ STATIC_URL }}homepage/js/webdashboard.js"></script>
 {% endcompress %}
 {% endblock %}
 
@@ -59,6 +64,32 @@ Mozilla Localization Team {{ locale.name }}
 {% block content %}
 <p>&lt; Back to <a href="{% url homepage.views.teams %}">all teams</a></p>
 <p>Contact the team on it's page on <a href="https://wiki.mozilla.org/L10n:Teams:{{locale.code}}">wikimo</a>.</p>
-<p>{{ shipping }}</p>
-<p>{{ bugs }}</p>
+
+{{ shipping }}
+
+{{ bugs }}
+
+<div id="webdashboard">
+<p class="rss-icon-outer" style="float:right"><a href="{{ webdashboard_url }}?locale={{ locale.code }}"><img src="{{ STATIC_URL }}img/icons/feed.png" alt="Subscribe to our feed"></a></p>
+<h2>Web Dashboard</h2>
+
+<p>The team's work on the <a href="http://www.mozilla.org/{{ locale.code }}/">mozilla.org website</a>
+is tracked on the <a href="{{ webdashboard_url }}?locale={{ locale.code }}">Web Dashboard</a>.
+<a href="http://viewvc.svn.mozilla.org/vc/projects/mozilla.com/trunk/{{ locale.code }}/">The sources</a> are in SVN,
+you can check the current status on the <a href="https://www-dev.allizom.org/{{ locale.code }}/">team's staging site</a>.</p>
+
+  <div class="loading">
+    <p><em>Please wait, loading web dashboard feed...</em></p>
+  </div>
+
+  <div class="failed" style="display:none">
+    <p><em><strong>Sorry.</strong><br>
+       Unable to load the web dashboad feed. Try reloading a little later.</em></p>
+  </div>
+
+
+<table class="trees" style="display:none">
+</table>
+</div>
+
 {% endblock %}

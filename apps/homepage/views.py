@@ -167,6 +167,7 @@ def locale_team(request, code):
                     'locale_name': name,
                     'shipping': ship_div,
                     'bugs': bug_div,
+                    'webdashboard_url': settings.WEBDASHBOARD_URL,
                   })
 
 # redirects for moves within pushes app, and moving the diff view
