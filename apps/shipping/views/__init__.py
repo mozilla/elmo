@@ -169,7 +169,7 @@ def teamsnippet(loc):
         # because Django templates (stupidly) swallows lookup errors we
         # have to apply the missing defaults too
         run.pending = run.rejected = run.accepted = \
-                      run.suggested_shortrev = None
+                      run.suggested_shortrev = run.appversion = None
         if appversion:
             run.appversion = appversion
             actions = [action_id for action_id, flag

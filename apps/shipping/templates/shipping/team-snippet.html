@@ -76,27 +76,35 @@
             </tr></tbody></table>
         </td>
         <td class="signoffstatus">
+
+	    <!-- No status -->
+	    {% if not run.rejected and not run.suggested_shortrev and not run.pending and not run.accepted %}
+	      {% if run.appversion %}
+                <a class="no-sign-offs" href="{% url shipping.views.signoff.signoff locale.code run.appversion.code %}">No Sign-offs</a>
+	      {% endif %}
+	    {% endif %}
+
             <!-- Rejected -->
             {% if run.rejected %}
                 <a class="rejected" href="{% url shipping.views.signoff.signoff locale.code run.appversion.code %}#{{ run.rejected_rev }}">Rejected</a>
             {% else %}
                 <a class="rejected hidden" href="#">Rejected</a>
             {% endif %}
-	
+
             <!-- Suggested -->
             {% if run.suggested_shortrev %}
                 <a class="suggested" href="{% url shipping.views.signoff.signoff locale.code run.appversion.code %}#{{ run.suggested_shortrev }}">Suggested</a>
             {% else %}
                 <a class="suggested hidden" href="#">Suggested</a>
             {% endif %}
-	    
+
             <!-- Pending -->
             {% if run.pending %}
                 <a class="pending" href="{% url shipping.views.signoff.signoff locale.code run.appversion.code %}#{{ run.pending_rev }}">Pending</a>
             {% else %}
                 <a class="pending hidden">Pending</a>
             {% endif %}
-	    
+
             <!-- Accepted -->
             {% if run.accepted %}
                 <a class="current" href="{% url shipping.views.signoff.signoff locale.code run.appversion.code %}#{{ run.accepted_rev }}">Current</a>

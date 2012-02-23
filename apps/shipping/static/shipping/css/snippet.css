@@ -109,7 +109,7 @@
     }
 
     .trees .signoffstatus a {
-        background: white url("../img/accepted.png") no-repeat scroll 6px center;
+	background: white no-repeat scroll 6px center;
         border: 1px solid #9b9b9b;
         border-radius: 4px;
         color: #484848;
@@ -118,6 +118,14 @@
         text-decoration: none;
     }
 
+    .trees .signoffstatus .no-sign-offs {
+        padding-left:0.55em;
+    }
+    
+    .trees .signoffstatus .current {
+        background-image: url("../img/accepted.png")
+    } 
+    
     .trees .signoffstatus .pending {
         background-image: url("../img/pending.png");
         background-position: 5px center;
