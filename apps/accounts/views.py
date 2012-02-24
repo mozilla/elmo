@@ -46,15 +46,34 @@ from django.core.context_processors import csrf
 from django.utils import simplejson as json
 from django.contrib.auth.views import login as django_login
 from forms import AuthenticationForm
+from lib.auth.backends import AUTHENTICATION_SERVER_ERRORS
+
+
+class HttpResponseServiceUnavailableError(HttpResponse):
+    """
+        503 Service Unavailable
+        The server is currently unavailable (because it is overloaded or down
+        for maintenance). Generally, this is a temporary state.
+    """
+    status_code = 503
+
+    def __init__(self, *args, **kwargs):
+        kwargs['content'] = 'Service Unavailable'
+        super(HttpResponseServiceUnavailableError, self
+              ).__init__(*args, **kwargs)
 
 
 def login(request):
     # the template is only used to show errors
-    response = django_login(
-      request,
-      template_name='accounts/login_form.html',
-      authentication_form=AuthenticationForm,
-    )
+    try:
+        response = django_login(
+          request,
+          template_name='accounts/login_form.html',
+          authentication_form=AuthenticationForm,
+        )
+    except AUTHENTICATION_SERVER_ERRORS:
+        return HttpResponseServiceUnavailableError()
+
     if request.is_ajax():
         if response.status_code == 302:
             # it worked!

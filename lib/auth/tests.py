@@ -49,7 +49,6 @@ from mock import Mock
 from nose.tools import eq_, ok_
 import ldap
 
-# REMEMBER TO add mock to requirements
 
 class LDAPAuthTestCase(TestCase):
 
@@ -58,7 +57,7 @@ class LDAPAuthTestCase(TestCase):
         self.fake_user = [
           ('mail=pbengtsson@mozilla.com,...',
            {'cn': ['Peter Bengtsson'],
-            'givenName': ['Pet\xc3\xa3r'], # utf-8 encoded
+            'givenName': ['Pet\xc3\xa3r'],  # utf-8 encoded
             'mail': ['peterbe@mozilla.com'],
             'sn': ['Bengtss\xc2\xa2n'],
             'uid': ['pbengtsson']
@@ -120,7 +119,7 @@ class LDAPAuthTestCase(TestCase):
         fake_user = [
           ('mail=%s,...' % long_email,
            {'cn': ['Peter Bengtsson'],
-            'givenName': ['Pet\xc3\xa3r'], # utf-8 encoded
+            'givenName': ['Pet\xc3\xa3r'],  # utf-8 encoded
             'mail': [long_email],
             'sn': ['Bengtss\xc2\xa2n'],
             'uid': ['pbengtsson']
@@ -141,7 +140,6 @@ class LDAPAuthTestCase(TestCase):
         eq_(user.last_name, u'Bengtss\xa2n')
         ok_(not user.has_usable_password())
         ok_(not user.check_password('secret'))
-
 
     def test_authenticate_with_ldap_existing_user(self):
         assert not User.objects.all().exists()
@@ -208,6 +206,39 @@ class LDAPAuthTestCase(TestCase):
         user = backend.authenticate('foo', 'secret')
         ok_(not user)
 
+    def test_ldap_server_down_error(self):
+        ldap.initialize = Mock(return_value=MockLDAP({
+          'dc=mozilla': None,
+          'ou=groups,dc=mozilla': self.fake_group
+        }, credentials={
+          self.fake_user[0][0]: 'secret'
+        }))
+        backend = BreakingMozLdapBackend()
+        self.assertRaises(ldap.SERVER_DOWN, backend.authenticate,
+                          'foo', 'secret')
+
+        # try it from the "outside"
+        from django.core.urlresolvers import reverse
+        url = reverse('accounts.views.login')
+        settings_before = settings.AUTHENTICATION_BACKENDS
+
+        try:
+            settings.AUTHENTICATION_BACKENDS = (
+              'lib.auth.tests.BreakingMozLdapBackend',
+            )
+            response = self.client.post(url,
+                                     {'username': 'foo', 'password': 'secret'})
+            self.assertEqual(response.status_code, 503)
+            self.assertEqual(response.content, 'Service Unavailable')
+        finally:
+            settings.AUTHENTICATION_BACKENDS = settings_before
+
+
+class BreakingMozLdapBackend(MozLdapBackend):
+
+    # why __getRecord was a double-underscore method I don't know
+    def _MozLdapBackend__getRecord(self, *a, **k):
+        raise ldap.SERVER_DOWN("Unable to connect")
 
 
 class MockLDAP:
