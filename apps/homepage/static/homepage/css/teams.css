@@ -36,7 +36,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 #teams {
+  column-width: 35ex;
   -moz-column-width: 35ex;
+  -webkit-column-width: 35ex;
 }
 #teams > li {
   list-style-type: none;
