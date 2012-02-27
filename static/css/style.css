@@ -143,8 +143,6 @@ nav .site_login_error {
     background: #fff url(../img/search-icon.png) 2px 50% no-repeat;
     border: 1px solid #1e4262;
     box-shadow: inset 1px 1px 1px rgba(100,100,100,0.5);
-    -webkit-box-shadow: inset 1px 1px 1px rgba(100,100,100,0.5);
-    -moz-box-shadow: inset 1px 1px 1px rgba(100,100,100,0.5);
     color: #999;
     font-size: 11px;
     height: 17px;
@@ -265,12 +263,9 @@ header h1 a:focus {
     background-image: -moz-linear-gradient(top, #e5cf55, #deb154 50%,#d5a42e 50%, #c3752d);
     background-image: -ms-linear-gradient(top, #e5cf55, #deb154 50%,#d5a42e 50%, #c3752d);
     background-image: -o-linear-gradient(top, #e5cf55, #deb154 50%,#d5a42e 50%, #c3752d);
-    background-image: linear-gradient(top, #e5cf55, #deb154 50%,#d5a42e 50%, #c3752d);
 
     border: 1px solid #ac5e1e;
     border-radius: 6px;
-    -moz-border-radius: 6px;
-    -webkit-border-radius: 6px;
 
     color: #a5151e;
     font-size: 1.1em;
@@ -291,7 +286,6 @@ header h1 a:focus {
     background-image: -moz-linear-gradient(top, #eaebed, #d7dadf 50%,#cecfd4 50%, #b7bcc0);
     background-image: -ms-linear-gradient(top, #eaebed, #d7dadf 50%,#cecfd4 50%, #b7bcc0);
     background-image: -o-linear-gradient(top, #eaebed, #d7dadf 50%,#cecfd4 50%, #b7bcc0);
-    background-image: linear-gradient(top, #eaebed, #d7dadf 50%,#cecfd4 50%, #b7bcc0);
 
     border-color: #9fa0a4;
     padding: 5px 6px;
@@ -328,11 +322,7 @@ header h1 a:focus {
 #body-content aside section,
 #main-content .introduction {
     border-radius: 4px;
-    -moz-border-radius: 4px;
-    -webkit-border-radius: 4px;
     box-shadow: 1px 1px 4px #999;
-    -moz-box-shadow: 1px 1px 4px #999;
-    -webkit-box-shadow: 1px 1px 4px #999;
     padding: 10px 15px;
     overflow: auto;
 }
@@ -390,10 +380,6 @@ header h1 a:focus {
 #main-content .introduction h1,
 #body-content aside h1 {
     color: #a5151e;
-}
-/* moved gradient from roe to cell level */
-#policy_versions td {
-    background-image: -moz-linear-gradient(center top , white, #EEEEEE);
 }
 /* Footer */
 .push {
@@ -483,7 +469,6 @@ tr.special {
     background-image: -moz-linear-gradient(top, white, #ebf4fb);
     background-image: -ms-linear-gradient(top, white, #ebf4fb);
     background-image: -o-linear-gradient(top, white, #ebf4fb);
-    background-image: linear-gradient(top, white, #ebf4fb);
     border-top: 1px solid #ccc;
 }
 td {
@@ -501,8 +486,6 @@ td.checked {
 
 .bullet {
     border-radius: 8px;
-    -webkit-border-radius: 8px;
-    -moz-border-radius: 8px;
     display: inline-block;
     height: 10px;
     margin-left: 10px;
