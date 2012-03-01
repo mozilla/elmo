@@ -51,8 +51,7 @@ from life.models import Repository
 
 from mercurial.ui import ui as _ui
 from mercurial.hg import repository
-from mercurial.node import nullid
-from mercurial.copies import copies as _copies
+from mercurial.copies import pathcopies
 
 from Mozilla.Parser import getParser
 from Mozilla.CompareLocales import AddRemove, Tree as DataTree
@@ -84,7 +83,7 @@ def diff(request):
     # This prevents UnicodeWarning messages.
     ctx1 = repo.changectx(str(request.GET['from']))
     ctx2 = repo.changectx(str(request.GET['to']))
-    copies = _copies(repo, ctx1, ctx2, repo[nullid])[0]
+    copies = pathcopies(ctx1, ctx2)
     match = None  # maybe get something from l10n.ini and cmdutil
     changed, added, removed = repo.status(ctx1, ctx2, match=match)[:3]
 
