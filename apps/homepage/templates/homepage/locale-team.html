@@ -73,18 +73,23 @@ Mozilla Localization Team {{ locale.name }}
 <p class="rss-icon-outer" style="float:right"><a href="{{ webdashboard_url }}?locale={{ locale.code }}"><img src="{{ STATIC_URL }}img/icons/feed.png" alt="Subscribe to our feed"></a></p>
 <h2>Web Dashboard</h2>
 
-<p>The team's work on the <a href="http://www.mozilla.org/{{ locale.code }}/">mozilla.org website</a>
+<p class="intro">The team's work on the <a href="http://www.mozilla.org/{{ locale.code }}/">mozilla.org website</a>
 is tracked on the <a href="{{ webdashboard_url }}?locale={{ locale.code }}">Web Dashboard</a>.
 <a href="http://viewvc.svn.mozilla.org/vc/projects/mozilla.com/trunk/{{ locale.code }}/">The sources</a> are in SVN,
 you can check the current status on the <a href="https://www-dev.allizom.org/{{ locale.code }}/">team's staging site</a>.</p>
 
   <div class="loading">
-    <p><em>Please wait, loading web dashboard feed...</em></p>
+    <p><em>Please wait, loading Web Dashboard feed...</em></p>
   </div>
 
   <div class="failed" style="display:none">
     <p><em><strong>Sorry.</strong><br>
-       Unable to load the web dashboad feed. Try reloading a little later.</em></p>
+       Unable to load the Web Dashboard feed.</em></p>
+  </div>
+
+  <div class="not-found" style="display:none">
+    <p><em><strong>Sorry.</strong><br>
+       The <strong>{{ locale.name }} ({{ locale.code }})</strong> locale is not available on the Web Dashboard.</em></p>
   </div>
 
 

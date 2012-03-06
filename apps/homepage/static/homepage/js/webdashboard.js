@@ -70,20 +70,34 @@ var WebdashboardRSSPuller = (function(code, webdashboard_url) {
 
   }
 
+  function excuse_error() {
+    $('.loading', parent).hide();
+    $('table', parent).hide();
+    $('p.intro, p.rss-icon-outer', parent).hide();
+    $('.failed', parent).show();
+  }
+
+  function excuse_not_found() {
+    $('.loading', parent).hide();
+    $('table', parent).hide();
+    $('p.intro, p.rss-icon-outer', parent).hide();
+    $('.not-found', parent).show();
+  }
+
   return {
      pull: function() {
       $.ajax({
         url: URL,
         success: render,
-        error: function(jqXHR, textStatus, errorThrown) {
-          excuse();
+        error: function(jqXHR) {
+          if (jqXHR.status == 404) {
+            excuse_not_found();
+          } else {
+            // any other error
+            excuse_error();
+          }
         }
       });
-     },
-     excuse: function() {
-       $('.loading', parent).hide();
-       $('table', parent).hide();
-       $('.failed', parent).show();
      }
   };
 
