@@ -40,7 +40,7 @@ var BugPuller = (function(code) {
   var parent = $('#bugzilla');
 
   function getURL(suffix) {
-    return 'https://api-dev.bugzilla.mozilla.org/0.9/' + suffix;
+    return 'https://api-dev.bugzilla.mozilla.org/1.1/' + suffix;
   }
 
   function getData() {

@@ -34,7 +34,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-var apibase = 'https://api-dev.bugzilla.mozilla.org/0.9/';
+var apibase = 'https://api-dev.bugzilla.mozilla.org/1.1/';
 $(document).ready(function() {
   function countBugs(data) {
     var count = 0;
