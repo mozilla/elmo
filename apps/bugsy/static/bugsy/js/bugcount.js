@@ -53,6 +53,13 @@ var BugPuller = (function(code) {
     };
   }
 
+  function excuse() {
+    $('.loading', parent).hide();
+    $('.loaded', parent).hide();
+    $('.failed', parent).show();
+  }
+
+
   return {
     render: function(json) {
 
@@ -93,36 +100,44 @@ var BugPuller = (function(code) {
       // populated
       tbody.appendTo($('table', parent));
       $('.loading', parent).hide();
+      $('.table-pre-header', parent).fadeIn(300);
       $('table.recent-bugs:hidden', parent).fadeIn(300);
     },
     pre_render: function(json) {
-      $('.loaded', parent).fadeIn(300);
       $('.recent-bugs', parent).hide();
       // update the count inline
       $('.bug-count', parent).text(json.bugs.length);
+      $('.loaded', parent).fadeIn(300);
 
-      json.bugs.sort(function(l, r) {
-        return l.last_change_time < r.last_change_time ? 1 : -1;
-      });
+      if (json.bugs.length) {
+        $('.loading', parent).show();
 
-      var IDs = $.map(json.bugs.slice(0, 5), function(o) {
-        return o.id;
-      });
+        json.bugs.sort(function(l, r) {
+          return l.last_change_time < r.last_change_time ? 1 : -1;
+        });
 
-      var details = {
-        'bug_id': IDs.join(','),
-        'include_fields': 'id,summary,creation_time,last_change_time'
-      };
-      $.ajax({
-         url: getURL('bug'),
-        data: details,
-        dataType: 'json',
-        success: BugPuller.render,
-        error: function(jqXHR, textStatus, errorThrown) {
-          BugPuller.excuse();
-          //alert('Error: ' + errorThrown);
-        }
-      });
+        var IDs = $.map(json.bugs.slice(0, 5), function(o) {
+          return o.id;
+        });
+
+        var details = {
+          'bug_id': IDs.join(','),
+          'include_fields': 'id,summary,creation_time,last_change_time'
+        };
+
+        $.ajax({
+           url: getURL('bug'),
+          data: details,
+          dataType: 'json',
+          success: BugPuller.render,
+          error: function(jqXHR, textStatus, errorThrown) {
+            excuse();
+          }
+        });
+      } else {
+        // no bugs to fetch more details about
+        // Mozilla is using bugs in Bugzilla to track
+      }
 
     },
     pull: function() {
@@ -132,15 +147,9 @@ var BugPuller = (function(code) {
         dataType: 'json',
         success: BugPuller.pre_render,
         error: function(jqXHR, textStatus, errorThrown) {
-          BugPuller.excuse();
-          //alert('Error: ' + errorThrown);
+          excuse();
         }
       });
-    },
-    excuse: function() {
-      $('.loading', parent).hide();
-      $('.loaded', parent).hide();
-      $('.failed', parent).show();
     }
   };
 })(LOCALE_CODE);
