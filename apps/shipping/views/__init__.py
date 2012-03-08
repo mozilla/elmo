@@ -60,7 +60,13 @@ from django.db.models import Max
 from mercurial.ui import ui as _ui
 from mercurial.hg import repository
 from mercurial.node import nullid
-from mercurial.copies import copies as _copies
+try:
+    from mercurial.copies import copies as _copies
+except ImportError:
+    # mercurial 2.1
+    from mercurial.copies import pathcopies
+    def _copies(repo, ctx1, ctx2, base):
+        return (pathcopies(ctx1, ctx2),)
 
 from Mozilla.Parser import getParser, Junk
 from Mozilla.CompareLocales import AddRemove, Tree as DataTree
