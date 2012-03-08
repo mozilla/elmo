@@ -1106,7 +1106,7 @@ class TestHandlePushes(TestCase):
     def test_handlePushes(self):
         repo = Repository.objects.create(
           name='mozilla-central',
-          url='file://' + self.repo
+          url='file:///' + self.repo
         )
         self.assertEqual(handlePushes(repo.pk, []), None)
 
@@ -1157,7 +1157,7 @@ class TestHandlePushes(TestCase):
     def test_handlePushes_messedup_revisions(self):
         repo = Repository.objects.create(
           name='mozilla-central',
-          url='file://' + self.repo
+          url='file:///' + self.repo
         )
         self.assertEqual(handlePushes(repo.pk, []), None)
 
@@ -1189,7 +1189,7 @@ class TestHandlePushes(TestCase):
     def test_handlePushes_space_files(self):
         repo = Repository.objects.create(
           name='mozilla-central',
-          url='file://' + self.repo
+          url='file:///' + self.repo
         )
         self.assertEqual(handlePushes(repo.pk, []), None)
 
@@ -1223,7 +1223,7 @@ class TestHandlePushes(TestCase):
     def test_handlePushes_repeated(self):
         repo = Repository.objects.create(
           name='mozilla-central',
-          url='file://' + self.repo
+          url='file:///' + self.repo
         )
         self.assertEqual(handlePushes(repo.pk, []), None)
 
@@ -1265,7 +1265,7 @@ class TestHandlePushes(TestCase):
     def test_handlePushes_cause_repoerror(self):
         repo = Repository.objects.create(
           name='mozilla-central',
-          url='file://does/not/exist'
+          url='file:///does/not/exist'
         )
         self.assertEqual(handlePushes(repo.pk, []), None)
 
