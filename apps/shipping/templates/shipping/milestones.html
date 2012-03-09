@@ -43,6 +43,9 @@
 
 {% block head_matter %}
 <link href="{% url shipping.views.stones_data %}" type="application/json" rel="exhibit/data">
+{% compress css %}
+<link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/milestones.css" type="text/css">
+{% endcompress %}
 {% exhibit autoCreate=false %}
 {% endblock %}
 
@@ -65,6 +68,7 @@
     <tr>
       <td>
         <a ex:content=".label"
+	   ex:class-subcontent="building-{&#123;.building}}"
         ex:href-subcontent="{% url shipping.views.milestone.about  "{&#123;.code}}" %}"></a>
       </td>
       <td>
@@ -101,6 +105,10 @@
          ex:facetLabel="Latest"
          ex:selection="0"
          id="age-facet"></div>
+       <div ex:role="facet" ex:expression=".building"
+         ex:facetLabel="Building"
+         ex:selection="true"
+         id="building-facet"></div>
     </td>
    </tr>
  </table>

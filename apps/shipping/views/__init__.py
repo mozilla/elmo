@@ -346,6 +346,7 @@ def stones_data(request):
         latest[stone.appver.id] += 1
         items.append({'label': str(stone),
                       'appver': str(stone.appver),
+                      'building': stone.appver.tree is not None,
                       'status': stone.status,
                       'code': stone.code,
                       'age': age})
