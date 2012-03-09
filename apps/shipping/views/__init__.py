@@ -185,7 +185,8 @@ def teamsnippet(loc):
               signoff_summary(actions)
             pushes.update((run.pending, run.rejected, run.accepted))
 
-            # get the suggested signoff
+            # get the suggested signoff. If there are existing actions
+            # we'll unset it when we get the shortrevs for those below
             if run_.id in suggested_rev:
                 run.suggested_shortrev = suggested_rev[run_.id][:12]
 
@@ -204,6 +205,9 @@ def teamsnippet(loc):
             for k in ('pending', 'rejected', 'accepted'):
                 if run[k] is not None:
                     run[k + '_rev'] = rev4id[tip4push[run[k].id]][:12]
+                    # unset the suggestion if there's existing signoff action
+                    if run[k + '_rev'] == run.suggested_shortrev:
+                        run.suggested_shortrev = None
     applications = ((k, v) for (k, v) in applications.items())
 
     return render_to_string('shipping/team-snippet.html',
