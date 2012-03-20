@@ -36,8 +36,15 @@
    -
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
+{% load compress %}
 {% block title_matter %}Mozilla Localization{% endblock %}
 {% block body_tag %}id="home"{% endblock %}
+
+{% block head_matter %}
+{% compress css %}
+<link rel="stylesheet" href="{{ STATIC_URL }}homepage/css/index.css" type="text/css">
+{% endcompress %}
+{% endblock %}
 
 {% block header_content_extra %}
 <p>Users first, no matter where they are.</p>
@@ -88,7 +95,7 @@
 	</article>
 	<article>
 		<h1>Projects to Localize</h1>
-		<p>We track the L10n progress of Firefox and other mozilla applications here. 
+		<p>We track the L10n progress of Firefox and other mozilla applications here.
 		You can also see and make contributions to mozilla web projects below.</p>
 		<ul>
 			<li><a href="https://localize.mozilla.org">View the status of mozilla web projects.</a></li>

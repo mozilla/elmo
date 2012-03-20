@@ -62,7 +62,7 @@
 {% if perms.privacy.activate_policy %}
 <form action="{% url privacy.views.activate_policy %}" method="post">{% csrf_token %}
 {% endif %}
-<table id="policy_versions">
+<table id="policy_versions" class="standard">
   <thead>
     <tr>
       <th>Revision</th>

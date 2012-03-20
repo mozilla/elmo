@@ -102,9 +102,23 @@
 .diffanchor.double {
     height: 16px;
 }
+#pushtable td.push {
+  -moz-border-radius-topleft: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  background-color: lightgray;
+  padding: 0.25em;
+}
 #pushtable {
     empty-cells: show;
     clear: left;
+}
+/* table#pushtable is a standard table but we want vertical borders too */
+#pushtable td {
+  border-right: 1px solid #ccc;
+}
+#pushtable td.note {
+  border-left: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
 }
 .diff {
     cursor: pointer;

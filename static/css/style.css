@@ -1,10 +1,113 @@
-* {
-    margin: 0;
-    padding: 0;
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is l10n django site.
+ *
+ * The Initial Developer of the Original Code is
+ *   Mozilla Foundation.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Peter Bengtsson <peterbe@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
+
+/* http://meyerweb.com/eric/tools/css/reset/
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+	display: block;
+}
+body {
+	line-height: 1;
+}
+ol, ul {
+	list-style: none;
+}
+blockquote, q {
+	quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
+}
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+/* end reset */
+
+
+/* Un-reset some basic sizes */
+h1, h2, h3, h4, th {
+    font-weight: bold;
+}
+h1 {
+    font-size: 170%;
+}
+h2 {
+    font-size: 150%;
+}
+em, cite {
+    font-style: italic;
+}
+ol, ul {
+    list-style: disc inside;
 }
 html {
     height: 100%;
 }
+/* end un-reset */
+
 body {
     background: #fff url(../img/body-background.jpg) no-repeat left top;
     color: #4b4740;
@@ -117,52 +220,18 @@ nav .error:after {
 nav .error:after {
     border: 7px solid transparent;
     border-bottom-color: #666;
-
     top: -14px;
     margin-left: -3px;
 }
 nav .error:before {
     border: 8px solid transparent;
     border-bottom-color: #333;
-
     top: -16px;
     margin-left: -4px;
 }
 nav .site_login_error {
-    color: red; 
+    color: red;
     font-size: 0.9em;
-}
-
-#quick-search {
-    white-space: nowrap;
-    float: right;
-    margin-left: 15px;
-    line-height: 1;
-}
-#quick-search #q {
-    background: #fff url(../img/search-icon.png) 2px 50% no-repeat;
-    border: 1px solid #1e4262;
-    box-shadow: inset 1px 1px 1px rgba(100,100,100,0.5);
-    color: #999;
-    font-size: 11px;
-    height: 17px;
-    padding: 2px 4px 2px 20px;
-    position: relative;
-    vertical-align: middle;
-    width: 140px;
-    z-index: 2;
-}
-#quick-search #q:focus {
-    color: #333;
-}
-#quick-search-btn {
-    vertical-align: middle;
-    position: relative;
-    left: -16px;
-    z-index: 1;
-}
-body#home > header {
-    height: auto;
 }
 
 /* header */
@@ -250,49 +319,6 @@ header h1 a:focus {
     margin-left: -5px;
 }
 
-#header-options {
-    padding: 20px 0 0 0;
-    position: absolute;
-    right: 0px;
-}
-#header-options .button {
-    background-color: #deb154;
-
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#e5cf55), to(#c3752d));
-    background-image: -webkit-linear-gradient(top, #e5cf55, #deb154 50%,#d5a42e 50%, #c3752d);
-    background-image: -moz-linear-gradient(top, #e5cf55, #deb154 50%,#d5a42e 50%, #c3752d);
-    background-image: -ms-linear-gradient(top, #e5cf55, #deb154 50%,#d5a42e 50%, #c3752d);
-    background-image: -o-linear-gradient(top, #e5cf55, #deb154 50%,#d5a42e 50%, #c3752d);
-
-    border: 1px solid #ac5e1e;
-    border-radius: 6px;
-
-    color: #a5151e;
-    font-size: 1.1em;
-    margin-left: 5px;
-    padding: 5px 30px;
-    text-shadow: 0px 1px 1px white;
-}
-#header-options .button:hover,
-#header-options .button:focus {
-    text-decoration: none;
-    background-image: none;
-}
-#header-options .settings {
-    background-color: #d7dadf;
-
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#eaebed), to(#b7bcc0));
-    background-image: -webkit-linear-gradient(top, #eaebed, #d7dadf 50%,#cecfd4 50%, #b7bcc0);
-    background-image: -moz-linear-gradient(top, #eaebed, #d7dadf 50%,#cecfd4 50%, #b7bcc0);
-    background-image: -ms-linear-gradient(top, #eaebed, #d7dadf 50%,#cecfd4 50%, #b7bcc0);
-    background-image: -o-linear-gradient(top, #eaebed, #d7dadf 50%,#cecfd4 50%, #b7bcc0);
-
-    border-color: #9fa0a4;
-    padding: 5px 6px;
-}
-#header-options .settings img {
-    vertical-align: middle;
-}
 
 /* content */
 #body-content {
@@ -314,7 +340,6 @@ header h1 a:focus {
 #body-content li {
     list-style-position: inside;
 }
-
 #body-content section,
 #body-content article {
     margin-bottom: 30px;
@@ -330,9 +355,6 @@ header h1 a:focus {
 #body-content aside {
     float: left;
     width: 228px;
-}
-#body-content aside .date {
-    color: #666;
 }
 #body-content aside h1 {
     border-bottom: 1px solid #ccc;
@@ -372,7 +394,7 @@ header h1 a:focus {
 }
 #main-content .introduction {
     background-color: white;
-    background-image: url(../img/introduction-background.jpg);
+    background-image: url("../img/introduction-background.jpg");
     background-repeat: no-repeat;
     background-position: bottom right;
     min-width: 679px;
@@ -381,12 +403,9 @@ header h1 a:focus {
 #body-content aside h1 {
     color: #a5151e;
 }
+
 /* Footer */
-.push {
-    clear: both;
-    height: 75px;
-}
-body > footer {
+footer {
     clear: both;
     position: relative;
     float: right;
@@ -398,16 +417,8 @@ body > footer {
     width: 90%;
     height: 75px;
 }
-body > footer h1,
-body > footer h2,
-body > footer h3,
-body > footer h4,
-body > footer h5,
-body > footer h6,
-body > footer p {
-    color: #999;
-}
 footer p {
+    color: #999;
     float: left;
     margin: 15px 0 0 15px;
     max-width: 480px;
@@ -425,43 +436,15 @@ footer .notices {
 .left-floated-container {
     float: left;
 }
-/* Team and Product overview pages */
 
-.team-intro-table p {
-    width: 75%;
-}
-.team-intro-table p.title {
-    clear: left;
-    float: left;
-    font-weight: bold;
-    width: 25%;
-}
-
-.locale-overview header {
-    margin-bottom: 10px;
-}
-.locale-overview header h1 {
-    display: inline;
-}
-.locale-overview header p {
-    display: inline;
-    padding-left: 10px;
-}
-.locale-overview header select {
-    float: right;
-}
-.locale-overview header + * {
-    border-top: 1px solid #ccc;
-}
-
-table {
+table.standard {
     border-collapse: collapse;
     width: 100%;
 }
-tr {
+table.standard tr {
     border-top: 1px solid #ccc;
 }
-tr.special {
+table.standard tr.special {
     background-color: #ebf4fb; /* fallback color if gradients are not supported */
 
     background-image: -webkit-gradient(linear, left top, left bottom, from(white), to(#ebf4fb));
@@ -471,43 +454,16 @@ tr.special {
     background-image: -o-linear-gradient(top, white, #ebf4fb);
     border-top: 1px solid #ccc;
 }
-td {
+table.standard td {
     padding: 10px 7px;
     vertical-align: top;
 }
-td span {
-    display: block;
-}
-td.diff,
-td.checked {
+table.standard td.diff {
     text-align: center;
     vertical-align: middle;
 }
 
-.bullet {
-    border-radius: 8px;
-    display: inline-block;
-    height: 10px;
-    margin-left: 10px;
-    width: 10px;
-}
-.green-bullet {
-    background-color: green;
-}
-.orange-bullet {
-    background-color: orange;
-}
-.gray-bullet {
-    background-color: #ccc;
-}
-.blog-links {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-.blog-links li {
-    margin-bottom: .5em;
-}
+
 /* Media Queries */
 /* Small screens */
 @media (max-width: 960px) {
@@ -541,20 +497,6 @@ td.checked {
         float: left;
         margin-right: 20px;
         width: 200px;
-    }
-    #blogroll aside section {
-        float: left;
-        background: #fff url("../img/introduction-background.jpg") bottom right no-repeat;
-        margin: 0 0 30px 0;
-        padding: 10px 15px;
-        min-width: 0;
-        width: 93%;
-        border-radius: 4px;
-        box-shadow: 1px 1px 4px #999;
-        overflow: auto;
-    }
-    #blogroll aside h1 {
-        padding-bottom: 5px;
     }
 }
 

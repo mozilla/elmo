@@ -35,67 +35,94 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-.exhibit-facet-body {height: 5em !important;}
-div.thumbnail {border: solid black 1px; margin: 2px;}
-.success {background-color: green;}
-.warning {background-color: orange;}
-.failure {background-color: red;}
-.tree_cell.success {background-color: rgba(0, 128, 0, 0.5);}
-.tree_cell.warnings {background-color: rgba(255, 165, 0, 0.5);}
-.tree_cell.failure {background-color: rgba(255, 0, 0, 0.5);}
-
+.exhibit-facet-body {
+    height: 5em !important;
+}
+div.thumbnail {
+    border: solid black 1px; margin: 2px;
+}
+.success {
+    background-color: green;
+}
+.warning {
+    background-color: orange;
+}
+.failure {
+    background-color: red;
+}
+.tree_cell.success {
+    background-color: rgba(0, 128, 0, 0.5);
+}
+.tree_cell.warnings {
+    background-color: rgba(255, 165, 0, 0.5);
+}
+.tree_cell.failure {
+    background-color: rgba(255, 0, 0, 0.5);
+}
 .stats {
     cell-padding:0px;
     border-spacing:0px;
     padding: 3px;
 }
-.status {
+table.stats td.status {
     height: 1ex;
     margin: 0px;
     padding: 0px;
     border: 0px;
 }
-.changed {background-color: green;}
-.unchanged {background-color: grey;}
-.missing {background-color: red;}
-
-.bugs_pane {
-  margin: 1em !important;
-  margin-top: 2em !important;
+.changed {
+    background-color: green;
 }
-.bug_block {margin-top: 1em !important;}
+.unchanged {
+    background-color: grey;
+}
+.missing {
+    background-color: red;
+}
+.bugs_pane {
+    margin: 1em !important;
+    margin-top: 2em !important;
+}
+.bug_block {
+    margin-top: 1em !important;
+}
 .blocker_block {
-  margin: .5em !important;
-  padding-left: 2em !important;
+    margin: .5em !important;
+    padding-left: 2em !important;
 }
 .noblockers {
-  margin: .5em !important;
-  padding-left: 2em !important;
-  font-style: italic;
+    margin: .5em !important;
+    padding-left: 2em !important;
+    font-style: italic;
 }
 .bugfield_status_whiteboard {
-  font-style: italic;
-  padding-left: 2em;
+    font-style: italic;
+    padding-left: 2em;
 }
 .bugfield_short_desc {
-  padding-left: 1em;
+    padding-left: 1em;
 }
 
 
 /* override of exhibit CSS effect
   (done here rather than editing exhibit-bundle.css)
 */
-table.exhibit-tabularView-body tr {
-        background-color:                       #eee; /* fallback color if gradients are not supported */
-
-                background-image:       -webkit-gradient(linear, left top, left bottom, from(white), to(#eee));
-                background-image:       -webkit-linear-gradient(white, #eee);
-                background-image:      -moz-linear-gradient(white, #eee);
-                background-image:       -ms-linear-gradient(white, #eee);
-                background-image:        -o-linear-gradient(white, #eee);
+table.exhibit-tabularView-body td,
+table.exhibit-tabularView-body th {
+    border-left: 1px solid #ccc;
 }
-table.exhibit-tabularView-body td.bugs_cell span { 
-    display: inline; 
+table.exhibit-tabularView-body {
+    border: 1px solid #ccc;
+    border-left: 0;
+}
+
+table.exhibit-tabularView-body tr {
+    background-color: #eee; /* fallback color if gradients are not supported */
+    background-image: -webkit-gradient(linear, left top, left bottom, from(white), to(#eee));
+    background-image: -webkit-linear-gradient(top, white, #eee);
+    background-image:    -moz-linear-gradient(top, white, #eee);
+    background-image:     -ms-linear-gradient(top, white, #eee);
+    background-image:      -o-linear-gradient(top, white, #eee);
 }
 .exhibit-tabularView-columnHeader,
 .exhibit-tabularView-columnHeader-sorted {
