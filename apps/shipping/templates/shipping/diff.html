@@ -88,7 +88,7 @@ Changed files:
   {% if diff.value %}
 <table class="diff">
   {% for line in diff.value.lines %}
-  <tr class="line-{{line.class}}"><td rowspan="2" valign="top">{{line.entity}}</td>
+  <tr class="line-{{line.class}}"><td rowspan="2">{{line.entity}}</td>
     <td>
       {% for chunk in line.oldval %}<span class="{{chunk.class}}">{{chunk.value}}</span>{% endfor %}
     </td></tr>
