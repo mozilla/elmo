@@ -89,7 +89,7 @@ looks good to <a href="#{{suggested_signoff}}">sign off on</a>.{% endif %}
   <form id="review_form" method="POST"
   action="{% url shipping.views.signoff.review_signoff language.code  appver.code %}">{% csrf_token %}
   <input type="hidden" name="signoff_id" value="">
-  <table cellspacing="0" cellpadding="0" border="0">
+  <table>
     <tr>
       <td><input type="radio" name="action" value="accept"
       onchange="Review.accept(event)"></td>
@@ -123,9 +123,9 @@ looks good to <a href="#{{suggested_signoff}}">sign off on</a>.{% endif %}
   <input type="submit" value="Sign-off" name="submit">
   </form>
 </div> {% endif %}
-<table cellspacing="0" cellpadding="5" border="1" id="pushtable" class="standard">
+<table id="pushtable" class="standard">
 {% include "shipping/signoff-rows.html" %}
-  <tr><td colspan="4" align="center" class="note">Loading more data will be part of
+  <tr><td colspan="4" class="note">Loading more data will be part of
   <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=658656">bug 658656</a></td></tr>
 </table>
 

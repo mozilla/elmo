@@ -40,13 +40,13 @@
     color: gray;
 }
 .who {
-    background-color: lightgray;  
+    background-color: lightgray;
     padding: 0.25em;
 }
 .push {
     border-top-left-radius: 10px;
     border-bottom-left-radius: 10px;
-    background-color: lightgray; 
+    background-color: lightgray;
     padding: 0.25em;
 }
 .rev {
@@ -119,6 +119,7 @@
 #pushtable td.note {
   border-left: 1px solid #ccc;
   border-bottom: 1px solid #ccc;
+  text-align: center;
 }
 .diff {
     cursor: pointer;
