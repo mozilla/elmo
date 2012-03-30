@@ -54,11 +54,11 @@
   <div class="previous links">
   Builds for the previous
     {% for h in times.hourlist %}
-    <a href="?{{ filters }}hours={{ h }}&starttime={{ times.end }}">{{ h }}</a>
+    <a href="?{{ filters }}hours={{ h }}&amp;starttime={{ times.end }}">{{ h }}</a>
     {% endfor %} hours.
   </div>
   {% endif %}
-<table id="water" border="1" cellspacing="0">
+<table id="water">
   <thead>
     <tr>
       {% for head in heads %}
@@ -68,20 +68,22 @@
   </thead>
   <tbody>
     {% for row in rows %}
-    <tr>
+      <tr>
       {% for cell in row %}
       <td rowspan="{{cell.rowspan}}" class="{{cell.class}}">
         {{ cell.obj|showbuild }}
       </td>
       {% endfor %}
-    </tr>
+      </tr>
     {% endfor %}
   </tbody>
 </table>
-  <div class="next links">
+<div class="next links">
+  <p>
   Builds for the next
-    {% for h in times.hourlist %}
-    <a href="?{{ filters }}hours={{ h }}&endtime={{ times.start }}">{{ h }}</a>
-    {% endfor %} hours.
-  </div>
+  {% for h in times.hourlist %}
+  <a href="?{{ filters }}hours={{ h }}&amp;endtime={{ times.start }}">{{ h }}</a>
+  {% endfor %} hours.
+  </p>
+</div>
 {% endblock %}

@@ -45,6 +45,7 @@ td.build {min-height: 1em;}
 td.step {min-height: 1em;}
 td.white {vertical-align: bottom;}
 table#water {empty-cells: show; }
+table#water td {border: 1px solid #666;}
 td {padding: 0.25em;}
 th {padding: 0.25em;}
 td.started {padding: 0px}
