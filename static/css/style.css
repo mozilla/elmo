@@ -124,15 +124,14 @@ body {
 img {
     border: 0;
 }
-a,
 a:link,
 a:active,
 a:visited {
     color: #2987AD;
     text-decoration: none;
 }
-a:hover,
-a:focus {
+a:link:hover,
+a:link:focus {
     text-decoration: underline;
 }
 button {
