@@ -121,8 +121,10 @@
   border-bottom: 1px solid #ccc;
   text-align: center;
 }
-.diff {
+td.diff {
     cursor: pointer;
+    text-align: center;
+    vertical-align: middle;
 }
 .shortrev.hidden {
     display: none;

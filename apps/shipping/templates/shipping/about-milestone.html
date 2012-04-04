@@ -48,8 +48,8 @@
 {% block content %}
 <h1>About {{ms}}</h1>
 
- <table width="100%">
-   <tr valign="top">
+ <table class="standard">
+   <tr>
      <td ex:role="viewPanel">
        <div ex:role="view" ex:showAll="true" ex:ViewClass="Tabular"
          ex:columnLabels="Locale, Revision, Latest, Snapshot {% ifnotequal ms.status  2 %}, Active{% endifnotequal %},Updated from"

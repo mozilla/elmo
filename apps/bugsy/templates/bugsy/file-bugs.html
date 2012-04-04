@@ -41,7 +41,7 @@
 {% block title_matter %}L10n Bug helper{% endblock %}
 {% block head_matter %}
 <link rel="exhibit/data" type="x-bugzilla-components"
-      href="https://api-dev.bugzilla.mozilla.org/1.1/configuration?flags=0&cached_ok=1">
+      href="https://api-dev.bugzilla.mozilla.org/1.1/configuration?flags=0&amp;cached_ok=1">
 {% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}bugsy/css/file_bugs.css" type="text/css">
 {% endcompress %}
@@ -61,8 +61,8 @@ var BUG_LINKS_URL = '{% url bugsy.views.get_bug_links %}';
 {% endblock %}
 {% block content %}
 <div id="blds" ex:role="exhibit-collection" ex:itemTypes="Component"></div>
-  <table width="100%">
-      <tr valign="top">
+  <table class="standard standard-borderless">
+      <tr>
          <td>
            <form name="bugdata">
            <input type="hidden" name="product" value="Mozilla Localizations">
@@ -125,7 +125,7 @@ var BUG_LINKS_URL = '{% url bugsy.views.get_bug_links %}';
            </form>
            <p id="linkpane"></p>
           </td>
-          <td width="25%">
+          <td>
         <div ex:role="facet" ex:expression=".label"
           ex:facetLabel="Components"></div>
         <div ex:role="facet" ex:facetClass="TextSearch"

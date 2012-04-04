@@ -378,6 +378,7 @@ header h1 a:focus {
     height: auto;
     min-height: 100%;
     margin-right: 10px;
+    margin-bottom: 20px;
 }
 #main-content section {
     clear: left;
@@ -436,31 +437,42 @@ footer .notices {
 .left-floated-container {
     float: left;
 }
+table.exhibit-tabularView-body td,
+table.exhibit-tabularView-body th {
+    border-left: 1px solid #ccc;
+}
+table.exhibit-tabularView-body {
+    border: 1px solid #ccc;
+    border-left: 0;
+}
 
+table.exhibit-tabularView-body,
 table.standard {
     border-collapse: collapse;
     width: 100%;
 }
+table.exhibit-tabularView-body tr,
 table.standard tr {
     border-top: 1px solid #ccc;
 }
-table.standard tr.special {
-    background-color: #ebf4fb; /* fallback color if gradients are not supported */
-
-    background-image: -webkit-gradient(linear, left top, left bottom, from(white), to(#ebf4fb));
-    background-image: -webkit-linear-gradient(top, white, #ebf4fb);
-    background-image: -moz-linear-gradient(top, white, #ebf4fb);
-    background-image: -ms-linear-gradient(top, white, #ebf4fb);
-    background-image: -o-linear-gradient(top, white, #ebf4fb);
+/* instead of relying on order, make this selector more prevalent
+   so it take precendence over `table.standard tr` */
+#main-content table.standard-borderless tr {
+    border-top: none;
+}
+table.exhibit-tabularView-body tr {
+    background-color: #eee; /* fallback color if gradients are not supported */
+    background-image: -webkit-gradient(linear, left top, left bottom, from(white), to(#eee));
+    background-image: -webkit-linear-gradient(top, white, #eee);
+    background-image:    -moz-linear-gradient(top, white, #eee);
+    background-image:     -ms-linear-gradient(top, white, #eee);
+    background-image:      -o-linear-gradient(top, white, #eee);
     border-top: 1px solid #ccc;
 }
+table.exhibit-tabularView-body td,
 table.standard td {
     padding: 10px 7px;
     vertical-align: top;
-}
-table.standard td.diff {
-    text-align: center;
-    vertical-align: middle;
 }
 
 
