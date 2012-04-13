@@ -65,7 +65,7 @@ class Command(BaseCommand):
         else:
             pull_args = []
         from life.models import Repository, Changeset
-        from pushes.management import hgcompat
+        from mercurial import dispatch
         import os.path
         from django.conf import settings
 
@@ -98,8 +98,12 @@ class Command(BaseCommand):
                         print ("\n\nFailed to prepare for clone, %s\n\n"
                                % str(e))
                         continue
-                hgcompat.dispatch(['clone', str(url), repopath])
+                dispatch.dispatch(
+                    dispatch.request(['clone', str(url), repopath])
+                    )
             else:
-                hgcompat.dispatch(['pull', '-R', repopath] + pull_args)
+                dispatch.dispatch(
+                    dispatch.request(['pull', '-R', repopath] + pull_args)
+                    )
 
         open(resolve('.latest_cs'), 'w').write('%i\n' % latest_cs)

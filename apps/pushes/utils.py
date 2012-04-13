@@ -41,10 +41,7 @@ from datetime import datetime
 import os.path
 from mercurial.hg import repository
 from mercurial.ui import ui
-try:
-    from mercurial.repo import RepoError
-except ImportError:
-    from mercurial.error import RepoError
+from mercurial.error import RepoError
 from mercurial.commands import pull, update, clone
 
 from life.models import Repository, Push, Changeset, Branch, File
