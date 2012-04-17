@@ -42,6 +42,7 @@ from django import http
 from django.shortcuts import get_object_or_404
 try:
     import json
+    json.dumps  # silence pyflakes
 except ImportError:
     from django.utils import simplejson as json
 

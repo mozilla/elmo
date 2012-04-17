@@ -51,7 +51,8 @@ from django.http import (HttpResponse, HttpResponseNotFound,
 from django.db.models import Min, Max
 from django.utils import simplejson
 
-from l10nstats.models import *
+from l10nstats.models import Active, Run
+from life.models import Locale, Tree
 from tinder.views import generateLog
 
 

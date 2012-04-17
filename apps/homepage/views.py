@@ -46,8 +46,7 @@ from django.shortcuts import render, redirect
 from django.utils.safestring import mark_safe
 from django.template import RequestContext, loader
 from django.conf import settings
-from django.shortcuts import render
-from django.views.defaults import page_not_found, server_error
+from django.views.defaults import page_not_found
 from django.core.cache import cache
 import django_arecibo.wrapper
 

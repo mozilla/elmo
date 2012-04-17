@@ -67,12 +67,14 @@ class ModelsTest(TestCase):
         prop = Property.objects.create(name='peter', source='foo_bar')
         prop.save()
         self.assertEqual(prop.value, None)
-        self.assertEqual(Property.objects.filter(value__isnull=True).count(), 1)
+        self.assertEqual(Property.objects.filter(value__isnull=True).count(),
+                         1)
 
         prop.value = self.testing_data
         prop.save()
 
-        self.assertEqual(Property.objects.filter(value__isnull=True).count(), 0)
+        self.assertEqual(Property.objects.filter(value__isnull=True).count(),
+                         0)
 
         prop = Property.objects.get(name='peter')
         self.assertEqual(prop.value, self.testing_data)

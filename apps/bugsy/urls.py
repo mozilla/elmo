@@ -37,7 +37,7 @@
 '''URL mappings for the bugsy application.
 '''
 
-from django.conf.urls.defaults import *
+from django.conf.urls.defaults import patterns
 
 urlpatterns = patterns('bugsy.views',
     (r'^$', 'index'),

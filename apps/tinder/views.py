@@ -54,7 +54,9 @@ import re
 from collections import defaultdict
 from datetime import datetime, timedelta
 import calendar
-from mbdb.models import *
+from mbdb.models import (Build, Builder, BuildRequest,
+                         Change, Change_Tags, NumberedChange,
+                         SourceStamp, Property)
 from life.models import Push, Repository
 
 
@@ -63,6 +65,7 @@ resultclasses = ['success', 'warning', 'failure', 'skip', 'except']
 # this import is used by urls.py to make 'tinder.view.feed' a named
 # view even though this is not important for use in this file
 from django.contrib.syndication.views import feed
+feed  # make check.py happy
 
 
 def debug_(*msg):
@@ -147,7 +150,6 @@ def tbpl_inner(request):
     """
     ss = SourceStamp.objects.filter(builds__isnull=False).order_by('-pk')
     props = []
-    doUpdate = True
     if request is not None:
         for key, values in request.GET.iterlists():
             if key == "random":
@@ -163,7 +165,6 @@ def tbpl_inner(request):
                 try:
                     id = values[-1]
                     ss = ss.filter(id__lte=int(id))
-                    doUpdate = False
                 except:
                     pass
                 continue
@@ -199,7 +200,6 @@ def tbpl_inner(request):
                     .values_list('name', 'url'))
 
     def changer(c):
-        branch = c.branch
         reponame = '/'.join([c.branch] + changetags[c.id])
         try:
             rev = c.revision[:12]

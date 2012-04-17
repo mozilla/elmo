@@ -34,7 +34,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
- 
+
 .success {
     background-color: green;
 }
@@ -51,19 +51,19 @@
     background-color: purple;
 }
 .buildbox {
-    float: left; 
-    padding: 0.25em; 
+    float: left;
+    padding: 0.25em;
     margin: 0.25em;
 }
 .stamp {
-    clear: left; 
+    clear: left;
 }
 .changes {
-    background-color: lightgrey; 
+    background-color: lightgrey;
     padding: 0.25em;
 }
 .who {
-    background-color: lightgrey; 
+    background-color: lightgrey;
     padding: 0.25em;
 }
 .top {

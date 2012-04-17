@@ -45,6 +45,7 @@ import datetime
 import time
 try:
     import json
+    json.dumps  # silence pyflakes
 except:
     from django.utils import simplejson as json
 from nose.tools import eq_, ok_

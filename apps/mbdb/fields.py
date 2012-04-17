@@ -43,14 +43,17 @@ database_engine = settings.DATABASES['default']['ENGINE'].split('.')[-1]
 
 try:
     import cPickle as pickle
+    pickle  # silence pyflakes
 except ImportError:
     import pickle
+
 
 class PickledObject(str):
     """A subclass of string so it can be told whether a string is
        a pickled object or not (if the object is an instance of this class
        then it must [well, should] be a pickled one)."""
     pass
+
 
 class PickledObjectField(models.Field):
     __metaclass__ = models.SubfieldBase
@@ -80,8 +83,9 @@ class PickledObjectField(models.Field):
     def get_internal_type(self):
         return 'TextField'
 
-    def get_db_prep_lookup(self, lookup_type, value, connection, prepared=False):
-        if lookup_type in ['exact','isnull']:
+    def get_db_prep_lookup(self, lookup_type, value, connection,
+                           prepared=False):
+        if lookup_type in ['exact', 'isnull']:
             if lookup_type != 'isnull':
                 value = self.get_db_prep_save(value, connection=connection)
         elif lookup_type == 'in':
@@ -89,10 +93,9 @@ class PickledObjectField(models.Field):
                      for v in value]
         else:
             raise TypeError('Lookup type %s is not supported.' % lookup_type)
-        return super(PickledObjectField, self).get_db_prep_lookup(lookup_type,
-                                                                  value,
-                                                                  connection=connection,
-                                                                  prepared=True)
+        return (super(PickledObjectField, self)
+                .get_db_prep_lookup(lookup_type, value,
+                                    connection=connection, prepared=True))
 
 
 class ListField(models.Field):
@@ -118,13 +121,15 @@ class ListField(models.Field):
     def get_internal_type(self):
         return 'TextField'
 
-    def get_db_prep_lookup(self, lookup_type, value, connection, prepared=False):
+    def get_db_prep_lookup(self, lookup_type, value, connection,
+                           prepared=False):
         if lookup_type in ['exact']:
             value = self.get_db_prep_save(value, connection=connection)
         elif lookup_type == 'isnull':
             pass
         elif lookup_type == 'in':
-            value = [self.get_db_prep_save(v, connection=connection) for v in value]
+            value = [self.get_db_prep_save(v, connection=connection)
+                     for v in value]
         else:
             raise TypeError('Lookup type %s is not supported.' % lookup_type)
         return super(ListField, self).get_db_prep_lookup(lookup_type, value,

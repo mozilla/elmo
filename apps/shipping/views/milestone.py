@@ -226,6 +226,7 @@ class JSONChangesets(SignoffDataView):
         try:
             from mercurial.hg import repository
             from mercurial.ui import ui as _ui
+            _ui  # silence pyflakes
         except:
             _ui = None
         if _ui is not None:
