@@ -39,7 +39,7 @@
 from django.test import TestCase
 from shipping.models import Signoff, Action
 from shipping.api import signoff_actions, flag_lists
-from nose.tools import eq_, ok_
+from nose.tools import eq_
 
 
 class ApiActionTest(TestCase):

@@ -56,7 +56,7 @@ The main entry point for buildbot status notifications are a
 - fake scheduler to get all changes, and a
 - StatusReceiver to get all builder.
 
-Both are set up by calling into 
+Both are set up by calling into
  setupBridge()
 so that you can pass in a single settings.py, and a BuildMasterConfig.
 '''
@@ -68,6 +68,7 @@ so that you can pass in a single settings.py, and a BuildMasterConfig.
 # handlers that attach new handlers, the decoration is
 # @transition.commit_manually, and transaction.commit() is called after
 # the child db objects is got, and before the child listener is created.
+
 
 def setupBridge(master, settings, config):
     '''Setup the bridget between buildbot and the database.
@@ -86,8 +87,7 @@ def setupBridge(master, settings, config):
     reload(mbdb.models)
     from bb2mbdb.utils import modelForSource, modelForChange, modelForLog, \
         timeHelper
-    from mbdb.models import Master, Slave, Builder, BuildRequest, Build, \
-        SourceStamp, NumberedChange
+    from mbdb.models import Master, Slave, Builder, BuildRequest, Build
 
     from django.db import transaction
 
@@ -108,6 +108,7 @@ def setupBridge(master, settings, config):
         def addChange(self, change):
             dbchange = modelForChange(dbm, change)
             log.msg('ADDED CHANGE to DB, %d' % dbchange.number)
+
         def listBuilderNames(self):
             # Sadly, we need this. Buildbot is going to complain that we
             # don't build. What does he know.
@@ -116,7 +117,6 @@ def setupBridge(master, settings, config):
     if 'schedulers' not in config:
         config['schedulers'] = []
     config['schedulers'].insert(0, Scheduler('bb2mbdb'))
-
 
     class StepReceiver(StatusReceiver):
         '''Build- and StatusReceiver helper objects to receive all
@@ -154,8 +154,6 @@ def setupBridge(master, settings, config):
             '''
             pass
 
-
-
     class BuildReceiver(StatusReceiver):
         '''StatusReceiver helper object to receive all events
         for a particular build.
@@ -169,10 +167,11 @@ def setupBridge(master, settings, config):
         @transaction.commit_manually
         def stepStarted(self, build, step):
             self.latestStep = step
-            self.latestDbStep = self.build.steps.create(name = step.getName(),
-                                                        starttime = timeHelper(step.getTimes()[0]),
-                                                        text = step.getText(),
-                                                        text2 = step.text2)
+            starttime = timeHelper(step.getTimes()[0])
+            self.latestDbStep = self.build.steps.create(name=step.getName(),
+                                                        starttime=starttime,
+                                                        text=step.getText(),
+                                                        text2=step.text2)
             transaction.commit()
             return StepReceiver(self.latestDbStep, self.basedir)
 
@@ -182,7 +181,8 @@ def setupBridge(master, settings, config):
             try:
                 self.latestStep = None
                 self.latestDbStep.endtime = timeHelper(step.getTimes()[1])
-                # only the first is the result, the second is text2, ignore that.
+                # only the first is the result, the second is text2,
+                # ignore that.
                 self.latestDbStep.result = results[0]
                 self.latestDbStep.text = step.getText()
                 self.latestDbStep.text2 = step.text2
@@ -197,15 +197,15 @@ def setupBridge(master, settings, config):
             '''
             pass
 
-            
-
     class MyStatusReceiver(StatusReceiverMultiService):
         '''StatusReceiver for buildbot to db bridge.
         '''
         requestsForBuild = defaultdict(list)
+
         def setServiceParent(self, parent):
             StatusReceiverMultiService.setServiceParent(self, parent)
             self.setup()
+
         def setup(self):
             log.msg("mbdb subscribing")
             status = self.parent.getStatus()
@@ -215,10 +215,10 @@ def setupBridge(master, settings, config):
         def builderAdded(self, builderName, builder):
             log.msg("adding %s to mbdb" % builderName)
             try:
-                dbbuilder = Builder.objects.get(master=dbm, name = builderName)
+                dbbuilder = Builder.objects.get(master=dbm, name=builderName)
             except Builder.DoesNotExist:
-                dbbuilder = Builder.objects.create(master = dbm,
-                                                   name = builderName)
+                dbbuilder = Builder.objects.create(master=dbm,
+                                                   name=builderName)
             dbbuilder.bigState = builder.getState()[0]
             if builder.category:
                 dbbuilder.category = builder.category
@@ -228,12 +228,14 @@ def setupBridge(master, settings, config):
 
         @transaction.commit_manually
         def requestSubmitted(self, request):
-            b, created = dbm.builders.get_or_create(name = request.getBuilderName())
+            b, _ = dbm.builders.get_or_create(name=request.getBuilderName())
             ss = modelForSource(dbm, request.source)
-            req = BuildRequest.objects.create(builder = b,
-                                              submitTime = timeHelper(request.getSubmitTime()),
-                                              sourcestamp = ss)
+            submitTime = timeHelper(request.getSubmitTime())
+            req = BuildRequest.objects.create(builder=b,
+                                              submitTime=submitTime,
+                                              sourcestamp=ss)
             transaction.commit()
+
             def addBuild(build):
                 dbbuild = b.builds.get(buildnumber=build.getNumber())
                 dbbuild.requests.add(req)
@@ -243,22 +245,23 @@ def setupBridge(master, settings, config):
         @transaction.commit_on_success
         def builderChangedState(self, builderName, state):
             log.msg("%s changed state to %s" % (builderName, state))
-            dbbuilder = Builder.objects.get(master=dbm, name = builderName)
+            dbbuilder = Builder.objects.get(master=dbm, name=builderName)
             dbbuilder.bigState = state
             dbbuilder.save()
 
         @transaction.commit_manually
         def buildStarted(self, builderName, build):
             log.msg("build started on  %s" % builderName)
-            builder = Builder.objects.get(master=dbm, name = builderName)
-            slave, newslave = Slave.objects.get_or_create(name = build.getSlavename())
+            builder = Builder.objects.get(master=dbm, name=builderName)
+            slave, _ = Slave.objects.get_or_create(name=build.getSlavename())
             ss = modelForSource(dbm, build.getSourceStamp())
+            starttime = timeHelper(build.getTimes()[0])
             dbbuild, created = \
-                builder.builds.get_or_create(buildnumber = build.getNumber(),
-                                             slave = slave,
-                                             starttime = timeHelper(build.getTimes()[0]),
-                                             reason = build.getReason(),
-                                             sourcestamp = ss)
+                builder.builds.get_or_create(buildnumber=build.getNumber(),
+                                             slave=slave,
+                                             starttime=starttime,
+                                             reason=build.getReason(),
+                                             sourcestamp=ss)
             if not created:
                 log.msg("%s build %d not created, endtime is %s" %
                         (builderName, build.getNumber(), dbbuild.endtime))
@@ -275,9 +278,10 @@ def setupBridge(master, settings, config):
 
         @transaction.commit_on_success
         def buildFinished(self, builderName, build, results):
-            log.msg("finished build on %s with %s" % (builderName, str(results)))
-            dbbuild = Build.objects.get(builder__name = builderName,
-                                        buildnumber = build.getNumber())
+            log.msg("finished build on %s with %s" %
+                    (builderName, str(results)))
+            dbbuild = Build.objects.get(builder__name=builderName,
+                                        buildnumber=build.getNumber())
             dbbuild.endtime = timeHelper(build.getTimes()[1])
             dbbuild.result = results
             for key, value, source in build.getProperties().asList():

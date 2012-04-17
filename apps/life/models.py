@@ -81,6 +81,7 @@ class Branch(models.Model):
 
 if 'mbdb' in settings.INSTALLED_APPS:
     from mbdb.models import File
+    File  # silence check.py
 else:
     class File(models.Model):
         class Meta:
@@ -90,6 +91,7 @@ else:
 
         def __unicode__(self):
             return self.path
+    File  # silence check.py
 
 
 class ChangesetManager(models.Manager):

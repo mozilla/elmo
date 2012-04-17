@@ -50,6 +50,7 @@ from commons.tests.mixins import EmbedsTestCaseMixin
 from life.models import Tree, Forest, Locale
 from shipping.models import Milestone, Application, AppVersion
 
+
 class ShippingTestCaseBase(TestCase, EmbedsTestCaseMixin):
 
     def _create_appver_milestone(self):

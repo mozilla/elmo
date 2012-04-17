@@ -69,7 +69,8 @@ def signoff_actions(locales=None, appversions=None, chunk_size=100):
             # maps locale id to signoff ids we collected, starting with an
             # empty set
             inc_locales = dict((_id, set())
-                               for _id in active_locs.values_list('id', flat=True))
+                               for _id in active_locs.values_list('id',
+                                                                  flat=True))
         elif isinstance(locales, (tuple, list)):
             # it's a tuple/list of IDs already
             inc_locales = dict((x, set()) for x in locales)
@@ -177,6 +178,7 @@ def signoff_summary(actions):
             # flag == Action.CANCELED, ignore, keep looking
             pass
     return pending, rejected, accepted, initial_diff
+
 
 class _RowCollector:
     """Helper class to collect all the rows and tests etc for a

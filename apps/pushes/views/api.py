@@ -42,8 +42,10 @@ from django import http
 from django.shortcuts import get_object_or_404
 try:
     import json
+    json.dumps  # silence check.py
 except ImportError:
     from django.utils import simplejson as json
+    json.dumps  # silence check.py
 
 from life.models import Repository, Changeset, Push, Branch
 

@@ -37,12 +37,10 @@
 '''Bring sign-offs from a stable branch onto a project branch.
 '''
 
-from optparse import make_option
-
 from django.core.management.base import BaseCommand, CommandError
 from shipping.models import AppVersion
 from shipping.api import accepted_signoffs
-import pdb
+
 
 class Command(BaseCommand):
     option_list = BaseCommand.option_list
@@ -51,20 +49,21 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if len(args) != 2:
-            raise CommandError, "two arguments required, old and new appversion"
+            raise CommandError("two arguments required, " +
+                               "old and new appversion")
         old = AppVersion.objects.get(code=args[0])
         new = AppVersion.objects.get(code=args[1])
         if old.tree.l10n != new.tree.l10n:
-            raise CommandError, "Old and new appversion don't share l10n"
+            raise CommandError("Old and new appversion don't share l10n")
         sos = accepted_signoffs(id=old.id)
         for so in sos:
             print "transplanting " + so.locale.code
-            _so = new.signoffs.create(push = so.push,
-                                      author = so.author,
-                                      when = so.when,
-                                      locale = so.locale)
+            _so = new.signoffs.create(push=so.push,
+                                      author=so.author,
+                                      when=so.when,
+                                      locale=so.locale)
             for a in so.action_set.order_by('pk'):
-                _so.action_set.create(flag = a.flag,
-                                      author = a.author,
-                                      when = a.when,
-                                      comment = a.comment)
+                _so.action_set.create(flag=a.flag,
+                                      author=a.author,
+                                      when=a.when,
+                                      comment=a.comment)

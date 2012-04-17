@@ -148,17 +148,21 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
                                       globals(), locals(), ['urls'], -1)
             # ...so that we can access the 'handler500' defined in there
             par, end = root_urlconf.handler500.rsplit('.', 1)
-            # ...which is an importable reference to the real handler500 function
+            # ...which is an importable reference to the
+            # real handler500 function
             views = __import__(par, globals(), locals(), [end], -1)
             # ...and finally we the handler500 function at hand
             handler500 = getattr(views, end)
 
-            # to make a mock call to the django view functions you need a request
-            fake_request = RequestFactory().get('/', {'no-compression': 'true'})
+            # to make a mock call to the django view functions
+            # you need a request
+            fake_request = (RequestFactory()
+                            .get('/', {'no-compression': 'true'}))
 
             # the reason for first causing an exception to be raised is because
-            # the handler500 function is only called by django when an exception
-            # has been raised which means sys.exc_info() is something.
+            # the handler500 function is only called by django when an
+            # exception has been raised which means sys.exc_info()
+            # is something.
             try:
                 raise NameError("sloppy code!")
             except NameError:
@@ -318,7 +322,8 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         """test if the old /pushes url redirects to /source/pushes"""
         old_response = self.client.get('/pushes/repo?path=query')
         eq_(old_response.status_code, 301)
-        target_url = reverse('pushes.views.pushlog', kwargs={'repo_name': 'repo'})
+        target_url = reverse('pushes.views.pushlog',
+                             kwargs={'repo_name': 'repo'})
         new_response = self.client.get(target_url, {'path': 'query'})
         eq_(new_response.status_code, 200)
         eq_(urlparse.urlparse(old_response['Location'])[2:],
@@ -326,7 +331,9 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
 
     def test_diff_redirect(self):
         """test if the old /pushes url redirects to /source/pushes"""
-        old_response = self.client.get('/shipping/diff?to=62f87d2952f4&from=fc700f4da954&tree=fx_beta&repo=some_repo&url=&locale=')
+        diff_url = ('/shipping/diff?to=62f87d2952f4&from=fc700f4da954' +
+                    '&tree=fx_beta&repo=some_repo&url=&locale=')
+        old_response = self.client.get(diff_url)
         eq_(old_response.status_code, 301)
         target_url = reverse('pushes.views.diff')
         # not testing response, as we don't have a repo to back this up
@@ -342,7 +349,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
 
     def test_get_homepage_locales(self):
         for i in range(1, 40 + 1):
-            loc = Locale.objects.create(
+            Locale.objects.create(
               name='Language-%d' % i,
               code='L%d' % i
             )

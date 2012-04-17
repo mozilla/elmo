@@ -39,7 +39,7 @@
 .trees {
     margin-bottom: 2em;
 }
-    
+
 .trees th {
     color: #9d9d9d;
     font-weight: normal;
@@ -121,11 +121,11 @@ table.trees tr.treesummary td.productname {
 .trees .signoffstatus .no-sign-offs {
     padding-left:0.55em;
 }
-    
+
 .trees .signoffstatus .current {
     background-image: url("../img/accepted.png")
-} 
-    
+}
+
 .trees .signoffstatus .pending {
     background-image: url("../img/pending.png");
     background-position: 5px center;

@@ -41,6 +41,7 @@ to enable multiple web servers hosting multiple masters.
 from django.db import models
 from mbdb.models import Master
 
+
 class WebHead(models.Model):
     name = models.CharField(max_length=50)
     masters = models.ManyToManyField(Master, through='MasterMap')
