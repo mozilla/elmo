@@ -45,8 +45,10 @@ import datetime
 import time
 try:
     import json
+    json.dumps  # silence check.py
 except:
     from django.utils import simplejson as json
+    json.dumps  # silence check.py
 from nose.tools import eq_, ok_
 from test_utils import TestCase
 from django import http

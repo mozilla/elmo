@@ -42,11 +42,10 @@ from datetime import datetime
 import operator
 from time import mktime
 
-from django.template.loader import render_to_string
 from django.shortcuts import render
-from django.db.models import Q, Max
+from django.db.models import Q
 
-from life.models import Push, Repository
+from life.models import Push
 
 
 def pushlog(request, repo_name):
