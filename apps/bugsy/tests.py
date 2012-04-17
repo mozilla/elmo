@@ -35,7 +35,6 @@
 #
 # ***** END LICENSE BLOCK *****
 
-import re
 from nose.tools import eq_, ok_
 from django.core.urlresolvers import reverse
 from django.utils import simplejson as json
