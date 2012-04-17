@@ -40,7 +40,7 @@ from urlparse import urlparse
 from nose.tools import eq_, ok_
 from django.http import QueryDict
 from django.core.urlresolvers import reverse
-from apps.shipping.tests import ShippingTestCaseBase
+from apps.shipping.tests.test_views import ShippingTestCaseBase
 from apps.life.models import Tree, Locale
 from apps.mbdb.models import Build
 from models import Run, Active

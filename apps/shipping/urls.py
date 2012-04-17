@@ -37,12 +37,11 @@
 '''URL mappings for the shipping app.
 '''
 
-from django.conf.urls.defaults import *
+from django.conf.urls.defaults import patterns
 
 urlpatterns = patterns('shipping.views',
     (r'^\/?$', 'index'),
     (r'^\/dashboard\/?$', 'dashboard'),
-    (r'^\/diff$', 'diff_app'),
     (r'^\/milestones$', 'milestones'),
     (r'^\/stones-data$', 'stones_data'),
     (r'^\/open-mstone$', 'open_mstone'),
@@ -76,6 +75,6 @@ urlpatterns += patterns('shipping.views.app',
 urlpatterns += patterns('shipping.views.signoff',
     (r'^\/signoffs\/(.*?)\/(.*)', 'signoff'),
     (r'^\/signoffs-details\/(.*?)\/(.*)', 'signoff_details'),
-    (r'^\/add-signoff\/(.*?)\/(.*)', 'add_signoff'), # POST only
-    (r'^\/review-signoff\/(.*?)\/(.*)', 'review_signoff'), # POST only
+    (r'^\/add-signoff\/(.*?)\/(.*)', 'add_signoff'),  # POST only
+    (r'^\/review-signoff\/(.*?)\/(.*)', 'review_signoff'),  # POST only
 )

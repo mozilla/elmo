@@ -35,14 +35,40 @@
  *
  * ***** END LICENSE BLOCK ***** */
  
-.success {background-color: green;}
-.warning {background-color: orange;}
-.failure {background-color: red;}
-.skip {background-color: yellow;}
-.except {background-color: purple;}
-.buildbox {float: left; padding: 0.25em; margin: 0.25em;}
-.stamp {clear: left; }
-.changes {background-color: lightgrey; padding: 0.25em;}
-.who {background-color: lightgrey;  padding: 0.25em;}
-.top {-moz-border-radius-topleft: 10px}
-.bottom {-moz-border-radius-bottomleft: 10px}
+.success {
+    background-color: green;
+}
+.warning {
+    background-color: orange;
+}
+.failure {
+    background-color: red;
+}
+.skip {
+    background-color: yellow;
+}
+.except {
+    background-color: purple;
+}
+.buildbox {
+    float: left; 
+    padding: 0.25em; 
+    margin: 0.25em;
+}
+.stamp {
+    clear: left; 
+}
+.changes {
+    background-color: lightgrey; 
+    padding: 0.25em;
+}
+.who {
+    background-color: lightgrey; 
+    padding: 0.25em;
+}
+.top {
+    border-radius-topleft: 10px;
+}
+.bottom {
+    border-radius-bottomleft: 10px;
+}

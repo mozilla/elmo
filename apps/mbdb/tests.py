@@ -38,7 +38,7 @@
 '''Unit testing for this module.
 '''
 import datetime
-from django.test import TestCase
+from test_utils import TestCase
 from django.core.management.commands.dumpdata import Command
 from apps.mbdb.models import Property, Step, Build, Builder, Master, Slave
 import json

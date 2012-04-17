@@ -35,13 +35,12 @@
 #
 # ***** END LICENSE BLOCK *****
 
-'''Command to check if any of the repositories in the database miss changeset mappings.
+'''Command to check if any of the repositories in the database
+that miss changeset mappings.
 '''
 
-from optparse import make_option
-
-from django.core.management.base import CommandError
 from ..base import RepositoryCommand
+
 
 class Command(RepositoryCommand):
     help = 'Find repositories with missing changeset entries in the db.'
@@ -51,4 +50,5 @@ class Command(RepositoryCommand):
         """
         self.verbose("Checking " + dbrepo.name)
         if dbcount != hgcount:
-            self.minimal("%s:\thg: %d\tdb: %d" % (dbrepo.name, hgcount, dbcount))
+            self.minimal("%s:\thg: %d\tdb: %d" %
+                         (dbrepo.name, hgcount, dbcount))

@@ -40,15 +40,19 @@ MANAGERS = ADMINS
 # these are appropriate settings only for local development
 DEBUG = TEMPLATE_DEBUG = True
 #TEMPLATE_STRING_IF_INVALID = '!{ %s }'
+COMPRESS_ENABLED = False
 SESSION_COOKIE_SECURE = False
 
 # if you want to test the Arecibo
 #ARECIBO_SERVER_URL = "http://amckay-arecibo.khan.mozilla.org/"
 
+# Feed for example, to avoid having to do a HTTP call for the feed use:
+#L10N_FEED_URL = 'file://' + os.path.abspath('apps/homepage/test_rss20.xml')
+
 try:
     from .mounts_local import *
 except ImportError:
-    # if the file exists, ImportError is actually fatal   
+    # if the file exists, ImportError is actually fatal
     import os.path as op
     if op.isfile(op.join(op.dirname(__file__), 'mounts_local.py')):
 	raise

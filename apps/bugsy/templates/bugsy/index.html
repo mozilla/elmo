@@ -53,19 +53,19 @@
 <p id="nob_div">There are currently <a href="https://bugzilla.mozilla.org/buglist.cgi?field0-0-0=component;resolution=---;type0-0-0=regexp;value0-0-0=^[a-z]{2%2C3}[%20\-];product=Mozilla%20Localizations"><span
 id="nob">?</span></a> open Mozilla Localization bugs in <span
 id="noc">?</span> components.</div>
-<div style="float:right;width:10em;">
+<div style="width:10em;">
   <em>Search:</em>
   <div ex:role="facet"
    ex:facetClass="TextSearch"
    ex:expressions=".label">
- </div>
- </div>
+  </div>
+</div>
 <div ex:role="view" ex:viewClass="Tabular" style="margin-right:11em;"
   ex:showToolbox="false" ex:showSummary="false"
   ex:paginate="true" ex:pagingControlLocations="bottom" ex:pageSize="10"
   ex:cellSpacing="0" sortColumn="1" sortAscending="false"
   ex:columns=".label, .count" ex:columnLabels="Component, Bugs">
-  <table>
+  <table class="standard">
     <tr>
       <td><a target="_blank"
         ex:href-subcontent="https://bugzilla.mozilla.org/buglist.cgi?component={&#123.label}}&resolution=---&columnlist=assigned_to%2Cshort_desc%2Cchangeddate"

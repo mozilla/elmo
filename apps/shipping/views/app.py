@@ -37,9 +37,9 @@
 """Views centric around AppVersion data.
 """
 
-from django.shortcuts import render_to_response, get_object_or_404
-from django.template import RequestContext
-from shipping.models import *
+from django.shortcuts import render, get_object_or_404
+from shipping.models import Milestone, AppVersion, Milestone_Signoffs
+
 
 def changes(request, app_code):
     """Show which milestones on the given appversion took changes for which
@@ -48,7 +48,9 @@ def changes(request, app_code):
     av = get_object_or_404(AppVersion, code=app_code)
     ms_names = {}
     ms_codes = {}
-    for ms in Milestone.objects.filter(appver=av).select_related('appver__app'):
+    for ms in (Milestone.objects
+               .filter(appver=av)
+               .select_related('appver__app')):
         ms_names[ms.id] = str(ms)
         ms_codes[ms.id] = ms.code
     rows = []
@@ -57,7 +59,13 @@ def changes(request, app_code):
     latest = {}
     current = {}
     ms_name = None
-    for _mid, loc, pid in Milestone_Signoffs.objects.filter(milestone__appver=av).order_by('milestone__id','signoff__locale__code').values_list('milestone__id','signoff__locale__code','signoff__push__id'):
+    for _mid, loc, pid in (Milestone_Signoffs.objects
+                           .filter(milestone__appver=av)
+                           .order_by('milestone__id',
+                                     'signoff__locale__code')
+                           .values_list('milestone__id',
+                                        'signoff__locale__code',
+                                        'signoff__push__id')):
         if _mid != ms_id:
             ms_id = _mid
             # next milestone, bootstrap new row
@@ -85,8 +93,7 @@ def changes(request, app_code):
         changes += [(loc, 'dropped') for loc in latest.iterkeys()]
         changes.sort(key=lambda t: t[0])
 
-    return render_to_response('shipping/app-changes.html',
-                              {'appver': av,
-                               'rows': rows,
-                               },
-                               context_instance=RequestContext(request))
+    return render(request, 'shipping/app-changes.html', {
+                    'appver': av,
+                    'rows': rows,
+                  })

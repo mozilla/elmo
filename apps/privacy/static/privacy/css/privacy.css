@@ -64,10 +64,14 @@ table#policy_versions {
   border-spacing: 0px;
   border-collapse: collapse;
   empty-cells: show;
+  width: 100%;
 }
 table#policy_versions th, table#policy_versions td {
   border: solid black 1px;
   padding: 2px;
+}
+#policy_versions td {
+  background-image: -moz-linear-gradient(white, #eee);
 }
 
 .notice {
@@ -75,7 +79,7 @@ table#policy_versions th, table#policy_versions td {
 }
 .notice > span {
   border: solid red;
-  -moz-border-radius: 2em;
+  border-radius: 2em;
   padding: 2em;
 }
 #policy {

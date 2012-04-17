@@ -20,6 +20,7 @@
  *
  * Contributor(s):
  *   Axel Hecht <l10n@mozilla.com>
+ *   Peter Bengtsson <peterbe@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -39,8 +40,19 @@
  * ***** END LICENSE BLOCK ***** */
 
 $.aH = $.aH || {};
-$.widget('aH.spinner', $.extend({}, $.ui.mouse, {
-    _init: function() {
+$.widget('aH.spinner', $.ui.mouse, {
+    options: {
+        alpha: 120,
+        n: 5,
+        value: 0,
+        width: 150,
+        fly: 1,
+        // ui.mouse.defaults
+        distance: 1,
+        delay: 0,
+        cancel: null
+    },
+    _create: function() {
         var that = this;
         this._hovering = false;
         that.element.append($('<table cellspacing="0" cellpadding="0" class="ui-widget ui-widget-content ui-state-default"><tr class="ui-state-hover ui-helper-hidden"></tr><tr><td><span class="ui-icon ui-icon-triangle-1-w">foo</span></td><td><canvas height="10" width="' +
@@ -61,7 +73,7 @@ $.widget('aH.spinner', $.extend({}, $.ui.mouse, {
         that.value(that.options.value);
     },
     destroy: function() {
-        $.widget.prototype.destroy.call(this);
+        $.Widget.prototype.destroy.call(this);
         this._mouseDestroy();
     },
     computeSetup: function() {
@@ -129,20 +141,6 @@ $.widget('aH.spinner', $.extend({}, $.ui.mouse, {
         }
         return this._value;
     }
-}));
-$.extend($.aH.spinner, {
-    getter: "value",
-    defaults: {
-        alpha: 120,
-        n: 5,
-        value: 0,
-        width: 150,
-        fly: 1,
-        // ui.mouse.defaults
-        distance: 1,
-        delay: 0,
-        cancel: null
-    }
 });
 $.easing.quadratic = function( p, n, firstNum, diff ) {
     return firstNum + diff * p * (2 - p);
@@ -151,7 +149,11 @@ $.easing.quadratic = function( p, n, firstNum, diff ) {
 $.widget(
     'aH.datetime',
     {
-        _init: function() {
+        options: {
+            date: undefined,
+            width: 300
+        },
+        _create: function() {
             var that = this;
             this._dateField = $('<span />')
                 .attr({style: 'font-family: monospace'});
@@ -183,7 +185,7 @@ $.widget(
                 new Date(this.options.date));
         },
         destroy: function() {
-            $.widget.prototype.destroy.call(this);
+            $.Widget.prototype.destroy.call(this);
             this.element.removeClass('ui-widget');
         },
         _days: [31, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31],
@@ -231,11 +233,3 @@ $.widget(
         }
     }
 );
-$.extend($.aH.datetime,
-    {
-        getter: "date",
-        defaults: {
-            date: undefined,
-            width: 300
-        }
-    });

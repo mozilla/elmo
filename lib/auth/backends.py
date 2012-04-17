@@ -1,14 +1,18 @@
 import ldap
 
 from django.conf import settings
-from django.contrib.auth.models import User, Group, check_password
+from django.contrib.auth.models import User, Group
 from django.contrib.auth.backends import RemoteUserBackend
 from django.core.validators import email_re
 from django.utils.hashcompat import md5_constructor
-from django.utils.encoding import force_unicode, DjangoUnicodeDecodeError
+from django.utils.encoding import force_unicode
 import os
 
 HERE = os.path.abspath(os.path.dirname(__file__))
+
+# List all ldap errors that are our fault (not the client's)
+AUTHENTICATION_SERVER_ERRORS = (ldap.SERVER_DOWN,)
+
 
 class MozLdapBackend(RemoteUserBackend):
     """Creates the connvection to the server, and binds anonymously"""
@@ -38,8 +42,8 @@ class MozLdapBackend(RemoteUserBackend):
     # Important note:
     #  We don't store LDAP password locally, so LDAP accounts will
     #  never be authenticated locally
-    def authenticate(self,username=None,password=None):
-        try: # Let's see if we have such user
+    def authenticate(self, username=None, password=None):
+        try:  # Let's see if we have such user
             if email_re.match(username):
                 local_user = User.objects.get(email=username)
             else:
@@ -56,11 +60,7 @@ class MozLdapBackend(RemoteUserBackend):
             return self._authenticate_ldap(username, password)
 
     def _authenticate_ldap(self, username, password, user=None):
-        try:
-            record = self.__getRecord(username)
-        except ldap.SERVER_DOWN, e: # pragma: no cover
-            print "** debug: LDAP server is down"
-            return
+        record = self.__getRecord(username)
         if not record:
             # wrong login
             return
@@ -73,15 +73,15 @@ class MozLdapBackend(RemoteUserBackend):
         self.ldo.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
         try:
             self.ldo.simple_bind_s(dn, password)
-        except ldap.INVALID_CREDENTIALS: # Bad password, credentials are bad.
+        except ldap.INVALID_CREDENTIALS:  # Bad password, credentials are bad.
             return
-        except ldap.UNWILLING_TO_PERFORM: # Bad password, credentials are bad.
+        except ldap.UNWILLING_TO_PERFORM:  # Bad password, credentials are bad.
             return
         else:
             self.ldo.unbind_s()
-            first_name =  record[0][1]['givenName'][0]
-            last_name =  record[0][1]['sn'][0]
-            email =  record[0][1]['mail'][0]
+            first_name = record[0][1]['givenName'][0]
+            last_name = record[0][1]['sn'][0]
+            email = record[0][1]['mail'][0]
             first_name = force_unicode(first_name)
             last_name = force_unicode(last_name)
 
@@ -97,7 +97,8 @@ class MozLdapBackend(RemoteUserBackend):
                     if isinstance(username, unicode):
                         # md5 chokes on non-ascii characters
                         django_username = username.encode('ascii', 'ignore')
-                    django_username = md5_constructor(django_username).hexdigest()[:30]
+                    django_username = (md5_constructor(django_username)
+                                       .hexdigest()[:30])
                 user = User(username=django_username,
                             first_name=first_name,
                             last_name=last_name,
@@ -122,14 +123,16 @@ class MozLdapBackend(RemoteUserBackend):
         return user
 
     def __getRecord(self, username):
-        """Private method to find the distinguished name for a given username"""
+        """Private method to find the distinguished name for a given
+        username"""
         #ldap.set_option(ldap.OPT_DEBUG_LEVEL,4095)
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
         ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, self.certfile)
         self.ldo = ldap.initialize(self.host)
         self.ldo.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
         self.ldo.simple_bind_s(self.dn, self.password)
-        result = self.ldo.search_s("dc=mozilla", ldap.SCOPE_SUBTREE, "mail="+username)
+        result = self.ldo.search_s("dc=mozilla", ldap.SCOPE_SUBTREE,
+                                   "mail=" + username)
         self.ldo.unbind_s()
         return result
 

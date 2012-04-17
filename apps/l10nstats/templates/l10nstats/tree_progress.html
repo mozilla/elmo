@@ -43,16 +43,9 @@
 
 
 {% timeplot autoCreate=false %}
+
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.core.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.resizable.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.accordion.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.dialog.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.slider.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.tabs.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.datepicker.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.progressbar.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.theme.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/smoothness/jquery-ui-1.8.16.custom.css" type="text/css">
 {% endcompress %}
 {% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}l10nstats/css/tree_progress.css" type="text/css">
@@ -60,15 +53,7 @@
 {% endblock %}
 
 {% block javascript_matter %}
-{% compress js %}
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.core.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.draggable.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.droppable.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.resizable.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.dialog.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.slider.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.accordion.js"></script>
-{% endcompress %}
+<script src="{{ STATIC_URL }}js/jquery.ui/jquery-ui-1.8.16.custom.min.js"></script>
 <script>
 var SHOW_BAD = {{ showBad|yesno:"true,false" }}
 var BOUND = {{ bound }};
@@ -98,10 +83,12 @@ for (var i=0, len=_locale_data_list.length; i<len; i++) {
 {% endcompress %}
 {% endblock %}
 
+{% block header_h1 %}Statistics for {{ tree }}{% endblock %}
+{% block header_content_extra %}<p>String completeness for {{ tree }} localizations over time.</p>{% endblock %}
+{% block body_content_class %}page-wider{% endblock %}
+
 {% block content %}
-<h1>Statistics for {{ tree }}</h1>
-<p>String completeness for {{ tree }} localizations over time.</p>
-<div id="my-timeplot" style="height: 350px;"></div>
+<div id="my-timeplot"></div>
 <div id="time-slider"></div>
 <div class="legend" style="float:right">
   <input type="checkbox" onchange="update({showBad:event.target.checked});" id="showBadField">red area: locales with missing strings<br>
@@ -109,6 +96,6 @@ for (var i=0, len=_locale_data_list.length; i<len; i++) {
   green area: good locales
 </div>
 <p>Move sliders on the history of the tree to change the displayed time window, or double click on the plot to drill into a time window.</p>
-<div id="histogram" style="height:100px">
+<div id="histogram">
 </div>
 {% endblock %}

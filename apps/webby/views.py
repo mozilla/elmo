@@ -35,11 +35,11 @@
 #
 # ***** END LICENSE BLOCK *****
 
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import get_object_or_404
+from django.shortcuts import render
 from webby.models import Project, Weblocale
 from django.http import HttpResponseRedirect
 from life.models import Locale
-from django.template import RequestContext
 from django import forms
 from django.contrib.admin.models import LogEntry, ADDITION
 from django.contrib.contenttypes.models import ContentType
@@ -67,11 +67,10 @@ def projects(request):
                 project.pending_count = len(project_optins[project.id])
             except KeyError:
                 project.pending_count = 0
-    return render_to_response('webby/projects.html',
-                              {'projects': projects,
-                               'login_form_needs_reload': True,
-                              },
-                              context_instance=RequestContext(request))
+    return render(request, 'webby/projects.html', {
+                    'projects': projects,
+                    'login_form_needs_reload': True,
+                  })
 
 
 def project(request, slug):
@@ -104,11 +103,10 @@ def project(request, slug):
                         .exclude(id__in=project.locales.values_list('id')) \
                         .order_by('code') if not project.is_archived else []
 
-    return render_to_response('webby/project.html',
-                              {'project': project,
-                               'locales': locales,
-                               'new_locales': new_locales,
-                               'form': form,
-                               'login_form_needs_reload': True,
-                              },
-                              context_instance=RequestContext(request))
+    return render(request, 'webby/project.html', {
+                    'project': project,
+                    'locales': locales,
+                    'new_locales': new_locales,
+                    'form': form,
+                    'login_form_needs_reload': True,
+                  })

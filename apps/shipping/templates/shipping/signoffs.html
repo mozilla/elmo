@@ -42,15 +42,7 @@
 
 {% block head_matter %}
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.core.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.resizable.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.accordion.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.dialog.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.slider.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.tabs.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.datepicker.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.progressbar.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.theme.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/smoothness/jquery-ui-1.8.16.custom.css" type="text/css">
 {% endcompress %}
 {% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/signoffs.css" type="text/css">
@@ -58,22 +50,14 @@
 {% endblock %}
 
 {% block javascript_matter %}
-{% compress js %}
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.core.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.draggable.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.droppable.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.resizable.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.dialog.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.slider.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.ui/ui/ui.accordion.js"></script>
-{% endcompress %}
+<script src="{{ STATIC_URL }}js/jquery.ui/jquery-ui-1.8.16.custom.min.js"></script>
 
 <script>
 var diffData = {
   tree: "{{tree}}",
   repo: "{{repo.name}}",
   locale: "{{lang.code}}",
-  url: "{% url shipping.views.diff_app %}?"
+  url: "{% url pushes.views.diff %}"
 };
 var permissions = {
   canAddSignoff: {{ perms.shipping.add_signoff|yesno:"true,false" }},
@@ -105,7 +89,7 @@ looks good to <a href="#{{suggested_signoff}}">sign off on</a>.{% endif %}
   <form id="review_form" method="POST"
   action="{% url shipping.views.signoff.review_signoff language.code  appver.code %}">{% csrf_token %}
   <input type="hidden" name="signoff_id" value="">
-  <table cellspacing="0" cellpadding="0" border="0">
+  <table>
     <tr>
       <td><input type="radio" name="action" value="accept"
       onchange="Review.accept(event)"></td>
@@ -139,9 +123,9 @@ looks good to <a href="#{{suggested_signoff}}">sign off on</a>.{% endif %}
   <input type="submit" value="Sign-off" name="submit">
   </form>
 </div> {% endif %}
-<table cellspacing="0" cellpadding="5" border="1" id="pushtable">
+<table id="pushtable" class="standard">
 {% include "shipping/signoff-rows.html" %}
-  <tr><td colspan="4" align="center" class="note">Loading more data will be part of
+  <tr><td colspan="4" class="note">Loading more data will be part of
   <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=658656">bug 658656</a></td></tr>
 </table>
 

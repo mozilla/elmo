@@ -22,8 +22,7 @@ urlpatterns = patterns('',
                        (r'.*/__history__.html$', lambda r: HttpResponse()),
                        (r'^builds/',
                         include('tinder.urls')),
-                       (r'^pushes/(?P<repo_name>.+)?$',
-                        'pushes.views.pushlog', {}, 'pushlog'),
+                       (r'^source/', include('pushes.urls')),
                        (r'^dashboard/', include('l10nstats.urls')),
                        (r'^shipping',
                             include('shipping.urls')),
@@ -64,10 +63,3 @@ urlpatterns += patterns('',
 
 #if settings.DEBUG:
 urlpatterns += staticfiles_urlpatterns()
-
-# Proxy the webdashboard
-urlpatterns += patterns('',
-                        (r'^webdashboard/(?P<path>.*)$',
-                         'l10nstats.views.proxy',
-                         {'base': 'http://l10n.mozilla.org/webdashboard/'}, 'webdashboard'),
-                        )

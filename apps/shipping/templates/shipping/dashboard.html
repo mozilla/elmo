@@ -37,10 +37,9 @@
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
 {% load simile %}
-{% block title_matter %}Signoffs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}
 
 {% block head_matter %}
-<link href="{% url webdashboard path="json/?tag=URGENT" %}" type="application/json" rel="exhibit/data" />
+<link href="{{ webdashboard_url }}json/?tag=URGENT" type="application/json" rel="exhibit/data" />
 <link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/dashboard.css" type="text/css">
 <link href="{% url shipping.views.status.status_json %}?{{ query }}" type="application/json" rel="exhibit/data"/>
 {% exhibit autoCreate=false %}
@@ -53,16 +52,17 @@ var EX_OPTIONS = ["tree", "result", "locale", "shipping", "signoff"];
 <script src="{{ STATIC_URL }}shipping/js/dashboard.js"></script>
 {% endblock %}
 
+{% block title_matter %}Sign-offs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}
+{% block header_h1 %}Sign-offs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}
+
+{% block body_content_class %}page-wider{% endblock %}
+
 {% block content %}
-
- <h1>Signoffs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}</h1>
-
-
  <div ex:role="collection" ex:itemTypes="Build"></div>
- <table width="100%">
+ <table width="100%" class="standard">
    <tr valign="top">
      <td ex:role="viewPanel" ex:showAll="true">
-       <span ex:role="lens" class="comparison" ex:itemTypes="Comparison"style="display:none">
+       <span ex:role="lens" class="comparison" ex:itemTypes="Comparison" style="display:none">
          <span  ex:content=".label"></span>
          <span ex:if-exists=".bug" class="bug"> (<a ex:href-subcontent="https://bugzilla.mozilla.org/show_bug.cgi?id={&#123;.bug}}" target="_blank">buglink</a>)</span>
 
@@ -85,7 +85,7 @@ var EX_OPTIONS = ["tree", "result", "locale", "shipping", "signoff"];
       <td class="coverage_cell" ex:content=".report"></td>
       <td class="coverage_cell" ex:content=".obsolete"></td>
       <td class="coverage_cell" ex:content=".unchanged"></td>
-     <td class="bugs_cell"><a ex:href-subcontent="http://l10n.mozilla.org/webdashboard/?locale={&#123;.locale}}" target="_blank" ex:content=".locale.missing_webbugs"></a> (<span ex:content=".locale.total_webbugs"></span>)</td>
+     <td class="bugs_cell"><a ex:href-subcontent="{{ webdashboard_url }}?locale={&#123;.locale}}" target="_blank" ex:content=".locale.missing_webbugs"></a> (<span ex:content=".locale.total_webbugs"></span>)</td>
       <td><a title="History" ex:href-subcontent="{% url l10nstats.views.history_plot %}?tree={&#123;.tree}}&locale={&#123;.locale}}" target="_blank">H</a>/<a title="Comparison" ex:href-subcontent="{% url compare_locales %}?run={&#123;.runid}}" target="_blank">C</a></td>
 
       <td>
@@ -113,7 +113,7 @@ var EX_OPTIONS = ["tree", "result", "locale", "shipping", "signoff"];
       </table>
     </div>
      </td>
-     <td width="25%">
+     <td width="18%">
        <div ex:role="facet" ex:expression=".result" ex:facetLabel="Result"
          id="result-facet"
          ex:fixedOrder="success;warnings;failure;exception"></div>

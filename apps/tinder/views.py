@@ -40,8 +40,7 @@
 from django.db.models import Q
 from django.db import connection
 from django.conf import settings
-from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.shortcuts import render
 from django.http import HttpResponseNotFound, Http404
 from django.contrib.syndication.feeds import Feed
 from django.core.exceptions import ObjectDoesNotExist
@@ -65,6 +64,7 @@ resultclasses = ['success', 'warning', 'failure', 'skip', 'except']
 # view even though this is not important for use in this file
 from django.contrib.syndication.views import feed
 
+
 def debug_(*msg):
     if False:
         print ' '.join(msg)
@@ -78,8 +78,8 @@ def pmap(props, bld_ids):
     Build and Property model in an efficient way which doens't cause massively
     complex joins which require temporary tables.
 
-    NOTE 2: This function assumes that the list of `props` is reasonably limited
-    or else the `WHERE id IN (...)` is going to in efficient.
+    NOTE 2: This function assumes that the list of `props` is reasonably
+    limited or else the `WHERE id IN (...)` is going to in efficient.
     """
     if not bld_ids:
         return {}
@@ -88,7 +88,7 @@ def pmap(props, bld_ids):
     # reference which is not a model but is a database table.
     # We're accessing this auxilliary table to avoid complex joins which force
     # MySQL to use a temporary table.
-    b2pf=Build._meta.get_field_by_name('properties')[0]
+    b2pf = Build._meta.get_field_by_name('properties')[0]
     args = {'t': b2pf.m2m_db_table(),
             'b': b2pf.m2m_column_name(),
             'p': b2pf.m2m_reverse_name()}
@@ -126,6 +126,7 @@ def pmap(props, bld_ids):
             rv[bid][name] = value
     return rv
 
+
 def tbpl_inner(request):
     """Inner method used by both tbpl and tbpl_rows to do the actual work.
     The callers only differ in that tbpl generates the complete webpage
@@ -135,8 +136,8 @@ def tbpl_inner(request):
     Pass in 'before' and you'll only get those sourcestamps with id matching
     or before the specified number.
 
-    Any params other than 'after', 'before', and 'random' are taken to be querying
-    build properties, where multiple properties of the same name are
+    Any params other than 'after', 'before', and 'random' are taken to be
+    querying build properties, where multiple properties of the same name are
     ORed together, and differently named properties restrict further.
 
     Example query would be
@@ -168,9 +169,11 @@ def tbpl_inner(request):
                 continue
             q = Q()
             for val in values:
-                q = q|Q(name=key, value=val)
+                q = q | Q(name=key, value=val)
             if q:
-                props.append(list(Property.objects.filter(q).values_list('id', flat=True)))
+                props.append(list(Property.objects
+                                  .filter(q)
+                                  .values_list('id', flat=True)))
     for _p in props:
         ss = ss.filter(builds__properties__in=_p)
     ss = ss.distinct()
@@ -180,19 +183,30 @@ def tbpl_inner(request):
         blds = blds.filter(properties__in=_p)
     nc = NumberedChange.objects.filter(sourcestamp__in=ss)
     changetags = defaultdict(list)
-    for ct in Change_Tags.objects.filter(change__stamps__in=ss).distinct().select_related('tag'):
+    for ct in (Change_Tags.objects
+               .filter(change__stamps__in=ss)
+               .distinct()
+               .select_related('tag')):
         changetags[ct.change_id].append(ct.tag.value)
-    reponames = dict((id, '/'.join([b]+changetags[id])) for id, b in Change.objects.filter(stamps__in=ss).distinct().values_list('id','branch'))
-    repourls = dict(Repository.objects.filter(name__in=set(reponames.values())).values_list('name','url'))
+    reponames = dict((id, '/'.join([b] + changetags[id]))
+                     for id, b
+                     in Change.objects
+                         .filter(stamps__in=ss)
+                         .distinct()
+                         .values_list('id', 'branch'))
+    repourls = dict(Repository.objects
+                    .filter(name__in=set(reponames.values()))
+                    .values_list('name', 'url'))
+
     def changer(c):
         branch = c.branch
         reponame = '/'.join([c.branch] + changetags[c.id])
         try:
             rev = c.revision[:12]
-            url = repourls[reponames[c.id]]+'pushloghtml?changeset='+rev
+            url = repourls[reponames[c.id]] + 'pushloghtml?changeset=' + rev
         except:
             url = 'about:blank'
-            rev = 12*'0'
+            rev = 12 * '0'
         return {'id': c.id,
                 'who': c.who,
                 'url': url,
@@ -205,18 +219,20 @@ def tbpl_inner(request):
     for _nc in nc.select_related('change'):
         changes_for_source[_nc.sourcestamp_id].append(_nc.change)
     for _cs in changes_for_source.values():
-        _cs.sort(key=lambda c:c.id, reverse=True)
-    bld_ids=list(blds.values_list('id', flat=True))
-    bprops = pmap(('locale','tree','slavename'), bld_ids)
+        _cs.sort(key=lambda c: c.id, reverse=True)
+    bld_ids = list(blds.values_list('id', flat=True))
+    bprops = pmap(('locale', 'tree', 'slavename'), bld_ids)
 
     builds_for_source = defaultdict(list)
     for b in blds.filter(sourcestamp__in=ss).select_related('builder'):
         builds_for_source[b.sourcestamp_id].append(b)
     for _b in builds_for_source.values():
-        _b.sort(key=lambda b:b.id)
+        _b.sort(key=lambda b: b.id)
     pending = defaultdict(int)
-    for s in BuildRequest.objects.filter(builds__isnull=True,
-                                         sourcestamp__in=ss).values_list('sourcestamp', flat=True):
+    for s in (BuildRequest.objects
+               .filter(builds__isnull=True,
+                       sourcestamp__in=ss)
+               .values_list('sourcestamp', flat=True)):
         pending[s] += 1
 
     def chunks(ss):
@@ -234,23 +250,26 @@ def tbpl_inner(request):
                                 'build': b}
                                for b in builds_for_source[s.id]]
             chunk['id'] = s.id
-            chunk['is_running'] = any(map(lambda c: c['end'] is None, chunk['builds']))
+            chunk['is_running'] = any(map(lambda c:
+                                          c['end'] is None, chunk['builds']))
             chunk['pending'] = pending[s.id]
             yield chunk
     return chunks(ss)
 
 
 def tbpl(request):
-    return render_to_response('tinder/tbpl.html',
-                              {'stamps': tbpl_inner(request),
-                               'params': request.GET.iterlists(),
-                               }, context_instance=RequestContext(request))
+    return render(request, 'tinder/tbpl.html', {
+                    'stamps': tbpl_inner(request),
+                    'params': request.GET.iterlists(),
+                  })
 
 
 def tbpl_rows(request):
     qlen = len(connection.queries)
-    r = render_to_response('tinder/tbpl-rows.html',
-                           {'stamps': tbpl_inner(request)})
+    r = render(request, 'tinder/tbpl-rows.html', {
+                 'stamps': tbpl_inner(request)
+               })
+    # XXX: is this used at all?
     debug_(len(connection.queries) - qlen)
     return r
 
@@ -370,6 +389,7 @@ class BColumn(object):
             l.append(ll)
         return l
 
+
 def _waterfall(request):
     '''Inner helper for waterfall display. This method is factored out
     of waterfall for testing purposes.
@@ -378,7 +398,7 @@ def _waterfall(request):
     try:
         end_t = max(Build.objects.order_by('-pk')[0].starttime,
                     Change.objects.order_by('-pk')[0].when)
-        start_t = end_t - timedelta(1)/2
+        start_t = end_t - timedelta(1) / 2
     except IndexError:
         # wallpaper against an empty build database
         end_t = datetime.max
@@ -405,12 +425,13 @@ def _waterfall(request):
             isEnd = False
         if 'starttime' in request.GET:
             try:
-                start_t = datetime.utcfromtimestamp(int(request.GET['starttime']))
+                start_t = datetime.utcfromtimestamp(
+                              int(request.GET['starttime']))
             except Exception:
                 pass
         if 'hours' in request.GET:
             try:
-                td = timedelta(1)/24*int(request.GET['hours'])
+                td = timedelta(1) / 24 * int(request.GET['hours'])
                 if 'starttime' in request.GET and 'endtime' not in request.GET:
                     end_t = start_t + td
                     isEnd = False
@@ -434,24 +455,25 @@ def _waterfall(request):
 
     # get the real hours, for consecutive queries
     time_d = end_t - start_t
-    hours = int(round(time_d.seconds/3600.0))
+    hours = int(round(time_d.seconds / 3600.0))
     if time_d.days:
         hours += time_d.days * 24
 
-    q_buildsdone = Build.objects.filter(Q(endtime__gt = start_t) |
-                                        Q(endtime__isnull = True),
-                                        Q(starttime__lte = end_t))
+    q_buildsdone = Build.objects.filter(Q(endtime__gt=start_t) |
+                                        Q(endtime__isnull=True),
+                                        Q(starttime__lte=end_t))
     if buildf:
         q_buildsdone = q_buildsdone.filter(**buildf)
     for p in  props:
-        q_buildsdone = q_buildsdone.filter(properties__in = p)
+        q_buildsdone = q_buildsdone.filter(properties__in=p)
     debug_("found %d builds" % q_buildsdone.count())
-    q_changes = Change.objects.filter(when__gt = start_t,
-                                      when__lte = end_t)
+    q_changes = Change.objects.filter(when__gt=start_t,
+                                      when__lte=end_t)
+
     def ievents(builds, changes, max_builds=None):
         starts = []
         c_iter = changes.order_by('-when', '-pk').iterator()
-        builds = builds.select_related('builder','slave','sourcestamp')
+        builds = builds.select_related('builder', 'slave', 'sourcestamp')
         try:
             c = c_iter.next()
         except StopIteration:
@@ -460,7 +482,8 @@ def _waterfall(request):
         if c:
             yield(None, 'end change', c)
         # yield end-events for running builds
-        for b in builds.filter(endtime__isnull=True).order_by('-starttime', '-pk'):
+        for b in (builds.filter(endtime__isnull=True)
+                  .order_by('-starttime', '-pk')):
             starts.insert(0, b)
             yield (None, 'end started build', b)
             if max_builds:
@@ -486,7 +509,7 @@ def _waterfall(request):
                 starts.insert(0, e)
                 if b is not None:
                     starts.append(b)
-                starts.sort(lambda r,l: cmp(r.starttime, l.starttime))
+                starts.sort(lambda r, l: cmp(r.starttime, l.starttime))
                 b = starts.pop()
                 try:
                     e = b_iter.next()
@@ -512,8 +535,11 @@ def _waterfall(request):
                 # we have more changes, open up the next cell
                 yield(None, 'end change', c)
 
-    builders = list(q_buildsdone.values_list('builder__name',
-                                             flat=True).distinct().order_by('builder__name'))
+    builders = list(q_buildsdone
+                    .values_list('builder__name',
+                                 flat=True)
+                    .distinct()
+                    .order_by('builder__name'))
     cols = dict((builder, BColumn(builder)) for builder in builders)
     blame = BColumn('blame')
     for t, type_, obj in ievents(q_buildsdone, q_changes, max_builds):
@@ -555,8 +581,10 @@ def _waterfall(request):
         filters = filters.urlencode() + '&'
     else:
         filters = ''
+
     def timestamp(dto):
         return "%d" % calendar.timegm(dto.utctimetuple())
+
     hourlist = [12, 24]
     if hours in hourlist:
         hourlist.remove(hours)
@@ -567,6 +595,7 @@ def _waterfall(request):
                                   'end_t': end_t,
                                   'hourlist': hourlist,
                                   'hours': hours, 'isEnd': isEnd}
+
 
 def waterfall(request):
     '''Waterfall view
@@ -583,11 +612,12 @@ def waterfall(request):
     rows = []
     rows = [reduce(operator.add, t, [])
             for t in zip(*map(lambda b: b.rows(), builders))]
-    return render_to_response('tinder/waterfall.html',
-                              {'times': times, 'filters': filters,
-                               'heads': head,
-                               'rows': rows},
-                               context_instance=RequestContext(request))
+    return render(request, 'tinder/waterfall.html', {
+                    'times': times, 'filters': filters,
+                    'heads': head,
+                    'rows': rows,
+                  })
+
 
 def builds_for_change(request):
     """View for builds for one particular change.
@@ -596,37 +626,40 @@ def builds_for_change(request):
     """
     try:
         changenumber = int(request.GET['change'])
-        change = Change.objects.get(number = changenumber)
+        change = Change.objects.get(number=changenumber)
     except (ValueError, KeyError):
         return HttpResponseNotFound("Given change does not exist")
 
-    builds = Build.objects.filter(sourcestamp__changes=change).order_by('starttime')
+    builds = (Build.objects
+              .filter(sourcestamp__changes=change)
+              .order_by('starttime'))
     pending = BuildRequest.objects.filter(builds__isnull=True,
                                           sourcestamp__changes=change).count()
-    running = []
     done = []
     for b in builds:
-        done.append({'build': b,
-                     'class': (b.result is not None and resultclasses[b.result])
+        done.append({
+          'build': b,
+          'class': (b.result is not None and resultclasses[b.result])
                      or ''})
 
     try:
 
-        url = str(Push.objects.get(changesets__revision__startswith=change.revision,
-                                   repository__name__startswith=change.branch))
+        url = str(Push.objects
+                 .get(changesets__revision__startswith=change.revision,
+                      repository__name__startswith=change.branch))
     except:
-        url=None
+        url = None
 
-    return render_to_response('tinder/builds_for.html',
-                              {'done_builds': done,
-                               'pending': pending,
-                               'url': url,
-                               'change': change},
-                               context_instance=RequestContext(request))
+    return render(request, 'tinder/builds_for.html', {
+                    'done_builds': done,
+                    'pending': pending,
+                    'url': url,
+                    'change': change,
+                  })
 
 
 class BuildsForChangeFeed(Feed):
-    ttl = str(5*60)
+    ttl = str(5 * 60)
     title_template = 'tinder/builds_for_change_title.html'
 
     def get_object(self, bits):
@@ -644,8 +677,9 @@ class BuildsForChangeFeed(Feed):
 
     def title(self, change):
         title = []
-        pending = BuildRequest.objects.filter(builds__isnull=True,
-                                              sourcestamp__changes=change).count()
+        pending = (BuildRequest.objects
+                   .filter(builds__isnull=True,
+                           sourcestamp__changes=change).count())
         if pending:
             title.append("%d pending" % pending)
         builds = Build.objects.filter(sourcestamp__changes=change)
@@ -666,7 +700,8 @@ class BuildsForChangeFeed(Feed):
         return ", ".join(title)
 
     def link(self, change):
-        lnk = reverse('tinder.views.builds_for_change') + '?change=%d' % change.pk
+        lnk = (reverse('tinder.views.builds_for_change') +
+               '?change=%d' % change.pk)
         lnk = self.request.build_absolute_uri(lnk)
         return lnk
 
@@ -684,6 +719,7 @@ class BuildsForChangeFeed(Feed):
         lnk = self.request.build_absolute_uri(lnk)
         return lnk
 
+
 def showbuild(request, buildername, buildnumber):
     try:
         builder = Builder.objects.get(name=buildername)
@@ -697,12 +733,12 @@ def showbuild(request, buildername, buildnumber):
 
     steps = build.steps.order_by('pk')
     props = build.propertiesAsList()
+    return render(request, 'tinder/showbuild.html', {
+                    'build': build,
+                    'steps': steps,
+                    'props': props,
+                  })
 
-    return render_to_response('tinder/showbuild.html',
-                              {'build': build,
-                               'steps': steps,
-                               'props': props},
-                               context_instance=RequestContext(request))
 
 def generateLog(master, filename):
     """Generic generator to read buildbot step logs.
@@ -720,9 +756,11 @@ def generateLog(master, filename):
         try:
             f = open(filename, "r")
         except IOError:
-            raise Http404("Log `%s` on master `%s` not found" % (filename, master))
+            raise Http404("Log `%s` on master `%s` not found" %
+                          (filename, master))
+
     def _iter(f):
-        buflen = 64*1024
+        buflen = 64 * 1024
         buf = f.read(buflen)
         offset = 0
         while buf:
@@ -731,11 +769,11 @@ def generateLog(master, filename):
                 cnt = int(m.group(1))
                 channel = int(m.group(2))
                 offset = m.end()
-                chunk = buf[offset:offset+cnt-1]
+                chunk = buf[offset:offset + cnt - 1]
                 if len(chunk) < cnt - 1:
                     cnt -= len(chunk)
                     morebuf = f.read(cnt)
-                    chunk += morebuf[:-1] # drop ','
+                    chunk += morebuf[:-1]  # drop ','
                     buf = []
                     offset = 0
                 else:
@@ -744,6 +782,7 @@ def generateLog(master, filename):
             buf = buf[offset:] + f.read(buflen)
             offset = 0
     return _iter(f)
+
 
 def showlog(request, master, file):
     """Show a log file.
@@ -759,8 +798,8 @@ def showlog(request, master, file):
     build = Build.objects.get(steps__logs__filename=file,
                               builder__master__name=master)
     chunks = generateLog(master, file)
-    return render_to_response('tinder/log.html',
-                              {'build': build,
-                               'file': file,
-                               'chunks': classify(chunks)},
-                               context_instance=RequestContext(request))
+    return render(request, 'tinder/log.html', {
+                    'build': build,
+                    'file': file,
+                    'chunks': classify(chunks),
+                  })

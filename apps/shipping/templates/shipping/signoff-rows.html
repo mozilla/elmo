@@ -41,7 +41,7 @@
 {% for push in pushes %}
   <tr class="pushrow" id="{{push.id}}" data-push="{{push.id}}">
     <td class="push{% if forloop.first %} top{% endif %}{% if forloop.last %}  bottom {% endif %}" rowspan="{{push.rows}}">{{push.when|date}}<br><span class="csuser">{{push.who}}</span></td>
-   <td rowspan="{{push.changerows}}">{{push.run|showrun}}<br>
+    <td rowspan="{{push.changerows}}">{{push.run|showrun}}<br>
      <span class="csuser">{{push.run.build.starttime|date}}</span></td>
     {% for cs in push.changes %}
     <td class="rev_td">
@@ -63,8 +63,8 @@
         <span class="shortrev">{{cs.shortrev}}</span></a>
       </div>
     </td>
-    <td class="diff">{% for _i in cs.diffbases %}<div class="diffanchor"></div>{% endfor %}</td>
-    {% if not forloop.last %}</tr>
+    <td class="diff">{% for _i in cs.diffbases %}<div class="diffanchor"></div>{% endfor %}</td></tr>
+    {% if not forloop.last %}
   <tr class="pushrow" data-push="{{push.id}}">
     {% endif %}
     {% endfor %}
@@ -108,8 +108,7 @@
       {% endfor %}
     {% else %}
     <tr class="signoffrow hidden" data-push="{{push.id}}">
-      <td class="run"></td><td class="signoff"></td><td class="diff"></td>
+      <td class="push"></td><td class="run"></td><td class="signoff"></td><td class="diff"></td>
     </tr>
     {% endif %}
-  </tr>
 {% endfor %}

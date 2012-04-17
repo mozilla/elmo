@@ -37,12 +37,16 @@
    - ***** END LICENSE BLOCK *****
 {% endcomment %} -->
 {% load build_extras %}
+{% load compress %}
 {% block title_matter %}{{ build.builder.name }} build {{ build.buildnumber }}{% endblock %}
 {% block head_matter %}
+{% compress css %}
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}tinder/css/showbuild.css">
+{% endcompress %}
 {% endblock %}
 {% block content %}
 <h1>{{ build.builder.name }} build {{ build.buildnumber }}</h1>
-<dl>
+<dl id="steps">
 {% for step in steps %}
 <dt>{{ step.text|join:" " }}</dt>
 <dd>
@@ -54,8 +58,8 @@
 </dl>
 <p>Total build time was
 {{build.starttime|timedelta:build.endtime}}</p>
-Build properties:
-<table>
+<h3>Build properties:</h3>
+<table class="standard">
 {% for p in props %}
 <tr><td>{{ p.0 }}</td><td>{{ p.1 }}</td></tr>
 {% endfor %}

@@ -46,17 +46,8 @@
 
 {# this is now exactly the same as on confirm-drill.html so the cache can be re-used #}
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.core.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.resizable.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.accordion.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.dialog.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.slider.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.tabs.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.datepicker.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.progressbar.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/base/ui.theme.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/smoothness/jquery-ui-1.8.16.custom.css" type="text/css">
 {% endcompress %}
-
 {% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/diff.css" type="text/css">
 {% endcompress %}
@@ -84,7 +75,7 @@ Changed files:
     {% endif %}
 </div>
 {% else %}
-<div class="diff-container {{diff.value.class}} ui-accordion
+<div class="diff-container {{diff.value.class}} ui-accordion ui-accordion-icons
   ui-widget ui-helper-reset"><div title="{{diff.value.path}}"
     class="ui-accordion-header ui-helper-reset"><span class="ui-icon ui-icon-triangle-1-s"></span><a>{{fragment}}
     {% if diff.value.renamed %}
@@ -97,7 +88,7 @@ Changed files:
   {% if diff.value %}
 <table class="diff">
   {% for line in diff.value.lines %}
-  <tr class="line-{{line.class}}"><td rowspan="2" valign="top">{{line.entity}}</td>
+  <tr class="line-{{line.class}}"><td rowspan="2">{{line.entity}}</td>
     <td>
       {% for chunk in line.oldval %}<span class="{{chunk.class}}">{{chunk.value}}</span>{% endfor %}
     </td></tr>

@@ -1,60 +1,522 @@
-#menu {
-  margin: 0 0 2em;
-  padding: 10px;
-  font-size: small;
-  font-style: italic;
-  line-height: 1em;
-  background-color: #eee;
-  -moz-border-radius: .5em;
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is l10n django site.
+ *
+ * The Initial Developer of the Original Code is
+ *   Mozilla Foundation.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Peter Bengtsson <peterbe@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
+
+/* http://meyerweb.com/eric/tools/css/reset/
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
 }
-#menu ul {
-  list-style: none;
-  float: left;
-  margin: 0;
-  padding: 0;
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+	display: block;
 }
-#menu li {
-  float: left;
-  margin: 0 10px;
+body {
+	line-height: 1;
 }
-#menu br {
-  clear: both;
+ol, ul {
+	list-style: none;
 }
-#menu .errorlist li {
-  color:red;
+blockquote, q {
+	quotes: none;
 }
-#auth {
-  float: right;
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
 }
-#page_footer {
-  margin-top: 2em;
-  padding: 10px;
-  font-size: small;
-  font-style: italic;
-  line-height: 1em;
-  background-color: #eee;
-  -moz-border-radius: .5em;
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+/* end reset */
+
+
+/* Un-reset some basic sizes */
+h1, h2, h3, h4, th {
+    font-weight: bold;
+}
+h1 {
+    font-size: 170%;
+}
+h2 {
+    font-size: 150%;
+}
+em, cite {
+    font-style: italic;
+}
+ol, ul {
+    list-style: disc inside;
+}
+html {
+    height: 100%;
+}
+/* end un-reset */
+
+body {
+    background: #fff url(../img/body-background.jpg) no-repeat left top;
+    color: #4b4740;
+    font: 14px/1.4 Georgia, Times, serif;
+    min-width: 960px;
+    position: relative;
+    height: 100%;
+}
+#wrapper {
+    background: url("../img/footer-background_trans.png") no-repeat scroll left bottom transparent;
+    position: relative;
+    min-height: 100%;
+}
+img {
+    border: 0;
+}
+a:link,
+a:active,
+a:visited {
+    color: #2987AD;
+    text-decoration: none;
+}
+a:link:hover,
+a:link:focus {
+    text-decoration: underline;
+}
+button {
+    cursor: pointer;
+    padding: 1px;
+}
+input {
+    padding: 2px;
+}
+
+h1,
+nav a,
+#header-nav a,
+#header-nav span,
+#header-options .button {
+    font-family: MetaBold, 'Trebuchet MS', sans-serif;
+}
+
+/*  960.gs */
+#body-content {
+    margin-left: 10%;
+    margin-right: auto;
+}
+body > header:after {
+    clear: both;
+    content: " ";
+    display: block;
+    overflow: hidden;
+    visibility: hidden;
+    width: 0;
+    height: 0;
+}
+
+/* Header */
+nav {
+    float: right;
+    padding: 15px 0;
+    width: 90%;
+}
+nav div {
+    float: right;
+}
+nav ul {
+    list-style-type: none;
+}
+nav li {
+    display: inline;
+}
+nav a {
+    font-size: 1.1em;
+    padding: 3px 6px;
+}
+nav a.homepage-link {
+    color: #2a2a2a;
+    text-shadow: 1px 1px 3px #fff;
+}
+nav input {
+    display: block;
+    margin: 0 2px;
+    width: 130px;
+}
+nav label {
+    float: left;
+    text-align: center;
+}
+nav .error {
+    background-color: #666;
+    border: 1px solid #333;
+    border-radius: 3px;
+    color: white;
+    display: inline-block;
+    margin: 3px 2px;
+    padding: 3px 5px;
+    position: absolute;
+    z-index: 1;
+}
+nav .error:before,
+nav .error:after {
+    content: "";
+    height: 0;
+    left: 20%;
+    position: absolute;
+    width: 0;
+}
+nav .error:after {
+    border: 7px solid transparent;
+    border-bottom-color: #666;
+    top: -14px;
+    margin-left: -3px;
+}
+nav .error:before {
+    border: 8px solid transparent;
+    border-bottom-color: #333;
+    top: -16px;
+    margin-left: -4px;
+}
+nav .site_login_error {
+    color: red;
+    font-size: 0.9em;
+}
+
+/* header */
+header {
+    clear: right;
+    float: right;
+    position: relative;
+    background-color: #2a2a2a;
+    background-color: rgba(38,38,38,0.9);
+    color: #999;
+    margin-bottom: 40px;
+    padding: 10px 0 25px 25px;
+    border-bottom: 10px solid #a5151e;
+    width: 90%;
+    height: 65px;
+}
+header h1 {
+    font-size: 40px;
+    color: #fff;
+    font-weight: bold;
+    letter-spacing: -2px;
+    padding: 0;
+    text-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    margin: 0;
+    min-width: 270px;
+    z-index: 2;
+}
+header h1 a,
+header h1 a:link,
+header h1 a:active,
+header h1 a:visited {
+    color: #fff;
+    display: inline;
+    text-decoration: none;
+}
+header h1 a:hover,
+header h1 a:focus {
+    text-decoration: none;
+    color: #eee;
+    text-shadow: 0 1px 5px rgba(0,0,0,0.4),
+    0 0 10px rgba(255,255,255,0.4);
+}
+
+#header-nav {
+    float: left;
+    list-style-type: none;
+    margin: 0;
+}
+#header-nav li {
+    background: none;
+    float: left;
+    padding: 0 0 30px 0;
+    position: relative;
+}
+#header-nav a,
+#header-nav span {
+    color: #ccc;
+    display: block;
+    padding: 25px 15px 0 15px;
+    font-weight: bold;
+    font-size: 1.2em;
+    height: 100%;
+}
+#header-nav a:hover,
+#header-nav a:focus {
+    text-decoration: none;
+    color: #f59d56;
+}
+#header-nav li.selected a,
+#header-nav li.on a {
+    color: white;
+}
+#header-nav li.selected:after,
+#header-nav li.on:after {
+    content: "";
+    height: 0;
+    position: absolute;
+    width: 0;
+
+    border: 10px solid transparent;
+    border-bottom-color: #a5151e;
+
+    bottom: 0;
+    left: 50%;
+    margin-left: -5px;
 }
 
 
-/* Teams page */
-#teams {
-  -moz-column-width: 35ex;
-  /* tried on google chrome and safari, looks like junk, borders don't work
-   -webkit-column-width: 35ex;
-   */
+/* content */
+#body-content {
+    clear: both;
+    overflow: auto;
+    padding: 2px 0 85px 2px;
 }
-#teams > li {
-  list-style-type: none;
-  border-top: 1px solid grey;
-  border-bottom: 1px solid grey;
-  margin-bottom: -1px;
-  padding: 5px;
-  margin-right: 5ex;
+#body-content h1 {
+    font-size: 1.5em;
 }
-/* end Teams page */
+#body-content ul,
+#body-content p {
+    margin-bottom: 15px;
+}
+#body-content ul.double {
+    float: left;
+    width: 49%;
+}
+#body-content li {
+    list-style-position: inside;
+}
+#body-content section,
+#body-content article {
+    margin-bottom: 30px;
+}
+#body-content aside section,
+#main-content .introduction {
+    border-radius: 4px;
+    box-shadow: 1px 1px 4px #999;
+    padding: 10px 15px;
+    overflow: auto;
+}
 
+#body-content aside {
+    float: left;
+    width: 228px;
+}
+#body-content aside h1 {
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+#body-content aside h1 {
+    font-size: 1.3em;
+}
+#body-content aside a.rss-icon {
+    float: right;
+}
+#body-content section {
+    background-color: white;
+    background-image: url(../img/aside-background.jpg);
+    background-repeat: no-repeat;
+    background-position: bottom;
+}
+
+#main-content {
+    height: auto;
+    min-height: 100%;
+    margin-right: 10px;
+    margin-bottom: 20px;
+}
+#main-content section {
+    clear: left;
+}
+#main-content article {
+    float: left;
+    width: 326px;
+    margin-right: 20px;
+    padding: 5px 5px;
+}
+#main-content .full {
+    min-width: 707px;
+    margin-right: 0;
+}
+#main-content .introduction {
+    background-color: white;
+    background-image: url("../img/introduction-background.jpg");
+    background-repeat: no-repeat;
+    background-position: bottom right;
+    min-width: 679px;
+}
+#main-content .introduction h1,
+#body-content aside h1 {
+    color: #a5151e;
+}
+
+/* Footer */
+footer {
+    clear: both;
+    position: relative;
+    float: right;
+    background-color: #2a2a2a;
+    background-color: rgb(38,38,38);
+    color: #999;
+    margin: -85px 0 0 0;
+    padding: 10px 25px 0 0;
+    width: 90%;
+    height: 75px;
+}
+footer p {
+    color: #999;
+    float: left;
+    margin: 15px 0 0 15px;
+    max-width: 480px;
+}
+footer img {
+    width: 50px;
+}
+footer .notices {
+    float: right;
+}
+/*
+ * utility class, mostly used when one needs to float the
+ * main-content container to the left.
+ */
+.left-floated-container {
+    float: left;
+}
+table.exhibit-tabularView-body td,
+table.exhibit-tabularView-body th {
+    border-left: 1px solid #ccc;
+}
+table.exhibit-tabularView-body {
+    border: 1px solid #ccc;
+    border-left: 0;
+}
+
+table.exhibit-tabularView-body,
+table.standard {
+    border-collapse: collapse;
+    width: 100%;
+}
+table.exhibit-tabularView-body tr,
+table.standard tr {
+    border-top: 1px solid #ccc;
+}
+/* instead of relying on order, make this selector more prevalent
+   so it take precendence over `table.standard tr` */
+#main-content table.standard-borderless tr {
+    border-top: none;
+}
+table.exhibit-tabularView-body tr {
+    background-color: #eee; /* fallback color if gradients are not supported */
+    background-image: -webkit-gradient(linear, left top, left bottom, from(white), to(#eee));
+    background-image: -webkit-linear-gradient(top, white, #eee);
+    background-image:    -moz-linear-gradient(top, white, #eee);
+    background-image:     -ms-linear-gradient(top, white, #eee);
+    background-image:      -o-linear-gradient(top, white, #eee);
+    border-top: 1px solid #ccc;
+}
+table.exhibit-tabularView-body td,
+table.standard td {
+    padding: 10px 7px;
+    vertical-align: top;
+}
+
+
+/* Media Queries */
+/* Small screens */
+@media (max-width: 960px) {
+
+    body {
+        min-width: 100%;
+    }
+    body > * {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+    footer p {
+        margin: 5px 0 0 5px;
+    }
+    footer .notices {
+        float: none;
+        margin-left: 61px;
+    }
+
+    #body-content,
+    #body-content aside,
+    #main-content,
+    #main-content section,
+    #main-content article,
+    #main-content .introduction,
+    #main-content .full {
+        width: 93%;
+        min-width: 0;
+    }
+    #body-content aside section {
+        float: left;
+        margin-right: 20px;
+        width: 200px;
+    }
+}
 
 .hidden {
-  display: none;
+    display: none;
+}
+.page-standard {
+    width: 960px;
+}
+.page-wider {
+    width: 1030px;
 }

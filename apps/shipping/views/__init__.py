@@ -38,38 +38,24 @@
 '''
 
 from collections import defaultdict
-from difflib import SequenceMatcher
 import re
 import urllib
 
-from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django import http
-from life.models import Repository, Locale, Tree
-from shipping.models import Milestone, Signoff, AppVersion, Action
-from shipping.api import signoff_actions, flag_lists, accepted_signoffs
+from life.models import Locale, Tree, Push, Changeset
+from l10nstats.models import Run_Revisions
+from shipping.models import Milestone, AppVersion, Action, Application
+from shipping.api import (signoff_actions, flag_lists, accepted_signoffs,
+                          signoff_summary)
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.db.models import Max
 from django.views.decorators.cache import cache_control
 from django.utils import simplejson
 from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
-from django.db.models import Max
-
-from mercurial.ui import ui as _ui
-from mercurial.hg import repository
-from mercurial.node import nullid
-try:
-    from mercurial.copies import copies as _copies
-except ImportError:
-    # mercurial 2.1
-    from mercurial.copies import pathcopies
-    def _copies(repo, ctx1, ctx2, base):
-        return (pathcopies(ctx1, ctx2),)
-
-from Mozilla.Parser import getParser, Junk
-from Mozilla.CompareLocales import AddRemove, Tree as DataTree
 
 
 def index(request):
@@ -77,7 +63,10 @@ def index(request):
     avs = AppVersion.objects.all().order_by('code')
 
     for i in avs:
-        statuses = Milestone.objects.filter(appver=i.id).values_list('status', flat=True).distinct()
+        statuses = (Milestone.objects
+                    .filter(appver=i.id)
+                    .values_list('status', flat=True)
+                    .distinct())
         if 1 in statuses:
             i.status = 'open'
         elif 0 in statuses:
@@ -87,187 +76,144 @@ def index(request):
         else:
             i.status = 'unknown'
 
-    return render_to_response('shipping/index.html', {
-        'locales': locales,
-        'avs': avs,
-    }, context_instance=RequestContext(request))
+    return render(request, 'shipping/index.html', {
+                    'locales': locales,
+                    'avs': avs,
+                  })
 
 
-def homesnippet(request):
-    q = AppVersion.objects.filter(milestone__status=1).select_related('app')
-    q = q.order_by('app__name','-version')
+def homesnippet():
+    q = (AppVersion.objects
+         .filter(milestone__status=1)
+         .select_related('app'))
+    q = q.order_by('app__name', '-version')
     return render_to_string('shipping/snippet.html', {
             'appvers': q,
             })
 
 
-def teamsnippet(request, loc):
-    return render_to_string('shipping/team-snippet.html', {
-            'locale': loc,
-            })
+class Run(dict):
+    def __getattr__(self, key):  # for dot notation
+        return self[key]
+
+    def __setattr__(self, key, value):  # for dot notation setters
+        self[key] = value
 
 
-def _universal_newlines(content):
-    "CompareLocales reads files with universal newlines, fake that"
-    return content.replace('\r\n', '\n').replace('\r', '\n')
+def teamsnippet(loc):
+    runs = list(loc.run_set.filter(active__isnull=False).select_related('tree')
+                .order_by('tree__code'))
 
+    # this locale isn't active in our trees yet
+    if not runs:
+        return ''
 
-def diff_app(request):
-    if not request.GET.get('repo'):
-        return http.HttpResponseBadRequest("Missing 'repo' parameter")
-    reponame = request.GET['repo']
-    repopath = settings.REPOSITORY_BASE + '/' + reponame
-    try:
-        repo_url = Repository.objects.get(name=reponame).url
-    except Repository.DoesNotExist:
-        raise http.Http404("Repository not found")
-    if not request.GET.get('from'):
-        return http.HttpResponseBadRequest("Missing 'from' parameter")
-    if not request.GET.get('to'):
-        return http.HttpResponseBadRequest("Missing 'to' parameter")
+    _application_codes = [(x.code, x) for x in Application.objects.all()]
+    # sort their keys so that the longest application codes come first
+    # otherwise, suppose we had these keys:
+    #   'fe', 'foo', 'fennec' then when matching against a tree code called
+    #   'fennec_10x' then, it would "accidentally" match on 'fe' and not
+    #   'fennec'.
+    _application_codes.sort(lambda x, y: -cmp(len(x[0]), len(y[0])))
 
-    ui = _ui()
-    repo = repository(ui, repopath)
-    # Convert the 'from' and 'to' to strings (instead of unicode)
-    # in case mercurial needs to look for the key in binary data.
-    # This prevents UnicodeWarning messages.
-    ctx1 = repo.changectx(str(request.GET['from']))
-    ctx2 = repo.changectx(str(request.GET['to']))
-    copies = _copies(repo, ctx1, ctx2, repo[nullid])[0]
-    match = None  # maybe get something from l10n.ini and cmdutil
-    changed, added, removed = repo.status(ctx1, ctx2, match=match)[:3]
+    # Create these two based on all appversions attached to a tree so that in
+    # the big loop on runs we don't need to make excessive queries for
+    # appversions and applications
+    _trees_to_appversions = {}
+    for appver in (AppVersion.objects
+                   .exclude(tree__isnull=True)
+                   .select_related('tree')):
+        _trees_to_appversions[appver.tree] = appver
 
-    # split up the copies info into thos that were renames and those that
-    # were copied.
-    moved = {}
-    copied = {}
-    for new_name, old_name in copies.items():
-        if old_name in removed:
-            moved[new_name] = old_name
-        else:
-            copied[new_name] = old_name
+    def tree_to_application(tree):
+        for key, app in _application_codes:
+            if tree.code.startswith(key):
+                return app
 
-    paths = ([(f, 'changed') for f in changed]
-             + [(f, 'removed') for f in removed
-                if f not in moved.values()]
-             + [(f,
-                 (f in moved and 'moved') or
-                 (f in copied and 'copied')
-                 or 'added') for f in added])
-    diffs = DataTree(dict)
-    for path, action in paths:
-        lines = []
-        try:
-            p = getParser(path)
-        except UserWarning:
-            diffs[path].update({
-              'path': path,
-              'isFile': True,
-              'rev': ((action == 'removed') and request.GET['from']
-                     or request.GET['to']),
-              'class': action,
-              'renamed': moved.get(path),
-              'copied': copied.get(path)
-            })
-            continue
-        if action == 'added':
-            a_entities = []
-            a_map = {}
-        else:
-            realpath = (action == 'moved' and moved[path] or
-                        action == 'copied' and copied[path] or
-                        path)
-            data = ctx1.filectx(realpath).data()
-            data = _universal_newlines(data)
-            try:
-                p.readContents(data)
-                a_entities, a_map = p.parse()
-            except:
-                # consider doing something like:
-                # logging.warn('Unable to parse %s', path, exc_info=True)
-                diffs[path].update({
-                  'path': path,
-                  'isFile': True,
-                  'rev': ((action == 'removed') and request.GET['from']
-                          or request.GET['to']),
-                  'class': action,
-                  'renamed': moved.get(path),
-                  'copied': copied.get(path)
-                })
-                continue
+    def tree_to_appversion(tree):
+        return _trees_to_appversions.get(tree)
 
-        if action == 'removed':
-            c_entities, c_map = [], {}
-        else:
-            data = ctx2.filectx(path).data()
-            data = _universal_newlines(data)
-            try:
-                p.readContents(data)
-                c_entities, c_map = p.parse()
-            except:
-                # consider doing something like:
-                # logging.warn('Unable to parse %s', path, exc_info=True)
-                diffs[path].update({
-                  'path': path,
-                  'isFile': True,
-                  'rev': ((action == 'removed') and request.GET['from']
-                         or request.GET['to']),
-                  'class': action
-                })
-                continue
-        a_list = sorted(a_map.keys())
-        c_list = sorted(c_map.keys())
-        ar = AddRemove()
-        ar.set_left(a_list)
-        ar.set_right(c_list)
-        for action, item_or_pair in ar:
-            if action == 'delete':
-                lines.append({
-                  'class': 'removed',
-                  'oldval': [{'value':a_entities[a_map[item_or_pair]].val}],
-                  'newval': '',
-                  'entity': item_or_pair
-                })
-            elif action == 'add':
-                lines.append({
-                  'class': 'added',
-                  'oldval': '',
-                  'newval': [{'value': c_entities[c_map[item_or_pair]].val}],
-                  'entity': item_or_pair
-                })
-            else:
-                oldval = a_entities[a_map[item_or_pair[0]]].val
-                newval = c_entities[c_map[item_or_pair[1]]].val
-                if oldval == newval:
-                    continue
-                sm = SequenceMatcher(None, oldval, newval)
-                oldhtml = []
-                newhtml = []
-                for op, o1, o2, n1, n2 in sm.get_opcodes():
-                    if o1 != o2:
-                        oldhtml.append({'class': op, 'value': oldval[o1:o2]})
-                    if n1 != n2:
-                        newhtml.append({'class': op, 'value': newval[n1:n2]})
-                lines.append({'class': 'changed',
-                              'oldval': oldhtml,
-                              'newval': newhtml,
-                              'entity': item_or_pair[0]})
-        container_class = lines and 'file' or 'empty-diff'
-        diffs[path].update({'path': path,
-                            'class': container_class,
-                            'lines': lines,
-                            'renamed': moved.get(path),
-                            'copied': copied.get(path)
+    # find good revisions to sign-off, latest run needs to be green.
+    # keep in sync with api.annotated_pushes
+    suggested_runs = filter(lambda r: r.allmissing == 0 and r.errors == 0,
+                            runs)
+    suggested_rev = dict(Run_Revisions.objects
+                         .filter(run__in=suggested_runs,
+                                 changeset__repositories__locale=loc)
+                         .values_list('run_id', 'changeset__revision'))
+
+    applications = defaultdict(list)
+    pushes = set()
+    for run_ in runs:
+        # copy the Run instance into a fancy dict but only copy those whose
+        # key doesn't start with an underscore
+        run = Run(dict((k, getattr(run_, k))
+                       for k in run_.__dict__
+                       if not k.startswith('_')))
+        run.allmissing = run_.allmissing  # a @property of the Run model
+        run.tree = run_.tree  # foreign key lookup
+        application = tree_to_application(run_.tree)
+        run.changed_ratio = run.completion
+        run.unchanged_ratio = 100 * run.unchanged / run.total
+        run.missing_ratio = 100 * run.allmissing / run.total
+        # cheat a bit and make sure that the red stripe on the chart is at
+        # least 1px wide
+        if run.allmissing and run.missing_ratio == 0:
+            run.missing_ratio = 1
+            for ratio in (run.changed_ratio, run.unchanged_ratio):
+                if ratio:
+                    ratio -= 1
+                    break
+
+        appversion = tree_to_appversion(run.tree)
+        # because Django templates (stupidly) swallows lookup errors we
+        # have to apply the missing defaults too
+        run.pending = run.rejected = run.accepted = \
+                      run.suggested_shortrev = run.appversion = None
+        if appversion:
+            run.appversion = appversion
+            actions = [action_id for action_id, flag
+                       in signoff_actions(
+                          appversions=[run.appversion],
+                          locales=[loc.id])
+                          ]
+            actions = Action.objects.filter(id__in=actions) \
+                                    .select_related('signoff__push')
+            # get current status of signoffs
+            # we really only need the shortrevs, we'll get those below
+            run.pending, run.rejected, run.accepted, __ = \
+              signoff_summary(actions)
+            pushes.update((run.pending, run.rejected, run.accepted))
+
+            # get the suggested signoff. If there are existing actions
+            # we'll unset it when we get the shortrevs for those below
+            if run_.id in suggested_rev:
+                run.suggested_shortrev = suggested_rev[run_.id][:12]
+
+        applications[application].append(run)
+    # get the tip shortrevs for all our pushes
+    pushes = map(lambda p: p.id, filter(None, pushes))
+    tip4push = dict(Push.objects
+                    .annotate(tc=Max('changesets'))
+                    .filter(id__in=pushes)
+                    .values_list('id', 'tc'))
+    rev4id = dict(Changeset.objects
+                  .filter(id__in=tip4push.values())
+                  .values_list('id', 'revision'))
+    for runs in applications.itervalues():
+        for run in runs:
+            for k in ('pending', 'rejected', 'accepted'):
+                if run[k] is not None:
+                    run[k + '_rev'] = rev4id[tip4push[run[k].id]][:12]
+                    # unset the suggestion if there's existing signoff action
+                    if run[k + '_rev'] == run.suggested_shortrev:
+                        run.suggested_shortrev = None
+    applications = ((k, v) for (k, v) in applications.items())
+
+    return render_to_string('shipping/team-snippet.html',
+                            {'locale': loc,
+                             'applications': applications,
                             })
-    diffs = diffs.toJSON().get('children', [])
-    return render_to_response('shipping/diff.html',
-                              {'given_title': request.GET.get('title', None),
-                               'repo': reponame,
-                               'repo_url': repo_url,
-                               'old_rev': request.GET['from'],
-                               'new_rev': request.GET['to'],
-                               'diffs': diffs},
-                               context_instance=RequestContext(request))
 
 
 def dashboard(request):
@@ -302,10 +248,11 @@ def dashboard(request):
             raise http.Http404("Invalid list of trees")
         query['tree'].extend(trees)
 
-    return render_to_response('shipping/dashboard.html', {
-            'subtitles': subtitles,
-            'query': mark_safe(urlencode(query, True)),
-            }, context_instance=RequestContext(request))
+    return render(request, 'shipping/dashboard.html', {
+                    'subtitles': subtitles,
+                    'webdashboard_url': settings.WEBDASHBOARD_URL,
+                    'query': mark_safe(urlencode(query, True)),
+                  })
 
 
 def milestones(request):
@@ -322,14 +269,15 @@ def milestones(request):
         urllib.always_safe = always_safe + '{}'
     else:
         always_safe = None
-    r =  render_to_response('shipping/milestones.html',
-                            {'login_form_needs_reload': True,
-                             'request': request,
-                             },
-                            context_instance=RequestContext(request))
+    # XXX this should have some sort of try:finally: to safely restore urllib
+    r = render(request, 'shipping/milestones.html', {
+                  'login_form_needs_reload': True,
+                  'request': request,
+                })
     if always_safe is not None:
         urllib.always_safe = always_safe
     return r
+
 
 @cache_control(max_age=60)
 def stones_data(request):
@@ -353,6 +301,7 @@ def stones_data(request):
 
     return http.HttpResponse(simplejson.dumps({'items': items}, indent=2))
 
+
 def open_mstone(request):
     """Open a milestone.
 
@@ -370,6 +319,7 @@ def open_mstone(request):
         except:
             pass
     return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
+
 
 def _propose_mstone(mstone):
     """Propose a new milestone based on an existing one.
@@ -417,14 +367,14 @@ def confirm_ship_mstone(request):
             # good
             good += 1
     pending_locs.sort()
-    return render_to_response('shipping/confirm-ship.html',
-                              {'mstone': mstone,
-                               'pending_locs': pending_locs,
-                               'good': good,
-                               'login_form_needs_reload': True,
-                               'request': request,
-                             },
-                              context_instance=RequestContext(request))
+    return render(request, 'shipping/confirm-ship.html', {
+                  'mstone': mstone,
+                  'pending_locs': pending_locs,
+                  'good': good,
+                  'login_form_needs_reload': True,
+                  'request': request,
+                  })
+
 
 def ship_mstone(request):
     """The actual worker method to ship a milestone.
@@ -466,17 +416,19 @@ def confirm_drill_mstone(request):
     if mstone.status != 1:
         return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
 
-    drill_base = Milestone.objects.filter(appver=mstone.appver,status=2).order_by('-pk').select_related()
+    drill_base = (Milestone.objects
+                  .filter(appver=mstone.appver, status=2)
+                  .order_by('-pk')
+                  .select_related())
     proposed = _propose_mstone(mstone)
+    return render(request, 'shipping/confirm-drill.html', {
+                    'mstone': mstone,
+                    'older': drill_base[:3],
+                    'proposed': proposed,
+                    'login_form_needs_reload': True,
+                    'request': request,
+                  })
 
-    return render_to_response('shipping/confirm-drill.html',
-                              {'mstone': mstone,
-                               'older': drill_base[:3],
-                               'proposed': proposed,
-                               'login_form_needs_reload': True,
-                               'request': request,
-                               },
-                              context_instance=RequestContext(request))
 
 def drill_mstone(request):
     """The actual worker method to ship a milestone.
@@ -496,6 +448,7 @@ def drill_mstone(request):
             mstone.status = 2
             # XXX create event
             mstone.save()
-        except Exception, e:
+        except Exception:
+            # XXX should deal better with this error
             pass
-    return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
+    return redirect(reverse('shipping.views.milestones'))

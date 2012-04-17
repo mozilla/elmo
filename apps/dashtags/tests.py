@@ -1,4 +1,4 @@
-from django.test import TestCase
+from test_utils import TestCase
 import unittest
 from django import template
 

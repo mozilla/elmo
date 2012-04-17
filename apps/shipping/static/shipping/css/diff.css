@@ -62,3 +62,10 @@
 .renamed, .copied {
   font-size: small;
 }
+table.diff {
+  margin-left: 20px;
+}
+table.diff td {
+  vertical-align: top;
+  padding-left: 10px;
+}

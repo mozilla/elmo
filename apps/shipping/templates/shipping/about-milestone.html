@@ -48,8 +48,8 @@
 {% block content %}
 <h1>About {{ms}}</h1>
 
- <table width="100%">
-   <tr valign="top">
+ <table class="standard">
+   <tr>
      <td ex:role="viewPanel">
        <div ex:role="view" ex:showAll="true" ex:ViewClass="Tabular"
          ex:columnLabels="Locale, Revision, Latest, Snapshot {% ifnotequal ms.status  2 %}, Active{% endifnotequal %},Updated from"
@@ -75,7 +75,7 @@
 {% endifnotequal %}
            <td><span ex:if-exists=".updatedFrom"><span>
               <a target="_blank" ex:content=".updatedFrom" ex:href-subcontent="{{foresturl}}{&#123;.label}}/pushloghtml?changeset={&#123;.updatedFromRev}}"></a>,
-              <a target="_blank" ex:href-subcontent="{% url shipping.views.diff_app %}?locale={&#123;.label}}&repo={{forestname}}/{&#123;.label}}&url={{foresturl}}{&#123;.label}}/&from={&#123;.updatedFromRev}}&to={&#123;.revision}}">diff</a></span><span></span></span>
+              <a target="_blank" ex:href-subcontent="{% url pushes.views.diff %}?from={&#123;.updatedFromRev}}&to={&#123;.revision}}&repo={{forestname}}/{&#123;.label}}">diff</a></span><span></span></span>
              <span ex:if-exists=".added"><span class="added">added</span></span>
             </td>
           </tr>

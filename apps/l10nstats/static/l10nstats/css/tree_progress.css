@@ -52,4 +52,21 @@
     text-align: center; 
     font-size: small;
 }
-td:nth-child(even) { background-color: #E6E6E6; }
+td:nth-child(even) { 
+    background-color: #E6E6E6; 
+}
+#my-timeplot { 
+    height: 350px;
+}
+.legend {
+    float: right;
+    margin-top: 10px;
+}
+#histogram {
+    margin-bottom: 20px;
+    height: auto;
+    clear: right;
+}
+#histogram table {
+    width: auto;
+}

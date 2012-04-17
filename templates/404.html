@@ -41,11 +41,16 @@
 {% endblock %}
 {% block content %}
 <h1>Oops! Page not found</h1>
-    <p>The page you requested could not be found. Sorry about that.</p>
-    <p>Click the Back button to try again or go to the 
-    <a href="{% url homepage.views.index %}">home page</a> to start over.</p>
-    <p>If you think there really should be something right here, please send us an 
-    <a href="mailto:l10n@mozilla.com">e-mail</a> or ping us in 
-    <a href="irc://irc.mozilla.org/#elmo">#elmo</a>.</p>
+<p>The page you requested could not be found. Sorry about that.</p>
+<p>Click the Back button to try again or go to the
+  <a href="{% url homepage.views.index %}">home page</a> to start over.<br>
+  If you think there really should be something right here, please send us an 
+  <a href="mailto:l10n@mozilla.com">e-mail</a> or ping us in
+  <a href="irc://irc.mozilla.org/#elmo">#elmo</a>.
+</p>
+<p>
+  Are you perhaps looking for the
+  <a href="http://l10n.mozilla-community.org{{ request.path }}">http://l10n.mozilla-community.org{{ request.path }}</a> page?
+</p>
 
 {% endblock%}

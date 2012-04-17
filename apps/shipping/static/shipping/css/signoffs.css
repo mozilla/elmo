@@ -36,89 +36,108 @@
  * ***** END LICENSE BLOCK ***** */
 
 .csuser {
-  font-size: smaller;
-  color: gray;
+    font-size: smaller;
+    color: gray;
 }
-.who {background-color: lightgray;  padding: 0.25em;}
+.who {
+    background-color: lightgray;
+    padding: 0.25em;
+}
 .push {
-  -moz-border-radius-topleft: 10px;
-  -moz-border-radius-bottomleft: 10px;
-  background-color: lightgray; padding: 0.25em;
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+    background-color: lightgray;
+    padding: 0.25em;
 }
 .rev {
-  padding-right: 12em;
+    padding-right: 12em;
 }
 .signoffrow.hidden {
-  display: none;
+    display: none;
 }
 .signoff {
-  background-repeat: no-repeat;
-  -moz-background-size: 32 32;
-  background-size: 32 32;
-  background-position: right 4;
+    background-repeat: no-repeat;
+    background-position: right 4;
 }
 .signoff.rejected {
-  background-color: #FFCCCC;
+    background-color: #FFCCCC;
 }
 .signoff.accepted {
-  background-color: #CCFFCC;
+    background-color: #CCFFCC;
 }
 .signoff.pending {
-  background-color: #FFFFCC;
+    background-color: #FFFFCC;
 }
 .signoff.canceled {
-  color: gray;
+    color: gray;
 }
 .bad_signoff {
-  padding: 1em;
-  padding-top: .5em;
-  margin-bottom: 1em;
-  border: solid orange 2px;
-  border-radius: .5em;
+    padding: 1em;
+    padding-top: .5em;
+    margin-bottom: 1em;
+    border: solid orange 2px;
+    border-radius: .5em;
 }
 .good_signoff {
-  padding: 1em;
-  padding-top: .5em;
-  margin-bottom: 1em;
-  border: solid black 2px;
-  border-radius: .5em;
+    padding: 1em;
+    padding-top: .5em;
+    margin-bottom: 1em;
+    border: solid black 2px;
+    border-radius: .5em;
 }
 .so_what {
-  font-size: smaller;
-  display: inline-block;
+    font-size: smaller;
+    display: inline-block;
 }
 .do_signoff {
-  float: right;
+    float: right;
 }
 .diffanchor {
-  width: 32px;
-  height: 32px;
-  -moz-border-radius: 16px;
-  background-color: gray;
-  cursor: move;
+    width: 32px;
+    height: 32px;
+    border-radius: 16px;
+    background-color: gray;
+    cursor: move;
 }
 .diffanchor.double {
-  height: 16px;
+    height: 16px;
+}
+#pushtable td.push {
+  -moz-border-radius-topleft: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  background-color: lightgray;
+  padding: 0.25em;
 }
 #pushtable {
-  empty-cells: show;
-  clear: left;
+    empty-cells: show;
+    clear: left;
 }
-.diff {
-  cursor: pointer;
+/* table#pushtable is a standard table but we want vertical borders too */
+#pushtable td {
+  border-right: 1px solid #ccc;
+}
+#pushtable td.note {
+  border-left: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+  text-align: center;
+}
+td.diff {
+    cursor: pointer;
+    text-align: center;
+    vertical-align: middle;
 }
 .shortrev.hidden {
-  display: none;
+    display: none;
 }
 
 .review_action {
-  float: right;
+    float: right;
 }
 .hidden {
-  visibility: hidden;
+    visibility: hidden;
 }
 
 .note {
-  color: gray;
-  font-style: italic;
+    color: gray;
+    font-style: italic;
 }

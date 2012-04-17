@@ -55,7 +55,7 @@ white-space: nowrap;
 
 {% block content %}
 <h1>Locale changes for {{appver}}</h1>
-<table>
+<table class="standard">
 {% for row in rows %}
 <tr>
   <td class="milestone"><a href="{% url shipping.views.milestone.about row.code %}" target="_blank">{{row.name}}</a></td>

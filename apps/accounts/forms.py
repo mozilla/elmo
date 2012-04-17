@@ -43,3 +43,8 @@ class AuthenticationForm(django.contrib.auth.forms.AuthenticationForm):
     """override the authentication form because we use the email address as the
     key to authentication."""
     username = forms.CharField(label="Username", max_length=75)
+
+    def __init__(self, *args, **kwargs):
+        super(AuthenticationForm, self).__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs['placeholder'] = 'Email'
+        self.fields['password'].widget.attrs['placeholder'] = 'Password'

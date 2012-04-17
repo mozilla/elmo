@@ -37,7 +37,7 @@
 
 import re
 from urlparse import urlparse
-from django.test import TestCase
+from test_utils import TestCase
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
@@ -49,8 +49,12 @@ class AccountsTestCase(TestCase):
 
     def setUp(self):
         super(AccountsTestCase, self).setUp()
-        # ensure that no arecibo is set up
-        settings.ARECIBO_SERVER_URL = None
+        assert not settings.ARECIBO_SERVER_URL
+        # authentication tests assume the LDAP stuff was set up
+        if 'MozLdapBackend' not in settings.AUTHENTICATION_BACKENDS[0]:
+            raise AssertionError('MozLdapBackend must be the first '
+                                 'authentication backend. '
+                                 'Did you set up ldap_settings.py properly?')
 
     def test_login_long_username(self):
         url = reverse('accounts.views.login')
@@ -172,7 +176,7 @@ class AccountsTestCase(TestCase):
         response = self.client.post(url, {'username': user.username,
                                           'password': 'wrong'})
         eq_(response.status_code, 200)
-        ok_('errorlist' in response.content)
+        ok_('error' in response.content)
         ok_('value="%s"' % user.username in response.content)
         ok_('text/html' in response['Content-Type'])
 
@@ -181,7 +185,7 @@ class AccountsTestCase(TestCase):
                                           'password': 'wrong'},
                                     HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         eq_(response.status_code, 200)
-        ok_('errorlist' in response.content)
+        ok_('error' in response.content)
         ok_('value="%s"' % user.username in response.content)
 
         # but get it right and as AJAX and you get JSON back

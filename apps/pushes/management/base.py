@@ -35,22 +35,23 @@
 #
 # ***** END LICENSE BLOCK *****
 
-'''Command to check if any of the repositories in the database miss changeset mappings.
+'''Command base class to do a task for a given set of repositories.
 '''
 
-from optparse import make_option
 import os.path
 import sys
 import logging
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.db.models import Q
 from django.conf import settings
 
 from life.models import Repository
 
+
 class RepositoryCommand(BaseCommand):
     _needsNewline = False
+
     def handle(self, *args, **options):
         self.verbosity = options.pop('verbosity', 1)
         self.handleOptions(**options)
@@ -62,7 +63,8 @@ class RepositoryCommand(BaseCommand):
         for dbrepo in repos:
             repopath = str(resolve(dbrepo.name))
             if not os.path.isdir(os.path.join(repopath, '.hg')):
-                self.minimal("\n  Cannot process %s, there's no local clone\n\n" % name)
+                self.minimal(("\n  Cannot process %s, "
+                              "there's no local clone\n\n") % dbrepo.name)
                 continue
             hgrepo = repository(ui, repopath)
             try:
@@ -72,7 +74,8 @@ class RepositoryCommand(BaseCommand):
                 break
             except StandardError:
                 print
-                logging.error('%s\tError while processing' % dbrepo.name, exc_info=True)
+                logging.error('%s\tError while processing' % dbrepo.name,
+                              exc_info=True)
                 self._needsNewline = False
         if self._needsNewline:
             print
@@ -81,15 +84,19 @@ class RepositoryCommand(BaseCommand):
         """Overload to take more options
         """
         pass
+
     def handleRepo(self, dbrepo, hgrepo):
-        """Overload this or handleRepoWithCounts to actually for your actual commands
+        """Overload this or handleRepoWithCounts for
+        your command subclasses
         """
         # count the db entries, excluding changeset 000000000000
         dbcount = dbrepo.changesets.exclude(id=1).count()
         hgcount = len(hgrepo)
         return self.handleRepoWithCounts(dbrepo, hgrepo, dbcount, hgcount)
+
     def handleRepoWithCounts(self, dbrepo, hgrepo, dbcount, hgcount):
-        """Overload this method, or handleRepo if you don't need changeset counts
+        """Overload this method,
+        or handleRepo if you don't need changeset counts
         """
         raise NotImplementedError
 
@@ -104,22 +111,28 @@ class RepositoryCommand(BaseCommand):
 
     def minimal(self, c, wantsnewline=True):
         self._output(0, c, wantsnewline)
+
     def normal(self, c, wantsnewline=True):
         self._output(1, c, wantsnewline)
+
     def verbose(self, c, wantsnewline=True):
         self._output(2, c, wantsnewline)
+
     def progress(self, verbose=False):
-        self._output(verbose and 2 or 1, '.', wantsnewline=False, writenewline=False)
-    def _output(self, verbosity, content, wantsnewline=True, writenewline=True):
+        self._output(verbose and 2 or 1, '.',
+                     wantsnewline=False, writenewline=False)
+
+    def _output(self, verbosity, content,
+                wantsnewline=True, writenewline=True):
         if verbosity > self.verbosity:
-            return # we're not that verbose
+            return  # we're not that verbose
         if self._needsNewline and wantsnewline:
             sys.stdout.write('\n')
         sys.stdout.write(content)
         self._needsNewline = True
         if wantsnewline:
             sys.stdout.write('\n')
-            self._needsNewline=False
+            self._needsNewline = False
         sys.stdout.flush()
 
 
