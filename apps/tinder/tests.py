@@ -46,11 +46,12 @@ from test_utils import TestCase
 from commons.tests.mixins import EmbedsTestCaseMixin
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.test.client import Client
 from mbdb.models import (Build, Change, Master, Log, Property, SourceStamp,
                          Builder, Slave)
-from tinder.views import _waterfall, waterfall
+from tinder.views import _waterfall
 from tinder.templatetags import build_extras
-from tinder.models import MasterMap, WebHead
+
 
 class WaterfallStarted(TestCase):
     fixtures = ['one_started_l10n_build.json']
@@ -68,7 +69,8 @@ class WaterfallStarted(TestCase):
                          'Width of builder column is not 1')
         blame_rows = list(blame.rows())
         self.assertEqual(len(blame_rows), 3,
-                         'Expecting 3 rows for table, got %d' % len(blame_rows))
+                         'Expecting 3 rows for table, got %d' %
+                         len(blame_rows))
         self.assertNotEqual(blame_rows[0], [],
                             'First row should not be empty')
         self.assertEqual(blame_rows[1], [])
@@ -83,6 +85,7 @@ class WaterfallStarted(TestCase):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
+
 class WaterfallParallel(TestCase):
     fixtures = ['parallel_builds.json']
 
@@ -96,6 +99,7 @@ class WaterfallParallel(TestCase):
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
+
 class FullBuilds(TestCase):
     fixtures = ['full_parallel_builds.json']
 
@@ -106,7 +110,7 @@ class FullBuilds(TestCase):
     def testForBuild(self):
         pass
 
-from django.test.client import Client
+
 class Mix:
     def waterfall_to_file(self):
         """Debugging helpers for waterfalls, dump the waterfall for all
@@ -114,14 +118,21 @@ class Mix:
         what you're testing."""
         c = Client()
         response = c.get('/builds/waterfall')
-        leaf = self.fixtures[0].replace(".json",".html")
+        leaf = self.fixtures[0].replace(".json", ".html")
         open(leaf, "w").write(response.content)
+
+
 class OneStartedL10nBuild(TestCase, Mix):
     fixtures = ['one_started_l10n_build.json']
+
+
 class ParallelBuilds(TestCase, Mix):
     fixtures = ['parallel_builds.json']
+
+
 class FullParallelBuilds(TestCase, Mix):
     fixtures = ['full_parallel_builds.json']
+
 
 class FakeBuildOrStep:
     """Helper class to get around having to use fixtures or the like.
@@ -132,45 +143,62 @@ class FakeBuildOrStep:
         self.result = result
         self.starttime = starttime
 
+
 class res2class(TestCase):
     """Testing the res2class filter in build_extras.py"""
     def _test(self, result, starttime, value):
         b = FakeBuildOrStep(result, starttime)
         self.assertEqual(build_extras.res2class(b), value)
+
     def test_success(self):
         self._test(0, None, "success")
+
     def test_warning(self):
         self._test(1, None, "warning")
+
     def test_failure(self):
         self._test(2, None, "failure")
+
     def test_skip(self):
         self._test(3, None, "skip")
+
     def test_except(self):
         self._test(4, None, "except")
+
     def test_invalid(self):
         self._test(5, None, "")
+
     def test_empty(self):
         self._test(None, None, "")
+
     def test_running(self):
         self._test(None, datetime.datetime.now(), "running")
+
 
 class showbuild(TestCase):
     """Testing the showbuild filter in build_extras.py"""
     fixtures = ["one_started_l10n_build.json"]
+
     def test_success(self):
         b = Build.objects.filter(result=0)[0]
         out = build_extras.showbuild(b)
         self.assertTrue(out.startswith('''<a href='''), "Not a link: " + out)
+
     def test_running(self):
         b = Build.objects.get(endtime__isnull=True)
         out = build_extras.showbuild(b)
-        self.assertTrue('''class="step_text"''' in out, "No step info in " + out)
-        self.assertTrue('''class="running"''' in out, "No 'running' class in " + out)
+        self.assertTrue('''class="step_text"''' in out,
+                        "No step info in " + out)
+        self.assertTrue('''class="running"''' in out,
+                        "No 'running' class in " + out)
+
     def test_change(self):
         c = Change.objects.all()[0]
         out = build_extras.showbuild(c)
         self.assertTrue("John Doe" in out, "User 'John Doe' was not in " + out)
-        self.assertTrue("builds_for?change=1" in out, "Not the right URL in " + out)
+        self.assertTrue("builds_for?change=1" in out,
+                        "Not the right URL in " + out)
+
 
 class timedelta(TestCase):
     """Testing the timedelta filter in build_extras.py"""
@@ -178,14 +206,17 @@ class timedelta(TestCase):
         now = datetime.datetime.now()
         self.assertEqual(build_extras.timedelta(None, now), "-")
         self.assertEqual(build_extras.timedelta(now, None), "-")
+
     def test_days(self):
         end = datetime.datetime.now()
         start = end - datetime.timedelta(3)
         self.assertEqual(build_extras.timedelta(start, end), "3 day(s)")
+
     def test_minutes(self):
         end = datetime.datetime.now()
         start = end - datetime.timedelta(minutes=3)
         self.assertEqual(build_extras.timedelta(start, end), "3 minute(s)")
+
     def test_seconds(self):
         end = datetime.datetime.now()
         start = end - datetime.timedelta(seconds=3)
@@ -293,10 +324,9 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         eq_(result.keys(), [build2.id])
         eq_(result[build2.id], {u'gender': u'male'})
 
-
     def test_showlog(self):
-        """Test that showlog shows headers, stdout, stderr, with the right CSS classes,
-        but not data from other channels like json.
+        """Test that showlog shows headers, stdout, stderr,
+        with the right CSS classes, but not data from other channels like json.
         """
         master = Master.objects.all()[0]
 
@@ -351,7 +381,6 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
                       args=[builder.name, 666])
         response = self.client.get(url)
         eq_(response.status_code, 404)
-
 
 
 SAMPLE_BUILD_LOG_PAYLOAD = '''16:2header content
