@@ -10,8 +10,9 @@ var Clusterer = function (data, smoothing_function) {
       if (a[i].constructor == Array) {
         flat = flat.concat(this._flatten(a[i]));
       }
-      else
+      else {
         flat.push(a[i]);
+      }
     }
     return flat.sort(function (a, b) {
       return a - b;

@@ -43,10 +43,9 @@ database_engine = settings.DATABASES['default']['ENGINE'].split('.')[-1]
 
 try:
     import cPickle as pickle
-    pickle.dumps
+    pickle  # silence pyflakes
 except ImportError:
     import pickle
-    pickle.dumps
 
 
 class PickledObject(str):

@@ -226,10 +226,9 @@ class JSONChangesets(SignoffDataView):
         try:
             from mercurial.hg import repository
             from mercurial.ui import ui as _ui
-            _ui  # silence check.py
+            _ui  # silence pyflakes
         except:
             _ui = None
-            _ui  # silence check.py
         if _ui is not None:
             for plat in sorted(multis.keys()):
                 try:
