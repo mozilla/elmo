@@ -35,4 +35,12 @@ table.diff {
 table.diff td {
   vertical-align: top;
   padding-left: 10px;
+  padding-bottom: 1px;
+}
+/* this is for visual grouping when a key is spread
+   across two changed lines.
+   Then we want to visally indicate that these two
+   belong together */
+tr.line-newval td {
+  padding-bottom: 5px;
 }

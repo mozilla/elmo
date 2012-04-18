@@ -59,10 +59,11 @@ Changed files:
     <td>
       {% for chunk in line.oldval %}<span class="{{chunk.class}}">{{chunk.value}}</span>{% endfor %}
     </td></tr>
-  <tr class="line-{{line.class}}">
-  <td>
+  <tr class="line-{{line.class}}{% if line.class == 'changed' %} line-newval{% endif %}">
+    <td>
       {% for chunk in line.newval %}<span class="{{chunk.class}}">{{chunk.value}}</span>{% endfor %}
-    </td></tr>
+    </td>
+  </tr>
   {% endfor %}
   </table>
   {% else %}
