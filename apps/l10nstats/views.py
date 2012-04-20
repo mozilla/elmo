@@ -12,16 +12,19 @@ import calendar
 
 from django.shortcuts import render, get_object_or_404
 from django.core.urlresolvers import reverse
+from django.conf import settings
 from django.template.loader import render_to_string
 from django.http import (HttpResponse, Http404,
                          HttpResponsePermanentRedirect,
                          HttpResponseBadRequest)
 from django.db.models import Min, Max
 from django.utils import simplejson
+import pyelasticsearch
 
 from l10nstats.models import Active, Run
 from life.models import Locale, Tree
-from tinder.views import generateLog
+from mbdb.models import Log, Step
+from tinder.views import generateLog, NoLogFile
 
 
 def getRunsBefore(tree, stamp, locales):
@@ -276,16 +279,32 @@ def compare(request):
         run = get_object_or_404(Run, id=request.GET['run'])
     except ValueError:
         return HttpResponseBadRequest('Invalid ID')
+    # try disk first, then ES
     json = ''
-    for step in run.build.steps.filter(name__startswith='moz_inspectlocales'):
+    for step in Step.objects.filter(name__startswith='moz_inspectlocales',
+                                    build__run=run):
         for log in step.logs.all():
-            for chunk in generateLog(run.build.builder.master.name,
-                                     log.filename):
-                if chunk['channel'] == 5:
+            try:
+                for chunk in generateLog(run.build.builder.master.name,
+                                         log.filename,
+                                         channels=(Log.JSON,)):
                     json += chunk['data']
+            except NoLogFile:
+                pass
     if json:
-        json = simplejson.loads(json)
-        nodes = list(JSONAdaptor.adaptChildren(json['details'].get('children', [])))
+        doc = simplejson.loads(json)
+    else:
+        es = pyelasticsearch.ElasticSearch(settings.ES_COMPARE_HOST)
+        try:
+            rv = es.get(settings.ES_COMPARE_INDEX, 'comparison', run.id)
+        except pyelasticsearch.ElasticHttpNotFoundError:
+            rv = {'exists': False}
+        if rv['exists']:
+            doc = rv['_source']
+        else:
+            doc = None
+    if doc:
+        nodes = list(JSONAdaptor.adaptChildren(doc['details'].get('children', [])))
     else:
         nodes = None
 

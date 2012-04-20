@@ -8,7 +8,7 @@
 from django.db.models import Q
 from django.db import connection
 from django.conf import settings
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseNotFound, Http404
 from django.contrib.syndication.views import Feed
 from django.core.urlresolvers import reverse
@@ -22,8 +22,8 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 import calendar
 from mbdb.models import (Build, Builder, BuildRequest,
-                         Change, Change_Tags, NumberedChange,
-                         SourceStamp, Property)
+                         Change, Change_Tags, Log, Master, NumberedChange,
+                         SourceStamp, Step, Property)
 from life.models import Push, Repository
 
 
@@ -692,7 +692,7 @@ def showbuild(request, buildername, buildnumber):
     except (ValueError, Build.DoesNotExist):
         return HttpResponseNotFound("No such build")
 
-    steps = build.steps.order_by('pk')
+    steps = build.steps.order_by('pk').select_related('log')
     props = build.propertiesAsList()
     return render(request, 'tinder/showbuild.html', {
                     'build': build,
@@ -701,7 +701,12 @@ def showbuild(request, buildername, buildnumber):
                   })
 
 
-def generateLog(master, filename):
+class NoLogFile(Exception):
+    '''Raised when the requested build log is not on disk'''
+    pass
+
+
+def generateLog(master, filename, channels):
     """Generic generator to read buildbot step logs.
     """
     try:
@@ -720,8 +725,8 @@ def generateLog(master, filename):
         try:
             f = open(filename, "r")
         except IOError:
-            raise Http404("Log `%s` on master `%s` not found" %
-                          (filename, master))
+            raise NoLogFile("Log `%s` on master `%s` not found" %
+                            (filename, master))
 
     def _iter(f):
         buflen = 64 * 1024
@@ -742,13 +747,14 @@ def generateLog(master, filename):
                     offset = 0
                 else:
                     offset += cnt
-                yield {'channel': channel, 'data': chunk}
+                if channels is None or channel in channels:
+                    yield {'channel': channel, 'data': chunk}
             buf = buf[offset:] + f.read(buflen)
             offset = 0
     return _iter(f)
 
 
-def showlog(request, master, file):
+def showlog(request, step_id, name):
     """Show a log file.
 
     Right now, this only supports locally mounted buildbot logs.
@@ -759,11 +765,23 @@ def showlog(request, master, file):
             if chunk['channel'] < 3:
                 yield {'class': classes[chunk['channel']],
                        'data': chunk['data']}
-    build = Build.objects.get(steps__logs__filename=file,
-                              builder__master__name=master)
-    chunks = generateLog(master, file)
-    return render(request, 'tinder/log.html', {
-                    'build': build,
-                    'file': file,
-                    'chunks': classify(chunks),
-                  })
+    step = get_object_or_404(Step, pk=step_id)
+    log = get_object_or_404(step.logs, name=name)
+    master = Master.objects.get(builders__builds__steps=step).name
+    if log.filename is not None:
+        try:
+            chunks = generateLog(master, log.filename,
+                                 channels=(Log.STDOUT, Log.STDERR, Log.HEADER))
+        except NoLogFile, e:
+            raise Http404(*e.args)
+        return render(request, 'tinder/log.html', {
+            'build': step.build,
+            'file': log.filename,
+            'chunks': classify(chunks),
+            'isFinished': log.isFinished,
+            })
+    return render(request, 'tinder/html-log.html', {
+        'build': step.build,
+        'file': log.name,
+        'content': log.html,
+        })

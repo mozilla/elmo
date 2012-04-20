@@ -16,7 +16,7 @@ urlpatterns = patterns('tinder.views',
                        (r'^builds_for', 'builds_for_change'),
                        (r'^builders/([^/]+)/(\d+)', 'showbuild',
                         {}, 'tinder_show_build'),
-                       (r'^log/([^/]+)/(.+)', 'showlog', {}, 'showlog'),
+                       (r'^log/([0-9]+)/([^/]+)$', 'showlog', {}, 'showlog'),
                        # feed instances need a name so use url() here
                        url(r'^feeds/builds_for_change/(\d+)/$',
                            BuildsForChangeFeed(), name='BuildsForChangeFeed'),

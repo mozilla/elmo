@@ -58,6 +58,10 @@ SESSION_COOKIE_SECURE = False
 # Enable Google Analytics in production
 #INCLUDE_ANALYTICS = True
 
+# Settings to retrieve compare-locales data from elasticsearch
+#ES_COMPARE_HOST = 'http://localhost:9200/'
+#ES_COMPARE_INDEX = 'elmo-comparisons'
+
 try:
     from .mounts_local import *
 except ImportError:
