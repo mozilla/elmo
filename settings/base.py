@@ -55,6 +55,7 @@ TEMPLATE_LOADERS = (
 TEMPLATE_CONTEXT_PROCESSORS += (
     'django.core.context_processors.static',
     'accounts.context_processors.accounts',
+    'homepage.context_processors.webtrends',
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = list(TEMPLATE_CONTEXT_PROCESSORS)
@@ -176,6 +177,10 @@ STATICFILES_FINDERS = (
 ## Feeds
 L10N_FEED_URL = 'http://planet.mozilla.org/l10n/atom.xml'
 HOMEPAGE_FEED_SIZE = 5
+
+## WebTrends
+INCLUDE_WEBTRENDS = False
+
 
 try:
     import ldap_settings

@@ -114,5 +114,25 @@ var CONFIG = {USER_URL: '{% url accounts.views.user_json %}',
 <script src="{{ STATIC_URL }}js/base.js"></script>
 {% endcompress %}
 {% block javascript_matter %}{% endblock %}
+
+{% if include_webtrends %}
+<script>
+window.webtrendsAsyncInit=function(){
+    var dcs=new Webtrends.dcs().init({
+        dcsid:"dcsf7xfvtuz5bded1ux6dbh3k_4e3h"
+        ,domain:"statse.webtrendslive.com"
+        ,timezone:0
+        ,plugins:{
+            //hm:{src:"//s.webtrends.com/js/webtrends.hm.js"}
+        }
+        }).track();
+};
+(function(){
+    var s=document.createElement("script"); s.async=true; s.src="{{ STATIC_URL }}js/libs/webtrends.min.js";
+    var s2=document.getElementsByTagName("script")[0]; s2.parentNode.insertBefore(s,s2);
+}());
+</script>
+<noscript><img alt="dcsimg" id="dcsimg" width="1" height="1" src="//statse.webtrendslive.com/dcsf7xfvtuz5bded1ux6dbh3k_4e3h/njs.gif?dcsuri=/nojavascript&amp;WT.js=No&amp;WT.tv=10.2.0&amp;dcssip=www.l10n.mozilla.org"/></noscript>
+{% endif %}
 	</body>
 </html>
