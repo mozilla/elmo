@@ -51,10 +51,6 @@ class PushesTestCase(TestCase, EmbedsTestCaseMixin):
 
 class DiffTestCase(TestCase):
 
-    class xxx_ui(hg_ui):
-        def write(self, *msg, **opts):
-            pass
-
     def setUp(self):
         super(DiffTestCase, self).setUp()
         self._old_repository_base = getattr(settings, 'REPOSITORY_BASE', None)
@@ -981,6 +977,63 @@ class DiffTestCase(TestCase):
         # also, expect a link to this file
         change_url = repo_url + 'file/%s/file.dtd' % rev1
         ok_('href="%s"' % change_url in html_diff)
+
+    def test_bogus_repo_hashes(self):
+        """test to satisfy
+        https://bugzilla.mozilla.org/show_bug.cgi?id=750533
+        which says that passing unrecognized repo hashes
+        should yield a 400 Bad Request error.
+        """
+        ui = mock_ui()
+        hgcommands.init(ui, self.repo)
+        hgrepo = repository(ui, self.repo)
+
+        (open(hgrepo.pathto('file.dtd'), 'w')
+             .write(u'<!ENTITY key1 "Hello">\n'))
+
+        hgcommands.addremove(ui, hgrepo)
+        hgcommands.commit(ui, hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="initial commit")
+        rev0 = hgrepo[0].hex()
+
+        # do this to trigger an exception on Mozilla.Parser.readContents
+        _content = u'<!ENTITY key1 "Hell\xe3">\n'
+        (codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1')
+          .write(_content))
+
+        hgcommands.commit(ui, hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="Second commit")
+        rev1 = hgrepo[1].hex()
+
+        repo_url = 'http://localhost:8001/' + self.repo_name + '/'
+        Repository.objects.create(
+          name=self.repo_name,
+          url=repo_url
+        )
+        url = reverse('pushes.views.diff')
+
+        response = self.client.get(url, {
+          'repo': self.repo_name,
+          'from': rev0,
+          'to': rev1
+        })
+        eq_(response.status_code, 200)
+
+        response = self.client.get(url, {
+          'repo': self.repo_name,
+          'from': 'xxx',
+          'to': rev1
+        })
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {
+          'repo': self.repo_name,
+          'from': rev0,
+          'to': 'xxx'
+        })
+        eq_(response.status_code, 400)
 
 
 class JSONifyTestCase(TestCase):
