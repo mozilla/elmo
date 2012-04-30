@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 # Django settings file for a project based on the playdoh template.
 
 from funfactory.settings_base import *
@@ -55,6 +59,7 @@ TEMPLATE_LOADERS = (
 TEMPLATE_CONTEXT_PROCESSORS += (
     'django.core.context_processors.static',
     'accounts.context_processors.accounts',
+    'homepage.context_processors.webtrends',
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = list(TEMPLATE_CONTEXT_PROCESSORS)
@@ -173,9 +178,38 @@ STATICFILES_FINDERS = (
   'compressor.finders.CompressorFinder',
 )
 
+## Logging
+
+# funfactory defines the default logging settings. Anything set here will
+# update the default settings. In particular, since funfactory's automatic
+# use of arecibo is to post to it with celery, we have to take it out, which
+# is fine because we already call arecibo ourselves in apps/homepage/views.py
+# handler500().
+# Once funfactory gets better, so that you can use its arecibo logging handler
+# but without doing it with celery then we can undo this logging business
+# and rely entirely on funfactory's logging.
+# The only difference between this and funfactory's default is that we don't
+# use the 'arecibo' handler.
+LOGGING = {
+    'loggers': {
+        'django.request': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'cef': {
+            'handlers': ['cef_syslog'],
+        }
+    },
+}
+
 ## Feeds
 L10N_FEED_URL = 'http://planet.mozilla.org/l10n/atom.xml'
 HOMEPAGE_FEED_SIZE = 5
+
+## WebTrends
+INCLUDE_WEBTRENDS = False
+
 
 try:
     import ldap_settings

@@ -1,39 +1,6 @@
-# ***** BEGIN LICENSE BLOCK *****
-# Version: MPL 1.1/GPL 2.0/LGPL 2.1
-#
-# The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at
-# http://www.mozilla.org/MPL/
-#
-# Software distributed under the License is distributed on an "AS IS" basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-# for the specific language governing rights and limitations under the
-# License.
-#
-# The Original Code is l10n django site.
-#
-# The Initial Developer of the Original Code is
-# Mozilla Foundation.
-# Portions created by the Initial Developer are Copyright (C) 2010
-# the Initial Developer. All Rights Reserved.
-#
-# Contributor(s):
-#   Peter Bengtsson <peterbe@mozilla.com>
-#
-# Alternatively, the contents of this file may be used under the terms of
-# either the GNU General Public License Version 2 or later (the "GPL"), or
-# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
-# in which case the provisions of the GPL or the LGPL are applicable instead
-# of those above. If you wish to allow use of your version of this file only
-# under the terms of either the GPL or the LGPL, and not to allow others to
-# use your version of this file under the terms of the MPL, indicate your
-# decision by deleting the provisions above and replace them with the notice
-# and other provisions required by the GPL or the LGPL. If you do not delete
-# the provisions above, a recipient may use your version of this file under
-# the terms of any one of the MPL, the GPL or the LGPL.
-#
-# ***** END LICENSE BLOCK *****
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import re
 import os
@@ -148,17 +115,21 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
                                       globals(), locals(), ['urls'], -1)
             # ...so that we can access the 'handler500' defined in there
             par, end = root_urlconf.handler500.rsplit('.', 1)
-            # ...which is an importable reference to the real handler500 function
+            # ...which is an importable reference to the
+            # real handler500 function
             views = __import__(par, globals(), locals(), [end], -1)
             # ...and finally we the handler500 function at hand
             handler500 = getattr(views, end)
 
-            # to make a mock call to the django view functions you need a request
-            fake_request = RequestFactory().get('/', {'no-compression': 'true'})
+            # to make a mock call to the django view functions
+            # you need a request
+            fake_request = (RequestFactory()
+                            .get('/', {'no-compression': 'true'}))
 
             # the reason for first causing an exception to be raised is because
-            # the handler500 function is only called by django when an exception
-            # has been raised which means sys.exc_info() is something.
+            # the handler500 function is only called by django when an
+            # exception has been raised which means sys.exc_info()
+            # is something.
             try:
                 raise NameError("sloppy code!")
             except NameError:
@@ -318,7 +289,8 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         """test if the old /pushes url redirects to /source/pushes"""
         old_response = self.client.get('/pushes/repo?path=query')
         eq_(old_response.status_code, 301)
-        target_url = reverse('pushes.views.pushlog', kwargs={'repo_name': 'repo'})
+        target_url = reverse('pushes.views.pushlog',
+                             kwargs={'repo_name': 'repo'})
         new_response = self.client.get(target_url, {'path': 'query'})
         eq_(new_response.status_code, 200)
         eq_(urlparse.urlparse(old_response['Location'])[2:],
@@ -326,7 +298,9 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
 
     def test_diff_redirect(self):
         """test if the old /pushes url redirects to /source/pushes"""
-        old_response = self.client.get('/shipping/diff?to=62f87d2952f4&from=fc700f4da954&tree=fx_beta&repo=some_repo&url=&locale=')
+        diff_url = ('/shipping/diff?to=62f87d2952f4&from=fc700f4da954' +
+                    '&tree=fx_beta&repo=some_repo&url=&locale=')
+        old_response = self.client.get(diff_url)
         eq_(old_response.status_code, 301)
         target_url = reverse('pushes.views.diff')
         # not testing response, as we don't have a repo to back this up
@@ -342,7 +316,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
 
     def test_get_homepage_locales(self):
         for i in range(1, 40 + 1):
-            loc = Locale.objects.create(
+            Locale.objects.create(
               name='Language-%d' % i,
               code='L%d' % i
             )

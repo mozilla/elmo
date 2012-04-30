@@ -49,6 +49,9 @@ SESSION_COOKIE_SECURE = False
 # Feed for example, to avoid having to do a HTTP call for the feed use:
 #L10N_FEED_URL = 'file://' + os.path.abspath('apps/homepage/test_rss20.xml')
 
+# Enable WebTrends in production
+#INCLUDE_WEBTRENDS = True
+
 try:
     from .mounts_local import *
 except ImportError:

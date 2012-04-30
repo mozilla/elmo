@@ -1,52 +1,19 @@
-# ***** BEGIN LICENSE BLOCK *****
-# Version: MPL 1.1/GPL 2.0/LGPL 2.1
-#
-# The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at
-# http://www.mozilla.org/MPL/
-#
-# Software distributed under the License is distributed on an "AS IS" basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-# for the specific language governing rights and limitations under the
-# License.
-#
-# The Original Code is l10n django site.
-#
-# The Initial Developer of the Original Code is
-# Mozilla Foundation.
-# Portions created by the Initial Developer are Copyright (C) 2010
-# the Initial Developer. All Rights Reserved.
-#
-# Contributor(s):
-#
-# Alternatively, the contents of this file may be used under the terms of
-# either the GNU General Public License Version 2 or later (the "GPL"), or
-# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
-# in which case the provisions of the GPL or the LGPL are applicable instead
-# of those above. If you wish to allow use of your version of this file only
-# under the terms of either the GPL or the LGPL, and not to allow others to
-# use your version of this file under the terms of the MPL, indicate your
-# decision by deleting the provisions above and replace them with the notice
-# and other provisions required by the GPL or the LGPL. If you do not delete
-# the provisions above, a recipient may use your version of this file under
-# the terms of any one of the MPL, the GPL or the LGPL.
-#
-# ***** END LICENSE BLOCK *****
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 '''Django command to import existing buildbot build pickles into the
 mbdb database.
 '''
 
-from optparse import make_option
 import pickle
 from glob import glob
 import os.path
 
 from django.core.management.base import BaseCommand, CommandError
-from mbdb.models import *
+from mbdb.models import Builder
 from bb2mbdb import utils
-from django.conf import settings
+
 
 def iterOverBuilds(builder, dbbuilder, buildername, start):
     for i in xrange(start, builder.nextBuildNumber):
@@ -54,11 +21,11 @@ def iterOverBuilds(builder, dbbuilder, buildername, start):
         if build is None:
             # we're missing a build of this number
             continue
-        yield {'buildername' : buildername,
-               'buildnumber' : i,
-               'build'       : builder.getBuild(i),
-               'builder'     : builder,
-               'dbbuilder'   : dbbuilder}
+        yield {'buildername': buildername,
+               'buildnumber': i,
+               'build': builder.getBuild(i),
+               'builder': builder,
+               'dbbuilder': dbbuilder}
 
 
 class Command(BaseCommand):
@@ -72,7 +39,7 @@ class Command(BaseCommand):
         builderconfs.sort()
         builders = []
         for builderconf in builderconfs:
-            buildername = builderconf[len(basedir)+1:-8]
+            buildername = builderconf[len(basedir) + 1:-8]
             if raw_input('Import %s? ' % buildername).lower() != 'y':
                 print 'Skipping %s' % buildername
                 continue
@@ -83,20 +50,23 @@ class Command(BaseCommand):
                 print '%s is %s in reality' % (buildername, builder.getName())
                 buildername = builder.getName()
             try:
-                dbbuilder = Builder.objects.get(name = buildername)
-                q = dbbuilder.builds.order_by('-pk').values_list('buildnumber', flat=True)
+                dbbuilder = Builder.objects.get(name=buildername)
+                q = dbbuilder.builds.order_by('-pk').values_list('buildnumber',
+                                                                 flat=True)
                 if q.count():
                     firstBuild = q[0] + 1
                 else:
                     firstBuild = 0
             except:
-                dbbuilder = Builder.objects.create(name = buildername,
-                                                   category = builder.category,
-                                                   bigState = builder.currentBigState)
+                dbbuilder = \
+                    Builder.objects.create(name=buildername,
+                                           category=builder.category,
+                                           bigState=builder.currentBigState)
                 firstBuild = 0
                 print "Created %s" % dbbuilder
             try:
-                firstBuild = int(raw_input('First build number (%d): ' % firstBuild))
+                firstBuild = int(raw_input('First build number (%d): '
+                                           % firstBuild))
             except ValueError:
                 pass
             g = iterOverBuilds(builder, dbbuilder, buildername, firstBuild)
@@ -124,19 +94,19 @@ class Command(BaseCommand):
             buildnumber = localvars['buildnumber']
             print buildername, buildnumber
             try:
-                dbbuilder.builds.get(buildnumber = buildnumber)
+                dbbuilder.builds.get(buildnumber=buildnumber)
                 print "Got build $d" % buildnumber
                 continue
             except:
                 pass
             build = builder.getBuild(buildnumber)
             times = map(utils.timeHelper, build.getTimes())
-            dbbuild = dbbuilder.builds.create(buildnumber = buildnumber,
-                                              slavename = build.getSlavename(),
-                                              starttime = times[0],
-                                              endtime = times[1],
-                                              result = build.getResults(),
-                                              reason = build.getReason())
+            dbbuild = dbbuilder.builds.create(buildnumber=buildnumber,
+                                              slavename=build.getSlavename(),
+                                              starttime=times[0],
+                                              endtime=times[1],
+                                              result=build.getResults(),
+                                              reason=build.getReason())
             for key, value, source in build.getProperties().asList():
                 dbbuild.setProperty(key, value, source)
             for change in build.getChanges():
@@ -148,12 +118,13 @@ class Command(BaseCommand):
                     result = None
                 else:
                     result = step.getResults()[0]
-                dbstep = dbbuild.steps.create(name = step.getName(),
-                                              text = step.getText(),
-                                              text2 = step.text2,
-                                              starttime = times[0],
-                                              endtime = times[1],
-                                              result = result)
+                dbstep = dbbuild.steps.create(name=step.getName(),
+                                              text=step.getText(),
+                                              text2=step.text2,
+                                              starttime=times[0],
+                                              endtime=times[1],
+                                              result=result)
                 for logfile in step.getLogs():
-                    utils.modelForLog(dbstep, logfile, basedir, isFinished = True)
+                    utils.modelForLog(dbstep, logfile, basedir,
+                                      isFinished=True)
             dbbuild.save()

@@ -50,9 +50,9 @@ site.addsitedir(path('..', '..'))
 
 # Reorder sys.path so that the new directories are at the front.
 #
-# The goal of the following reordering is to give the modules in the root 
-# directory the highest priority, then virtualenv, then global python packages.  
-# Since we're prepending to sys.path, we start with virtualenv, then project's 
+# The goal of the following reordering is to give the modules in the root
+# directory the highest priority, then virtualenv, then global python packages.
+# Since we're prepending to sys.path, we start with virtualenv, then project's
 # root.
 
 # 1. Add virtualenv to sys.path
