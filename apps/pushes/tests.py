@@ -838,10 +838,10 @@ class DiffTestCase(TestCase):
 
         url = reverse('pushes.views.diff')
         # right now, we can't diff between repos, this might change!
-        self.assertRaises(RepoError, self.client.get,
-                          url, {'repo': 'clone',
-                                'from': rev_from[:12],
-                                'to': rev_to[:12]})
+        response = self.client.get(url, {'repo': 'clone',
+                                         'from': rev_from[:12],
+                                         'to': rev_to[:12]})
+        eq_(response.status_code, 400)
 
     def test_binary_file_edited(self):
         """Modify a binary file"""
