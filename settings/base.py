@@ -144,7 +144,7 @@ SESSION_COOKIE_HTTPONLY = True
 # See http://readthedocs.org/docs/mozweb/en/latest/errors.html
 ARECIBO_PUBLIC_ACCOUNT_NUMBER = ""  # not needed behind firewall
 ARECIBO_SERVER_URL = ""
-
+ARECIBO_USES_CELERY = False
 ARECIBO_SETTINGS = {
     'EXCLUDED_POST_VARS': ['password',],
 }
@@ -177,31 +177,6 @@ STATICFILES_FINDERS = (
   'django.contrib.staticfiles.finders.AppDirectoriesFinder',
   'compressor.finders.CompressorFinder',
 )
-
-## Logging
-
-# funfactory defines the default logging settings. Anything set here will
-# update the default settings. In particular, since funfactory's automatic
-# use of arecibo is to post to it with celery, we have to take it out, which
-# is fine because we already call arecibo ourselves in apps/homepage/views.py
-# handler500().
-# Once funfactory gets better, so that you can use its arecibo logging handler
-# but without doing it with celery then we can undo this logging business
-# and rely entirely on funfactory's logging.
-# The only difference between this and funfactory's default is that we don't
-# use the 'arecibo' handler.
-LOGGING = {
-    'loggers': {
-        'django.request': {
-            'handlers': ['mail_admins'],
-            'level': 'ERROR',
-            'propagate': False,
-        },
-        'cef': {
-            'handlers': ['cef_syslog'],
-        }
-    },
-}
 
 ## Feeds
 L10N_FEED_URL = 'http://planet.mozilla.org/l10n/atom.xml'
