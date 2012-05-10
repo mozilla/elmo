@@ -10,6 +10,9 @@ from django.utils.functional import lazy
 
 DEBUG = TEMPLATE_DEBUG = False
 
+# because we're not using the pythonic structure as per funfactory
+ROOT_PACKAGE = os.path.basename(ROOT)
+
 ADMINS = ()
 MANAGERS = ADMINS
 
@@ -94,6 +97,8 @@ MIDDLEWARE_CLASSES = (
 )
 
 INSTALLED_APPS += (
+    ROOT_PACKAGE,
+
     # Local apps
     'commons',
     'nashvegas',
