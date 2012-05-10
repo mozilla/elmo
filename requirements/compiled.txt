@@ -9,4 +9,5 @@ hashlib==20081119
 py-bcrypt==0.2
 
 mercurial==2.1.2
-python-ldap
+python-ldap==2.3.13
+
