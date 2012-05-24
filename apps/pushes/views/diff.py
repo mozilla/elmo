@@ -184,7 +184,7 @@ def diff(request):
                             'copied': copied.get(path)
                             })
     diffs = diffs.toJSON().get('children', [])
-    return render(request, 'shipping/diff.html', {
+    return render(request, 'pushes/diff.html', {
                     'given_title': request.GET.get('title', None),
                     'repo': reponame,
                     'repo_url': repo_url,
