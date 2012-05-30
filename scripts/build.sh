@@ -35,6 +35,7 @@ DATABASES = {
         'TEST_COLLATION': 'utf8_general_ci',
     },
 }
+SECRET_KEY = 'anything'
 " > settings/local.py
 
 # the file settings/ldap_settings.py must exist
