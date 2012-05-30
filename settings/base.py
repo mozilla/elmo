@@ -50,7 +50,7 @@ MEDIA_ROOT = path('static')
 ADMIN_MEDIA_PREFIX = '/static/admin/'
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = '1iz#v0m55@h26^m6hxk3a7at*h$qj_2a$juu1#nv50548j(x1v'
+SECRET_KEY = ''
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -141,7 +141,6 @@ HMAC_KEYS = {
 }
 
 SESSION_COOKIE_SECURE = True
-SESSION_COOKIE_HTTPONLY = True
 
 ## Tests
 

@@ -7,6 +7,9 @@ from base import *
 #INSTALLED_APPS = list(INSTALLED_APPS) + ['django_extensions','debug_toolbar']
 #INSTALLED_APPS = tuple(INSTALLED_APPS)
 
+# You must set this to something different and unique
+SECRET_KEY = ''
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -42,6 +45,7 @@ DEBUG = TEMPLATE_DEBUG = True
 #TEMPLATE_STRING_IF_INVALID = '!{ %s }'
 COMPRESS_ENABLED = False
 SESSION_COOKIE_SECURE = False
+
 
 # if you want to test the Arecibo
 #ARECIBO_SERVER_URL = "http://amckay-arecibo.khan.mozilla.org/"
