@@ -81,8 +81,6 @@ class MigrateAppversions(generic.View):
 
     def migrateBranch(self, migration_date, branch_data, av_details):
         # hold old beta tree
-        print branch_data
-        print av_details
         avt = branch_data['beta']
         avt.end = migration_date
         avt.save()

@@ -162,7 +162,6 @@ def teamsnippet(loc):
 
             # get the suggested signoff. If there are existing actions
             # we'll unset it when we get the shortrevs for those below
-            print run
             if run_.id in suggested_rev:
                 run.suggested_shortrev = suggested_rev[run_.id][:12]
 
