@@ -6,7 +6,9 @@
 """
 
 from django.shortcuts import render, get_object_or_404
-from shipping.models import Milestone, AppVersion, Milestone_Signoffs
+from shipping.models import (Milestone, AppVersion, Milestone_Signoffs,
+                             Action, Signoff)
+from shipping.api import flags4appversions
 
 
 def changes(request, app_code):
@@ -27,6 +29,32 @@ def changes(request, app_code):
     latest = {}
     current = {}
     ms_name = None
+    # get historic data that enters this appversion
+    # get that in fallback order, we'll reverse afterwards
+    flags4av = flags4appversions(appversions={"id": av.id})
+    fallback = av.fallback
+    while fallback and fallback in flags4av:
+        flags4loc = flags4av[fallback]
+        locs = [loc for loc, (real_av, flags) in flags4loc.iteritems()
+                if (real_av == fallback.code and
+                    loc not in current and
+                    Action.ACCEPTED in flags)]
+        if locs:
+            # store actions for now, we'll get the push_ids later
+            for loc in locs:
+                current[loc] = flags4loc[loc][1][Action.ACCEPTED]
+            rows.append({
+                'name': str(fallback),
+                'code': fallback.code,
+                'changes': [(loc, 'added') for loc in sorted(locs)]
+                })
+        fallback = fallback.fallback
+    rows.reverse()
+    for loc, pid in (Signoff.objects
+                     .filter(action__in=current.values())
+                     .values_list('locale__code',
+                                  'push__id')):
+        current[loc] = pid
     for _mid, loc, pid in (Milestone_Signoffs.objects
                            .filter(milestone__appver=av)
                            .order_by('milestone__id',
