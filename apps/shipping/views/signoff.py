@@ -6,14 +6,14 @@
 """
 
 
-from django.db.models import Max
-from django.http import Http404
+from django.db.models import Max, Q
+from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
 # TODO: from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_POST, etag
 from django.views.decorators import cache
 
-from life.models import Repository, Locale, Push, Changeset
+from life.models import Locale, Push
 from shipping.models import AppVersion, Signoff, Action
 from shipping.api import flags4appversions, annotated_pushes
 from l10nstats.models import Run
@@ -122,61 +122,65 @@ def signoff_details(request, locale_code, app_code):
         # rev query arg is required, it's not a url param for caching, and
         # because it's dynamic in the js code, so the {% url %} tag prefers
         # this
-        rev = request.GET['rev']
-    except:
+        push_id = int(request.GET['push'])
+    except (KeyError, ValueError):
         raise Http404
     try:
         # there might be a specified run parameter
         runid = int(request.GET['run'])
-    except:
+    except (KeyError, ValueError):
         runid = None
     appver = get_object_or_404(AppVersion, code=app_code)
     lang = get_object_or_404(Locale, code=locale_code)
-    tree = appver.trees_over_time.current()[0].tree
-    forest = tree.l10n
-    repo = get_object_or_404(Repository, locale=lang, forest=forest)
+    push = get_object_or_404(Push, id=push_id)
 
     run = lastrun = None
-    good = False
-    try:
-        cs = repo.changesets.get(revision__startswith=rev)
-    except Changeset.DoesNotExist:
-        cs = None
-    if cs is not None:
-        runs = (Run.objects.order_by('-pk')
-                .filter(tree=tree, locale=lang, revisions=cs))
-        if runid is not None:
-            try:
-                run = runs.get(id=runid)
-            except Run.DoesNotExist:
-                pass
+    doubled = good = False
+
+    cs = push.tip
+
+    runs = (Run.objects.order_by('-pk')
+            .filter(locale=lang, revisions=cs))
+    q = None
+    for avt in appver.trees_over_time.all():
+        _q = {'tree': avt.tree_id}
+        if avt.start:
+            _q['srctime__gte'] = avt.start
+        if avt.end:
+            _q['srctime__lte'] = avt.end
+        q = q is None and Q(**_q) or q | Q(**_q)
+    if q is not None:
+        runs = runs.filter(q)
         try:
             lastrun = runs[0]
         except IndexError:
             pass
-        good = lastrun and (lastrun.errors == 0) and (lastrun.allmissing == 0)
+    if runid is not None:
+        try:
+            run = Run.objects.get(id=runid)
+        except Run.DoesNotExist:
+            pass
+    good = lastrun and (lastrun.errors == 0) and (lastrun.allmissing == 0)
 
-        # check if we have a newer signoff.
-        push = cs.pushes.get(repository=repo)
-        sos = appver.signoffs.filter(locale=lang, push__gte=push)
-        sos = list(sos.annotate(la=Max('action')))
-        doubled = None
-        newer = []
-        if len(sos):
-            s2a = dict((so.id, so.la) for so in sos)
-            actions = Action.objects.filter(id__in=s2a.values())
-            actions = dict((a.signoff_id, a.get_flag_display())
-                           for a in actions)
-            for so in sos:
-                if so.push_id == push.id:
-                    doubled = True
+    # check if we have a newer signoff.
+    sos = appver.signoffs.filter(locale=lang, push__gte=push)
+    sos = list(sos.annotate(la=Max('action')))
+    newer = []
+    if len(sos):
+        s2a = dict((so.id, so.la) for so in sos)
+        actions = Action.objects.filter(id__in=s2a.values())
+        actions = dict((a.signoff_id, a.get_flag_display())
+                       for a in actions)
+        for so in sos:
+            if so.push_id == push.id:
+                doubled = True
+                good = False
+            else:
+                flag = actions[so.id]
+                if flag not in newer:
+                    newer.append(flag)
                     good = False
-                else:
-                    flag = actions[so.id]
-                    if flag not in newer:
-                        newer.append(flag)
-                        good = False
-            newer = sorted(newer)
+        newer = sorted(newer)
 
     return render(request, 'shipping/signoff-details.html', {
                     'run': run,
@@ -203,11 +207,11 @@ def add_signoff(request, locale_code, app_code):
                 # we're not accepting signoffs, someone's hitting urls manually
                 raise ValueError("not accepting signoffs for %s" %
                                  app_code)
-            tree = appver.get_current_tree()[0]
-            repo = Repository.objects.get(locale=lang, forest=tree.l10n_id)
-            rev = request.POST['revision']
-            push = Push.objects.get(repository=repo,
-                                    changesets__revision__startswith=rev)
+            try:
+                push_id = int(request.POST['push'])
+            except (KeyError, ValueError), msg:
+                return HttpResponseBadRequest(str(msg))
+            push = Push.objects.get(id=push_id)
             if push.signoff_set.filter(appversion=appver).count():
                 # there's already an existing sign-off, bail
                 # messages.info(request, "There is already an existing
@@ -246,8 +250,6 @@ def review_signoff(request, locale_code, app_code):
             lang = Locale.objects.get(code=locale_code)
             appver = (AppVersion.objects
                       .select_related('tree').get(code=app_code))
-            tree = appver.get_current_tree()[0]
-            Repository.objects.get(locale=lang, forest=tree.l10n_id)
             action = request.POST['action']
             signoff_id = int(request.POST['signoff_id'])
             flag = action == "accept" and Action.ACCEPTED or Action.REJECTED

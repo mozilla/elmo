@@ -85,7 +85,7 @@ looks good to <a href="#{{suggested_signoff}}">sign off on</a>.{% endif %}
 {% if perms.shipping.add_signoff %}<div id="add_signoff" style="display:none">
   <form id="signoff_form" method="POST"
   action="{% url shipping.views.signoff.add_signoff language.code  appver.code %}">{% csrf_token %}
-  <input type="hidden" name="revision" value="">
+  <input type="hidden" name="push" value="">
   <input type="hidden" name="run" value="">
   <div id="signoff_desc"></div>
   <input type="submit" value="Sign-off" name="submit">
