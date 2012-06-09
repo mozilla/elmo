@@ -10,7 +10,8 @@ from collections import defaultdict
 from django.core.management.base import BaseCommand
 from django.db.models import Max
 from life.models import Push, Changeset
-from shipping.api import accepted_signoffs
+from shipping.models import Action
+from shipping.api import flags4appversions
 import json
 
 
@@ -18,15 +19,17 @@ class Command(BaseCommand):
     help = 'Dump all latest accepted signoffs for appversions as JSON'
 
     def handle(self, *args, **options):
-        sos = accepted_signoffs()
-        triples = list(sos
-                       .order_by('appversion__code', 'locale__code')
-                       .values_list('appversion__code',
-                                    'locale__code',
-                                    'push'))
-        pushes = set(t[2] for t in triples)
+        locflags4av = flags4appversions()
+        actions = set()
+        for flags4loc in locflags4av.itervalues():
+            for real_av, flags in flags4loc.itervalues():
+                if Action.ACCEPTED in flags:
+                    actions.add(flags[Action.ACCEPTED])
+        push4action = dict(Action.objects
+                           .filter(id__in=actions)
+                           .values_list('id', 'signoff__push'))
         cs4push = dict(Push.objects
-                       .filter(id__in=pushes)
+                       .filter(id__in=set(push4action.values()))
                        .annotate(tip=Max("changesets"))
                        .values_list('id', 'tip'))
         revs = dict(Changeset.objects
@@ -34,7 +37,11 @@ class Command(BaseCommand):
                     .values_list('id', 'revision'))
 
         rv = defaultdict(dict)
-        for av, loc, pushid in triples:
-            rv[av][loc] = revs[cs4push[pushid]][:12]
+        for av, flags4loc in locflags4av.iteritems():
+            for loc, (real_av, flags) in flags4loc.iteritems():
+                if Action.ACCEPTED not in flags:
+                    continue
+                pushid = push4action[flags[Action.ACCEPTED]]
+                rv[av.code][loc] = revs[cs4push[pushid]][:12]
 
         print json.dumps(rv, indent=2, sort_keys=True)

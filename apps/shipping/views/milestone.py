@@ -38,23 +38,12 @@ def about(request, ms_code):
     """
     ms = get_object_or_404(Milestone, code=ms_code)
 
-    mss = Milestone.objects.filter(id=ms.id)
-    try:
-        tree, forestname, foresturl = \
-              mss.values_list('appver__tree__code',
-                              'appver__tree__l10n__name',
-                              'appver__tree__l10n__url')[0]
-    except IndexError:
-        tree, forestname, foresturl = \
-              mss.values_list('appver__lasttree__code',
-                              'appver__lasttree__l10n__name',
-                              'appver__lasttree__l10n__url')[0]
+    forest = ms.appver.trees_over_time.latest().tree.l10n
 
     return render(request, 'shipping/about-milestone.html', {
                     'ms': ms,
-                    'tree': tree,
-                    'forestname': forestname,
-                    'foresturl': foresturl,
+                    'forestname': forest.name,
+                    'foresturl': forest.url,
                   })
 
 
@@ -68,15 +57,12 @@ def statuses(req, ms_code):
     except:
         return HttpResponse('no milestone found for %s' % ms_code)
 
-    if ms.appver.tree is not None:
-        tree = ms.appver.tree
-    else:
-        tree = ms.appver.lasttree
+    tree = ms.appver.trees_over_time.latest().tree
 
     if ms.status == Milestone.SHIPPED:
         sos_vals = ms.signoffs.values_list('id', 'push__id', 'locale__code')
     else:
-        sos_vals = (accepted_signoffs(id=ms.appver.id)
+        sos_vals = (accepted_signoffs(ms.appver)
                     .values_list('id', 'push__id', 'locale__code'))
     sos = dict(d[:2] for d in sos_vals)
     loc2push = dict((d[2], d[1]) for d in sos_vals)

@@ -12,6 +12,7 @@ from django.forms import ModelForm
 from django.contrib.auth.models import User
 from l10nstats.models import Run
 from life.models import Tree, Locale, Push
+from elmo_commons.models import DurationThrough
 
 
 class Application(models.Model):
@@ -22,6 +23,25 @@ class Application(models.Model):
 
     def __unicode__(self):
         return self.name
+
+
+class AppVersionTreeThrough(DurationThrough):
+    appversion = models.ForeignKey('AppVersion',
+                                   related_name='trees_over_time')
+    tree = models.ForeignKey(Tree,
+                             related_name='appvers_over_time')
+
+    def __unicode__(self):
+        rv = u'%s \u2014 %s' % (self.appversion.__unicode__(),
+                               self.tree.__unicode__())
+        if self.start or self.end:
+            rv += u' [%s:%s]' % (
+                self.start and str(self.start.date()) or '',
+                self.end and str(self.end.date()) or '')
+        return rv
+
+    class Meta(DurationThrough.DurationMeta):
+        unique_together = (DurationThrough.unique + ('appversion', 'tree'),)
 
 
 class AppVersionManager(models.Manager):
@@ -37,11 +57,13 @@ class AppVersion(models.Model):
     version = models.CharField(max_length=10)
     code = models.CharField(max_length=20, blank=True)
     codename = models.CharField(max_length=30, blank=True, null=True)
-    # tree can be null for shipped appversions in the rapid release cadence
-    tree = models.ForeignKey(Tree, blank=True, null=True)
-    # ... but then we should keep track of that in lasttree
-    lasttree = models.ForeignKey(Tree, related_name='legacy_appversions',
-                                 blank=True, null=True)
+    trees = models.ManyToManyField(Tree, through=AppVersionTreeThrough)
+    # with rapid releases, we're using sign-offs from previous appversion
+    fallback = models.ForeignKey('self', blank=True, null=True,
+                                 default=None,
+                                 on_delete=models.SET_NULL,
+                                 related_name='followups')
+    accepts_signoffs = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         if not self.code:

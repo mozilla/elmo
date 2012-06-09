@@ -10,6 +10,9 @@ from django.utils.functional import lazy
 
 DEBUG = TEMPLATE_DEBUG = False
 
+# because we're not using the pythonic structure as per funfactory
+ROOT_PACKAGE = os.path.basename(ROOT)
+
 ADMINS = ()
 MANAGERS = ADMINS
 
@@ -47,7 +50,7 @@ MEDIA_ROOT = path('static')
 ADMIN_MEDIA_PREFIX = '/static/admin/'
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = '1iz#v0m55@h26^m6hxk3a7at*h$qj_2a$juu1#nv50548j(x1v'
+SECRET_KEY = ''
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -94,6 +97,8 @@ MIDDLEWARE_CLASSES = (
 )
 
 INSTALLED_APPS += (
+    ROOT_PACKAGE,
+
     # Local apps
     'commons',
     'nashvegas',
@@ -121,6 +126,7 @@ INSTALLED_APPS += (
     'shipping',
     'bugsy',
     'webby',
+    'elmo_commons',
 
 )
 # remove some from funfactory
@@ -136,7 +142,6 @@ HMAC_KEYS = {
 }
 
 SESSION_COOKIE_SECURE = True
-SESSION_COOKIE_HTTPONLY = True
 
 ## Tests
 
@@ -144,7 +149,7 @@ SESSION_COOKIE_HTTPONLY = True
 # See http://readthedocs.org/docs/mozweb/en/latest/errors.html
 ARECIBO_PUBLIC_ACCOUNT_NUMBER = ""  # not needed behind firewall
 ARECIBO_SERVER_URL = ""
-
+ARECIBO_USES_CELERY = False
 ARECIBO_SETTINGS = {
     'EXCLUDED_POST_VARS': ['password',],
 }
@@ -177,31 +182,6 @@ STATICFILES_FINDERS = (
   'django.contrib.staticfiles.finders.AppDirectoriesFinder',
   'compressor.finders.CompressorFinder',
 )
-
-## Logging
-
-# funfactory defines the default logging settings. Anything set here will
-# update the default settings. In particular, since funfactory's automatic
-# use of arecibo is to post to it with celery, we have to take it out, which
-# is fine because we already call arecibo ourselves in apps/homepage/views.py
-# handler500().
-# Once funfactory gets better, so that you can use its arecibo logging handler
-# but without doing it with celery then we can undo this logging business
-# and rely entirely on funfactory's logging.
-# The only difference between this and funfactory's default is that we don't
-# use the 'arecibo' handler.
-LOGGING = {
-    'loggers': {
-        'django.request': {
-            'handlers': ['mail_admins'],
-            'level': 'ERROR',
-            'propagate': False,
-        },
-        'cef': {
-            'handlers': ['cef_syslog'],
-        }
-    },
-}
 
 ## Feeds
 L10N_FEED_URL = 'http://planet.mozilla.org/l10n/atom.xml'

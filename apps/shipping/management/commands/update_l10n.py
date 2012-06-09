@@ -33,7 +33,7 @@ class Command(BaseCommand):
         except:
             raise CommandError("No milestone with code %s found" % args[0])
 
-        forest = ms.appver.tree.l10n.name.split('/')
+        forest = ms.appver.trees_over_time.latest().tree.l10n.name.split('/')
 
         def resolve(path):
             return os.path.join(settings.REPOSITORY_BASE,
@@ -42,7 +42,7 @@ class Command(BaseCommand):
         if ms.status == Milestone.SHIPPED:
             sos = ms.signoffs
         else:
-            sos = accepted_signoffs(id=ms.appver_id)
+            sos = accepted_signoffs(ms.appver)
         sos = dict(sos.values_list('locale__code', 'push_id'))
         tips = dict(Push.objects
                     .filter(id__in=sos.values())

@@ -31,7 +31,7 @@ $(document).ready(function() {
     var params = {
       from: dfs[1].textContent,
       to: dfs[0].textContent,
-      repo: diffData.repo
+      repo: $(dfs[0]).data('repo')
     };
     params = $.param(params);
     window.open(diffData.url + "?" + params);
@@ -39,7 +39,7 @@ $(document).ready(function() {
 
   function hoverSO(showOrHide) {
     return function() {
-      var q = $('#so_' + this.getAttribute('data-push'))
+      var q = $('input[data-push=' + this.getAttribute('data-push') + ']')
         .not('.suggested')
           .not('.clicked');
       if (showOrHide === 'hide') {
@@ -53,7 +53,7 @@ $(document).ready(function() {
   $('.pushrow').hover(hoverSO('show'), hoverSO('hide'))
     .click(function() {
       var self = $(this);
-      var so = $('#so_' + this.getAttribute('data-push'))
+      var so = $('input[data-push=' + this.getAttribute('data-push') + ']')
         .not('.suggested');
       if (! so.length) { return; }
       var wasClicked = so.hasClass('clicked');
@@ -113,10 +113,10 @@ function showSignoff(details_content) {
 function doSignoff(event) {
   event.stopPropagation();
   var t = $(event.target);
-  var rev = event.target.id.substr(3);
+  var push = t.attr('data-push');
   var sf = $('#signoff_form');
-  sf.children('[name=revision]').val(rev);
+  sf.children('[name=push]').val(push);
   var run = t.attr('data-run');
   sf.children('[name=run]').val(run);
-  $.get(signoffDetailsURL, {rev: rev, run: run}, showSignoff, 'html');
+  $.get(signoffDetailsURL, {push: push, run: run}, showSignoff, 'html');
 }

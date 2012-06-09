@@ -1,6 +1,4 @@
 src/compare-locales/lib
-src/bleach
-src/django-arecibo
 src/nashvegas
 src/django_compressor
 src/django-appconf

@@ -1,4 +1,4 @@
-{% extends "shipping/base.html" %}
+{% extends "base.html" %}
 <!-- {% comment %}
    - This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -16,13 +16,13 @@
 <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/smoothness/jquery-ui-1.8.16.custom.css" type="text/css">
 {% endcompress %}
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/diff.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}pushes/css/diff.css" type="text/css">
 {% endcompress %}
 {% endblock %}
 
 {% block javascript_matter %}
 {% compress js %}
-<script src="{{ STATIC_URL }}shipping/js/diff.js"></script>
+<script src="{{ STATIC_URL }}pushes/js/diff.js"></script>
 {% endcompress %}
 {% endblock %}
 

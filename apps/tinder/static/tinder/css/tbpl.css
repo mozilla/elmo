@@ -34,8 +34,20 @@
     padding: 0.25em;
 }
 .top {
-    border-radius-topleft: 10px;
+    border-top-left-radius: 10px;
 }
 .bottom {
-    border-radius-bottomleft: 10px;
+    border-bottom-left-radius: 10px;
+}
+#buildrows {
+    border-collapse: separate;
+    border-spacing: 2px;
+}
+td.who, td.changes{
+     vertical-align: top;
+     border: 1px solid #999;
+}
+td.build :link {
+    color: #4B4740;
+    text-decoration: underline;
 }

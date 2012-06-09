@@ -24,10 +24,11 @@ Only recreates those sign-offs that don't exist on the target appver."""
                                "old and new appversion")
         fork = AppVersion.objects.get(code=args[0])
         target = AppVersion.objects.get(code=args[1])
-        if fork.tree.l10n != target.tree.l10n:
+        if (fork.trees_over_time.latest().tree.l10n !=
+            target.trees_over_time.latest().tree.l10n):
             raise CommandError("Fork and target appversion don't share l10n")
-        fsos = accepted_signoffs(id=fork.id)
-        tsos = accepted_signoffs(id=target.id)
+        fsos = accepted_signoffs(fork)
+        tsos = accepted_signoffs(target)
         known_push_ids = dict(tsos.values_list('locale__code', 'push__id'))
         sos = fsos.exclude(push__id__in=known_push_ids.values())
 

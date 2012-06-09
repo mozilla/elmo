@@ -10,6 +10,9 @@ import base64
 import re
 
 
+from funfactory.monkeypatches import patch
+patch()
+
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
 admin.autodiscover()

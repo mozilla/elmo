@@ -84,6 +84,7 @@ var EX_OPTIONS = ["tree", "result", "locale", "shipping", "signoff"];
      <td width="18%">
        <div ex:role="facet" ex:expression=".result" ex:facetLabel="Result"
          id="result-facet"
+         ex:height="5em"
          ex:fixedOrder="success;warnings;failure;exception"></div>
        <div ex:role="facet" ex:facetLabel="Missing"
          ex:expression=".missing"
@@ -97,17 +98,19 @@ var EX_OPTIONS = ["tree", "result", "locale", "shipping", "signoff"];
          ex:expression=".report"
          ex:facetClass="Slider">
        </div>
-       <div ex:role="facet" ex:expression=".locale.tier" ex:facetLabel="Tier"
-         ex:fixedOrder="1;2"></div>
        <div ex:role="facet" ex:expression=".tree" ex:facetLabel="Tree"
-         id="tree-facet"
-         ex:fixedOrder="trunk;incubator"></div>
+         ex:height="5em"
+         id="tree-facet"></div>
        <div ex:role="facet" ex:expression=".locale" ex:facetLabel="Locale"
+         ex:height="5em"
          id="locale-facet"></div>
 
-       <div ex:role="facet" ex:expression=".locale.missing_webbugs" ex:facetLabel="Web bugs"></div>
-       <div ex:role="facet" ex:expression=".apploc.shipped" ex:facetLabel="Shipped in ..." id="shipping-facet"></div>
-       <div ex:role="facet" ex:expression=".signoff" ex:facetLabel="Sign-off" id="signoff-facet"></div>
+       <div ex:role="facet" ex:expression=".locale.missing_webbugs"
+         ex:height="5em" ex:facetLabel="Web bugs"></div>
+       <div ex:role="facet" ex:expression=".apploc.shipped"
+         ex:height="5em" ex:facetLabel="Shipped in ..." id="shipping-facet"></div>
+       <div ex:role="facet" ex:expression=".signoff"
+         ex:height="5em" ex:facetLabel="Sign-off" id="signoff-facet"></div>
      </td>
    </tr>
  </table>

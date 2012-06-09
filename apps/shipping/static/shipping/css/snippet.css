@@ -93,6 +93,10 @@ table.trees tr.treesummary td.productname {
     background-image: url("../img/accepted.png")
 }
 
+.trees .signoffstatus .fallback {
+    background-image: url("../img/details.png")
+}
+
 .trees .signoffstatus .pending {
     background-image: url("../img/pending.png");
     background-position: 5px center;

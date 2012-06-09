@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
 import re
 from urlparse import urlparse
 from nose.tools import eq_, ok_
@@ -19,7 +20,7 @@ from shipping.models import Milestone, Application, AppVersion
 
 class ShippingTestCaseBase(TestCase, EmbedsTestCaseMixin):
 
-    def _create_appver_milestone(self):
+    def _create_appver_tree_milestone(self):
         app = Application.objects.create(
           name='firefox',
           code='fx'
@@ -36,16 +37,20 @@ class ShippingTestCaseBase(TestCase, EmbedsTestCaseMixin):
           app=app,
           version='1',
           code='fx1',
-          codename='foxy',
-          tree=tree,
+          codename='foxy'
         )
+        appver.trees.through.objects.create(tree=tree,
+                                            appversion=appver,
+                                            start=None,
+                                            end=None)
+
         milestone = Milestone.objects.create(
           code='one',
           name='One',
           appver=appver,
         )
 
-        return appver, milestone
+        return appver, tree, milestone
 
 
 class ShippingTestCase(ShippingTestCaseBase):
@@ -64,7 +69,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
-        appver, milestone = self._create_appver_milestone()
+        appver, __, ___ = self._create_appver_tree_milestone()
         url = reverse('shipping.views.app.changes',
                       args=[appver.code])
         response = self.client.get(url)
@@ -78,7 +83,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         url = reverse('shipping.views.confirm_drill_mstone')
         response = self.client.get(url)
         eq_(response.status_code, 404)
-        appver, milestone = self._create_appver_milestone()
+        appver, __, milestone = self._create_appver_tree_milestone()
         response = self.client.get(url, {'ms': milestone.code})
         eq_(response.status_code, 302)  # not permission to view
 
@@ -111,7 +116,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         url = reverse('shipping.views.confirm_ship_mstone')
         response = self.client.get(url)
         eq_(response.status_code, 404)
-        appver, milestone = self._create_appver_milestone()
+        appver, __, milestone = self._create_appver_tree_milestone()
         response = self.client.get(url, {'ms': milestone.code})
         eq_(response.status_code, 302)  # not permission to view
 
@@ -145,7 +150,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(response.status_code, 404)
 
         # to succeed we need sample fixtures
-        appver, milestone = self._create_appver_milestone()
+        appver, __, ___ = self._create_appver_tree_milestone()
 
         # Succeed
         response = self.client.get(url, dict(av=appver.code))
@@ -166,7 +171,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(response.status_code, 404)
 
         # to succeed we need sample fixtures
-        appver, milestone = self._create_appver_milestone()
+        appver, __, milestone = self._create_appver_tree_milestone()
         response = self.client.get(url, dict(ms=milestone.code))
         eq_(response.status_code, 200)
         response = self.client.get(url, dict(av=appver.code))
@@ -187,7 +192,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(response.status_code, 404)
 
         # to succeed we need sample fixtures
-        appver, milestone = self._create_appver_milestone()
+        appver, __, milestone = self._create_appver_tree_milestone()
         response = self.client.get(url, dict(ms=milestone.code))
         eq_(response.status_code, 200)
         response = self.client.get(url, dict(av=appver.code))
@@ -212,7 +217,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(response.status_code, 404)
 
         # Succeed
-        __, milestone = self._create_appver_milestone()
+        __, ___, milestone = self._create_appver_tree_milestone()
         milestone.status = 1
         milestone.save()
         response = self.client.get(url, dict(ms=milestone.code))
@@ -244,7 +249,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         admin.save()
         assert self.client.login(username='admin', password='secret')
 
-        __, milestone = self._create_appver_milestone()
+        __, ___, milestone = self._create_appver_tree_milestone()
         response = self.client.post(url, dict(ms="junk"))
         eq_(response.status_code, 404)
 
@@ -270,7 +275,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
-        __, milestone = self._create_appver_milestone()
+        __, ___, milestone = self._create_appver_tree_milestone()
         url = reverse('shipping.views.milestone.about',
                       args=[milestone.code])
         response = self.client.get(url)
@@ -295,13 +300,13 @@ class ShippingTestCase(ShippingTestCaseBase):
         struct = json.loads(response.content)
         eq_(struct['items'], [])
 
-        appver, milestone = self._create_appver_milestone()
+        appver, tree, milestone = self._create_appver_tree_milestone()
         locale, __ = Locale.objects.get_or_create(
           code='en-US',
           name='English',
         )
         run = Run.objects.create(
-          tree=appver.tree,
+          tree=tree,
           locale=locale,
         )
         assert Run.objects.all()
@@ -313,9 +318,13 @@ class ShippingTestCase(ShippingTestCaseBase):
 
     def test_status_json_by_treeless_appversion(self):
         url = reverse('shipping.views.status.status_json')
-        appver, milestone = self._create_appver_milestone()
-        appver.tree = None
-        appver.save()
+        appver, tree, milestone = self._create_appver_tree_milestone()
+        # get the AppVersionThrough, and set it's duration to the past
+        avt = appver.trees_over_time.get(tree=tree)
+        n = datetime.datetime.now()
+        avt.start = n - datetime.timedelta(days=14)
+        avt.end = n - datetime.timedelta(days=1)
+        avt.save()
         response = self.client.get(url, {'av': appver.code})
 
         eq_(response.status_code, 200)
@@ -325,7 +334,7 @@ class ShippingTestCase(ShippingTestCaseBase):
     def test_status_json_multiple_locales_multiple_trees(self):
         url = reverse('shipping.views.status.status_json')
 
-        appver, milestone = self._create_appver_milestone()
+        appver, tree, milestone = self._create_appver_tree_milestone()
         locale_en, __ = Locale.objects.get_or_create(
           code='en-US',
           name='English',
@@ -339,8 +348,7 @@ class ShippingTestCase(ShippingTestCaseBase):
           name='Tamil',
         )
 
-        # 4 trees
-        tree, = Tree.objects.all()
+        # 3 more trees
         tree2 = Tree.objects.create(
           code='fy',
           l10n=tree.l10n,
@@ -360,16 +368,25 @@ class ShippingTestCase(ShippingTestCaseBase):
         appver2 = AppVersion.objects.create(
           app=appver.app,
           code='FY1',
-          tree=tree2
+          accepts_signoffs=True
         )
+        appver2.trees.through.objects.create(tree=tree2,
+                                             appversion=appver2,
+                                             start=None,
+                                             end=None)
         appver3 = AppVersion.objects.create(
           app=appver.app,
           code='FZ1',
-          tree=tree3
+          accepts_signoffs=True
         )
+        appver3.trees.through.objects.create(tree=tree3,
+                                             appversion=appver3,
+                                             start=None,
+                                             end=None)
         AppVersion.objects.create(
           app=appver.app,
           code='F-LONER',
+          accepts_signoffs=True
         )
 
         assert AppVersion.objects.count() == 4
@@ -502,7 +519,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(response.status_code, 200)
         eq_(get_query(response.content), 'locale=en-US&locale=ta')
 
-        appver, __ = self._create_appver_milestone()
+        appver, __, ___ = self._create_appver_tree_milestone()
         tree, = Tree.objects.all()
         response = self.client.get(url, {'tree': tree.code})
         eq_(response.status_code, 200)
@@ -565,7 +582,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         response = self.client.get(url, {'tree': 'xxx'})
         eq_(response.status_code, 404)
 
-        self._create_appver_milestone()
+        self._create_appver_tree_milestone()
         assert Tree.objects.all().exists()
         tree, = Tree.objects.all()
 

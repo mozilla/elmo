@@ -19,6 +19,7 @@ from life.models import Repository
 from mercurial.ui import ui as _ui
 from mercurial.hg import repository
 from mercurial.copies import pathcopies
+from mercurial.error import RepoLookupError
 
 from Mozilla.Parser import getParser
 from Mozilla.CompareLocales import AddRemove, Tree as DataTree
@@ -48,8 +49,14 @@ def diff(request):
     # Convert the 'from' and 'to' to strings (instead of unicode)
     # in case mercurial needs to look for the key in binary data.
     # This prevents UnicodeWarning messages.
-    ctx1 = repo.changectx(str(request.GET['from']))
-    ctx2 = repo.changectx(str(request.GET['to']))
+    try:
+        ctx1 = repo.changectx(str(request.GET['from']))
+    except RepoLookupError:
+        return http.HttpResponseBadRequest("Unrecognized 'from' parameter")
+    try:
+        ctx2 = repo.changectx(str(request.GET['to']))
+    except RepoLookupError:
+        return http.HttpResponseBadRequest("Unrecognized 'to' parameter")
     copies = pathcopies(ctx1, ctx2)
     match = None  # maybe get something from l10n.ini and cmdutil
     changed, added, removed = repo.status(ctx1, ctx2, match=match)[:3]
@@ -177,7 +184,7 @@ def diff(request):
                             'copied': copied.get(path)
                             })
     diffs = diffs.toJSON().get('children', [])
-    return render(request, 'shipping/diff.html', {
+    return render(request, 'pushes/diff.html', {
                     'given_title': request.GET.get('title', None),
                     'repo': reponame,
                     'repo_url': repo_url,

@@ -6,7 +6,12 @@
 {% load run_filters %}
 {% load commons_filters %}
 {% for push in pushes %}
-  <tr class="pushrow" id="{{push.id}}" data-push="{{push.id}}">
+  {% if push.new_forest %}
+    <tr class="tree-change-spacer"></tr>
+  {% else %}
+    <tr class="push-spacer"></tr>
+  {% endif %}
+  <tr class="pushrow" id="{{push.id}}" data-push="{{push.push_id}}">
     <td class="push{% if forloop.first %} top{% endif %}{% if forloop.last %}  bottom {% endif %}" rowspan="{{push.rows}}">{{push.when|date}}<br><span class="csuser">{{push.who}}</span></td>
     <td rowspan="{{push.changerows}}">{{push.run|showrun}}<br>
      <span class="csuser">{{push.run.build.starttime|date}}</span></td>
@@ -15,24 +20,24 @@
       {% if forloop.first %}
         {% if not push.signoffs|length %}
           <div class="do_signoff">
-            <input type="button" id="so_{{push.id}}" value="sign off&hellip;" onclick="return false;"
+            <input type="button" data-push="{{push.push_id}}" value="sign off&hellip;" onclick="return false;"
             {% if push.run %}
               data-run="{{push.run.id}}"
             {% endif %}
             class="do_signoff {% ifequal suggested_signoff push.id %}suggested{% else %}hidden{% endifequal %}"
-            {%if not perms.shipping.add_signoff %} disabled {%endif%}>
+            {%if not perms.shipping.add_signoff or not appver.accepts_signoffs %} disabled {%endif%}>
           </div>
         {% endif %}
       {% endif %}
       <div class="rev">{{cs.description}}<br>
         <span class="csuser">{{cs.user}}</span>
         <a href="{{push.url}}/rev/{{cs.shortrev}}" class="csuser">rev
-        <span class="shortrev">{{cs.shortrev}}</span></a>
+        <span class="shortrev" data-repo="{{push.repo}}">{{cs.shortrev}}</span></a>
       </div>
     </td>
     <td class="diff">{% for _i in cs.diffbases %}<div class="diffanchor"></div>{% endfor %}</td></tr>
     {% if not forloop.last %}
-  <tr class="pushrow" data-push="{{push.id}}">
+  <tr class="pushrow" data-push="{{push.push_id}}">
     {% endif %}
     {% endfor %}
     {% if push.signoffs|length %}
@@ -66,7 +71,7 @@
                 accepted sign-off by {{so.signoff.author.get_full_name}} on
                 {{so.action.when|date}}
               {% endifequal %}
-                <span class="shortrev hidden">{{push.changes.0.shortrev}}</span>
+                <span class="shortrev hidden" data-repo="{{push.repo}}">{{push.changes.0.shortrev}}</span>
               </div>
             </td>
             <td class="diff {{flag}}">{% if so.diffbases %}<div class="diffanchor"></div>{% endif %}</td>
@@ -74,7 +79,7 @@
         {% endwith %}
       {% endfor %}
     {% else %}
-    <tr class="signoffrow hidden" data-push="{{push.id}}">
+    <tr class="signoffrow hidden" data-push="{{push.push_id}}">
       <td class="push"></td><td class="run"></td><td class="signoff"></td><td class="diff"></td>
     </tr>
     {% endif %}
