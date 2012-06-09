@@ -273,11 +273,11 @@ class StatusJSON(SignoffDataView):
         so_items = {}
         for av in AppVersion.objects.filter(**avq):
             for loc, (real_av, flags) in locflags4av[av].iteritems():
-                if real_av == av.code:
-                    so_items[(av2tree[av.code], loc)] = [values[f]
-                                                         for f in flags]
-                else:
-                    so_items[(av2tree[av.code], loc)] = [real_av]
+                flag_values = [
+                    (real_av==av.code or f!=Action.ACCEPTED) and values[f]
+                    or real_av
+                    for f in flags]
+                so_items[(av2tree[av.code], loc)] = flag_values
         # get shipped-in data, latest milestone of all appversions for now
         shipped_in = defaultdict(list)
         for _av in appvers.select_related('app'):
