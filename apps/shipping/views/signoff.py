@@ -65,8 +65,8 @@ def etag_signoff(request, locale_code, app_code):
     return "%d|%d|%d|%d|%d" % ((can_signoff, review_signoff) + ids)
 
 
-@cache.cache_control(private=True)
-@etag(etag_signoff)
+#@cache.cache_control(private=True)
+#@etag(etag_signoff)
 def signoff(request, locale_code, app_code):
     """View to show recent sign-offs and opportunities to sign off.
 
