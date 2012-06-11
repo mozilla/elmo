@@ -44,7 +44,7 @@ var signoffDetailsURL = "{% url shipping.views.signoff.signoff_details language.
 <h1>Sign-offs for {{appver}} in {{language}}</h1>
 <p>{% if not appver.accepts_signoffs %}{{appver}} is not open for new sign-offs. It's either too early or too late
 to do that.{% endif %}
-{% if accepted %}There is {% if fallback %}an {{ real_av }} <a href="#{{fallback.tip.shortrev}}">fallback
+{% if accepted %}There is {% if fallback %}a {{ real_av }} <a href="#{{fallback.tip.shortrev}}">fallback
 signoff</a>{% else %}a <a href="#{{accepted.tip.shortrev}}">current accepted sign-off</a>{% endif %},
 which is used for shipping {{appver}}.{% endif %}
 {% if pending %}There is a <a href="#{{pending.tip.shortrev}}">pending
