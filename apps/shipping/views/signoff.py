@@ -92,12 +92,12 @@ def signoff(request, locale_code, app_code):
     rejected = push4action.get(flags.get(Action.REJECTED))
     accepted = push4action.get(flags.get(Action.ACCEPTED))
 
-    pushes, suggested_signoff = annotated_pushes(appver, lang, actions, flags)
     if real_av != appver.code and accepted is not None:
         # we're falling back, add the accepted push to the table
         fallback = accepted
     else:
         fallback = None
+    pushes, suggested_signoff = annotated_pushes(appver, lang, actions, flags, fallback)
 
     return render(request, 'shipping/signoffs.html', {
                     'appver': appver,

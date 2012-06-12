@@ -248,7 +248,7 @@ class _RowCollector:
             self._prev = push.id
 
 
-def annotated_pushes(appver, loc, actions, flags, count=10):
+def annotated_pushes(appver, loc, actions, flags, fallback, count=10):
     pushes_q = (Push.objects
                 .filter(changesets__branch__id=1)
                 .order_by('-push_date'))
@@ -293,7 +293,9 @@ def annotated_pushes(appver, loc, actions, flags, count=10):
         initial_diff.append(action4id[flags[Action.PENDING]].signoff_id)
     if Action.REJECTED in flags and len(initial_diff) < 2:
         initial_diff.append(action4id[flags[Action.REJECTED]].signoff_id)
-    if current_so is not None:
+    # if we're having a sign-off on this appversion, i.e no fallback,
+    # show only new pushes
+    if current_so is not None and fallback is None:
         pushes_q = (pushes_q
                     .filter(push_date__gte=current_so.push.push_date)
                     .distinct())
