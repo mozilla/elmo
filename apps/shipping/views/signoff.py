@@ -65,6 +65,7 @@ def etag_signoff(request, locale_code, app_code):
     return "%d|%d|%d|%d|%d" % ((can_signoff, review_signoff) + ids)
 
 
+# XXX bug 763214, disable etag and test for now
 #@cache.cache_control(private=True)
 #@etag(etag_signoff)
 def signoff(request, locale_code, app_code):
@@ -92,12 +93,12 @@ def signoff(request, locale_code, app_code):
     rejected = push4action.get(flags.get(Action.REJECTED))
     accepted = push4action.get(flags.get(Action.ACCEPTED))
 
-    pushes, suggested_signoff = annotated_pushes(appver, lang, actions, flags)
     if real_av != appver.code and accepted is not None:
         # we're falling back, add the accepted push to the table
         fallback = accepted
     else:
         fallback = None
+    pushes, suggested_signoff = annotated_pushes(appver, lang, actions, flags, fallback)
 
     return render(request, 'shipping/signoffs.html', {
                     'appver': appver,
