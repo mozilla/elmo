@@ -65,6 +65,7 @@ def etag_signoff(request, locale_code, app_code):
     return "%d|%d|%d|%d|%d" % ((can_signoff, review_signoff) + ids)
 
 
+# XXX bug 763214, disable etag and test for now
 #@cache.cache_control(private=True)
 #@etag(etag_signoff)
 def signoff(request, locale_code, app_code):

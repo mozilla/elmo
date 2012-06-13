@@ -156,7 +156,8 @@ en-US
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
 
-    def test_signoff_etag(self):
+    # XXX bug 763214, disable etag and test for now
+    def _do_not_test_signoff_etag(self):
         """Test that the ETag is sent correctly for the signoff() view.
 
         Copied here from the etag_signoff() function's doc string:
