@@ -4,16 +4,19 @@
 
 import re
 import os
+import logging
 import codecs
 import base64
 from nose.tools import eq_, ok_
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from mercurial import commands as hgcommands
+from mercurial.copies import pathcopies
 from mercurial.hg import repository
 
 from life.models import Repository
 from .base import mock_ui, RepoTestBase
+from pushes.views.diff import DiffView, BadRevision
 
 
 class DiffTestCase(RepoTestBase):
@@ -740,8 +743,7 @@ class DiffTestCase(RepoTestBase):
         ok_(re.findall('>\s*World\s*<', html_diff))
 
     def test_diff_base_against_clone(self):
-        """Test that the right error is raised on trying to do a diff across
-        a different divergant clone"""
+        """Test a diff across a different divergant clone"""
         ui = mock_ui()
         orig = os.path.join(settings.REPOSITORY_BASE, 'orig')
         clone = os.path.join(settings.REPOSITORY_BASE, 'clone')
@@ -785,18 +787,78 @@ class DiffTestCase(RepoTestBase):
                           message="a different commit on clone")
         rev_to = hgclone[1].hex()
 
-        Repository.objects.create(
-          name='orig',
-          url='http://localhost:8001/orig/'
-        )
-        Repository.objects.create(
-          name='clone',
-          url='http://localhost:8001/clone/'
-        )
-
+        self.dbrepo(name='orig', changesets_from=hgorig)
+        self.dbrepo(name='clone', changesets_from=hgclone)
+        # unit test part
+        v = DiffView()
+        v.getrepo('orig')
+        files = v.contextsAndPaths(rev_from, rev_to, 'orig')
+        eq_(files, [('file.dtd', 'changed')])
+        lines = v.diffLines('file.dtd', 'changed')
+        eq_(len(lines), 3)
+        line = lines[0]
+        eq_(line['class'], 'changed')
+        eq_(line['entity'], 'mod')
+        line = lines[1]
+        eq_(line['class'], 'removed')
+        eq_(line['entity'], 'new')
+        line = lines[2]
+        eq_(line['class'], 'added')
+        eq_(line['entity'], 'new_in_clone')
+        # integration test part, successful load and spot checks
         url = reverse('pushes.views.diff')
         # right now, we can't diff between repos, this might change!
         response = self.client.get(url, {'repo': 'clone',
+                                         'from': rev_from[:12],
+                                         'to': rev_to[:12]})
+        eq_(response.status_code, 200)
+        html_diff = response.content.split('Changed files:')[1]
+        ok_(re.findall('>\s*file\.dtd\s*<', html_diff))
+
+    def test_diff_unrelated_repos(self):
+        """Test for failure to diff unrelated repos"""
+        ui = mock_ui()
+        one = os.path.join(settings.REPOSITORY_BASE, 'one')
+        other = os.path.join(settings.REPOSITORY_BASE, 'other')
+        hgcommands.init(ui, one)
+        hgone = repository(ui, one)
+        (open(hgone.pathto('file.dtd'), 'w')
+         .write('''
+          <!ENTITY ent "val">
+        '''))
+        hgcommands.addremove(ui, hgone)
+        hgcommands.commit(ui, hgone,
+                          user="Jane Doe <jdoe@foo.tld",
+                          message="initial commit")
+        assert len(hgone) == 1  # 1 commit
+        rev_from = hgone['tip'].hex()
+
+        # different commit on other
+        hgcommands.init(ui, other)
+        hgother = repository(ui, other)
+        (open(hgother.pathto('file.dtd'), 'w')
+         .write('''
+         <!ENTITY aunt "otherval">
+         '''))
+        hgcommands.addremove(ui, hgother)
+        hgcommands.commit(ui, hgother,
+                          user="John Doe <jodo@foo.tld",
+                          message="a different commit on other")
+        rev_to = hgother['tip'].hex()
+
+        self.dbrepo(name='one', changesets_from=hgone)
+        self.dbrepo(name='other', changesets_from=hgother)
+        # unit test part
+        v = DiffView()
+        v.getrepo('one')
+        with self.assertRaises(BadRevision) as badrev:
+            v.contextsAndPaths(rev_from, rev_to, 'one')
+        eq_(badrev.exception.args,
+            ('from and to parameter are not connected',))
+        # integration test part, failure to load
+        url = reverse('pushes.views.diff')
+        # right now, we can't diff between repos, this might change!
+        response = self.client.get(url, {'repo': 'one',
                                          'from': rev_from[:12],
                                          'to': rev_to[:12]})
         eq_(response.status_code, 400)
@@ -992,3 +1054,313 @@ class DiffTestCase(RepoTestBase):
           'to': 'xxx'
         })
         eq_(response.status_code, 400)
+
+
+class ProcessForkTestCase(RepoTestBase):
+    'Test that output of DiffView.processFork matches .status() and copies()'
+    def setUp(self):
+        # start with a single file with one entry
+        super(ProcessForkTestCase, self).setUp()
+        self.repo_name = 'mozilla-central'
+        self.repo = os.path.join(self._base, self.repo_name)
+        self.commit = self.edit = 0
+        self.ui = mock_ui()
+        hgcommands.init(self.ui, self.repo)
+        self.hgrepo = repository(self.ui, self.repo)
+        (open(self.hgrepo.pathto('file.dtd'), 'w')
+             .write(u'<!ENTITY key1 "Hello %d">\n' % self.edit))
+        hgcommands.addremove(self.ui, self.hgrepo)
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="commit no: %d" % (self.commit))
+        self.edit += 1
+        self.commit += 1
+
+    def _exec_test(self, ctx1, ctx2):
+        r = self.hgrepo
+        anc_rev = r[0].hex()
+        repo = self.dbrepo()
+        v = DiffView()
+        v.getrepo(repo.name)
+        logging.debug('orig files:\n%r', ctx1.manifest().keys())
+        logging.debug('target files:\n%r', ctx2.manifest().keys())
+        logging.debug('anc files:\n%r', r[0].manifest().keys())
+        changed, added, removed, copies = v.processFork(r, ctx1, r, ctx2,
+                                                        anc_rev)
+        eq_((changed, added, removed), r.status(ctx1, ctx2)[:3])
+        eq_(copies, pathcopies(ctx1, ctx2))
+
+    def test_same_file_change(self):
+        rev0 = self.hgrepo[0].hex()
+        (open(self.hgrepo.pathto('file.dtd'), 'w')
+             .write(u'<!ENTITY key1 "Hello Again">\n'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="first commit")
+        ctx1 = self.hgrepo['tip']
+        hgcommands.update(self.ui, self.hgrepo, rev=rev0)
+        (open(self.hgrepo.pathto('file.dtd'), 'w')
+             .write(u'<!ENTITY key1 "Hello Again">\n'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="second commit")
+        ctx2 = self.hgrepo['tip']
+        self._exec_test(ctx1, ctx2)
+
+    def test_same_file_rename(self):
+        rev0 = self.hgrepo[0].hex()
+        hgcommands.rename(self.ui, self.hgrepo,
+                          self.hgrepo.pathto('file.dtd'),
+                          self.hgrepo.pathto('newnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="first commit")
+        ctx1 = self.hgrepo['tip']
+        hgcommands.update(self.ui, self.hgrepo, rev=rev0)
+        hgcommands.rename(self.ui, self.hgrepo,
+                          self.hgrepo.pathto('file.dtd'),
+                          self.hgrepo.pathto('newnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="second commit")
+        ctx2 = self.hgrepo['tip']
+        self._exec_test(ctx1, ctx2)
+
+    def test_same_file_rename_and_edit(self):
+        rev0 = self.hgrepo[0].hex()
+        hgcommands.rename(self.ui, self.hgrepo,
+                          self.hgrepo.pathto('file.dtd'),
+                          self.hgrepo.pathto('newnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="first commit")
+        ctx1 = self.hgrepo['tip']
+        hgcommands.update(self.ui, self.hgrepo, rev=rev0)
+        (open(self.hgrepo.pathto('file.dtd'), 'w')
+             .write(u'<!ENTITY key1 "Hello Again">\n'))
+        hgcommands.rename(self.ui, self.hgrepo,
+                          self.hgrepo.pathto('file.dtd'),
+                          self.hgrepo.pathto('newnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="second commit")
+        ctx2 = self.hgrepo['tip']
+        self._exec_test(ctx1, ctx2)
+
+    def test_different_rename(self):
+        rev0 = self.hgrepo[0].hex()
+        hgcommands.rename(self.ui, self.hgrepo,
+                          self.hgrepo.pathto('file.dtd'),
+                          self.hgrepo.pathto('newnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="first commit")
+        ctx1 = self.hgrepo['tip']
+        hgcommands.update(self.ui, self.hgrepo, rev=rev0)
+        hgcommands.rename(self.ui, self.hgrepo,
+                          self.hgrepo.pathto('file.dtd'),
+                          self.hgrepo.pathto('othernewnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="second commit")
+        ctx2 = self.hgrepo['tip']
+        self._exec_test(ctx1, ctx2)
+
+    def test_different_copy(self):
+        rev0 = self.hgrepo[0].hex()
+        hgcommands.copy(self.ui, self.hgrepo,
+                        self.hgrepo.pathto('file.dtd'),
+                        self.hgrepo.pathto('newnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="first commit")
+        ctx1 = self.hgrepo['tip']
+        hgcommands.update(self.ui, self.hgrepo, rev=rev0)
+        hgcommands.copy(self.ui, self.hgrepo,
+                        self.hgrepo.pathto('file.dtd'),
+                        self.hgrepo.pathto('othernewnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="second commit")
+        ctx2 = self.hgrepo['tip']
+        self._exec_test(ctx1, ctx2)
+
+    def test_different_copy_rename(self):
+        rev0 = self.hgrepo[0].hex()
+        hgcommands.copy(self.ui, self.hgrepo,
+                        self.hgrepo.pathto('file.dtd'),
+                        self.hgrepo.pathto('newnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="first commit")
+        ctx1 = self.hgrepo['tip']
+        hgcommands.update(self.ui, self.hgrepo, rev=rev0)
+        hgcommands.rename(self.ui, self.hgrepo,
+                          self.hgrepo.pathto('file.dtd'),
+                          self.hgrepo.pathto('othernewnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="second commit")
+        ctx2 = self.hgrepo['tip']
+        self._exec_test(ctx1, ctx2)
+
+    def test_different_rename_copy(self):
+        rev0 = self.hgrepo[0].hex()
+        hgcommands.rename(self.ui, self.hgrepo,
+                          self.hgrepo.pathto('file.dtd'),
+                          self.hgrepo.pathto('newnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="first commit")
+        ctx1 = self.hgrepo['tip']
+        hgcommands.update(self.ui, self.hgrepo, rev=rev0)
+        hgcommands.copy(self.ui, self.hgrepo,
+                        self.hgrepo.pathto('file.dtd'),
+                        self.hgrepo.pathto('othernewnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="second commit")
+        ctx2 = self.hgrepo['tip']
+        self._exec_test(ctx1, ctx2)
+
+    def test_edit_file_rename(self):
+        rev0 = self.hgrepo[0].hex()
+        (open(self.hgrepo.pathto('file.dtd'), 'w')
+             .write(u'<!ENTITY key1 "Hello Again">\n'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="first commit")
+        ctx1 = self.hgrepo['tip']
+        hgcommands.update(self.ui, self.hgrepo, rev=rev0)
+        hgcommands.rename(self.ui, self.hgrepo,
+                          self.hgrepo.pathto('file.dtd'),
+                          self.hgrepo.pathto('newnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="second commit")
+        ctx2 = self.hgrepo['tip']
+        self._exec_test(ctx1, ctx2)
+
+    def test_edit_file_copy(self):
+        rev0 = self.hgrepo[0].hex()
+        (open(self.hgrepo.pathto('file.dtd'), 'w')
+             .write(u'<!ENTITY key1 "Hello Again">\n'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="first commit")
+        ctx1 = self.hgrepo['tip']
+        hgcommands.update(self.ui, self.hgrepo, rev=rev0)
+        hgcommands.copy(self.ui, self.hgrepo,
+                        self.hgrepo.pathto('file.dtd'),
+                        self.hgrepo.pathto('newnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="second commit")
+        ctx2 = self.hgrepo['tip']
+        self._exec_test(ctx1, ctx2)
+
+    def test_edit_file_and_remove(self):
+        rev0 = self.hgrepo[0].hex()
+        (open(self.hgrepo.pathto('file.dtd'), 'w')
+             .write(u'<!ENTITY key1 "Hello Again">\n'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="first commit")
+        ctx1 = self.hgrepo['tip']
+        hgcommands.update(self.ui, self.hgrepo, rev=rev0)
+        hgcommands.remove(self.ui, self.hgrepo,
+                          self.hgrepo.pathto('file.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="second commit")
+        ctx2 = self.hgrepo['tip']
+        self._exec_test(ctx1, ctx2)
+
+    def test_remove_file_and_edit(self):
+        rev0 = self.hgrepo[0].hex()
+        hgcommands.remove(self.ui, self.hgrepo,
+                          self.hgrepo.pathto('file.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="first commit")
+        ctx1 = self.hgrepo['tip']
+        hgcommands.update(self.ui, self.hgrepo, rev=rev0)
+        (open(self.hgrepo.pathto('file.dtd'), 'w')
+             .write(u'<!ENTITY key1 "Hello Again">\n'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="second commit")
+        ctx2 = self.hgrepo['tip']
+        self._exec_test(ctx1, ctx2)
+
+    def test_remove_file_and_copy(self):
+        rev0 = self.hgrepo[0].hex()
+        hgcommands.remove(self.ui, self.hgrepo,
+                          self.hgrepo.pathto('file.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="first commit")
+        ctx1 = self.hgrepo['tip']
+        hgcommands.update(self.ui, self.hgrepo, rev=rev0)
+        hgcommands.copy(self.ui, self.hgrepo,
+                        self.hgrepo.pathto('file.dtd'),
+                        self.hgrepo.pathto('newnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="second commit")
+        ctx2 = self.hgrepo['tip']
+        self._exec_test(ctx1, ctx2)
+
+    def test_remove_file_and_rename(self):
+        rev0 = self.hgrepo[0].hex()
+        hgcommands.remove(self.ui, self.hgrepo,
+                          self.hgrepo.pathto('file.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="first commit")
+        ctx1 = self.hgrepo['tip']
+        hgcommands.update(self.ui, self.hgrepo, rev=rev0)
+        hgcommands.rename(self.ui, self.hgrepo,
+                          self.hgrepo.pathto('file.dtd'),
+                          self.hgrepo.pathto('newnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="second commit")
+        ctx2 = self.hgrepo['tip']
+        self._exec_test(ctx1, ctx2)
+
+    def test_rename_file_and_remove(self):
+        rev0 = self.hgrepo[0].hex()
+        hgcommands.rename(self.ui, self.hgrepo,
+                          self.hgrepo.pathto('file.dtd'),
+                          self.hgrepo.pathto('newnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="first commit")
+        ctx1 = self.hgrepo['tip']
+        hgcommands.update(self.ui, self.hgrepo, rev=rev0)
+        hgcommands.remove(self.ui, self.hgrepo,
+                          self.hgrepo.pathto('file.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="second commit")
+        ctx2 = self.hgrepo['tip']
+        self._exec_test(ctx1, ctx2)
+
+    def test_copy_file_and_remove(self):
+        rev0 = self.hgrepo[0].hex()
+        hgcommands.copy(self.ui, self.hgrepo,
+                        self.hgrepo.pathto('file.dtd'),
+                        self.hgrepo.pathto('newnamefile.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="first commit")
+        ctx1 = self.hgrepo['tip']
+        hgcommands.update(self.ui, self.hgrepo, rev=rev0)
+        hgcommands.remove(self.ui, self.hgrepo,
+                          self.hgrepo.pathto('file.dtd'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="second commit")
+        ctx2 = self.hgrepo['tip']
+        self._exec_test(ctx1, ctx2)

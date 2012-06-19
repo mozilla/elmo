@@ -9,17 +9,19 @@ as the repositories are related.
 """
 
 from difflib import SequenceMatcher
+import logging
 
 from django.shortcuts import render
 from django.conf import settings
+from django.db.models import Max
 from django import http
 from django.views.generic.base import View
 
-from life.models import Repository
+from life.models import Repository, Changeset
 
 from mercurial.ui import ui as _ui
 from mercurial.hg import repository
-from mercurial.copies import pathcopies
+from mercurial.copies import pathcopies, _chain  # HG INTERNAL
 from mercurial.error import RepoLookupError
 
 from Mozilla.Parser import getParser
@@ -42,7 +44,7 @@ class DiffView(View):
             return http.HttpResponseBadRequest("Missing 'repo' parameter")
         reponame = request.GET['repo']
         try:
-            repo_url = Repository.objects.get(name=reponame).url
+            self.getrepo(reponame)
         except Repository.DoesNotExist:
             raise http.Http404("Repository not found")
         if not request.GET.get('from'):
@@ -79,11 +81,14 @@ class DiffView(View):
         return render(request, 'pushes/diff.html', {
                         'given_title': request.GET.get('title', None),
                         'repo': reponame,
-                        'repo_url': repo_url,
+                        'repo_url': self.repo.url,
                         'old_rev': request.GET['from'],
                         'new_rev': request.GET['to'],
                         'diffs': diffs
                       })
+
+    def getrepo(self, reponame):
+        self.repo = Repository.objects.get(name=reponame)
 
     def contextsAndPaths(self, _from, _to, suggested_repo):
         repopath = settings.REPOSITORY_BASE + '/' + suggested_repo
@@ -93,18 +98,33 @@ class DiffView(View):
         # in case mercurial needs to look for the key in binary data.
         # This prevents UnicodeWarning messages.
         try:
-            self.ctx1 = repo.changectx(str(_from))
+            self.ctx1, fromrepo, dbfrom = self.contextAndRepo(_from, repo)
         except RepoLookupError:
             raise BadRevision("Unrecognized 'from' parameter")
         try:
-            self.ctx2 = repo.changectx(str(_to))
+            self.ctx2, torepo, dbto = self.contextAndRepo(_to, repo)
         except RepoLookupError:
             raise BadRevision("Unrecognized 'to' parameter")
-        copies = pathcopies(self.ctx1, self.ctx2)
-        match = None  # maybe get something from l10n.ini and cmdutil
-        changed, added, removed = repo.status(self.ctx1, self.ctx2,
-                                              match=match)[:3]
-
+        if fromrepo == torepo:
+            copies = pathcopies(self.ctx1, self.ctx2)
+            match = None  # maybe get something from l10n.ini and cmdutil
+            changed, added, removed = repo.status(self.ctx1, self.ctx2,
+                                                  match=match)[:3]
+        else:
+            # find descent ancestor for ctx1 and ctx2
+            try:
+                anc_rev = (Changeset.objects
+                           .exclude(id=1)  # exclude rev 0000
+                           .filter(repositories=dbfrom)
+                           .filter(repositories=dbto)
+                           .filter(branch=1)
+                           .order_by('-pk')
+                           .values_list('revision', flat=True))[0]
+            except IndexError:
+                raise BadRevision("from and to parameter are not connected")
+            changed, added, removed, copies = \
+                    self.processFork(fromrepo, self.ctx1, torepo, self.ctx2,
+                                     anc_rev)
         # split up the copies info into thos that were renames and those that
         # were copied.
         self.moved = {}
@@ -123,6 +143,91 @@ class DiffView(View):
                      (f in self.copied and 'copied')
                      or 'added') for f in added])
         return paths
+
+    def contextAndRepo(self, rev, repo):
+        '''Get a hg changectx for the given rev, preferably in the given repo.
+        '''
+        try:
+            # Convert the 'from' and 'to' to strings (instead of unicode)
+            # in case mercurial needs to look for the key in binary data.
+            # This prevents UnicodeWarning messages.
+            ctx = repo.changectx(str(rev))
+            return ctx, repo, self.repo
+        except RepoLookupError, e:
+            # the favored repo doesn't have a changeset, look for an
+            # active repo that does.
+            try:
+                dbrepo = (Repository.objects
+                          .filter(changesets__revision__startswith=rev)
+                          .annotate(last_push=Max('push__push_date'))
+                          .order_by('-last_push'))[0]
+            except IndexError:
+                # can't find the changeset in other repos, raise the
+                # original error
+                raise e
+        # ok, new repo
+        repopath = settings.REPOSITORY_BASE + '/' + dbrepo.name
+        otherrepo = repository(_ui(), repopath)
+        return otherrepo.changectx(str(rev)), otherrepo, dbrepo
+
+    def processFork(self, fromrepo, ctx1, torepo, ctx2, anc_rev):
+        # piece together changed, removed, added, and copies
+        match = None  # keep in sync with match above
+        ctx3 = fromrepo.changectx(anc_rev)
+        first_copies = pathcopies(ctx1, ctx3)
+        changed, added, removed = fromrepo.status(ctx1, ctx3,
+                                                  match=match)[:3]
+        logging.debug('changed, added, removed, copies:\n %r %r %r %r',
+                      changed, added, removed, first_copies)
+        ctx3 = torepo.changectx(anc_rev)
+        more_copies = pathcopies(ctx3, ctx2)
+        more_reverse = dict((v, k) for k, v in more_copies.iteritems())
+        more_changed, more_added, more_removed = torepo.status(ctx3, ctx2,
+                                                               match=match)[:3]
+        logging.debug('more_changed, added, removed, copies:\n %r %r %r %r',
+                      more_changed, more_added, more_removed, more_copies)
+        copies = _chain(ctx1, ctx2, first_copies, more_copies)  # HG INTERNAL
+        # the second step removed a file, strip it from copies, changed
+        # if it's in added, strip, otherwise add to removed
+        check_manifests = set()  # moved back and forth, check manifests
+        for f in more_removed:
+            try:
+                changed.remove(f)
+            except ValueError:
+                pass
+            try:
+                added.remove(f)
+                # this file moved from ctx1 to ct2, adjust copies
+                if (f in more_reverse and
+                    f in first_copies):
+                    if more_reverse[f] == first_copies[f]:
+                        #file moving back and forth, check manifests below
+                        check_manifests.add(first_copies[f])
+            except ValueError:
+                removed.append(f)
+        # the second step added a file
+        # strip it from removed, or add it to added
+        for f in more_added:
+            try:
+                removed.remove(f)
+            except ValueError:
+                added.append(f)
+        # see if a change was reverted, both changed,
+        # manifests in to and from match
+        m1 = m2 = None
+        changed = set(changed)
+        more_changed = set(more_changed)
+        both_changed = (changed & more_changed) | check_manifests
+        changed |= both_changed
+        for tp in both_changed:
+            fp = copies.get(tp, tp)
+            if m1 is None:
+                m1 = ctx1.manifest()
+                m2 = ctx2.manifest()
+            if m1[fp] == m2[tp]:
+                changed.remove(tp)
+        return (sorted(changed), sorted(set(added)), sorted(set(removed)),
+                copies)
 
     def diffLines(self, path, action):
         lines = []
