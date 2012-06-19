@@ -4,6 +4,7 @@
 
 '''Views for shipping metrics.
 '''
+from collections import defaultdict
 
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
@@ -17,7 +18,7 @@ from django.views.decorators.cache import cache_control
 from django.utils import simplejson
 from django.db.models import Max
 
-from collections import defaultdict
+from .utils import class_decorator
 
 
 class SignoffDataView(View):
@@ -66,6 +67,7 @@ class SignoffDataView(View):
         return r
 
 
+@class_decorator(cache_control(max_age=60))
 class Changesets(SignoffDataView):
     filename = 'l10n-changesets'
 
@@ -77,10 +79,10 @@ class Changesets(SignoffDataView):
         return ('%s %s\n' % (l, revmap[tips[l]][:12])
                 for l in sorted(tips.keys()))
 
+l10n_changesets = Changesets.as_view()
 
-l10n_changesets = cache_control(max_age=60)(Changesets.as_view())
 
-
+@class_decorator(cache_control(max_age=60))
 class ShippedLocales(SignoffDataView):
     filename = 'shipped-locales'
 
@@ -98,9 +100,10 @@ class ShippedLocales(SignoffDataView):
         return map(withPlatforms, sorted(locales))
 
 
-shipped_locales = cache_control(max_age=60)(ShippedLocales.as_view())
+shipped_locales = ShippedLocales.as_view()
 
 
+@class_decorator(cache_control(max_age=60))
 class StatusJSON(SignoffDataView):
 
     EXHIBIT_SCHEMA = {
@@ -274,7 +277,7 @@ class StatusJSON(SignoffDataView):
         for av in AppVersion.objects.filter(**avq):
             for loc, (real_av, flags) in locflags4av[av].iteritems():
                 flag_values = [
-                    (real_av==av.code or f!=Action.ACCEPTED) and values[f]
+                    (real_av == av.code or f != Action.ACCEPTED) and values[f]
                     or real_av
                     for f in flags]
                 so_items[(av2tree[av.code], loc)] = flag_values
@@ -317,4 +320,4 @@ class StatusJSON(SignoffDataView):
         return simplejson.dumps(data, indent=2)
 
 
-status_json = cache_control(max_age=60)(StatusJSON.as_view())
+status_json = StatusJSON.as_view()

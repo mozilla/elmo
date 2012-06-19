@@ -33,6 +33,7 @@ class SignOffTest(TestCase, EmbedsTestCaseMixin):
         eq_(response.content, """da l10n da 0003
 de l10n de 0002
 """)
+        ok_('max-age=60' in response['Cache-Control'])
 
     def test_shipped_locales(self):
         """Test that shipped-locales is OK"""
@@ -44,12 +45,14 @@ de l10n de 0002
 de
 en-US
 """)
+        ok_('max-age=60' in response['Cache-Control'])
 
     def test_status_json(self):
         """Test that the status json for the dashboard is OK"""
         url = reverse('shipping.views.status.status_json')
         response = self.client.get(url, {'av': 'fx1.0'})
         eq_(response.status_code, 200)
+        ok_('max-age=60' in response['Cache-Control'])
         data = json.loads(response.content)
         ok_('items' in data)
         items = data['items']
@@ -123,6 +126,7 @@ en-US
         response = self.client.get(url, {'ms': mile.code,
                                          'platforms': 'windows, linux'})
         eq_(response.status_code, 200)
+        ok_('max-age=60' in response['Cache-Control'])
         json_changes = json.loads(response.content)
         eq_(json_changes, {'de':
                             {

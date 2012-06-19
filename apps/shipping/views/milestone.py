@@ -23,6 +23,8 @@ from l10nstats.models import Run, Run_Revisions
 from shipping.views.status import SignoffDataView
 from shipping.api import accepted_signoffs
 
+from .utils import class_decorator
+
 
 def about(request, ms_code):
     """View showing which locales are in which changeset on the given
@@ -150,6 +152,7 @@ def statuses(req, ms_code):
                         mimetype="text/plain")
 
 
+@class_decorator(cache_control(max_age=60))
 class JSONChangesets(SignoffDataView):
     """Create a json l10n-changesets.
     This takes optional arguments of triples to link to files in repos
@@ -214,4 +217,4 @@ class JSONChangesets(SignoffDataView):
         content = ''.join(content)
         return content
 
-json_changesets = cache_control(max_age=60)(JSONChangesets.as_view())
+json_changesets = JSONChangesets.as_view()

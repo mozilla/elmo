@@ -13,11 +13,11 @@ function addMulti() {
   var platform = $("#nextmulti")[0].value;
   var row = $('<tr>' +
     '<td><input type="text" name="multi_' + platform + '_repo"'+
-      ' value="mobile-browser"></td>'+
+      ' value="releases/mozilla-beta"></td>'+
     '<td><input type="text" name="multi_' + platform + '_rev"'+
       ' value="default"></td>'+
     '<td><input type="text" name="multi_' + platform + '_path"'+
-      ' value="locales/maemo-locales"></td>'+
+      ' value="mobile/android/locales/maemo-locales"></td>'+
     '</tr>');
   $('#multis').append(row);
 }
@@ -45,10 +45,10 @@ and
 <form id="changes.json" method="GET" action="{% url shipping.views.milestone.json_changesets %}">
 <input type="hidden" name="ms" value="{{ mstone.code }}" />
 Platforms, comma separated:
-<input type="text" name="platforms" value="maemo"></br>
+<input type="text" name="platforms" value="android"></br>
 <input type="button" value="Add" onclick="addMulti()"> a multi-locale
 file for <input id="nextmulti"
-type="text" value="maemo-multilocale">
+type="text" value="android-multilocale">
 <table class="standard">
   <tbody id="multis">
     <tr><th>repo</th><th>branch</th><th>path</th></tr>
