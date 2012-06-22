@@ -272,6 +272,10 @@ def annotated_pushes(appver, loc, actions, flags, fallback, count=10):
                        .values_list('forest', 'id'))
     repoquery = None
     for (_s, _e), _f in forest4times.iteritems():
+        if _f not in repo4forest:
+            # we don't have a repo for this locale in this forest
+            # that's OK, continue
+            continue
         qd = {'repository': repo4forest[_f]}
         if _s is not None:
             qd['push_date__gte'] = _s
