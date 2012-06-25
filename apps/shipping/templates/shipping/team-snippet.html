@@ -46,10 +46,10 @@
         <td class="signoffstatus">
 
 	    <!-- No status -->
-	    {% if not run.rejected and not run.suggested_shortrev and not run.pending and not run.accepted %}
-	      {% if run.appversion %}
-                <a class="no-sign-offs" href="{% url shipping.views.signoff.signoff locale.code run.appversion.code %}">No Sign-offs</a>
-	      {% endif %}
+	    {% if not run.rejected and not run.suggested_shortrev and not run.pending and not run.accepted and run.appversion %}
+              <a class="no-sign-offs" href="{% url shipping.views.signoff.signoff locale.code run.appversion.code %}">No Sign-offs</a>
+	    {% else %}
+                <a class="no-sign-offs hidden" href="#">No Sign-offs</a>
 	    {% endif %}
 
             <!-- Rejected -->
