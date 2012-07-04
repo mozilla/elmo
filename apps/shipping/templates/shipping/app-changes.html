@@ -9,11 +9,17 @@
 
 {% block head_matter %}
 <style>
-.dropped {
+a.dropped, a.rejected {
 color: red;
 }
-.added {
+a.added {
 color: green;
+}
+a.pending {
+  color: orange;
+}
+a.obsoleted {
+  text-decoration: line-through;
 }
 .milestone {
 white-space: nowrap;
@@ -26,9 +32,9 @@ white-space: nowrap;
 <table class="standard">
 {% for row in rows %}
 <tr>
-  <td class="milestone"><a href="{% url shipping.views.milestone.about row.code %}" target="_blank">{{row.name}}</a></td>
+  <td class="milestone">{% if row.code %}<a href="{% if row.isAppVersion %}{% url shipping.views.app.changes row.code %}{% else %}{% url shipping.views.milestone.about row.code %}{% endif %}" target="_blank">{% endif %}{{row.name}}{% if row.code %}</a>{% endif %}</td>
   <td>
-    {% for loc, cls in row.changes %}<span class="{{cls}}">{{loc}}</span> {% endfor %}
+    {% for loc, cls in row.changes %}<a class="{{cls}}" href="{% url shipping.views.signoff.signoff loc appver.code %}">{{loc}}</a> {% endfor %}
   </td>
 </tr>
 {% endfor %}
