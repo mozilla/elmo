@@ -284,7 +284,7 @@ def open_mstone(request):
     """Open a milestone.
 
     Only available to POST, and requires signoff.can_open permissions.
-    Redirects to milestones().
+    Redirects to milestone.about().
     """
     if (request.method == "POST" and
         'ms' in request.POST and
@@ -296,30 +296,8 @@ def open_mstone(request):
             mstone.save()
         except:
             pass
-    return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
-
-
-def _propose_mstone(mstone):
-    """Propose a new milestone based on an existing one.
-
-    Tries to find the last integer in name and version, increment that
-    and create a new milestone.
-    """
-    last_int = re.compile('(\d+)$')
-    name_m = last_int.search(mstone.name)
-    if name_m is None:
-        return None
-    code_m = last_int.search(mstone.code)
-    if code_m is None:
-        return None
-    name_int = int(name_m.group())
-    code_int = int(code_m.group())
-    if name_int != code_int:
-        return None
-    new_rev = str(name_int + 1)
-    return dict(code=last_int.sub(new_rev, mstone.code),
-                name=last_int.sub(new_rev, mstone.name),
-                appver=mstone.appver.code)
+    return http.HttpResponseRedirect(reverse('shipping.views.milestone.about',
+                                             args=[mstone.code]))
 
 
 def confirm_ship_mstone(request):
@@ -359,7 +337,7 @@ def confirm_ship_mstone(request):
 def ship_mstone(request):
     """The actual worker method to ship a milestone.
 
-    Redirects to milestones().
+    Redirects to milestone.about().
     """
     if request.method != "POST":
         return http.HttpResponseNotAllowed(["POST"])
@@ -378,7 +356,8 @@ def ship_mstone(request):
     # XXX create event
     mstone.save()
 
-    return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
+    return http.HttpResponseRedirect(reverse('shipping.views.milestone.about',
+                                             args=[mstone.code]))
 
 
 def confirm_drill_mstone(request):
@@ -400,11 +379,9 @@ def confirm_drill_mstone(request):
                   .filter(appver=mstone.appver, status=2)
                   .order_by('-pk')
                   .select_related())
-    proposed = _propose_mstone(mstone)
     return render(request, 'shipping/confirm-drill.html', {
                     'mstone': mstone,
                     'older': drill_base[:3],
-                    'proposed': proposed,
                     'login_form_needs_reload': True,
                     'request': request,
                   })
@@ -414,21 +391,24 @@ def drill_mstone(request):
     """The actual worker method to ship a milestone.
 
     Only avaible to POST.
-    Redirects to milestones().
+    Redirects to milestone.about().
     """
-    if (request.method == "POST" and
-        'ms' in request.POST and
-        'base' in request.POST and
-        request.user.has_perm('shipping.can_ship')):
-        try:
-            mstone = Milestone.objects.get(code=request.POST['ms'])
-            base = Milestone.objects.get(code=request.POST['base'])
-            so_ids = list(base.signoffs.values_list('id', flat=True))
-            mstone.signoffs = so_ids  # add signoffs of base ms
-            mstone.status = 2
-            # XXX create event
-            mstone.save()
-        except Exception:
-            # XXX should deal better with this error
-            pass
-    return redirect(reverse('shipping.views.milestones'))
+    if request.method != "POST":
+        return http.HttpResponseNotAllowed(["POST"])
+    if not request.user.has_perm('shipping.can_ship'):
+        # XXX: personally I'd prefer if this was a raised 4xx error (peter)
+        # then I can guarantee better test coverage
+        return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
+
+    mstone = get_object_or_404(Milestone, code=request.POST.get('ms'))
+    base = get_object_or_404(Milestone, code=request.POST.get('base'))
+    if mstone.status != Milestone.OPEN:
+        return http.HttpResponseForbidden('Can only ship open milestones')
+
+    so_ids = list(base.signoffs.values_list('id', flat=True))
+    mstone.signoffs = so_ids  # add signoffs of base ms
+    mstone.status = 2
+    # XXX create event
+    mstone.save()
+    return redirect(reverse('shipping.views.milestone.about',
+                            args=[mstone.code]))

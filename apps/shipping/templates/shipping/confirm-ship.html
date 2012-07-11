@@ -7,23 +7,6 @@
 
 {% block title_matter %}Shipping {{ mstone }}{% endblock %}
 
-{% block javascript_matter %}
-<script>
-function addMulti() {
-  var platform = $("#nextmulti")[0].value;
-  var row = $('<tr>' +
-    '<td><input type="text" name="multi_' + platform + '_repo"'+
-      ' value="releases/mozilla-beta"></td>'+
-    '<td><input type="text" name="multi_' + platform + '_rev"'+
-      ' value="default"></td>'+
-    '<td><input type="text" name="multi_' + platform + '_path"'+
-      ' value="mobile/android/locales/maemo-locales"></td>'+
-    '</tr>');
-  $('#multis').append(row);
-}
-</script>
-{% endblock %}
-
 {% block content %}
 <h1>Shipping {{ mstone }}</h1>
 {% if pending_locs %}
@@ -35,30 +18,6 @@ There are pending sign-offs for {{ pending_locs|join:", " }}.
 There are no pending sign-offs.
 </p>
 {% endif %}
-<p>You'd be shipping {{ good }} locales with
-<a href="{% url shipping.views.status.shipped_locales %}?ms={{ mstone.code }}" target="_blank">shipped-locales</a>
-and
-<a href="{% url shipping.views.status.l10n_changesets %}?ms={{ mstone.code }}" target="_blank">l10n-changesets</a>.
-</p>
-<p>Alternatively, fill out the l10n-changesets.json form:</p>
-<p>
-<form id="changes.json" method="GET" action="{% url shipping.views.milestone.json_changesets %}">
-<input type="hidden" name="ms" value="{{ mstone.code }}" />
-Platforms, comma separated:
-<input type="text" name="platforms" value="android"></br>
-<input type="button" value="Add" onclick="addMulti()"> a multi-locale
-file for <input id="nextmulti"
-type="text" value="android-multilocale">
-<table class="standard">
-  <tbody id="multis">
-    <tr><th>repo</th><th>branch</th><th>path</th></tr>
-  </tbody>
-</table>
-<input type="submit" value="Generate it">
-</form>
-</p>
-<p>Don't forget to actually trigger the ship-it form below, too. Just
-downloading l10n-changesets doesn't keep track of the generated data.</p>
 <form id="ship" method="post" action="{% url shipping.views.ship_mstone %}">{% csrf_token %}
 <input type="hidden" name="ms" value="{{ mstone.code }}" />
 <input type="submit" {% if not perms.shipping.can_ship %}
