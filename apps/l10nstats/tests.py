@@ -4,14 +4,18 @@
 
 import datetime
 from urlparse import urlparse
+from test_utils import TestCase
 from nose.tools import eq_, ok_
 from django.http import QueryDict
 from django.core.urlresolvers import reverse
+from django.utils.safestring import SafeString
 from apps.shipping.tests.test_views import ShippingTestCaseBase
 from apps.life.models import Tree, Locale
 from apps.mbdb.models import Build
 from models import Run, Active
+from templatetags.run_filters import showrun
 from commons.tests.mixins import EmbedsTestCaseMixin
+from html5lib import parseFragment
 
 
 class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
@@ -102,3 +106,102 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
         # and sane but unknown should be 404
         response = self.client.get(url, {'run': 123})
         eq_(response.status_code, 404)
+
+
+class ShowRunTestCase(TestCase):
+
+    def test_errors(self):
+        r = Run(errors=3)
+        r.id = 1
+        rv = showrun(r)
+        ok_(isinstance(rv, SafeString))
+        frag = parseFragment(rv)
+        eq_(len(frag.childNodes), 1)
+        a = frag.childNodes[0]
+        eq_(a.attributes, {'data-errors': '3',
+                           'data-total': '0',
+                           'data-missing': '0',
+                           'href': '/dashboard/compare?run=1',
+                           'data-warnings': '0'})
+        text = a.childNodes[0].value
+        ok_('3' in text and 'error' in text)
+
+    def test_missing(self):
+        r = Run(missing=3)
+        r.id = 1
+        rv = showrun(r)
+        ok_(isinstance(rv, SafeString))
+        frag = parseFragment(rv)
+        eq_(len(frag.childNodes), 1)
+        a = frag.childNodes[0]
+        eq_(a.attributes, {'data-errors': '0',
+                           'data-total': '0',
+                           'data-missing': '3',
+                           'href': '/dashboard/compare?run=1',
+                           'data-warnings': '0'})
+        text = a.childNodes[0].value
+        ok_('3' in text and 'missing' in text)
+
+    def test_missingInFiles(self):
+        r = Run(missingInFiles=3)
+        r.id = 1
+        rv = showrun(r)
+        ok_(isinstance(rv, SafeString))
+        frag = parseFragment(rv)
+        eq_(len(frag.childNodes), 1)
+        a = frag.childNodes[0]
+        eq_(a.attributes, {'data-errors': '0',
+                           'data-total': '0',
+                           'data-missing': '3',
+                           'href': '/dashboard/compare?run=1',
+                           'data-warnings': '0'})
+        text = a.childNodes[0].value
+        ok_('3' in text and 'missing' in text)
+
+    def test_warnings(self):
+        r = Run(warnings=3)
+        r.id = 1
+        rv = showrun(r)
+        ok_(isinstance(rv, SafeString))
+        frag = parseFragment(rv)
+        eq_(len(frag.childNodes), 1)
+        a = frag.childNodes[0]
+        eq_(a.attributes, {'data-errors': '0',
+                           'data-total': '0',
+                           'data-missing': '0',
+                           'href': '/dashboard/compare?run=1',
+                           'data-warnings': '3'})
+        text = a.childNodes[0].value
+        ok_('3' in text and 'warning' in text)
+
+    def test_obsolete(self):
+        r = Run(obsolete=3)
+        r.id = 1
+        rv = showrun(r)
+        ok_(isinstance(rv, SafeString))
+        frag = parseFragment(rv)
+        eq_(len(frag.childNodes), 1)
+        a = frag.childNodes[0]
+        eq_(a.attributes, {'data-errors': '0',
+                           'data-total': '0',
+                           'data-missing': '0',
+                           'href': '/dashboard/compare?run=1',
+                           'data-warnings': '0'})
+        text = a.childNodes[0].value
+        ok_('3' in text and 'obsolete' in text)
+
+    def test_green(self):
+        r = Run()
+        r.id = 1
+        rv = showrun(r)
+        ok_(isinstance(rv, SafeString))
+        frag = parseFragment(rv)
+        eq_(len(frag.childNodes), 1)
+        a = frag.childNodes[0]
+        eq_(a.attributes, {'data-errors': '0',
+                           'data-total': '0',
+                           'data-missing': '0',
+                           'href': '/dashboard/compare?run=1',
+                           'data-warnings': '0'})
+        text = a.childNodes[0].value
+        ok_('green' in text)

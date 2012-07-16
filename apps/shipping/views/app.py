@@ -5,6 +5,7 @@
 """Views centric around AppVersion data.
 """
 
+from collections import defaultdict
 from django.shortcuts import render, get_object_or_404
 from shipping.models import (Milestone, AppVersion, Milestone_Signoffs,
                              Action, Signoff)
@@ -32,29 +33,51 @@ def changes(request, app_code):
     # get historic data that enters this appversion
     # get that in fallback order, we'll reverse afterwards
     flags4av = flags4appversions(appversions={"id": av.id})
-    fallback = av.fallback
-    while fallback and fallback in flags4av:
-        flags4loc = flags4av[fallback]
-        locs = [loc for loc, (real_av, flags) in flags4loc.iteritems()
-                if (real_av == fallback.code and
-                    loc not in current and
-                    Action.ACCEPTED in flags)]
-        if locs:
+    flags4loc = flags4av[av]
+    locs4av = defaultdict(dict)  # av -> loc -> ACCEPTED
+    notaccepted = {}  # av -> flags
+    for loc, (real_av, flags) in flags4loc.iteritems():
+        if Action.ACCEPTED in flags:
+            locs4av[real_av][loc] = flags[Action.ACCEPTED]
+        else:
+            notaccepted[loc] = flags
+    # for not accepted locales on the current appver,
+    # check for accepted on fallbacks
+    if av.fallback and notaccepted:
+        flags4fallback = flags4av[av.fallback]
+        for loc in notaccepted:
+            if loc in flags4fallback:
+                # if the loc isn't here, it's never been accepted so far
+                real_av, flags = flags4fallback[loc]
+                if Action.ACCEPTED in flags:
+                    locs4av[real_av] = flags[Action.ACCEPTED]
+    # let's keep the current appver data around for later,
+    # and order the fallbacks
+    accepted = locs4av.pop(av.code, {})
+    av_ = av
+    while av_ and locs4av:
+        if av_.code in locs4av:
+            accepted4loc = locs4av.pop(av_.code)
             # store actions for now, we'll get the push_ids later
-            for loc in locs:
-                current[loc] = flags4loc[loc][1][Action.ACCEPTED]
+            current.update(accepted4loc)
             rows.append({
-                'name': str(fallback),
-                'code': fallback.code,
-                'changes': [(loc, 'added') for loc in sorted(locs)]
+                'name': str(av_),
+                'code': av_.code,
+                'isAppVersion': True,
+                'changes': [(loc, 'added') for loc in sorted(accepted4loc)]
                 })
-        fallback = fallback.fallback
+        av_ = av_.fallback
     rows.reverse()
     for loc, pid in (Signoff.objects
                      .filter(action__in=current.values())
                      .values_list('locale__code',
                                   'push__id')):
         current[loc] = pid
+    for loc, pid in (Signoff.objects
+                     .filter(action__in=accepted.values())
+                     .values_list('locale__code',
+                                  'push__id')):
+        accepted[loc] = pid
     for _mid, loc, pid in (Milestone_Signoffs.objects
                            .filter(milestone__appver=av)
                            .order_by('milestone__id',
@@ -68,7 +91,7 @@ def changes(request, app_code):
             if latest:
                 # previous milestone has locales left, update previous changes
                 changes += [(_loc, 'dropped') for _loc in latest.iterkeys()]
-                changes.sort(key=lambda t: t[0])
+                changes.sort()
             latest = current
             current = {}
             ms_name = ms_names[ms_id]
@@ -87,7 +110,24 @@ def changes(request, app_code):
     if latest:
         # previous milestone has locales left, update previous changes
         changes += [(loc, 'dropped') for loc in latest.iterkeys()]
-        changes.sort(key=lambda t: t[0])
+        changes.sort()
+    # finally, check if there's more signoffs after the last shipped milestone
+    newso = [(loc, loc in current and 'changed' or 'added')
+        for loc, pid in accepted.iteritems()
+        if current.get(loc) != pid]
+    for loc, flags in notaccepted.iteritems():
+        if Action.PENDING in flags:
+            newso.append((loc, 'pending'))
+        elif Action.REJECTED in flags:
+            newso.append((loc, 'rejected'))
+        elif Action.OBSOLETED in flags:
+            newso.append((loc, 'obsoleted'))
+    if newso:
+        newso.sort()
+        rows.append({
+            'name': '%s .next' % str(av),
+            'changes': newso
+        })
 
     return render(request, 'shipping/app-changes.html', {
                     'appver': av,

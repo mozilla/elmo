@@ -3,12 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 
-#pushtable td {
-  border-style: inset;
-  border-width: 1px;
-  border-color: black;
-}
-
 .csuser {
     font-size: smaller;
     color: gray;
@@ -76,25 +70,47 @@
 .diffanchor.double {
     height: 16px;
 }
+
+#pushtable td {
+    border-style: inherit;
+    border-right: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    border-top: 1px solid #ccc;
+}
+
 #pushtable td.push {
-  -moz-border-radius-topleft: 10px;
-  -moz-border-radius-bottomleft: 10px;
-  background-color: lightgray;
-  padding: 0.25em;
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+    background-color: lightgray;
+    padding: 0.25em;
 }
 #pushtable {
     empty-cells: show;
     clear: left;
+    border-collapse: separate;
 }
-/* table#pushtable is a standard table but we want vertical borders too */
-#pushtable td {
-  border-right: 1px solid #ccc;
+
+#pushtable tr.pushrow td {
+    border-top:1px solid #ccc;
 }
+
+#pushtable tr.pushrow-inner td {
+    border-top:0px solid white;
+}
+
+#pushtable tr.pushrow-first td {
+    border-top:1px solid #ccc;
+}
+
+#pushtable tr.signoffrow td {
+    border-top:0px solid white;
+}
+
 #pushtable td.note {
-  border-left: 1px solid #ccc;
-  border-bottom: 1px solid #ccc;
-  text-align: center;
+    border: 0 solid white;
+    text-align: center;
 }
+
 td.diff {
     cursor: pointer;
     text-align: center;

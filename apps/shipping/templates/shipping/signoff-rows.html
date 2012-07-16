@@ -11,7 +11,7 @@
   {% else %}
     <tr class="push-spacer"></tr>
   {% endif %}
-  <tr class="pushrow" id="{{push.id}}" data-push="{{push.push_id}}">
+  <tr class="pushrow {% if forloop.first %}pushrow-first{% endif %}" id="{{push.id}}" data-push="{{push.push_id}}">
     <td class="push{% if forloop.first %} top{% endif %}{% if forloop.last %}  bottom {% endif %}" rowspan="{{push.rows}}">{{push.when|date}}<br><span class="csuser">{{push.who}}</span></td>
     <td rowspan="{{push.changerows}}">{{push.run|showrun}}<br>
      <span class="csuser">{{push.run.build.starttime|date}}</span></td>
@@ -35,9 +35,9 @@
         <span class="shortrev" data-repo="{{push.repo}}">{{cs.shortrev}}</span></a>
       </div>
     </td>
-    <td class="diff">{% for _i in cs.diffbases %}<div class="diffanchor"></div>{% endfor %}</td></tr>
+    <td class="diff {% if forloop.first %}diff-first{% endif %}">{% for _i in cs.diffbases %}<div class="diffanchor"></div>{% endfor %}</td></tr>
     {% if not forloop.last %}
-  <tr class="pushrow" data-push="{{push.push_id}}">
+  <tr class="pushrow pushrow-inner" data-push="{{push.push_id}}">
     {% endif %}
     {% endfor %}
     {% if push.signoffs|length %}
@@ -63,7 +63,7 @@
               {% endifequal %}
               {% ifequal flag "canceled" %}
                 {{so.action.author.get_full_name}}
-      	  canceled sign-off by {{so.signoff.author.get_full_name}} on
+                canceled sign-off by {{so.signoff.author.get_full_name}} on
                 {{so.action.when|date}}
               {% endifequal %}
               {% ifequal flag "accepted" %}

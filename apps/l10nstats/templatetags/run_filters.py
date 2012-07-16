@@ -28,14 +28,19 @@ def showrun(run):
             reverse('l10nstats.views.compare'))
     missing = run.missing + run.missingInFiles
     data = {'missing': missing}
-    for k in ('errors', 'total'):
+    for k in ('errors', 'warnings', 'total'):
         data[k] = getattr(run, k)
     datastr = ' '.join('data-%s="%d"' % (k, v) for k, v in data.iteritems())
+    def plural(msg, num):
+        # dirty plural hack
+        return num==1 and (msg % num) or ((msg + 's') % num)
     cmp_segs = []
     if run.errors:
-        cmp_segs.append('%d error(s)' % run.errors)
+        cmp_segs.append(plural('%d error', run.errors))
     if missing:
         cmp_segs.append('%d missing' % missing)
+    if run.warnings:
+        cmp_segs.append(plural('%d warning', run.warnings))
     if run.obsolete:
         cmp_segs.append('%d obsolete' % run.obsolete)
     if not cmp_segs:
