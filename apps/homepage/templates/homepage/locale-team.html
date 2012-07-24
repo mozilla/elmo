@@ -19,6 +19,7 @@ var LOCALE_CODE = '{{ locale.code }}';
 
 {% block head_matter %}
 {% compress css %}
+<link rel="stylesheet" href="{{ STATIC_URL }}homepage/css/locale-team.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/dashboard.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/snippet.css" type="text/css">
 {% endcompress %}
@@ -29,9 +30,27 @@ Mozilla Localization Team {{ locale.name }}
 <span class="lang">({{ locale.code }})</span>
 {% endblock %}
 
+
 {% block content %}
-<p>&lt; Back to <a href="{% url homepage.views.teams %}">all teams</a></p>
-<p>Contact the team on it's page on <a href="https://wiki.mozilla.org/L10n:Teams:{{locale.code}}">wikimo</a>.</p>
+
+<div class="subnav">
+  <ul>
+    {% if shipping %}
+    <li>
+      <a href="#applications">Applications &amp; Sign-offs</a>
+    </li>
+    {% endif %}
+    <li>
+      <a href="#bugzilla">Bugzilla</a>
+    </li>
+    <li>
+      <a href="#webdashboard">Web Dashboard</a>
+    </li>
+    <li class="last">
+      <a href="https://wiki.mozilla.org/L10n:Teams:{{locale.code}}" class="external-link">Contact</a>
+    </li>
+  </ul>
+</div>
 
 {{ shipping }}
 
@@ -39,7 +58,7 @@ Mozilla Localization Team {{ locale.name }}
 
 <div id="webdashboard">
 <p class="rss-icon-outer" style="float:right"><a href="{{ webdashboard_url }}?locale={{ locale.code }}"><img src="{{ STATIC_URL }}img/icons/feed.png" alt="Subscribe to our feed"></a></p>
-<h2>Web Dashboard</h2>
+<h2>Web Dashboard <a href="#webdashboard" class="permalink">#</a></h2>
 
 <p class="intro">The team's work on the <a href="http://www.mozilla.org/{{ locale.code }}/">mozilla.org website</a>
 is tracked on the <a href="{{ webdashboard_url }}?locale={{ locale.code }}">Web Dashboard</a>.
@@ -64,5 +83,6 @@ you can check the current status on the <a href="https://www-dev.allizom.org/{{ 
 <table class="standard trees" style="display:none">
 </table>
 </div>
+
 
 {% endblock %}
