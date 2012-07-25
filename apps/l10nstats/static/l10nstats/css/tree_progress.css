@@ -12,23 +12,17 @@
 .bar {
     position: absolute;
     border-bottom-width: 0;
+    border: 1px solid rgb(170, 170, 170);
+    background: rgb(204, 204, 204);
 }
 
-.cluster_a {
-    background-color: blue;
-}
-
-.cluster_b {
-    background-color: red;
-}
-
-.cluster_c {
-    background-color: green;
-}
-
-.hd {
+.hist.desc {
     text-align: center;
     font-size: small;
+}
+
+.hist.graph td, .hist.desc td {
+    padding: 1px 5px 1px;
 }
 
 td:nth-child(even) {
@@ -36,7 +30,7 @@ td:nth-child(even) {
 }
 
 #my-timeplot {
-    height: 350px;
+    height: 400px;
 }
 
 .legend {

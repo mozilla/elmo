@@ -8,12 +8,12 @@ and progress graphs.
 
 from collections import defaultdict
 from datetime import datetime, timedelta
-import time
+import calendar
 
 from django.shortcuts import render, get_object_or_404
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
-from django.http import (HttpResponse, HttpResponseNotFound,
+from django.http import (HttpResponse, Http404,
                          HttpResponsePermanentRedirect,
                          HttpResponseBadRequest)
 from django.db.models import Min, Max
@@ -77,73 +77,73 @@ def teamsnippet(loc):
 def history_plot(request):
     """Progress of a single locale and tree.
 
-    Implemented with a Simile Timeplot.
+    Implemented with a D3 plot.
     """
     tree = locale = None
-    endtime = datetime.utcnow().replace(microsecond=0)
-    starttime = endtime - timedelta(14)
-    second = timedelta(0, 1)
-    if 'tree' in request.GET:
-        try:
-            tree = Tree.objects.get(code=request.GET['tree'])
-        except Tree.DoesNotExist:
-            pass
-    if 'locale' in request.GET:
-        try:
-            locale = Locale.objects.get(code=request.GET['locale'])
-        except Locale.DoesNotExist:
-            pass
-    if 'starttime' in request.GET:
-        starttime = datetime.utcfromtimestamp(int(request.GET['starttime']))
-    if 'endtime' in request.GET:
-        endtime = datetime.utcfromtimestamp(int(request.GET['endtime']))
-    if locale is not None and tree is not None:
-        q = Run.objects.filter(tree=tree, locale=locale)
-        q2 = q.filter(srctime__lte=endtime,
-                      srctime__gte=starttime).order_by('srctime')
-        p = None
-        try:
-            p = q2.filter(srctime__lt=starttime).order_by('-srctime')[0]
-        except IndexError:
-            pass
-
-        def runs(_q, p):
-            if p is not None:
-                yield {'srctime': starttime,
-                       'missing': p.missing + p.missingInFiles + p.report,
-                       'obsolete': p.obsolete,
-                       'unchanged': p.unchanged}
-            r = None
-            for r in _q:
-                if p is not None:
-                    yield {'srctime': r.srctime - second,
-                           'missing': p.missing + p.missingInFiles + p.report,
-                           'obsolete': p.obsolete,
-                           'unchanged': p.unchanged}
-                yield {'srctime': r.srctime,
-                       'missing': r.missing + r.missingInFiles + r.report,
-                       'obsolete': r.obsolete,
-                       'unchanged': r.unchanged}
-                p = r
-            if r is not None:
-                yield {'srctime': endtime,
-                       'missing': r.missing + r.missingInFiles + r.report,
-                       'obsolete': r.obsolete,
-                       'unchanged': r.unchanged}
-        stamps = {}
-        stamps['start'] = int(time.mktime(starttime.timetuple()))
-        stamps['end'] = int(time.mktime(endtime.timetuple()))
-        stamps['previous'] = stamps['start'] * 2 - stamps['end']
-        stamps['next'] = stamps['end'] * 2 - stamps['start']
-        return render(request, 'l10nstats/history.html', {
-                        'locale': locale.code,
-                        'tree': tree.code,
-                        'starttime': starttime,
-                        'endtime': endtime,
-                        'stamps': stamps,
-                        'runs': runs(q2, p)
-                      })
-    return HttpResponseNotFound("sorry, gimme tree and locale")
+    tree = get_object_or_404(Tree, code=request.GET.get('tree'))
+    locale = get_object_or_404(Locale, code=request.GET.get('locale'))
+    q = q2 = Run.objects.filter(tree=tree, locale=locale)
+    try:
+        startrange = q.order_by('srctime').values_list('srctime', flat=True)[0]
+    except IndexError:
+        # oops, we're obviously not building this, 404
+        raise Http404("We're not building %s on %s" % (locale.code, tree.code))
+    endrange = (datetime.utcnow()
+                .replace(hour=0, minute=0, second=0, microsecond=0)
+                + timedelta(days=1))
+    try:
+        endtime = datetime.strptime(request.GET['endtime'], '%Y-%m-%d')
+    except (KeyError, ValueError):
+        # default to tomorrow
+        endtime = endrange
+    try:
+        starttime = datetime.strptime(request.GET['starttime'], '%Y-%m-%d')
+    except (KeyError, ValueError):
+        starttime = endtime - timedelta(days=21)
+    try:
+        r = q2.filter(srctime__lt=starttime).order_by('-srctime')[0]
+        runs = [{
+            'srctime': starttime,
+            'missing': r.allmissing + r.report,
+            'obsolete': r.obsolete,
+            'unchanged': r.unchanged,
+            'run': r.id
+            }]
+    except IndexError:
+        runs = []
+    q2 = q2.filter(srctime__gte=starttime,
+                   srctime__lte=endtime)
+    runs += [
+        {
+            'srctime': r.srctime,
+            'missing': r.allmissing + r.report,
+            'obsolete': r.obsolete,
+            'unchanged': r.unchanged,
+            'run': r.id
+        }
+        for r in q2
+    ] + [
+        {
+            'srctime': endtime,
+            'missing': r.allmissing + r.report,
+            'obsolete': r.obsolete,
+            'unchanged': r.unchanged,
+            'run': r.id
+        }
+    ]
+    stamps = {}
+    stamps['start'] = int(calendar.timegm(starttime.timetuple()))
+    stamps['end'] = int(calendar.timegm(endtime.timetuple()))
+    stamps['startrange'] = int(calendar.timegm(startrange.timetuple()))
+    stamps['endrange'] = int(calendar.timegm(endrange.timetuple()))
+    return render(request, 'l10nstats/history.html', {
+                    'locale': locale.code,
+                    'tree': tree.code,
+                    'starttime': starttime,
+                    'endtime': endtime,
+                    'stamps': stamps,
+                    'runs': runs
+                  })
 
 
 def tree_progress(request, tree):
@@ -151,7 +151,7 @@ def tree_progress(request, tree):
 
     Display the number of successful vs not locales.
 
-    Implemented as Simile Timeplot.
+    Implemented as d3.js plot.
     """
     tree = get_object_or_404(Tree, code=tree)
 
@@ -162,33 +162,20 @@ def tree_progress(request, tree):
     q = Run.objects.filter(tree=tree)
     _d = q.aggregate(allStart=Min('srctime'), allEnd=Max('srctime'))
     allStart, allEnd = (_d[k] for k in ('allStart', 'allEnd'))
-    displayEnd = allEnd + timedelta(.5)
 
-    endtime = datetime.utcnow().replace(microsecond=0)
-    starttime = endtime - timedelta(14)
-
-    if starttime > allEnd:
-        # by default, we'd just see a flat graph, show half a day more
-        # than allend
-        endtime = displayEnd
-        starttime = endtime - timedelta(14)
-
-    if 'starttime' in request.GET:
-        try:
-            starttime = datetime.utcfromtimestamp(
-              int(request.GET['starttime'])
-            )
-        except Exception:
-            pass
-        if starttime < allStart:
-            # make sure that even though there nothing to see,
-            # the slider shows all times
-            allStart = starttime
-    if 'endtime' in request.GET:
-        try:
-            endtime = datetime.utcfromtimestamp(int(request.GET['endtime']))
-        except Exception:
-            pass
+    startrange = allStart
+    endrange = (datetime.utcnow()
+                .replace(hour=0, minute=0, second=0, microsecond=0)
+                + timedelta(days=1))
+    try:
+        endtime = datetime.strptime(request.GET['endtime'], '%Y-%m-%d')
+    except (KeyError, ValueError):
+        # default to tomorrow
+        endtime = endrange
+    try:
+        starttime = datetime.strptime(request.GET['starttime'], '%Y-%m-%d')
+    except (KeyError, ValueError):
+        starttime = endtime - timedelta(days=21)
 
     q = q.filter(locale__in=locales)
     q2 = q.filter(srctime__lte=endtime,
@@ -199,13 +186,15 @@ def tree_progress(request, tree):
                                  locales)
     datadict = defaultdict(dict)
     for loc, r in initial_runs.iteritems():
-        datadict[starttime][loc] = (r.missing +
-                                    r.missingInFiles +
-                                    r.report)
+        stamp = int(calendar.timegm(starttime.timetuple()))
+        datadict[stamp][loc] = (r.missing +
+                                r.missingInFiles +
+                                r.report)
     for r in q2:
-        datadict[r.srctime][r.locale.code] = (r.missing +
-                                              r.missingInFiles +
-                                              r.report)
+        stamp = int(calendar.timegm(r.srctime.timetuple()))
+        datadict[stamp][r.locale.code] = (r.missing +
+                                          r.missingInFiles +
+                                          r.report)
     data = [{'srctime': t, 'locales': simplejson.dumps(datadict[t])}
             for t in sorted(datadict.keys())]
 
@@ -213,6 +202,11 @@ def tree_progress(request, tree):
         bound = int(request.GET.get('bound', 0))
     except ValueError:
         bound = 0
+    stamps = {}
+    stamps['start'] = int(calendar.timegm(starttime.timetuple()))
+    stamps['end'] = int(calendar.timegm(endtime.timetuple()))
+    stamps['startrange'] = int(calendar.timegm(startrange.timetuple()))
+    stamps['endrange'] = int(calendar.timegm(endrange.timetuple()))
 
     return render(request, 'l10nstats/tree_progress.html', {
                     'tree': tree.code,
@@ -220,10 +214,7 @@ def tree_progress(request, tree):
                     'showBad': 'hideBad' not in request.GET,
                     'startTime': starttime,
                     'endTime': endtime,
-                    'explicitEnd': 'endtime' in request.GET,
-                    'explicitStart': 'starttime' in request.GET,
-                    'allStart': allStart,
-                    'allEnd': displayEnd,
+                    'stamps': stamps,
                     'data': data
                   })
 
