@@ -352,7 +352,7 @@ def ship_mstone(request):
     cs = (accepted_signoffs(mstone.appver)
           .values_list('id', flat=True))
     mstone.signoffs.add(*list(cs))  # add them
-    mstone.status = 2
+    mstone.status = Milestone.SHIPPED
     # XXX create event
     mstone.save()
 
