@@ -30,7 +30,7 @@ All active bugs are best reached with this URL:
 
 License
 -------
-This software is licensed under the [Mozilla Public License Version 1.1][MPL]. For more
+This software is licensed under the [Mozilla Public License Version 2.0][MPL]. For more
 information, read the file ``LICENSE``.
 
 [MPL]: http://www.mozilla.org/MPL/
