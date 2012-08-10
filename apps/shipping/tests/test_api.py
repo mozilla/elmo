@@ -145,6 +145,42 @@ class ApiMigrationTest(TestCase):
             })
         eq_(flagdata[self.old_av], flagdata[self.new_av])
 
+    def testOneOldOneNewByActionDate(self):
+        """One locale signed off and accepted on old appversion,
+        nothing new on new, thus falling back to the old one.
+        """
+        locale = Locale.objects.get(code='da')
+        repo = self._setup(locale, Action.ACCEPTED, Action.ACCEPTED)
+        eq_(repo.changesets.count(), 3)
+        flaglocs4av, __ = _actions4appversion(
+            self.old_av,
+            set([locale.id]),
+            100,
+        )
+        actions = flaglocs4av[locale.id]
+        action = Action.objects.get(pk=actions.values()[0])
+        eq_(action.flag, Action.ACCEPTED)
+
+        flaglocs4av, __ = _actions4appversion(
+            self.old_av,
+            set([locale.id]),
+            100,
+            up_until=self.pre_date
+        )
+        actions = flaglocs4av[locale.id]
+        action = Action.objects.get(pk=actions.values()[0])
+        eq_(action.flag, Action.PENDING)
+
+        flaglocs4av, __ = _actions4appversion(
+            self.old_av,
+            set([locale.id]),
+            100,
+            up_until=self.post_date
+        )
+        actions = flaglocs4av[locale.id]
+        action = Action.objects.get(pk=actions.values()[0])
+        eq_(action.flag, Action.ACCEPTED)
+
     def testOneNew(self):
         """One accepted signoff on the new appversion, none on the old.
         Old appversion comes back empty.
