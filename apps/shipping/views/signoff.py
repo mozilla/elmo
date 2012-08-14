@@ -5,19 +5,20 @@
 """Views and helpers for sign-off views.
 """
 
+from collections import defaultdict
 
 from django.db.models import Max, Q
 from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
 # TODO: from django.views.decorators.cache import cache_control
-from django.views.decorators.http import require_POST, etag
-from django.views.decorators import cache
 from django.core.urlresolvers import reverse
+from django.views.decorators.http import require_POST
+from django.views.generic import TemplateView
 
-from life.models import Locale, Push
+from life.models import Locale, Push, Repository, Push_Changesets
+from l10nstats.models import Run_Revisions, Run
 from shipping.models import AppVersion, Signoff, Action
-from shipping.api import flags4appversions, annotated_pushes
-from l10nstats.models import Run
+from shipping.api import flags4appversions
 
 
 def signoff_locale(request, locale_code):
@@ -26,50 +27,251 @@ def signoff_locale(request, locale_code):
                     permanent=True)
 
 
-def signoff(request, locale_code, app_code):
+class SignoffView(TemplateView):
     """View to show recent sign-offs and opportunities to sign off.
 
     This view is the main entry point to localizers to add sign-offs and to
     review what they're shipping.
     It's also the entry point for drivers to review existing sign-offs.
     """
-    appver = get_object_or_404(AppVersion, code=app_code)
-    lang = get_object_or_404(Locale, code=locale_code)
-    # which pushes to show
-    real_av, flags = (flags4appversions(
-        locales={'id': lang.id},
-        appversions={'id': appver.id})
-                      .get(appver, {})
-                      .get(lang.code, [None, {}]))
-    actions = list(Action.objects.filter(id__in=flags.values())
-                   .select_related('signoff__push__repository', 'author'))
+    template_name = 'shipping/signoffs.html'
 
-    # get current status of signoffs
-    push4action = dict((a.id, a.signoff.push)
-        for a in actions)
-    pending = push4action.get(flags.get(Action.PENDING))
-    rejected = push4action.get(flags.get(Action.REJECTED))
-    accepted = push4action.get(flags.get(Action.ACCEPTED))
+    def get(self, request, locale_code, app_code):
+        appver = get_object_or_404(AppVersion, code=app_code)
+        lang = get_object_or_404(Locale, code=locale_code)
+        context = self.get_context_data(lang, appver)
+        return self.render_to_response(context)
 
-    if real_av != appver.code and accepted is not None:
-        # we're falling back, add the accepted push to the table
-        fallback = accepted
-    else:
-        fallback = None
-    pushes, suggested_signoff = annotated_pushes(appver, lang, actions, flags, fallback)
+    def get_context_data(self, lang, appver):
+        # which pushes to show
+        real_av, flags = (flags4appversions(
+            locales={'id': lang.id},
+            appversions={'id': appver.id})
+                          .get(appver, {})
+                          .get(lang.code, [None, {}]))
+        actions = list(Action.objects.filter(id__in=flags.values())
+                       .select_related('signoff__push__repository', 'author'))
 
-    return render(request, 'shipping/signoffs.html', {
-                    'appver': appver,
-                    'language': lang,
-                    'pushes': pushes,
-                    'pending': pending,
-                    'rejected': rejected,
-                    'accepted': accepted,
-                    'suggested_signoff': suggested_signoff,
-                    'login_form_needs_reload': True,
-                    'fallback': fallback,
-                    'real_av': real_av,
-                  })
+        # get current status of signoffs
+        push4action = dict((a.id, a.signoff.push)
+            for a in actions)
+        pending = push4action.get(flags.get(Action.PENDING))
+        rejected = push4action.get(flags.get(Action.REJECTED))
+        accepted = push4action.get(flags.get(Action.ACCEPTED))
+
+        if real_av != appver.code and accepted is not None:
+            # we're falling back, add the accepted push to the table
+            fallback = accepted
+        else:
+            fallback = None
+
+        pushes, suggested_signoff = self.annotated_pushes(
+            actions,
+            flags,
+            fallback,
+            lang,
+            appver,
+        )
+
+        return {
+            'appver': appver,
+            'language': lang,
+            'pushes': pushes,
+            'pending': pending,
+            'rejected': rejected,
+            'accepted': accepted,
+            'suggested_signoff': suggested_signoff,
+            'login_form_needs_reload': True,
+            'fallback': fallback,
+            'real_av': real_av,
+        }
+
+    def annotated_pushes(self, actions, flags, fallback,
+                         lang, appver, count=10):
+        pushes_q = (Push.objects
+                    .filter(changesets__branch__id=1)
+                    .order_by('-push_date'))
+        # Find the repos via trees_over_time
+        forest4times = dict()
+        tree4forest = dict()
+        treename4forest = dict()
+        for (_s, _e, _t, _tc, _f) in (appver.trees_over_time
+                                 .values_list('start',
+                                              'end',
+                                              'tree',
+                                              'tree__code',
+                                              'tree__l10n')):
+            forest4times[(_s, _e)] = _f
+            tree4forest[_f] = _t
+            treename4forest[_f] = _tc
+
+        repo4forest = dict(Repository.objects
+                           .filter(forest__in=forest4times.values(),
+                                   locale=lang)
+                           .values_list('forest', 'id'))
+        repoquery = None
+        for (_s, _e), _f in forest4times.iteritems():
+            if _f not in repo4forest:
+                # we don't have a repo for this locale in this forest
+                # that's OK, continue
+                continue
+            qd = {'repository': repo4forest[_f]}
+            if _s is not None:
+                qd['push_date__gte'] = _s
+            if _e is not None:
+                qd['push_date__lte'] = _e
+            if repoquery is not None:
+                repoquery = repoquery | Q(**qd)
+            else:
+                repoquery = Q(**qd)
+        pushes_q = pushes_q.filter(repoquery)
+        current_so = None
+        action4id = dict((a.id, a) for a in actions)
+        initial_diff = []
+        if Action.ACCEPTED in flags:
+            a = action4id[flags[Action.ACCEPTED]]
+            current_so = a.signoff
+            initial_diff.append(a.signoff_id)
+        if Action.PENDING in flags:
+            initial_diff.append(action4id[flags[Action.PENDING]].signoff_id)
+        if Action.REJECTED in flags and len(initial_diff) < 2:
+            initial_diff.append(action4id[flags[Action.REJECTED]].signoff_id)
+        # if we're having a sign-off on this appversion, i.e no fallback,
+        # show only new pushes
+        if current_so is not None and fallback is None:
+            pushes_q = (pushes_q
+                        .filter(push_date__gte=current_so.push.push_date)
+                        .distinct())
+        else:
+            pushes_q = pushes_q.distinct()[:count]
+
+        # get pushes, changesets and signoffs/actions
+        _p = list(pushes_q.values_list('id', flat=True))
+        pcs = (Push_Changesets.objects
+               .filter(push__in=_p)
+               .order_by('-push__push_date', '-changeset__id'))
+        actions4push = defaultdict(list)
+        handled_signoffs = set()
+        for a in (Action.objects
+                  .filter(signoff__push__in=_p,
+                          signoff__appversion=appver)
+                  .order_by('-when')
+                  .select_related('signoff')):
+            if a.signoff_id in handled_signoffs:
+                continue
+            handled_signoffs.add(a.signoff_id)
+            actions4push[a.signoff.push_id].append(a)
+
+        self.collect(pcs, actions4push)
+        pushes = self.pushes
+
+        # get latest runs for our changesets,
+        # but restrict to the times that actually had the tree active
+        cs4f = defaultdict(dict)
+        for f, p, cs in pcs.values_list('push__repository__forest',
+                                        'push',
+                                        'changeset'):
+            cs4f[f][cs] = p
+        times4forest = dict((v, k) for k, v in forest4times.iteritems())
+        run4push = dict()
+        for f, changes in cs4f.iteritems():
+            rrs = (Run_Revisions.objects
+                   .order_by('changeset', 'run')
+                   .filter(run__tree=tree4forest[f],
+                           run__locale=lang,
+                           changeset__in=changes.keys()))
+            _s, _e = times4forest[f]
+            if _s is not None:
+                rrs = rrs.filter(run__srctime__gte=_s)
+            if _e is not None:
+                rrs = rrs.filter(run__srctime__lte=_e)
+            for runrev in rrs.select_related('run'):
+                run4push[changes[runrev.changeset_id]] = runrev.run
+
+        # merge data back into pushes list
+        suggested_signoff = None
+        # initial_diff and runs
+        if len(initial_diff) < 2 and pushes:
+            pushes[0]['changes'][0].diffbases = (
+              [None] * (2 - len(initial_diff))
+            )
+        for p in pushes:
+            # initial_diff
+            for sod in p['signoffs']:
+                if sod['signoff'].id in initial_diff:
+                    sod['diffbases'] = 1
+            # runs
+            if p['push_id'] in run4push:
+                _r = run4push[p['push_id']]
+                p['run'] = _r
+                # should we suggest the latest run?
+                # keep semantics of suggestion in sync with
+                # shipping.views.teamsnippet
+                if suggested_signoff is None:
+                    if (not p['signoffs'] and
+                        _r.allmissing == 0 and _r.errors == 0):
+                        # source checks are good, suggest
+                        suggested_signoff = p['id']
+                    else:
+                        # last push is signed off or red,
+                        # don't suggest anything
+                        suggested_signoff = False
+        # mark up pushes that change forests/trees
+        for i in xrange(len(pushes) - 1, 0, -1):
+            if pushes[i]['forest'] != pushes[i - 1]['forest']:
+                pushes[i]['new_forest'] = True
+
+        return pushes, suggested_signoff
+
+    def collect(self, pcs, actions4push):
+        """Prepare for collecting pushes. Result is set in self.pushes.
+
+        pcs is a Push_Changesets queryset, ordered by -push_date, -changeset_id
+        actions4push is a dict mapping push ids to lists of action objects
+
+        The result is a list of dictionaries, describing the table rows to be
+        shown for each push, as well as the detail information within.
+        """
+        self.actions4push = actions4push
+        self.pushes = []
+        self._prev = None
+        self.rowcount = 0
+        for _pc in pcs.select_related('push__repository', 'changeset'):
+            push = _pc.push
+            cs = _pc.changeset
+            if self._prev != push.id:
+                self.wrapup(push, cs)
+            self.rowcount += 1
+            self.pushes[-1]['changes'].append(cs)
+        self.wrapup()
+
+    def wrapup(self, push=None, cs=None):
+        """Actual worker"""
+        if self._prev is not None:
+            self.pushes[-1]['changerows'] = self.rowcount
+            signoffs = []
+            for action in self.actions4push[self._prev]:
+                _d = {'signoff': action.signoff, 'action': action}
+                for snap in action.signoff.snapshot_set.all():
+                    _i = snap.instance()
+                    _n = _i._meta.object_name.lower()
+                    _d[_n] = _i
+                signoffs.append(_d)
+            self.pushes[-1]['signoffs'] = signoffs
+            self.pushes[-1]['rows'] = self.rowcount + len(signoffs)
+        if push is not None:
+            self.pushes.append({'changes': [],
+                                'push_id': push.id,
+                                'who': push.user,
+                                'when': push.push_date,
+                                'repo': push.repository.name,
+                                'url': push.repository.url,
+                                'forest': push.repository.forest_id,
+                                'id': cs.shortrev})
+            self.rowcount = 0
+            self._prev = push.id
+
+signoff = SignoffView.as_view()
 
 
 def signoff_details(request, locale_code, app_code):

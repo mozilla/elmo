@@ -11,6 +11,7 @@ from commons.tests.mixins import EmbedsTestCaseMixin
 from shipping.models import Milestone, AppVersion, Action, Signoff
 from shipping import api
 from life.models import Locale
+from shipping.views.signoff import SignoffView
 
 
 class SignOffTest(TestCase, EmbedsTestCaseMixin):
@@ -324,3 +325,30 @@ en-US
 
         signoff = Signoff.objects.get(pk=signoff.pk)
         eq_(signoff.status, Action.PENDING)
+
+    def test_signoff_annotated_pushes(self):
+        view = SignoffView()
+        locale = Locale.objects.get(code='de')
+
+        real_av, flags = (api.flags4appversions(
+            locales={'id': locale.id},
+            appversions={'id': self.av.id})
+                          .get(self.av, {})
+                          .get(locale.code, [None, {}]))
+        actions = list(Action.objects.filter(id__in=flags.values())
+                       .select_related('signoff__push__repository', 'author'))
+        fallback = None
+        fallback, = actions
+        assert fallback.flag == Action.ACCEPTED, fallback.flag
+        pushes, suggested_signoff = view.annotated_pushes(
+            actions,
+            flags,
+            fallback,
+            locale,
+            self.av
+        )
+        eq_(suggested_signoff, None)
+        changesets = [c for p in pushes for c in p['changes']]
+        revisions = [x.revision for x in changesets]
+        # only `de` changes in the right order
+        eq_(revisions, [u'l10n de 0003', u'l10n de 0002'])
