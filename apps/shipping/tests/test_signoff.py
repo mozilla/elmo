@@ -159,3 +159,40 @@ en-US
         response = self.client.get(url)
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
+
+    def test_redirect_signoff_locale(self):
+        locale = Locale.objects.get(code='de')
+
+        url = reverse('shipping.views.signoff.signoff_locale', args=['xxx'])
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
+        url = reverse('shipping.views.signoff.signoff_locale',
+                      args=[locale.code])
+
+        response = self.client.get(url)
+        eq_(response.status_code, 301)  # permanent
+        self.assertRedirects(
+            response,
+            reverse('homepage.views.locale_team', args=[locale.code]),
+            status_code=301
+        )
+
+        # lastly, take a perfectly healthy signoff URL
+        url = reverse('shipping.views.signoff.signoff',
+                      args=[locale.code, self.av.code])
+        eq_(self.client.get(url).status_code, 200)
+
+        # peal off the AppVersion code
+        url = url.replace(self.av.code, '')
+        assert url.endswith('/')
+        eq_(self.client.get(url).status_code, 301)
+
+        # same thing if we drop the trailing /
+        url = url[:-1]
+        assert url.endswith(locale.code)
+        eq_(self.client.get(url).status_code, 301)
+
+        # and remove the locale too and enter a rabbit hole
+        url = url.replace(locale.code, '')
+        eq_(self.client.get(url).status_code, 404)

@@ -12,11 +12,18 @@ from django.shortcuts import render, get_object_or_404, redirect
 # TODO: from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_POST, etag
 from django.views.decorators import cache
+from django.core.urlresolvers import reverse
 
 from life.models import Locale, Push
 from shipping.models import AppVersion, Signoff, Action
 from shipping.api import flags4appversions, annotated_pushes
 from l10nstats.models import Run
+
+
+def signoff_locale(request, locale_code):
+    get_object_or_404(Locale, code=locale_code)
+    return redirect(reverse('homepage.views.locale_team', args=[locale_code]),
+                    permanent=True)
 
 
 def signoff(request, locale_code, app_code):
