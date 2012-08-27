@@ -87,7 +87,7 @@ MIDDLEWARE_CLASSES = (
     'session_csrf.CsrfMiddleware',
 
     'commonware.middleware.FrameOptionsHeader',
-    'commonware.middleware.HidePasswordOnException',
+    'commonware.middleware.ScrubRequestOnException',
 
     'django_arecibo.middleware.AreciboMiddleware',
 )
