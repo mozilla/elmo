@@ -2,7 +2,7 @@ import re
 from collections import defaultdict
 from datetime import datetime
 from django.db.models import Max, Q
-from django.http import Http404, HttpResponseBadRequest
+from django.http import HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import generic
 from django.views.decorators.http import require_POST
@@ -179,21 +179,17 @@ def create_milestones(request):
     if not request.user.has_perm('shipping.can_ship'):
         return _redirect
     new_miles = defaultdict(dict)
-    for k, v in request.POST.iteritems():
-        try:
-            prop, av = k.split('-')
-        except ValueError:
-            # at least csrf is OK, so let's just pass all. get picky later.
-            continue
-        new_miles[av][prop] = v
+    for av in request.POST.getlist('av'):
+        if not request.POST.get('code-%s' % av):
+            return HttpResponseBadRequest("'code' not in posted details")
+        new_miles[av]['code'] = request.POST['code-%s' % av]
+        if not request.POST.get('name-%s' % av):
+            return HttpResponseBadRequest("'name' not in posted details")
+        new_miles[av]['name'] = request.POST['name-%s' % av]
 
     # first, let's make sure all data is OK, and then create stuff
     for av, details in new_miles.iteritems():
         details['av'] = get_object_or_404(AppVersion, code=av)
-        if 'code' not in details:
-            return HttpResponseBadRequest("'code' not in posted details")
-        if 'name' not in details:
-            return HttpResponseBadRequest("'name' not in posted details")
 
     # it survived the data input check,
     # now check those code not to already exist

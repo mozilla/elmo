@@ -29,6 +29,7 @@ class ShippingReleaseTestCase(TestCase):
 
         # Send the special POST variables
         new_milestones = {
+            'av': 'fx13',
             'code-fx13': 'fx_beta_b6',
             'name-fx13': 'Beta Build 6'
         }
@@ -49,6 +50,7 @@ class ShippingReleaseTestCase(TestCase):
 
         # before we do it properly, try by messing up the input
         no_code_data = {
+            'av': 'fx13',
             'xxx': 'yyy',
             'name-fx13': 'Beta Build 6'
         }
@@ -57,6 +59,7 @@ class ShippingReleaseTestCase(TestCase):
         eq_(response.status_code, 400)
 
         no_name_data = {
+            'av': 'fx13',
             'code-fx13': 'fx_beta_b6',
             'yada': 'yada'
         }
