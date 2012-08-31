@@ -40,6 +40,8 @@ class MozLdapBackend(RemoteUserBackend):
         self.password = settings.LDAP_PASSWORD
         self.localizers = None
 
+        self.ldo = None
+
     #
     # This is the path we take here:
     # *) Try to find the user locally
@@ -85,17 +87,27 @@ class MozLdapBackend(RemoteUserBackend):
                 search_filter = '(&%s)' % search_filter
         return search_filter
 
-    def _authenticate_ldap(self, mail, password, user=None):
+    def initialize(self):
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
         ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, self.certfile)
         self.ldo = ldap.initialize(self.host)
         self.ldo.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
 
-        # first, figure out the uid
-        search_filter = self.make_search_filter(dict(mail=mail))
+    def connect(self):
+        self.initialize()
 
         # open a connection using the bind user
         self.ldo.simple_bind_s(self.dn, self.password)
+
+    def disconnect(self):
+        self.ldo.unbind_s()
+
+    def _authenticate_ldap(self, mail, password, user=None):
+        self.connect()
+
+        # first, figure out the uid
+        search_filter = self.make_search_filter(dict(mail=mail))
+
         try:
             # get the uid (first and foremost) but also pick up the other
             # essential attributes which we'll need later on.
@@ -141,18 +153,19 @@ class MozLdapBackend(RemoteUserBackend):
                 for names in each.values():
                     groups.extend(names)
         finally:
-            self.ldo.unbind_s()
+            self.disconnect()
 
         # Now we know everything we need to know about the user but lastly we
         # need to check if their password is correct
-        self.ldo = ldap.initialize(self.host)
-        self.ldo.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
+        self.initialize()
         try:
             self.ldo.simple_bind_s(uid, password)
         except ldap.INVALID_CREDENTIALS:  # Bad password, credentials are bad.
             return
         except ldap.UNWILLING_TO_PERFORM:  # Bad password, credentials are bad.
             return
+        else:
+            self.ldo.unbind_s()
 
         first_name = result['givenName'][0]
         last_name = result['sn'][0]
