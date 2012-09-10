@@ -241,3 +241,83 @@ def review_signoff(request, locale_code, app_code):
                 else:
                     break
     return _redirect
+
+
+@require_POST
+def cancel_signoff(request, locale_code, appver_code):
+    """Actual worker to cancel a pending sign-off.
+    Requires shipping.add_signoff permission.
+    """
+    _redirect = redirect('shipping.views.signoff.signoff',
+                         locale_code, appver_code)
+    if not request.user.has_perm("shipping.add_signoff"):
+        return _redirect
+
+    lang = get_object_or_404(Locale, code=locale_code)
+    appver = get_object_or_404(AppVersion, code=appver_code)
+
+    # permissions are cool, let's check the data
+    try:
+        signoff_id = int(request.POST['signoff_id'])
+        so = Signoff.objects.get(
+            id=signoff_id,
+            locale=lang,
+            appversion=appver
+        )
+    except KeyError:
+        return HttpResponseBadRequest("no 'signoff_id'")
+    except ValueError:
+        return HttpResponseBadRequest("not an integer")
+    except Signoff.DoesNotExist:
+        return HttpResponseBadRequest("Signoff not found")
+
+    if so.status != Action.PENDING:
+        return HttpResponseBadRequest("Signoff not pending (%s)" % so.flag)
+
+    Action.objects.create(
+        signoff=so,
+        flag=Action.CANCELED,
+        author=request.user,
+    )
+
+    return _redirect
+
+
+@require_POST
+def reopen_signoff(request, locale_code, appver_code):
+    """Actual worker to reopen a canceled sign-off.
+    Requires shipping.add_signoff permission.
+    """
+    _redirect = redirect('shipping.views.signoff.signoff',
+                         locale_code, appver_code)
+    if not request.user.has_perm("shipping.add_signoff"):
+        return _redirect
+
+    lang = get_object_or_404(Locale, code=locale_code)
+    appver = get_object_or_404(AppVersion, code=appver_code)
+
+    # permissions are cool, let's check the data
+    try:
+        signoff_id = int(request.POST['signoff_id'])
+        so = Signoff.objects.get(
+            id=signoff_id,
+            locale=lang,
+            appversion=appver
+        )
+    except KeyError:
+        return HttpResponseBadRequest("no 'signoff_id'")
+    except ValueError:
+        return HttpResponseBadRequest("not an integer")
+    except Signoff.DoesNotExist:
+        return HttpResponseBadRequest("Signoff not found")
+
+    if so.status != Action.CANCELED:
+        return HttpResponseBadRequest("Signoff not canceled (%s)" % so.flag)
+
+    Action.objects.create(
+        signoff=so,
+        flag=Action.PENDING,
+        author=request.user,
+    )
+
+    return _redirect

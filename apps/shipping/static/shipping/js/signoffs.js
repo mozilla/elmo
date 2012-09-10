@@ -47,7 +47,7 @@ $(document).ready(function() {
       } else {
         q.removeClass('hidden');
       }
-    }
+    };
   }
 
   $('.pushrow').hover(hoverSO('show'), hoverSO('hide'))
@@ -72,7 +72,37 @@ $(document).ready(function() {
       minWidth: 300,
       title: 'Sign-off'
     });
+
+    $('#cancel_signoff').dialog({
+      autoOpen: false,
+      width: 600,
+      minWidth: 300,
+      title: 'Cancel'
+    });
+    $('.cancel_signoff').click(function(event) {
+      var signoff_id = $(this).data('signoff');
+      var rs = $('#cancel_signoff');
+      $('input[name="signoff_id"]', rs).val(signoff_id);
+      rs.dialog('open');
+      return false;
+    });
+
+    $('#reopen_signoff').dialog({
+      autoOpen: false,
+      width: 600,
+      minWidth: 300,
+      title: 'Re-open'
+    });
+    $('.reopen_signoff').click(function(event) {
+      var signoff_id = $(this).data('signoff');
+      var rs = $('#reopen_signoff');
+      $('input[name="signoff_id"]', rs).val(signoff_id);
+      rs.dialog('open');
+      return false;
+    });
+
   }
+
   if (permissions && permissions.canReviewSignoff) {
     $('#review_signoff').dialog({
       autoOpen: false,

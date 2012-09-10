@@ -90,7 +90,7 @@ class Signoff(models.Model):
 
     @property
     def accepted(self):
-        return self.status == 1
+        return self.status == Action.ACCEPTED
 
     @property
     def status(self):
@@ -98,7 +98,7 @@ class Signoff(models.Model):
             actions = Action.objects.filter(signoff=self).order_by('-pk')
             return actions.values_list('flag', flat=True)[0]
         except IndexError:
-            return 0
+            return Action.PENDING
 
     @property
     def flag(self):
