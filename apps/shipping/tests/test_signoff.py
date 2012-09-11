@@ -160,154 +160,39 @@ en-US
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
 
-    # XXX bug 763214, disable etag and test for now
-    def _do_not_test_signoff_etag(self):
-        """Test that the ETag is sent correctly for the signoff() view.
-
-        Copied here from the etag_signoff() function's doc string:
-            The signoff view should update for:
-                - new actions
-                - new pushes
-                - new runs on existing pushes
-                - changed permissions
-
-        So, we need to make this test check all of that.
-        """
-        appver = self.av
+    def test_redirect_signoff_locale(self):
         locale = Locale.objects.get(code='de')
+
+        url = reverse('shipping.views.signoff.signoff_locale', args=['xxx'])
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
+        url = reverse('shipping.views.signoff.signoff_locale',
+                      args=[locale.code])
+
+        response = self.client.get(url)
+        eq_(response.status_code, 301)  # permanent
+        self.assertRedirects(
+            response,
+            reverse('homepage.views.locale_team', args=[locale.code]),
+            status_code=301
+        )
+
+        # lastly, take a perfectly healthy signoff URL
         url = reverse('shipping.views.signoff.signoff',
-                      args=[locale.code, appver.code])
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        etag = response.get('etag', None)
-        ok_(etag)
+                      args=[locale.code, self.av.code])
+        eq_(self.client.get(url).status_code, 200)
 
-        # expect the PK of the most recent action to be in the etag
-        actions = (Action.objects
-          .filter(signoff__locale__code=locale.code,
-                  signoff__appversion__code=appver.code)
-          .order_by('-pk'))
-        last_action = actions[0]
+        # peal off the AppVersion code
+        url = url.replace(self.av.code, '')
+        assert url.endswith('/')
+        eq_(self.client.get(url).status_code, 301)
 
-        # now, log in and expect the ETag to change once the user has the
-        # right permissions
-        user = User.objects.get(username='l10ndriver')  # from fixtures
-        user.set_password('secret')
-        user.save()
-        assert self.client.login(username='l10ndriver', password='secret')
+        # same thing if we drop the trailing /
+        url = url[:-1]
+        assert url.endswith(locale.code)
+        eq_(self.client.get(url).status_code, 301)
 
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        etag_before = etag
-        etag = response.get('etag', None)
-        ok_(etag)
-        eq_(etag, etag_before)
-
-        add_perm = Permission.objects.get(codename='add_signoff')
-        user.user_permissions.add(add_perm)
-        user.save()
-
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        etag_before = etag
-        etag = response.get('etag', None)
-        ok_(etag != etag_before)
-
-        add_perm = Permission.objects.get(codename='review_signoff')
-        user.user_permissions.add(add_perm)
-        user.save()
-
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        etag_before = etag
-        etag = response.get('etag', None)
-        ok_(etag != etag_before)
-
-        # add a new action
-        Action.objects.create(
-          signoff=last_action.signoff,
-          flag=last_action.flag,
-          author=user,
-          comment='test'
-        )
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        etag_before = etag
-        etag = response.get('etag', None)
-        ok_(etag != etag_before)
-
-        # add a new push
-        assert Push.objects.all()
-        # ...by copying the last one
-        tree = appver.trees_over_time.latest().tree
-        pushes = (Push.objects
-                  .filter(repository__forest__tree=tree)
-                  .filter(repository__locale__code=locale.code)
-                  .order_by('-pk'))
-        last_push = pushes[0]
-        Push.objects.create(
-          repository=last_push.repository,
-          user=last_push.user,
-          push_date=last_push.push_date,
-          push_id=last_push.push_id + 1
-        )
-
-        # that should force a new etag identifier
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        etag_before = etag
-        etag = response.get('etag', None)
-        ok_(etag != etag_before)
-
-        # but not if a new, unreleated push is created
-        other_locale = Locale.objects.get(code='pl')
-        other_repo = Repository.objects.get(locale=other_locale)
-
-        Push.objects.create(
-          repository=other_repo,
-          user=last_push.user,
-          push_date=last_push.push_date,
-          push_id=last_push.push_id + 1
-        )
-
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        etag_before = etag
-        etag = response.get('etag', None)
-        # doesn't change the etag since the *relevant* pushes haven't changed
-        ok_(etag == etag_before)
-
-        # add a new run
-        assert not Run.objects.all().exists()  # none in fixtures
-        # ...again, by copying the last one and making a small change
-        Run.objects.create(
-          tree=tree,
-          locale=locale,
-        )
-
-        # that should force a new etag identifier
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        etag_before = etag
-        etag = response.get('etag', None)
-        ok_(etag != etag_before)
-
-        # but not just any new run
-        Run.objects.create(
-          tree=tree,
-          locale=other_locale,
-        )
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        etag_before = etag
-        etag = response.get('etag', None)
-        # not different this time!
-        ok_(etag == etag_before)
-
-        # lastly, log out and it should ne different
-        self.client.logout()
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        etag_before = etag
-        etag = response.get('etag', None)
-        ok_(etag != etag_before)
+        # and remove the locale too and enter a rabbit hole
+        url = url.replace(locale.code, '')
+        eq_(self.client.get(url).status_code, 404)

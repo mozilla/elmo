@@ -340,3 +340,29 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         eq_(len(first), 20)
         eq_(len(second), 20 - 1)
         eq_(rest, 1)
+
+    def test_get_homepage_etag(self):
+        arabic = Locale.objects.create(code='ar', name='Arabic')
+        for i in range(1, 40 + 1):
+            Locale.objects.create(
+              name='Language-%d' % i,
+              code='L%d' % i
+            )
+        url = reverse('homepage.views.index')
+        response = self.client.get(url)
+        assert response['ETag']
+        etag_first = response['ETag']
+
+        response = self.client.get(url)
+        assert response['ETag']
+        etag_second = response['ETag']
+        eq_(etag_first, etag_second)
+
+        # Edit an existing locale
+        arabic.name = arabic.name.upper()
+        arabic.save()
+
+        response = self.client.get(url)
+        assert response['ETag']
+        etag_third = response['ETag']
+        self.assertNotEqual(etag_second, etag_third)

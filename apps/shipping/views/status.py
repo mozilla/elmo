@@ -6,8 +6,7 @@
 '''
 from collections import defaultdict
 
-from django.shortcuts import get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.generic import View
 from life.models import Changeset
 from l10nstats.models import Run
@@ -19,6 +18,11 @@ from django.utils import simplejson
 from django.db.models import Max
 
 from .utils import class_decorator
+from shipping.forms import SignoffFilterForm
+
+
+class BadRequestData(Exception):
+    pass
 
 
 class SignoffDataView(View):
@@ -36,30 +40,40 @@ class SignoffDataView(View):
     filename = None
 
     def process_request(self, request, *args, **kwargs):
-        self.ms = request.GET.get('ms')
-        self.av = request.GET.get('av')
+        form = SignoffFilterForm(request.GET)
+        if form.is_valid():
+            self.mile = form.cleaned_data['ms']
+            self.appver = form.cleaned_data['av']
+            self.up_until = form.cleaned_data['up_until']
+        else:
+            raise BadRequestData(form.errors.items())
 
     def get_data(self):
-        if self.ms is not None:
-            mile = get_object_or_404(Milestone, code=self.ms)
-            if mile.status == Milestone.SHIPPED:
-                return self.data_for_milestone(mile)
-            appver = mile.appver
-        elif self.av is not None:
-            appver = get_object_or_404(AppVersion, code=self.av)
+        if self.mile:
+            if self.mile.status == Milestone.SHIPPED:
+                return self.data_for_milestone(self.mile)
+            appver = self.mile.appver
+        elif self.appver:
+            appver = self.appver
         else:
             raise RuntimeError("Expecting either ms or av")
         return self.data_for_appversion(appver)
 
     def data_for_appversion(self, appver):
-        return (accepted_signoffs(appver),)
+        return (accepted_signoffs(appver, up_until=self.up_until),)
 
     def data_for_milestone(self, mile):
         return (mile.signoffs,)
 
     def get(self, request, *args, **kwargs):
-        self.process_request(request)
-        data = self.get_data()
+        try:
+            self.process_request(request)
+        except BadRequestData, msg:
+            return HttpResponseBadRequest(msg)
+        try:
+            data = self.get_data()
+        except RuntimeError, msg:
+            return HttpResponseBadRequest(str(msg))
         content = self.content(request, *data)
         r = HttpResponse(content, content_type='text/plain; charset=utf-8')
         if self.filename:

@@ -15,6 +15,7 @@ from django.utils import simplejson as json
 from django.contrib.auth.views import login as django_login
 from forms import AuthenticationForm
 from lib.auth.backends import AUTHENTICATION_SERVER_ERRORS
+from session_csrf import anonymous_csrf
 
 
 class HttpResponseServiceUnavailableError(HttpResponse):
@@ -51,6 +52,7 @@ def login(request):
 
 
 @cache.cache_control(private=True)
+@anonymous_csrf
 def user_json(request):
     result = {}
     if request.user.is_authenticated():
@@ -59,7 +61,7 @@ def user_json(request):
         else:
             result['user_name'] = request.user.username
     else:
-        result['csrf_token'] = unicode(csrf(request)['csrf_token'])
+        result['csrf_token'] = request.csrf_token
     return HttpResponse(json.dumps(result), mimetype="application/json")
 
 

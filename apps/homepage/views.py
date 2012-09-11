@@ -5,6 +5,7 @@
 '''Views for the main navigation pages.
 '''
 
+import datetime
 import sys
 import feedparser  # vendor-local
 from django.core.urlresolvers import reverse
@@ -16,6 +17,7 @@ from django.template import RequestContext, loader
 from django.conf import settings
 from django.views.defaults import page_not_found
 from django.core.cache import cache
+from django.views.decorators.http import etag
 import django_arecibo.wrapper
 
 from life.models import Locale
@@ -48,6 +50,21 @@ def handler500(request):
     return HttpResponseServerError(t.render(RequestContext(request)))
 
 
+def etag_index(request):
+    cache_key = 'homepage.views.index.etag'
+    tag = cache.get(cache_key)
+    if tag is None:
+        # because the Locale model doesn't have a modify time thing, we can
+        # just any unique value to this moment.
+        tag = datetime.datetime.now().strftime('%f')  # microseconds
+
+        # the home page depends on the cache for the feed
+        # 1 hour is the same as a expiration time for the L10n feed
+        cache.set(cache_key, tag, 60 * 60)
+    return tag
+
+
+@etag(etag_index)
 def index(request):
     limit = getattr(settings, 'HOMEPAGE_LOCALES_LIMIT', 10)
 
@@ -90,8 +107,12 @@ def get_feed_items(max_count=settings.HOMEPAGE_FEED_SIZE,
         if items is not None:
             return items
 
-    parsed = feedparser.parse(settings.L10N_FEED_URL)
+    # if we have to re-parse the feed, then lets also invalidate the homepage
+    # etag.
+    if force_refresh:
+        cache.delete('homepage.views.index.etag')
 
+    parsed = feedparser.parse(settings.L10N_FEED_URL)
     items = []
     for item in parsed.entries:
         url = item['link']

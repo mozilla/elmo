@@ -18,7 +18,7 @@ from shipping.models import AppVersion, Signoff, Action
 test_locales = []
 
 
-def _actions4appversion(appversion, locales, chunk_size):
+def _actions4appversion(appversion, locales, chunk_size, up_until=None):
     '''Helper method, get the actions/flags for each of the given locales
     Also return the locales not found
 
@@ -38,20 +38,23 @@ def _actions4appversion(appversion, locales, chunk_size):
                        .distinct())
     if test_locales:
         locales += test_locales
-    rv = defaultdict(dict)  # return value
-    inc_locales = dict((id, set()) for id in locales)
     # now we know which locales to check for this version, go for Actions
-    actions = (Action.objects
-               .filter(signoff__appversion=appversion)
-               .order_by('-signoff__id', '-id')
-               .values_list('id',
-                            'flag',
-                            'signoff_id',
-                            'signoff__locale_id'))
+    actions = Action.objects.filter(signoff__appversion=appversion)
+    if up_until:
+        actions = actions.filter(when__lte=up_until)
+    inc_locales = dict((id, set()) for id in locales)
     if len(inc_locales) < 10:
         # optimize for few locales use to actually reduce the actions
         actions = actions.filter(signoff__locale__in=inc_locales.keys())
+
+    # reduce the queryset by sort order and only the data we need out
+    actions = (actions.order_by('-signoff__id', '-id')
+                       .values_list('id',
+                                   'flag',
+                                   'signoff_id',
+                                   'signoff__locale_id'))
     i = 0
+    rv = defaultdict(dict)  # return value
     while inc_locales:
         actions_chunk = actions[chunk_size * i:chunk_size * (i + 1)]
         had_action = False
@@ -81,7 +84,8 @@ def _actions4appversion(appversion, locales, chunk_size):
     return dict(rv), set(inc_locales.keys())
 
 
-def actions4appversions(locales=None, appversions=None, chunk_size=100):
+def actions4appversions(locales=None, appversions=None, chunk_size=100,
+                        up_until=None):
     """Get actions for given appversions and locales.
     Returns a 4-level dictionary:
     appversions -> locale_id -> flag -> action_id
@@ -118,7 +122,8 @@ def actions4appversions(locales=None, appversions=None, chunk_size=100):
         rv[appversion], not_found = \
             _actions4appversion(appversion,
                                 fallbacks.get(appversion, locales),
-                                chunk_size)
+                                chunk_size,
+                                up_until=up_until)
         # optimization:
         # if we need to fallback, only search for the not_found locales,
         # if possible
@@ -139,13 +144,14 @@ def actions4appversions(locales=None, appversions=None, chunk_size=100):
     return rv
 
 
-def accepted_signoffs(appversion):
+def accepted_signoffs(appversion, up_until=None):
     """Get accepted sign-offs for a single appversion, including fallbacks.
     Returns a Signoffs query.
     The returned sign-offs don't necessarily need to be on the requested
     appversion, due to fallback.
     """
-    flags4loc = (flags4appversions(appversions={'id': appversion.id})
+    flags4loc = (flags4appversions(appversions={'id': appversion.id},
+                                   up_until=up_until)
                  .get(appversion, {}))
     actions = [flags[Action.ACCEPTED] for _, flags in flags4loc.itervalues()
                if Action.ACCEPTED in flags]
@@ -182,13 +188,17 @@ def _flags4av(flaglocs4av, loc4id, rv, av=None):
     rv[av] = _rv
 
 
-def flags4appversions(locales=None, appversions=None):
+def flags4appversions(locales=None, appversions=None, up_until=None):
     """Get flags or fallback codes for given locales and appversions.
     Returns appversion -> locale__code -> (av__code, {flag -> action_id}).
     """
     # map to replace locale IDs with codes inside the helper
     loc4id = dict(Locale.objects.values_list('id', 'code'))
-    flaglocs4av = actions4appversions(locales=locales, appversions=appversions)
+    flaglocs4av = actions4appversions(
+        locales=locales,
+        appversions=appversions,
+        up_until=up_until
+    )
     rv = {}
     while flaglocs4av:
         _flags4av(flaglocs4av, loc4id, rv)

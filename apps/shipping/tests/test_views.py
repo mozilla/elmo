@@ -160,42 +160,56 @@ class ShippingTestCase(ShippingTestCaseBase):
         """test that bad GET parameters raise 404 errors not 500s"""
         url = reverse('shipping.views.status.l10n_changesets')
         # Fail
-        response = self.client.get(url, dict(ms=""))
-        eq_(response.status_code, 404)
-        response = self.client.get(url, dict(av=""))
-        eq_(response.status_code, 404)
+        response = self.client.get(url)
+        # neither ms or av specified
+        eq_(response.status_code, 400)
 
         response = self.client.get(url, dict(ms="junk"))
-        eq_(response.status_code, 404)
+        eq_(response.status_code, 400)
         response = self.client.get(url, dict(av="junk"))
-        eq_(response.status_code, 404)
+        eq_(response.status_code, 400)
 
         # to succeed we need sample fixtures
         appver, __, milestone = self._create_appver_tree_milestone()
+        # but it can fail on 'up_until'
+        response = self.client.get(url, dict(ms=milestone.code,
+                                             up_until='junk'))
+        eq_(response.status_code, 400)
+
+        # finally
         response = self.client.get(url, dict(ms=milestone.code))
         eq_(response.status_code, 200)
+        response = self.client.get(url, dict(ms=milestone.code, av=''))
+        eq_(response.status_code, 200)
         response = self.client.get(url, dict(av=appver.code))
+        eq_(response.status_code, 200)
+        response = self.client.get(url, dict(av=appver.code, ms=''))
+        eq_(response.status_code, 200)
+        response = self.client.get(url, dict(ms=milestone.code,
+                                             up_until='2012-05-07'))
         eq_(response.status_code, 200)
 
     def test_shipped_locales_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
         url = reverse('shipping.views.status.shipped_locales')
         # Fail
-        response = self.client.get(url, dict(ms=""))
-        eq_(response.status_code, 404)
-        response = self.client.get(url, dict(av=""))
-        eq_(response.status_code, 404)
+        response = self.client.get(url)
+        eq_(response.status_code, 400)
 
         response = self.client.get(url, dict(ms="junk"))
-        eq_(response.status_code, 404)
+        eq_(response.status_code, 400)
         response = self.client.get(url, dict(av="junk"))
-        eq_(response.status_code, 404)
+        eq_(response.status_code, 400)
 
         # to succeed we need sample fixtures
         appver, __, milestone = self._create_appver_tree_milestone()
         response = self.client.get(url, dict(ms=milestone.code))
         eq_(response.status_code, 200)
+        response = self.client.get(url, dict(ms=milestone.code, av=''))
+        eq_(response.status_code, 200)
         response = self.client.get(url, dict(av=appver.code))
+        eq_(response.status_code, 200)
+        response = self.client.get(url, dict(av=appver.code, ms=''))
         eq_(response.status_code, 200)
 
     def test_confirm_ship_mstone_bad_urls(self):

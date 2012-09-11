@@ -169,7 +169,7 @@ class Milestone(models.Model):
     The milestone is open for signoff between string_freeze and code
     """
     UPCOMING, OPEN, SHIPPED = range(3)
-    code = models.CharField(max_length=30)
+    code = models.CharField(max_length=30, unique=True)
     name = models.CharField(max_length=50)
     appver = models.ForeignKey(AppVersion)
     signoffs = models.ManyToManyField(Signoff, related_name='shipped_in',

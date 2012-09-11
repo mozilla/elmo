@@ -1,51 +1,35 @@
-{% extends "base.html" %}
+{% extends "l10nstats/timeplot_base.html" %}
 <!-- {% comment %}
    - This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load compress %}
-{% load simile %}
+
 {% block title_matter %}{{ tree }} l10n stats{% endblock %}
-{% block head_matter %}
 
-
-{% timeplot autoCreate=false %}
-
+{% block timeplot_styles %}
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/smoothness/jquery-ui-1.8.16.custom.css" type="text/css">
-{% endcompress %}
-{% compress css %}
+<link rel="stylesheet" href="{{ STATIC_URL }}l10nstats/css/timeplot.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}l10nstats/css/tree_progress.css" type="text/css">
 {% endcompress %}
 {% endblock %}
 
-{% block javascript_matter %}
-<script src="{{ STATIC_URL }}js/jquery.ui/jquery-ui-1.8.16.custom.min.js"></script>
+{% block timeplot_extra_js %}
 <script>
+var tree = "{{ tree }}";
 var SHOW_BAD = {{ showBad|yesno:"true,false" }}
 var BOUND = {{ bound }};
-var EARLIEST_DATE = {% if explicitStart %}new Date("{{ startTime.isoformat }}Z"){% else %}null{% endif %};
-var LATEST_DATE = {% if explicitEnd %}new Date("{{ endTime.isoformat }}Z"){% else %}null{% endif %};
-var START_TIME = "{{ startTime.isoformat }}Z";
-var END_TIME = "{{ endTime.isoformat }}Z";
-var START_TIME_U = {{ startTime|date:"U" }};
-var END_TIME_U = {{ endTime|date:"U" }};
-var ALL_START_U = {{ allStart|date:"U" }};
-var ALL_END_U = {{ allEnd|date:"U" }};
 
-var _locale_data_list = [{% for item in data %}
-    ['{{item.srctime.isoformat }}Z', {{ item.locales|safe }}]{% if not forloop.last %},{% endif %}
-{% endfor %}];
-
-var LOCALE_DATA = [];
-// move the list data into a full array
-for (var i=0, len=_locale_data_list.length; i<len; i++) {
-  LOCALE_DATA.push({time: SimileAjax.DateTime.parseIso8601DateTime(_locale_data_list[i][0]),
-                    locales: _locale_data_list[i][1]});
-}
+var LOCALE_DATA = [{% for item in data %}
+    {time: new Date({{item.srctime}} * 1000), locales: {{ item.locales|safe }}}{% if not forloop.last %},{% endif %}{% endfor %}
+];
 </script>
+{% endblock %}
+
+{% block timeplot_scripts %}
 {% compress js %}
+<script src="{{ STATIC_URL }}l10nstats/js/timeplot.js"></script>
 <script src="{{ STATIC_URL }}l10nstats/js/clusterer.js"></script>
 <script src="{{ STATIC_URL }}l10nstats/js/tree_progress.js"></script>
 {% endcompress %}
@@ -53,17 +37,14 @@ for (var i=0, len=_locale_data_list.length; i<len; i++) {
 
 {% block header_h1 %}Statistics for {{ tree }}{% endblock %}
 {% block header_content_extra %}<p>String completeness for {{ tree }} localizations over time.</p>{% endblock %}
-{% block body_content_class %}page-wider{% endblock %}
 
 {% block content %}
 <div id="my-timeplot"></div>
-<div id="time-slider"></div>
 <div class="legend" style="float:right">
   <input type="checkbox" onchange="update({showBad:event.target.checked});" id="showBadField">red area: locales with missing strings<br>
   shaded area: locales with <input type="text" size="3" id="boundField" onchange="update({bound:Number(event.target.value)})"> missing strings<br>
   green area: good locales
 </div>
-<p>Move sliders on the history of the tree to change the displayed time window, or double click on the plot to drill into a time window.</p>
 <div id="histogram">
 </div>
 {% endblock %}

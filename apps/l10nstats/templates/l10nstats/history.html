@@ -1,27 +1,36 @@
-{% extends "base.html" %}
+{% extends "l10nstats/timeplot_base.html" %}
 <!-- {% comment %}
    - This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
-{% load simile %}
 {% load compress %}
+
 {% block title_matter %}[{{ locale}}, {{ tree }}] l10n stats{% endblock %}
 
-{% block head_matter %}
-{% timeplot autoCreate=false %}
+{% block timeplot_styles %}
+{% compress css %}
+<link rel="stylesheet" href="{{ STATIC_URL }}l10nstats/css/timeplot.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}l10nstats/css/history.css" type="text/css">
+{% endcompress %}
 {% endblock %}
 
-{% block javascript_matter %}
+{% block timeplot_extra_js %}
+<script>
+var tree = "{{ tree }}", locale = "{{ locale }}";
+var compare_link = "{% url l10nstats.views.compare %}";
+</script>
+{% endblock %}
+
+{% block timeplot_scripts %}
 {% compress js %}
+<script src="{{ STATIC_URL }}l10nstats/js/timeplot.js"></script>
 <script src="{{ STATIC_URL }}l10nstats/js/history.js"></script>
 {% endcompress %}
 {% endblock %}
 
-{% block body_content_class %}page-wider{% endblock %}
-
 {% block content %}
-<h1>Statistics for {{ locale }}, {{ tree }}, {{starttime}}-{{endtime}}</h1>
+<h1>Statistics for {{ locale }}, {{ tree }}, {{starttime.date}}-{{endtime.date}}</h1>
 <div id="my-timeplot" style="height: 400px;"></div>
 <div class="legend" style="float:right">
   left scale:
@@ -30,15 +39,7 @@
   right scale, grey area: unchanged
 </div>
 <div id="txtData" style="display:none">{% for run in runs %}
-{{ run.srctime.isoformat }}Z,{{ run.missing }},{{ run.obsolete }},{{ run.unchanged }}{% endfor %}
-</div>
-<div>
-  <a href="?locale={{locale}}&amp;tree={{tree}}&amp;starttime={{stamps.previous}}&amp;endtime={{stamps.start}}">Previous</a>
-  <a href="?locale={{locale}}&amp;tree={{tree}}&amp;starttime={{stamps.end}}&amp;endtime={{stamps.next}}">Next</a>
-</div>
-<div id="events" style="display:none">
-  <data date-time-format="iso8601">
-  </data>
+{{ run.srctime.isoformat }}Z,{{ run.run }},{{ run.missing }},{{ run.obsolete }},{{ run.unchanged }}{% endfor %}
 </div>
 
 <div style="clear:right">&nbsp;</div>

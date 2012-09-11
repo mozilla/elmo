@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+<!-- {% comment %}
+   - This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/.
+{% endcomment %} -->
+{% load compress %}
+
+{% block head_matter %}
+{% block timeplot_styles %}
+{% compress css %}
+<link rel="stylesheet" href="{{ STATIC_URL }}l10nstats/css/timeplot.css" type="text/css">
+{% endcompress %}
+{% endblock %}
+{% endblock %}
+
+{% block javascript_matter %}
+<script>
+var startdate = new Date({{stamps.start}}*1000),
+    enddate = new Date({{stamps.end}}*1000),
+    fullrange = [new Date({{stamps.startrange}}*1000), new Date({{stamps.endrange}}*1000)];
+</script>
+{% block timeplot_extra_js %}{% endblock %}
+
+<script src="{{ STATIC_URL }}js/d3/d3.v2.min.js"></script>
+{% block timeplot_scripts %}
+{% compress js %}
+<script src="{{ STATIC_URL }}l10nstats/js/timeplot.js"></script>
+{% endcompress %}
+{% endblock %}
+{% endblock %}
+
+{% block body_content_class %}page-wider{% endblock %}

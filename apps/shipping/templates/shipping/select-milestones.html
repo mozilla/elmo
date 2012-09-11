@@ -16,17 +16,30 @@
 
 {% block content %}
 <h4>Select Milestones to create:</h4>
-<input type="button" value="Clear Aurora" onclick="clear_aurora()">
-<form action="{% url shipping.views.release.create_milestones %}" method="POST">{%csrf_token%}
-<table class="standard">
+<form action="{% url shipping.views.release.create_milestones %}" method="POST">{% csrf_token %}
+<select name="branch">
+  <option value="beta" selected>Beta</option>
+  <option value="aurora">Aurora</option>
+</select>
+<table class="standard appversions">
 {% for app in apps %}
 {% for av in app.avs %}
-  <tr class="{{ av.branch }}">
-    <td class="switch">x</td>
-    <td>{{ app.app }} {{ av.branch }}</td>
+   <tr class="{{ av.branch }}">
+    <td>
+      {% if av.milestone.good %}
+      <input type="checkbox" name="av" id="id_av_{{ app.app.code }}_{{ av.appversion.code }}" value="{{ av.appversion.code }}">
+      {% endif %}
+    </td>
+    <td>
+      {% if av.milestone.good %}
+      <label for="id_av_{{ app.app.code }}_{{ av.appversion.code }}">{{ app.app }} {{ av.branch }}</label>
+      {% else %}
+      {{ app.app }} {{ av.branch }}
+      {% endif %}
+    </td>
     {% if av.milestone.good %}
     <td><input name="name-{{av.appversion.code}}" value="{{av.milestone.name}}"></td>
-    <td><input name="code-{{av.appversion.code}}"value="{{av.milestone.code}}"></td>
+    <td><input name="code-{{av.appversion.code}}" value="{{av.milestone.code}}"></td>
     {% else %}
     <td colspan="2"></td>
     {% endif %}
@@ -34,7 +47,7 @@
 {% endfor %}
 {% endfor %}
 </table>
-<input type="submit" value="Submit">
+<input type="submit" value="Create Milestones">
 </form>
 
 {% endblock %}

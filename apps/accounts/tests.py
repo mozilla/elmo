@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 from django.utils import simplejson as json
+from django.core.cache import cache
 from nose.tools import eq_, ok_
 
 
@@ -67,6 +68,13 @@ class AccountsTestCase(TestCase):
         eq_(response.status_code, 200)
         data = json.loads(response.content)
         ok_(data['csrf_token'])
+        ok_(data['csrf_token'] != 'NOTPROVIDED')
+
+        token_key = response.cookies['anoncsrf'].value
+        # before we can pick up from the cache we need to know
+        # what prefix it was stored with
+        from session_csrf import PREFIX
+        eq_(cache.get(PREFIX + token_key), data['csrf_token'])
         ok_('user_name' not in data)
 
         user = User.objects.create_user(
@@ -174,3 +182,42 @@ class AccountsTestCase(TestCase):
         eq_(response.status_code, 200)
         data = json.loads(response.content)
         eq_(data['user_name'], "Peter")
+
+    def test_django_session_csrf(self):
+        """test that we're correctly using session CSRF tokens
+        (as opposed to cookies)"""
+        ok_('session_csrf.context_processor'
+            in settings.TEMPLATE_CONTEXT_PROCESSORS)
+        ok_('django.core.context_processors.csrf'
+            not in settings.TEMPLATE_CONTEXT_PROCESSORS)
+
+        ok_('session_csrf.CsrfMiddleware' in settings.MIDDLEWARE_CLASSES)
+        ok_('django.middleware.csrf.CsrfViewMiddleware'
+            not in settings.MIDDLEWARE_CLASSES)
+
+        ok_('session_csrf' in settings.INSTALLED_APPS)
+        # funfactory initiates an important monkeypatch which we need
+        ok_('funfactory' in settings.INSTALLED_APPS)
+
+        login_url = reverse('accounts.views.user_json')
+
+        cookies_before = self.client.cookies
+        assert not self.client.cookies
+        response = self.client.get(login_url)
+        ok_(self.client.cookies['anoncsrf'])
+
+        admin = User.objects.create(
+          username='admin',
+          is_staff=True,
+          is_superuser=True,
+        )
+        admin.set_password('secret')
+        admin.save()
+
+        # any page with a POST form will do
+        url = reverse('privacy.views.add_policy')
+        response = self.client.get(url)
+        ok_('href="/#login"' in response.content)
+        assert self.client.login(username='admin', password='secret')
+        response = self.client.get(url)
+        ok_(re.findall('name=[\'"]csrfmiddlewaretoken[\'"]', response.content))

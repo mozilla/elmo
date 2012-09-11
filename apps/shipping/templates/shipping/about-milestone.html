@@ -4,6 +4,7 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
+{% load compress %}
 {% load simile %}
 
 {% block title_matter %}About {{ms}}{% endblock %}
@@ -11,10 +12,47 @@
 {% block head_matter %}
 {% exhibit %}
 <link href="{% url shipping.views.milestone.statuses ms.code %}" type="application/json" rel="exhibit/data" />
+{% compress css %}
+<link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/about-milestone.css" type="text/css">
+{% endcompress %}
 {% endblock %}
+{% block javascript_matter %}
+{% compress js %}
+<script src="{{ STATIC_URL }}shipping/js/about-milestone.js"></script>
+{% endcompress %}
+{% endblock %}
+
 
 {% block content %}
 <h1>About {{ms}}</h1>
+
+  <div class="shipping">
+    <div><span id="ship-expander"><a href="#">Shipping tools</a></span></div>
+    <div class="shipping-tools" style="display:none">
+      <p>Download
+      <a href="{% url shipping.views.status.shipped_locales %}?ms={{ ms.code }}" target="_blank">shipped-locales</a>
+      and
+      <a href="{% url shipping.views.status.l10n_changesets %}?ms={{ ms.code }}" target="_blank">l10n-changesets</a>
+      for this milestone.
+      </p>
+      <p>Alternatively, fill out the l10n-changesets.json form:</p>
+      <form id="changes.json" method="get" action="{% url shipping.views.milestone.json_changesets %}">
+      <input type="hidden" name="ms" value="{{ ms.code }}" />
+      Platforms, comma separated:
+      <input type="text" name="platforms" value="android"><br>
+      <input type="button" value="Add" id="add-multi"> a multi-locale
+      file for <input id="nextmulti"
+      type="text" value="android-multilocale">
+      <table class="standard">
+        <thead>
+          <tr><th>repo</th><th>branch</th><th>path</th></tr>
+        </thead>
+        <tbody id="multis"></tbody>
+      </table>
+      <input type="submit" value="l10n-changesets.json">
+      </form>
+    </div>
+  </div>
 
  <table class="standard">
    <tr>

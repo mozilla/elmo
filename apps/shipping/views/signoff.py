@@ -12,6 +12,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 # TODO: from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_POST, etag
 from django.views.decorators import cache
+from django.core.urlresolvers import reverse
 
 from life.models import Locale, Push
 from shipping.models import AppVersion, Signoff, Action
@@ -19,55 +20,12 @@ from shipping.api import flags4appversions, annotated_pushes
 from l10nstats.models import Run
 
 
-def etag_signoff(request, locale_code, app_code):
-    """The signoff view should update for:
-    - new actions
-    - new pushes
-    - new runs on existing pushes
-    - changed permissions
-    """
-    try:
-        av = AppVersion.objects.get(code=app_code)
-    except AppVersion.DoesNotExist:
-        # bad request, turn off etags, that's simple
-        return None
-
-    def get_id_or_null(q):
-        # helper to get the first id, or 0
-        try:
-            return q.values_list('id', flat=True)[0]
-        except IndexError:
-            return 0
-
-    actions = Action.objects.filter(signoff__locale__code=locale_code,
-                                    signoff__appversion=av).order_by('-pk')
-    # pushes and runs only matter if there's still a tree associated
-    # just check the current tree
-    try:
-        tree_id = av.trees_over_time.current().values_list('id', flat=True)[0]
-    except IndexError:
-        tree_id = None
-    if tree_id:
-        pushes = (Push.objects
-                  .filter(repository__forest__tree=tree_id)
-                  .filter(repository__locale__code=locale_code)
-                  .order_by('-pk'))
-        runs = (Run.objects
-                .filter(tree=tree_id)
-                .filter(locale__code=locale_code)
-                .order_by('-pk'))
-        ids = tuple(map(get_id_or_null, (actions, pushes, runs)))
-    else:
-        ids = (get_id_or_null(actions), 0, 0)
-    can_signoff = request.user.has_perm('shipping.add_signoff')
-    review_signoff = request.user.has_perm('shipping.review_signoff')
-
-    return "%d|%d|%d|%d|%d" % ((can_signoff, review_signoff) + ids)
+def signoff_locale(request, locale_code):
+    get_object_or_404(Locale, code=locale_code)
+    return redirect(reverse('homepage.views.locale_team', args=[locale_code]),
+                    permanent=True)
 
 
-# XXX bug 763214, disable etag and test for now
-#@cache.cache_control(private=True)
-#@etag(etag_signoff)
 def signoff(request, locale_code, app_code):
     """View to show recent sign-offs and opportunities to sign off.
 

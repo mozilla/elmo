@@ -5,6 +5,7 @@
 if (!CONFIG) alert('variable CONFIG must be loaded first');
 
 var AjaxLogin = (function() {
+  var container = $('#auth');
   return {
      initialize: function() {
        /* Do a light-weight AJAX GET for the username;
@@ -12,18 +13,25 @@ var AjaxLogin = (function() {
         */
        $.getJSON(CONFIG.USER_URL, function(res) {
          if (res.user_name) {
-           $('a.site_login').hide();
-           $('div.site_logout .username').text(res.user_name);
-           $('div.site_logout').show();
+           $('a.site_login', container).hide();
+           $('.username', container).text(res.user_name);
+           $('.site_logout', container).show();
          } else {
-           $('input[name="csrfmiddlewaretoken"]', 'form.site_login')
+           if ($('input[name="csrfmiddlewaretoken"]', container).size() != 1) {
+             $('<input type="hidden">')
+               .attr('name', 'csrfmiddlewaretoken')
+               .appendTo($('<div>')
+                           .hide()
+                           .prependTo($('form', container)));
+           }
+           $('input[name="csrfmiddlewaretoken"]', container)
              .val(res.csrf_token);
          }
        });
 
 
        /* Initially a 'Log in' link appears on every page */
-       $('a.site_login').click(function() {
+       $('a.site_login', container).click(function() {
          AjaxLogin.show_login_form();
          return false;
        });
@@ -32,36 +40,36 @@ var AjaxLogin = (function() {
         * attempt fails it will return us the HTML of the failed form which
         * we'll use to replace the old one.
         */
-       $('form.site_login').live('submit', function() {
+       $('form', container).live('submit', function() {
          var p = {};
          $.each($(this).serializeArray(), function(i, o) {
            p[o.name] = o.value;
          });
 
-         $('form.site_login')
+         $('form', container)
            .empty()
-             .append($('<img>', {src: CONFIG.LOADING_GIF_URL}));
+           .append($('<img>', {src: CONFIG.LOADING_GIF_URL}));
 
          $.post($(this).attr('action'), p, function(res) {
            if (res.user_name) {
              if (CONFIG.NEEDS_RELOAD) {
                location.href = CONFIG.CURRENT_URL;
              } else {
-               $('form.site_login').hide();
-               $('a.site_login').hide();
-               $('div.site_logout .username').text(res.user_name);
-               $('div.site_logout').show();
+               $('form', container).hide();
+               $('a.site_login', container).hide();
+               $('.username', container).text(res.user_name);
+               $('div.site_logout', container).show();
              }
            } else {
              // if it failed we get the whole form as HTML
-             $('form.site_login').remove();
+             $('form', container).remove();
              // re-insert it into the page
              $('#auth').append(res);
              // remove errors once the user starts correcting themselves
-             if ($('form.site_login label span.error').size()) {
-               $('form.site_login input').focus(function() {
-                 $('form.site_login input').unbind('focus');
-                 $('form.site_login label span.error').fadeOut(500);
+             if ($('form label span.error', container).size()) {
+               $('form input', container).focus(function() {
+                 $('form input', container).unbind('focus');
+                 $('form label span.error', container).fadeOut(500);
                });
              }
            }
@@ -75,8 +83,8 @@ var AjaxLogin = (function() {
        });
      },
     show_login_form: function() {
-      $('a.site_login').hide();
-      $('form.site_login').show();
+      $('a.site_login', container).hide();
+      $('form', container).show();
       $('#id_username').trigger('focus');
     }
   };

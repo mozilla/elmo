@@ -4,44 +4,14 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
-{% load compress %}
 {% block head_matter %}
-
-{% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/smoothness/jquery-ui-1.8.16.custom.css" type="text/css">
-{% endcompress %}
-
 <style>
-#new_milestone {
-  float: left;
-}
 #controls {
   clear: left;
 }
 </style>
 {% endblock %}
 
-{% block javascript_matter %}
-<script src="{{ STATIC_URL }}js/jquery.ui/jquery-ui-1.8.16.custom.min.js"></script>
-<script>
-// XXX (peter, 17 may 2011) Is this still in use? I can't find id="new_milestone" anywhere
-$(document).ready(function() {
-  var acc=$("#new_milestone").accordion({collapsible:true,animated:false,autoHeight:false});
- acc.bind('accordionchange', function(event, ui) {
-    if (ui.oldHeader.length) {
-      // disabling new milestone
-     ui.oldHeader.children('a').html('Create a new milestone&hellip;');
-      document.forms.ship.create_new.value='no';
-    }
-    else {
-      ui.oldHeader.children('a').html('Creating a new milestone&hellip;');
-      document.forms.ship.create_new.value='yes';
-    }
- });
-{% if not proposed %}  acc.accordion('activate', false);{% endif %}
-});
-</script>
-{% endblock %}
 
 {% block title_matter %}Shipping {{ mstone }}{% endblock %}
 

@@ -8,15 +8,15 @@
 from django.conf.urls.defaults import patterns
 
 urlpatterns = patterns('shipping.views',
-    (r'^\/?$', 'index'),
-    (r'^\/dashboard\/?$', 'dashboard'),
-    (r'^\/milestones$', 'milestones'),
-    (r'^\/stones-data$', 'stones_data'),
-    (r'^\/open-mstone$', 'open_mstone'),
-    (r'^\/confirm-ship$', 'confirm_ship_mstone'),
-    (r'^\/confirm-drill$', 'confirm_drill_mstone'),
-    (r'^\/drill$', 'drill_mstone'),
-    (r'^\/ship$', 'ship_mstone'),
+    (r'^/?$', 'index'),
+    (r'^/dashboard/?$', 'dashboard'),
+    (r'^/milestones$', 'milestones'),
+    (r'^/stones-data$', 'stones_data'),
+    (r'^/open-mstone$', 'open_mstone'),
+    (r'^/confirm-ship$', 'confirm_ship_mstone'),
+    (r'^/confirm-drill$', 'confirm_drill_mstone'),
+    (r'^/drill$', 'drill_mstone'),
+    (r'^/ship$', 'ship_mstone'),
 )
 
 urlpatterns += patterns('shipping.views.status',
@@ -31,20 +31,21 @@ urlpatterns += patterns('shipping.views.outreach',
 )
 
 urlpatterns += patterns('shipping.views.milestone',
-    (r'^\/about-milestone/(.*)', 'about'),
-    (r'^\/milestone-statuses/(.*)', 'statuses'),
-    (r'^\/json-changesets$', 'json_changesets'),
+    (r'^/about-milestone/(.*)', 'about'),
+    (r'^/milestone-statuses/(.*)', 'statuses'),
+    (r'^/json-changesets$', 'json_changesets'),
 )
 
 urlpatterns += patterns('shipping.views.app',
-    (r'^\/app/locale-changes/(.*)', 'changes'),
+    (r'^/app/locale-changes/(.*)', 'changes'),
 )
 
 urlpatterns += patterns('shipping.views.signoff',
-    (r'^\/signoffs\/(.*?)\/(.*)', 'signoff'),
-    (r'^\/signoffs-details\/(.*?)\/(.*)', 'signoff_details'),
-    (r'^\/add-signoff\/(.*?)\/(.*)', 'add_signoff'),  # POST only
-    (r'^\/review-signoff\/(.*?)\/(.*)', 'review_signoff'),  # POST only
+    (r'^/signoffs/(.*)/$', 'signoff_locale'),
+    (r'^/signoffs/(.*?)/(.*)', 'signoff'),
+    (r'^/signoffs-details/(.*?)/(.*)', 'signoff_details'),
+    (r'^/add-signoff/(.*?)/(.*)', 'add_signoff'),  # POST only
+    (r'^/review-signoff/(.*?)/(.*)', 'review_signoff'),  # POST only
 )
 
 urlpatterns += patterns('shipping.views.release',

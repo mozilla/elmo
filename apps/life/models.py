@@ -8,6 +8,9 @@ most notable locales and hg repositories.
 
 from django.db import models
 from django.conf import settings
+from django.dispatch import receiver
+from django.db.models.signals import post_save
+from django.core.cache import cache
 
 
 class LocaleManager(models.Manager):
@@ -36,6 +39,12 @@ class Locale(models.Model):
 
     def natural_key(self):
         return (self.code,)
+
+
+@receiver(post_save, sender=Locale)
+def invalidate_homepage_index_cache(sender, **kwargs):
+    cache_key = 'homepage.views.index.etag'
+    cache.delete(cache_key)
 
 
 class Branch(models.Model):

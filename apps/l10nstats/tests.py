@@ -49,6 +49,11 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
           name='English',
         )
         data = {'tree': tree.code, 'locale': locale.code}
+        # good locale, good tree, but not building
+        response = self.client.get(url, data)
+        eq_(response.status_code, 404)
+        # good locale, good tree, and building, 200
+        self._create_active_run()
         response = self.client.get(url, data)
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
