@@ -58,15 +58,6 @@ class ShippingReleaseTestCase(TestCase):
         # should fail because there's no "code"
         eq_(response.status_code, 400)
 
-        no_name_data = {
-            'av': 'fx13',
-            'code-fx13': 'fx_beta_b6',
-            'yada': 'yada'
-        }
-        response = self.client.post(url, no_name_data)
-        # should fail because there's no "name"
-        eq_(response.status_code, 400)
-
         # proper input and matching AppVersion
         response = self.client.post(url, new_milestones)
         # redirecting means it worked
@@ -80,3 +71,40 @@ class ShippingReleaseTestCase(TestCase):
         # don't try to do it again
         response = self.client.post(url, new_milestones)
         eq_(response.status_code, 400)
+
+    def test_create_milestone_with_blank_name(self):
+        """proves that we solved
+        https://bugzilla.mozilla.org/show_bug.cgi?id=798529
+        """
+        url = reverse('shipping.views.release.create_milestones')
+
+        admin = User.objects.create_user(
+            'admin',
+            'admin@example.com',
+            'secret'
+        )
+        admin.is_superuser = True
+        admin.save()
+        self.client.login(username='admin', password='secret')
+
+        app = Application.objects.create(
+            name='Firefox',
+            code='fx',
+        )
+        AppVersion.objects.create(
+            app=app,
+            version='13',
+            code='fx13',
+        )
+
+        # Send the special POST variables
+        new_milestones = {
+            'av': 'fx13',
+            'code-fx13': 'fx_beta_b6',
+            'name-fx13': ''
+        }
+        response = self.client.post(url, new_milestones)
+        # redirecting means it worked
+        eq_(response.status_code, 302)
+
+        ok_(Milestone.objects.filter(name=''))

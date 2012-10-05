@@ -183,9 +183,9 @@ def create_milestones(request):
         if not request.POST.get('code-%s' % av):
             return HttpResponseBadRequest("'code' not in posted details")
         new_miles[av]['code'] = request.POST['code-%s' % av]
-        if not request.POST.get('name-%s' % av):
-            return HttpResponseBadRequest("'name' not in posted details")
-        new_miles[av]['name'] = request.POST['name-%s' % av]
+        # name can be blank
+        # see https://bugzilla.mozilla.org/show_bug.cgi?id=798529
+        new_miles[av]['name'] = request.POST.get('name-%s' % av, '')
 
     # first, let's make sure all data is OK, and then create stuff
     for av, details in new_miles.iteritems():
