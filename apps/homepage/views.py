@@ -150,12 +150,22 @@ def locale_team(request, code):
 
     name = loc.name or loc.code
 
+    gliblocale = settings.VERBATIM_CONVERSIONS.get(
+        loc.code,
+        loc.code.replace('-', '_')
+    )
+    if gliblocale:
+        verbatim_url = 'https://localize.mozilla.org/%s/' % gliblocale
+    else:
+        verbatim_url = None
+
     return render(request, 'homepage/locale-team.html', {
                     'locale': loc,
                     'locale_name': name,
                     'shipping': ship_div,
                     'bugs': bug_div,
                     'webdashboard_url': settings.WEBDASHBOARD_URL,
+                    'verbatim_url': verbatim_url,
                   })
 
 # redirects for moves within pushes app, and moving the diff view

@@ -46,9 +46,14 @@ Mozilla Localization Team {{ locale.name }}
     <li>
       <a href="#webdashboard">Web Dashboard</a>
     </li>
-    <li class="last">
+    <li {% if not verbatim_url %}class="last"{% endif %}>
       <a href="https://wiki.mozilla.org/L10n:Teams:{{locale.code}}" class="external-link">Contact</a>
     </li>
+    {% if verbatim_url %}
+    <li class="last">
+      <a href="{{ verbatim_url }}" class="external-link">Verbatim</a>
+    </li>
+    {% endif %}
   </ul>
 </div>
 

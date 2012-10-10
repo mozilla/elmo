@@ -254,7 +254,6 @@ def milestones(request):
     return r
 
 
-@cache_control(max_age=60)
 def stones_data(request):
     """JSON data to be used by milestones
     """
