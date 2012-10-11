@@ -17,7 +17,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
     "blocked": "fx-l10n-tracker"
   }, 
   {
-    "comment": "We need a bugzilla component for the {{ loc }} Localization, and a new value for the Locale custon field.\n\nPlease add a new value for the custom field 'Locale': {{ loc }} / {{ language }}\n\nThe details for the component should be:\n\nProduct: Mozilla Localizations\nComponent: {{ loc }} / {{ language }}\nDescription: {{ language }} Localization (...)\n\nAssignee: nobody\nQA Contact: Empty\n\n{{ name }}, could you provide a utf-8 encoded translation of '{{ language }} Localization' to include in the component description? In preparation of a new scheme, could you also fill out the descriptions for Firefox on https://localize.mozilla.org/{{ loc }}/bugzilla_components/, please? You'll be able to either log in with your ldap credentials once you have them (along with your hg access), or create an account there. Either way, I'll need to grant you permissions on the server, so poke me with your account details for that.\n\nOnce we have the description, this bug will be fixed by Mozilla staff.", 
+    "comment": "We need a bugzilla component for the '{{ loc }}' Localization, and a new value for the Locale custon field.\n\nPlease add a new value for the custom field 'Locale': {{ loc }} / {{ language }}\n\nThe details for the component should be:\n\nProduct: Mozilla Localizations\nComponent: {{ loc }} / {{ language }}\nDescription: {{ language }} Localization (...)\n\nAssignee: nobody\nQA Contact: Empty\n\n{{ name }}, could you provide a utf-8 encoded translation of '{{ language }} Localization' to include in the component description? In preparation of a new scheme, could you also fill out the descriptions for Firefox on https://localize.mozilla.org/{{ loc }}/bugzilla_components/, please? You'll be able to either log in with your ldap credentials once you have them (along with your hg access), or create an account there. Either way, I'll need to grant you permissions on the server, so poke me with your account details for that.\n\nOnce we have the description, this bug will be fixed by Mozilla staff.", 
     "product": "bugzilla.mozilla.org", 
     "title": "bugzilla", 
     "cc": "{{ bugmail }},l10n@mozilla.com", 
@@ -33,29 +33,29 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
     "title": "hg_repo", 
     "cc": "l10n@mozilla.com", 
     "rep_platform": "All", 
-    "short_desc": "l10n aurora/beta/release mercurial repository for {{ loc }}", 
+    "short_desc": "l10n aurora/beta/release mercurial repository for '{{ loc }}'", 
     "component": "Release Engineering: Developer Tools", 
     "op_sys": "All", 
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "We need to add {{ loc }} to browser/locales/all-locales on mozilla-aurora.\n\nPS: to be clear to the localization team, this bug is handled by Mozilla staff.", 
+    "comment": "We need to add '{{ loc }}' to browser/locales/all-locales on mozilla-aurora.\n\nPS: to be clear to the localization team, this bug is handled by Mozilla staff.", 
     "product": "Firefox", 
     "title": "build", 
     "cc": "l10n@mozilla.com", 
     "rep_platform": "All", 
-    "short_desc": "Add {{ loc }} to the Firefox build", 
+    "short_desc": "Add '{{ loc }}' to the Firefox build", 
     "component": "Build Config", 
     "op_sys": "All", 
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "We need to add {{ loc }} to the Firefox Aurora l10n builds.\n\nPS: to be clear to the localization team, this bug is handled by Mozilla staff.", 
+    "comment": "We need to add '{{ loc }}' to the Firefox Aurora l10n builds.\n\nPS: to be clear to the localization team, this bug is handled by Mozilla staff.", 
     "product": "mozilla.org", 
     "title": "releng", 
     "cc": "l10n@mozilla.com", 
     "rep_platform": "All", 
-    "short_desc": "Add {{ loc }} to the Firefox build", 
+    "short_desc": "Add '{{ loc }}' to the Firefox build", 
     "component": "Release Engineering", 
     "op_sys": "All", 
     "blocked": "fx-l10n-{{ loc }}"
@@ -111,18 +111,18 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
   }, 
   {
     "comment": "To release Firefox in {{ language }}, we need a way to promote it. We do that via http://www.mozilla.org/firefox/ web pages. There's a set of pages that are essential to having a successful Firefox localization and promotion, and those depend on the files listed below. \n\nMilos or Pascal will follow up here when the initial setup work is done. After that, you'll find the files to localize in SVN.\n\nThe repositories you want to work with are located at https://svn.mozilla.org/projects/mozilla.com/trunk/{{ loc }}/  and https://svn.mozilla.org/projects/mozilla.com/trunk/locales/{{ loc }}/ . Files that need to be translated are, namely:\n\nin https://svn.mozilla.org/projects/mozilla.com/trunk/{{ loc }}/\n\n 404.html\n download/content.inc.html\n firefox/4/firstrun/fallback.inc.html\n firefox/channel/content.inc.html\n plugincheck/content.inc.html\n plugincheck/index.html\n\nin https://svn.mozilla.org/projects/mozilla.com/trunk/locales/{{ loc }}/\n\n download.lang\n firefoxtesting.lang\n home.lang\n main.lang\n mobile.lang\n newsletter.lang\n snippets.lang\n upgradedialog.lang\n whatsnew.lang\n\nAll the translations you do will be available on the testing website, http://www-dev.allizom.org/{{ loc }}/firefox/ , around 15-30 minutes after commit.\n\nThe {{ language }} team will be driving this bug to completion.", 
-    "product": "Websites", 
+    "product": "www.mozilla.org", 
     "title": "webparts", 
     "cc": "pascalc@gmail,{{ bugmail }},milos@moz,l10n@mozilla.com", 
     "rep_platform": "All", 
     "short_desc": "[{{ loc }}] Firefox initial web parts for {{ language }}", 
-    "component": "www.mozilla.org", 
+    "component": "L10N", 
     "op_sys": "All", 
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
     "comment": "We need to enable the localization of SUMO in {{ language }} [{{ loc }}].\n\n{{ name }}, this is one of the better places to get the community to help out directly. If it makes more sense to redirect to another language, though, we can also do that.\n\nAnd, {{ name }}, we'd need \"{{ language }}\" in {{ language }} again to set this up, please add that here, utf-8 encoded. Thanks.\n\nOnce we have a decision what to do, and possibly the description, this bug will be fixed by Mozilla staff.", 
-    "product": "support.mozilla.com", 
+    "product": "support.mozilla.org", 
     "title": "sumo", 
     "cc": "{{ bugmail }}", 
     "rep_platform": "All", 
