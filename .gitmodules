@@ -7,9 +7,3 @@
 [submodule "vendor-local/src/nashvegas"]
 	path = vendor-local/src/nashvegas
 	url = git://github.com/paltman/nashvegas.git
-[submodule "vendor-local/src/django_compressor"]
-	path = vendor-local/src/django_compressor
-	url = git://github.com/jezdez/django_compressor.git
-[submodule "vendor-local/src/django-appconf"]
-	path = vendor-local/src/django-appconf
-	url = git://github.com/jezdez/django-appconf.git

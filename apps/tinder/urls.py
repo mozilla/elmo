@@ -7,11 +7,7 @@
 
 from django.conf.urls.defaults import patterns
 from views import BuildsForChangeFeed
-from django.contrib.syndication.views import feed
 
-feeds = {
-    'builds_for_change': BuildsForChangeFeed,
-    }
 
 urlpatterns = patterns('tinder.views',
                        (r'^waterfall$', 'waterfall'),
@@ -21,6 +17,6 @@ urlpatterns = patterns('tinder.views',
                        (r'^builders/([^/]+)/(\d+)', 'showbuild',
                         {}, 'tinder_show_build'),
                        (r'^log/([^/]+)/(.+)', 'showlog', {}, 'showlog'),
-                       (r'^feeds/(?P<url>.*)/$', feed,
-                        {'feed_dict': feeds}),
+                       (r'^feeds/builds_for_change/(\d+)/$',
+                        BuildsForChangeFeed()),
                        )

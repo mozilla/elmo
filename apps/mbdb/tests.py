@@ -64,7 +64,12 @@ class ModelsTest(TestCase):
                                            source='foo',
                                            value=value)
             dumpdata = Command()
-            jsondata = dumpdata.handle('mbdb')
+            # when calling handle() directly it's unable to pick up defaults
+            # in Command.option_list so we have to pick that up manually
+            defaults = dict(
+                (x.dest, x.default) for x in Command.option_list
+            )
+            jsondata = dumpdata.handle('mbdb', **defaults)
             data = json.loads(jsondata)
             value_data = data[0]['fields']['value']
             # dump data will always dump the pickled data stringified
