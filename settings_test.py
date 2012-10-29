@@ -19,3 +19,7 @@ COMPRESS_OFFLINE = False
 
 # ensure that ARECIBO is never used in tests
 ARECIBO_SERVER_URL = None
+
+PASSWORD_HASHERS = (
+    'django.contrib.auth.hashers.MD5PasswordHasher',
+)
