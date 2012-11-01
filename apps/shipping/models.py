@@ -82,7 +82,7 @@ class Signoff(models.Model):
     appversion = models.ForeignKey(AppVersion, related_name='signoffs')
     author = models.ForeignKey(User)
     when = models.DateTimeField('signoff timestamp',
-                                default=datetime.datetime.now)
+                                default=datetime.datetime.utcnow)
     locale = models.ForeignKey(Locale)
 
     class Meta:
@@ -124,7 +124,7 @@ class Action(models.Model):
     flag = models.IntegerField(choices=FLAG_CHOICES)
     author = models.ForeignKey(User)
     when = models.DateTimeField('signoff action timestamp',
-                                default=datetime.datetime.now)
+                                default=datetime.datetime.utcnow)
     comment = models.TextField(blank=True, null=True)
 
     def __unicode__(self):

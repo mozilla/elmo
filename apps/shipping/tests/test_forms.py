@@ -67,17 +67,8 @@ class FormTests(TestCase):
         })
         ok_(form.is_valid())
 
-        # in August, it's -7h difference to UTC because of DST
         eq_(form.cleaned_data['up_until'],
-            datetime.datetime(2012, 8, 17, 7, 50, 0))
-
-        form = SignoffFilterForm({
-          'up_until': '2012-01-17',
-        })
-        ok_(form.is_valid())
-        # in January, it's -8h difference to UTC
-        eq_(form.cleaned_data['up_until'],
-            datetime.datetime(2012, 1, 16, 16, 0, 0))
+            datetime.datetime(2012, 8, 17, 14, 50, 0))
 
         # not a valid date
         form = SignoffFilterForm({

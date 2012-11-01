@@ -30,17 +30,3 @@ class SignoffFilterForm(forms.Form):
     ms = ModelInstanceField(Milestone, key='code', required=False)
     av = ModelInstanceField(AppVersion, key='code', required=False)
     up_until = forms.fields.DateTimeField(required=False)
-
-    def clean_up_until(self):
-        # the date is inputted as assumed, UTC datetime
-        # but our data is stored with a local time, so we adjust it
-        value = self.cleaned_data['up_until']
-        if value:
-            # convert it to a timezone aware datetime
-            value = value.replace(tzinfo=pytz.UTC)
-            local = pytz.timezone(settings.TIME_ZONE)
-            # convert it into that timezone
-            value = value.astimezone(local)
-            # make it a naive datetime again
-            value = value.replace(tzinfo=None)
-        return value

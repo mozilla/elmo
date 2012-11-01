@@ -95,8 +95,8 @@ class ModelsTest(TestCase):
           buildnumber=1,
           builder=builder,
           slave=slave,
-          starttime=datetime.datetime.now(),
-          endtime=datetime.datetime.now(),
+          starttime=datetime.datetime.utcnow(),
+          endtime=datetime.datetime.utcnow(),
           result=1,
         )
 

@@ -139,7 +139,7 @@ class res2class(TestCase):
         self._test(None, None, "")
 
     def test_running(self):
-        self._test(None, datetime.datetime.now(), "running")
+        self._test(None, datetime.datetime.utcnow(), "running")
 
 
 class showbuild(TestCase):
@@ -170,22 +170,22 @@ class showbuild(TestCase):
 class timedelta(TestCase):
     """Testing the timedelta filter in build_extras.py"""
     def test_empty(self):
-        now = datetime.datetime.now()
+        now = datetime.datetime.utcnow()
         self.assertEqual(build_extras.timedelta(None, now), "-")
         self.assertEqual(build_extras.timedelta(now, None), "-")
 
     def test_days(self):
-        end = datetime.datetime.now()
+        end = datetime.datetime.utcnow()
         start = end - datetime.timedelta(3)
         self.assertEqual(build_extras.timedelta(start, end), "3 day(s)")
 
     def test_minutes(self):
-        end = datetime.datetime.now()
+        end = datetime.datetime.utcnow()
         start = end - datetime.timedelta(minutes=3)
         self.assertEqual(build_extras.timedelta(start, end), "3 minute(s)")
 
     def test_seconds(self):
-        end = datetime.datetime.now()
+        end = datetime.datetime.utcnow()
         start = end - datetime.timedelta(seconds=3)
         self.assertEqual(build_extras.timedelta(start, end), "3 second(s)")
 

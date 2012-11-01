@@ -335,7 +335,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         appver, tree, milestone = self._create_appver_tree_milestone()
         # get the AppVersionThrough, and set it's duration to the past
         avt = appver.trees_over_time.get(tree=tree)
-        n = datetime.datetime.now()
+        n = datetime.datetime.utcnow()
         avt.start = n - datetime.timedelta(days=14)
         avt.end = n - datetime.timedelta(days=1)
         avt.save()
