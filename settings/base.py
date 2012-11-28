@@ -58,7 +58,7 @@ TEMPLATE_LOADERS = (
 TEMPLATE_CONTEXT_PROCESSORS += (
     'django.core.context_processors.static',
     'accounts.context_processors.accounts',
-    'homepage.context_processors.webtrends',
+    'homepage.context_processors.analytics',
 )
 
 # This is the common prefix displayed in front of ALL static files
@@ -179,8 +179,8 @@ STATICFILES_FINDERS = (
 L10N_FEED_URL = 'http://planet.mozilla.org/l10n/atom.xml'
 HOMEPAGE_FEED_SIZE = 5
 
-## WebTrends
-INCLUDE_WEBTRENDS = False
+## Google Analytics
+INCLUDE_ANALYTICS = False
 
 
 try:
