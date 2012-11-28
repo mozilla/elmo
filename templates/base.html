@@ -83,24 +83,17 @@ var CONFIG = {USER_URL: '{% url accounts.views.user_json %}',
 {% endcompress %}
 {% block javascript_matter %}{% endblock %}
 
-{% if include_webtrends %}
-<script>
-window.webtrendsAsyncInit=function(){
-    var dcs=new Webtrends.dcs().init({
-        dcsid:"dcsf7xfvtuz5bded1ux6dbh3k_4e3h"
-        ,domain:"statse.webtrendslive.com"
-        ,timezone:0
-        ,plugins:{
-            //hm:{src:"//s.webtrends.com/js/webtrends.hm.js"}
-        }
-        }).track();
-};
-(function(){
-    var s=document.createElement("script"); s.async=true; s.src="{{ STATIC_URL }}js/libs/webtrends.min.js";
-    var s2=document.getElementsByTagName("script")[0]; s2.parentNode.insertBefore(s,s2);
-}());
+{% if include_analytics %}
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-35433268-7']);
+  _gaq.push(['_trackPageview']);
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
 </script>
-<noscript><img alt="dcsimg" id="dcsimg" width="1" height="1" src="//statse.webtrendslive.com/dcsf7xfvtuz5bded1ux6dbh3k_4e3h/njs.gif?dcsuri=/nojavascript&amp;WT.js=No&amp;WT.tv=10.2.0&amp;dcssip=www.l10n.mozilla.org"/></noscript>
 {% endif %}
 	</body>
 </html>

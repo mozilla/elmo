@@ -3,12 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 """
-Make the settings `INCLUDE_WEBTRENDS` available to all templates so it can
+Make the settings `INCLUDE_ANALYTICS` available to all templates so it can
 be used in the base.html template.
 """
 from django.conf import settings
 
 
 
-def webtrends(request):
-    return {'include_webtrends': settings.INCLUDE_WEBTRENDS}
+def analytics(request):
+    return {'include_analytics': settings.INCLUDE_ANALYTICS}
