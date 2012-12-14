@@ -216,9 +216,11 @@ class DiffView(View):
         # manifests in to and from match
         m1 = m2 = None
         changed = set(changed)
-        more_changed = set(more_changed)
+        # only look at more_changed files we didn't add
+        more_changed = set(more_changed) - set(added)
         both_changed = (changed & more_changed) | check_manifests
-        changed |= both_changed
+        # changed may be anything changed first, second, or both
+        changed |= more_changed | check_manifests
         for tp in both_changed:
             fp = copies.get(tp, tp)
             if m1 is None:
