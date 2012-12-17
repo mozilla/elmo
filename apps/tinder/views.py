@@ -10,8 +10,7 @@ from django.db import connection
 from django.conf import settings
 from django.shortcuts import render
 from django.http import HttpResponseNotFound, Http404
-from django.contrib.syndication.feeds import Feed
-from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.syndication.views import Feed
 from django.core.urlresolvers import reverse
 
 
@@ -29,11 +28,6 @@ from life.models import Push, Repository
 
 
 resultclasses = ['success', 'warning', 'failure', 'skip', 'except']
-
-# this import is used by urls.py to make 'tinder.view.feed' a named
-# view even though this is not important for use in this file
-from django.contrib.syndication.views import feed
-feed  # make check.py happy
 
 
 def debug_(*msg):
@@ -630,17 +624,12 @@ class BuildsForChangeFeed(Feed):
     ttl = str(5 * 60)
     title_template = 'tinder/builds_for_change_title.html'
 
-    def get_object(self, bits):
+    def get_object(self, request, id):
         """Return a closure to be used to create the feed for this change.
 
         404 for anything that isn't a single change ID.
         """
-        if len(bits) != 1:
-            raise ObjectDoesNotExist
-        try:
-            id = int(bits[0])
-        except ValueError:
-            raise ObjectDoesNotExist
+        self.request = request
         return Change.objects.get(number=id)
 
     def title(self, change):

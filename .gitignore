@@ -1,9 +1,9 @@
 settings/local*.py
 settings/ldap_settings.py
 settings/mounts_local.py
-env
+/env/
 @elmo
 *.pyc
 .coverage
-cover/
-collected/
+/cover/
+/collected/

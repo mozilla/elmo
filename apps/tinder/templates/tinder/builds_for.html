@@ -16,7 +16,7 @@
 .buildbox {float: left; padding: 0.25em; margin: 0.25em;}
 </style>
 <link rel="alternate" type="application/rss+xml"
-   title="RSS" href="{% url tinder.views.feed "builds_for_change" %}{{ change.number }}" />
+   title="RSS" href="{% url tinder.views.Feed "builds_for_change" %}{{ change.number }}" />
 {% endblock %}
 {% block content %}
 <h1>Builds for change {{change.number}}</h1>

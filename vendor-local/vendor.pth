@@ -1,4 +1,2 @@
 src/compare-locales/lib
 src/nashvegas
-src/django_compressor
-src/django-appconf

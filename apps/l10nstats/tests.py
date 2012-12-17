@@ -32,7 +32,7 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
           locale=locale,
           tree=tree,
           build=build,
-          srctime=datetime.datetime.now(),
+          srctime=datetime.datetime.utcnow(),
         )
         Active.objects.create(run=run)
         return run

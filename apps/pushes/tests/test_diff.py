@@ -1069,6 +1069,8 @@ class ProcessForkTestCase(RepoTestBase):
         self.hgrepo = repository(self.ui, self.repo)
         (open(self.hgrepo.pathto('file.dtd'), 'w')
              .write(u'<!ENTITY key1 "Hello %d">\n' % self.edit))
+        (open(self.hgrepo.pathto('file2.dtd'), 'w')
+             .write(u'<!ENTITY key1 "Goodbye">\n'))
         hgcommands.addremove(self.ui, self.hgrepo)
         hgcommands.commit(self.ui, self.hgrepo,
                   user="Jane Doe <jdoe@foo.tld>",
@@ -1087,7 +1089,10 @@ class ProcessForkTestCase(RepoTestBase):
         logging.debug('anc files:\n%r', r[0].manifest().keys())
         changed, added, removed, copies = v.processFork(r, ctx1, r, ctx2,
                                                         anc_rev)
-        eq_((changed, added, removed), r.status(ctx1, ctx2)[:3])
+        ref_changed, ref_added, ref_removed = r.status(ctx1, ctx2)[:3]
+        logging.debug('hg changed, added, removed: %r',
+                      (ref_changed, ref_added, ref_removed))
+        eq_((changed, added, removed), (ref_changed, ref_added, ref_removed))
         eq_(copies, pathcopies(ctx1, ctx2))
 
     def test_same_file_change(self):
@@ -1101,6 +1106,23 @@ class ProcessForkTestCase(RepoTestBase):
         hgcommands.update(self.ui, self.hgrepo, rev=rev0)
         (open(self.hgrepo.pathto('file.dtd'), 'w')
              .write(u'<!ENTITY key1 "Hello Again">\n'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="second commit")
+        ctx2 = self.hgrepo['tip']
+        self._exec_test(ctx1, ctx2)
+
+    def test_different_file_change(self):
+        rev0 = self.hgrepo[0].hex()
+        (open(self.hgrepo.pathto('file.dtd'), 'w')
+             .write(u'<!ENTITY key1 "Hello Again">\n'))
+        hgcommands.commit(self.ui, self.hgrepo,
+                  user="Jane Doe <jdoe@foo.tld>",
+                  message="first commit")
+        ctx1 = self.hgrepo['tip']
+        hgcommands.update(self.ui, self.hgrepo, rev=rev0)
+        (open(self.hgrepo.pathto('file2.dtd'), 'w')
+             .write(u'<!ENTITY key1 "Goodbye Again">\n'))
         hgcommands.commit(self.ui, self.hgrepo,
                   user="Jane Doe <jdoe@foo.tld>",
                   message="second commit")

@@ -40,10 +40,6 @@ TIME_ZONE = 'America/Los_Angeles'
 
 ## Media and templates.
 
-# Absolute path to the directory that holds media.
-# Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = path('static')
-
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
@@ -68,12 +64,13 @@ TEMPLATE_CONTEXT_PROCESSORS += (
 # This is the common prefix displayed in front of ALL static files
 STATIC_URL = '/static/'
 
+
 # the location where all collected files end up.
 # the reason for repeated the word 'static' inside 'collected/'
 # is so we, in nginx/apache, can set up the root to be
 # <base path>/collected
 # then a URL like http://domain/static/js/jquery.js just works
-STATIC_ROOT = path('collected', 'static')
+STATIC_ROOT = COMPRESS_ROOT = path('collected', 'static')
 
 ## Middlewares, apps, URL configs.
 
@@ -130,8 +127,11 @@ INSTALLED_APPS += (
 ## Auth
 PWD_ALGORITHM = 'bcrypt'
 HMAC_KEYS = {
-    '2011-04-12': 'anything?',
+    '2012-10-23': 'something',
 }
+
+from django_sha2 import get_password_hashers
+PASSWORD_HASHERS = get_password_hashers(BASE_PASSWORD_HASHERS, HMAC_KEYS)
 
 SESSION_COOKIE_SECURE = True
 

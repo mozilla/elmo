@@ -3,8 +3,6 @@ nashvegas
 bleach
 html5lib
 python-memcached
-django_compressor
-django-appconf
 versiontools
 feedparser==5.1
 pytz==2012d

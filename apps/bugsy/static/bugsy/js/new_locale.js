@@ -20,6 +20,18 @@ function doBugs() {
     params[this.name] = this.value;
   }
   $.each(document.forms.bugdata.elements, addParam);
+  // generate edit_bugs links right away,
+  // and the buglinks once we have them formatted
+  var editout = $('#users').html('');
+  $.each(document.forms.bugdata.bugmail.value.split(/\s*,\s*/),
+         function (_, email) {
+          var link = 'https://bugzilla.mozilla.org/editusers.cgi?' +
+            'action=list&matchvalue=login_name&matchtype=substr&matchstr=';
+          link += encodeURIComponent(email);
+          var child = $('<a>').text(email);
+          child.attr({href: link, target: '_blank'});
+          editout.append(child).append(' ');
+         });
   function handleLinkJSON(data, result) {
     var out = $('#links');
     if (result != 'success') {
