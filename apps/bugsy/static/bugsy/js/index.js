@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var apibase = 'https://api-dev.bugzilla.mozilla.org/1.1/';
+var apibase = 'https://api-dev.bugzilla.mozilla.org/1.2/';
 $(document).ready(function() {
   function countBugs(data) {
     var count = 0;
