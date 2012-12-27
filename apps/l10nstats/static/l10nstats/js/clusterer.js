@@ -72,7 +72,10 @@ var Clusterer = function (data, smoothing_function) {
     // Return an array of clusters in which all clusters
     // consist of elements at most 'level' units distant
     // from each other.
-    this._clusters = [[item] for each (item in this._data)];
+    this._clusters = new Array(this._data.length);
+    for (var i=0,ii=this._data.length; i<ii; ++i) {
+      this._clusters[i] = [this._data[i]];
+    }
     if (!clusters_max) clusters_max = 10;
     var closest = this._get_min_distance(0);
     while (this._clusters.length > clusters_max || closest.value <= level) {
