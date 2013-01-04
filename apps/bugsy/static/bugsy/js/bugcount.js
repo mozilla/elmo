@@ -15,6 +15,9 @@ var BugPuller = (function(code) {
       'field0-0-0': 'component',
       'type0-0-0': 'regexp',
       'value0-0-0': '^' + _locale_code + ' / ',
+      'field0-0-1': 'cf_locale',
+      'type0-0-1': 'regexp',
+      'value0-0-1': '^' + _locale_code + ' / ',
       'resolution': '---',
       'include_fields': 'id,last_change_time'
     };

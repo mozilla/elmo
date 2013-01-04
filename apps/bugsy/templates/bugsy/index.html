@@ -18,7 +18,7 @@
 {% endblock %}
 {% block content %}
 <h1>Localization bugs</h1>
-<p id="nob_div">There are currently <a href="https://bugzilla.mozilla.org/buglist.cgi?field0-0-0=component;resolution=---;type0-0-0=regexp;value0-0-0=^[a-z]{2%2C3}[%20\-];product=Mozilla%20Localizations"><span
+<p id="nob_div">There are currently <a href="https://bugzilla.mozilla.org/buglist.cgi?field0-0-0=component;resolution=---;type0-0-0=regexp;value0-0-0=^[a-z]{2%2C3}[%20\-];field0-0-1=product;type0-0-1=equals;value0-0-1=Mozilla%20Localizations"><span
 id="nob">?</span></a> open Mozilla Localization bugs in <span
 id="noc">?</span> components.</div>
 <div style="width:10em;">
@@ -36,7 +36,7 @@ id="noc">?</span> components.</div>
   <table class="standard">
     <tr>
       <td><a target="_blank"
-        ex:href-subcontent="https://bugzilla.mozilla.org/buglist.cgi?component={&#123.label}}&resolution=---&columnlist=assigned_to%2Cshort_desc%2Cchangeddate"
+        ex:href-subcontent="https://bugzilla.mozilla.org/buglist.cgi?field0-0-0=component;type0-0-0=regexp;value0-0-0=^{&#123.locale}}%20/;field0-;field0-0-1=cf_locale;type0-0-1=regexp;value0-0-1=^{&#123.locale}}%20/&resolution=---&columnlist=assigned_to%2Cshort_desc%2Cchangeddate"
         ex:content=".label"></a></td>
         <td ex:content=".count"></td>
     </tr>
