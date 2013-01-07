@@ -7,7 +7,7 @@ var BugPuller = (function(code) {
   var parent = $('#bugzilla');
 
   function getURL(suffix) {
-    return 'https://api-dev.bugzilla.mozilla.org/1.1/' + suffix;
+    return 'https://api-dev.bugzilla.mozilla.org/1.2/' + suffix;
   }
 
   function getData() {
@@ -15,6 +15,9 @@ var BugPuller = (function(code) {
       'field0-0-0': 'component',
       'type0-0-0': 'regexp',
       'value0-0-0': '^' + _locale_code + ' / ',
+      'field0-0-1': 'cf_locale',
+      'type0-0-1': 'regexp',
+      'value0-0-1': '^' + _locale_code + ' / ',
       'resolution': '---',
       'include_fields': 'id,last_change_time'
     };

@@ -8,10 +8,9 @@ from django.test import TestCase
 from django.contrib.auth.models import User, Permission
 from django.utils import simplejson as json
 from commons.tests.mixins import EmbedsTestCaseMixin
-from shipping.models import Milestone, AppVersion, Action
+from shipping.models import Milestone, AppVersion, Action, Signoff
 from shipping import api
-from life.models import Locale, Push, Repository
-from l10nstats.models import Run
+from life.models import Locale
 
 
 class SignOffTest(TestCase, EmbedsTestCaseMixin):
@@ -196,3 +195,132 @@ en-US
         # and remove the locale too and enter a rabbit hole
         url = url.replace(locale.code, '')
         eq_(self.client.get(url).status_code, 404)
+
+    def test_cancel_pending_signoff(self):
+        appver, = AppVersion.objects.all()
+        # gotta know your signoffs.json
+        accepted = Signoff.objects.get(appversion=appver,
+                                       locale__code='de')
+        assert accepted.status == Action.ACCEPTED
+
+        cancel_url = reverse('shipping.views.signoff.cancel_signoff',
+                             args=['de', appver.code])
+
+        # only accepts POST
+        eq_(self.client.get(cancel_url).status_code, 405)
+
+        # 302 because you're not logged in
+        response = self.client.post(cancel_url, {'signoff_id': accepted.pk})
+        eq_(response.status_code, 302)
+
+        user = User.objects.get(username='l10ndriver')
+        user.set_password('secret')
+        user.save()
+        assert self.client.login(username=user.username, password='secret')
+
+        # 302 because you don't have the review_signoff permission
+        response = self.client.post(cancel_url, {'signoff_id': accepted.pk})
+        eq_(response.status_code, 302)
+
+        user.user_permissions.add(
+            Permission.objects.get(codename='add_signoff')
+        )
+
+        # not a recognized appversion code
+        junk_url = cancel_url.replace(appver.code, 'xxx')
+        eq_(self.client.post(junk_url).status_code, 404)
+
+        # no signoff_id
+        response = self.client.post(cancel_url, {})
+        eq_(response.status_code, 400)
+
+        # bogus signoff_id
+        response = self.client.post(cancel_url, {'signoff_id': 'xxx'})
+        eq_(response.status_code, 400)
+
+        # not found signoff_id
+        response = self.client.post(cancel_url, {'signoff_id': 999})
+        eq_(response.status_code, 400)
+
+        # 400 because it's already accepted
+        response = self.client.post(cancel_url, {'signoff_id': accepted.pk})
+        eq_(response.status_code, 400)
+
+        # pl has a pending signoff
+        cancel_url = reverse('shipping.views.signoff.cancel_signoff',
+                             args=['pl', appver.code])
+        signoff = Signoff.objects.get(appversion=appver,
+                                      locale__code='pl')
+
+        assert Action.objects.filter(signoff=signoff).count()
+        response = self.client.post(cancel_url, {'signoff_id': signoff.pk})
+        eq_(response.status_code, 302)
+        eq_(Action.objects.filter(signoff=signoff).count(), 2)
+
+        signoff = Signoff.objects.get(pk=signoff.pk)
+        eq_(signoff.status, Action.CANCELED)
+
+    def test_reopen_canceled_signoff(self):
+        appver, = AppVersion.objects.all()
+        # gotta know your signoffs.json
+        accepted = Signoff.objects.get(appversion=appver,
+                                      locale__code='de')
+        assert accepted.status == Action.ACCEPTED
+        reopen_url = reverse('shipping.views.signoff.reopen_signoff',
+                             args=['de', appver.code])
+
+        # only accepts POST
+        eq_(self.client.get(reopen_url).status_code, 405)
+
+        # 302 because you're not logged in
+        response = self.client.post(reopen_url, {'signoff_id': accepted.pk})
+        eq_(response.status_code, 302)
+
+        user = User.objects.get(username='l10ndriver')
+        user.set_password('secret')
+        user.save()
+        assert self.client.login(username=user.username, password='secret')
+
+        # 302 because you don't have the review_signoff permission
+        response = self.client.post(reopen_url, {'signoff_id': accepted.pk})
+        eq_(response.status_code, 302)
+
+        user.user_permissions.add(
+            Permission.objects.get(codename='add_signoff')
+        )
+
+        # not a recognized appversion code
+        junk_url = reopen_url.replace(appver.code, 'xxx')
+        eq_(self.client.post(junk_url).status_code, 404)
+
+        # no signoff_id
+        response = self.client.post(reopen_url, {})
+        eq_(response.status_code, 400)
+
+        # bogus signoff_id
+        response = self.client.post(reopen_url, {'signoff_id': 'xxx'})
+        eq_(response.status_code, 400)
+
+        # not found signoff_id
+        response = self.client.post(reopen_url, {'signoff_id': 999})
+        eq_(response.status_code, 400)
+
+        # 400 because it's already accepted
+        response = self.client.post(reopen_url, {'signoff_id': accepted.pk})
+        eq_(response.status_code, 400)
+
+        # pl has a pending signoff
+        Action.objects.create(
+            signoff=accepted,
+            flag=Action.CANCELED,
+            author=User.objects.exclude(pk=user.pk)[0]  # anybody else
+        )
+        signoff = Signoff.objects.get(pk=accepted.pk)
+        assert signoff.status == Action.CANCELED
+
+        assert Action.objects.filter(signoff=signoff).count()
+        response = self.client.post(reopen_url, {'signoff_id': signoff.pk})
+        eq_(response.status_code, 302)
+
+        signoff = Signoff.objects.get(pk=signoff.pk)
+        eq_(signoff.status, Action.PENDING)

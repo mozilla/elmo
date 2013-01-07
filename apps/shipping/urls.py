@@ -46,6 +46,8 @@ urlpatterns += patterns('shipping.views.signoff',
     (r'^/signoffs-details/(.*?)/(.*)', 'signoff_details'),
     (r'^/add-signoff/(.*?)/(.*)', 'add_signoff'),  # POST only
     (r'^/review-signoff/(.*?)/(.*)', 'review_signoff'),  # POST only
+    (r'^/cancel-signoff/(.*?)/(.*)', 'cancel_signoff'),  # POST only
+    (r'^/reopen-signoff/(.*?)/(.*)', 'reopen_signoff'),  # POST only
 )
 
 urlpatterns += patterns('shipping.views.release',
