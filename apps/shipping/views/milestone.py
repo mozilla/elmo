@@ -46,6 +46,7 @@ def about(request, ms_code):
                     'ms': ms,
                     'forestname': forest.name,
                     'foresturl': forest.url,
+                    'Milestone': Milestone,
                   })
 
 
@@ -80,7 +81,7 @@ def statuses(req, ms_code):
 
     # if the milestone is not shipped, let's check the active Runs, too
     active = {}
-    if ms.status != 2:
+    if ms.status != Milestone.SHIPPED:
         runs = Run.objects.filter(active__isnull=False)
         runs = runs.filter(tree=tree)
         active = runs2dict(runs)

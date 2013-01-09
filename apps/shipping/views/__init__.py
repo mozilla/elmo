@@ -34,11 +34,11 @@ def index(request):
                     .filter(appver=i.id)
                     .values_list('status', flat=True)
                     .distinct())
-        if 1 in statuses:
+        if Milestone.OPEN in statuses:
             i.status = 'open'
-        elif 0 in statuses:
+        elif Milestone.UPCOMING in statuses:
             i.status = 'upcoming'
-        elif 2 in statuses:
+        elif Milestone.SHIPPED in statuses:
             i.status = 'shipped'
         else:
             i.status = 'unknown'
@@ -51,7 +51,7 @@ def index(request):
 
 def homesnippet():
     q = (AppVersion.objects
-         .filter(milestone__status=1)
+         .filter(milestone__status=Milestone.OPEN)
          .select_related('app'))
     q = q.order_by('app__name', '-version')
     return render_to_string('shipping/snippet.html', {
@@ -248,6 +248,7 @@ def milestones(request):
     r = render(request, 'shipping/milestones.html', {
                   'login_form_needs_reload': True,
                   'request': request,
+                  'Milestone': Milestone,
                 })
     if always_safe is not None:
         urllib.always_safe = always_safe
@@ -290,7 +291,7 @@ def open_mstone(request):
         request.user.has_perm('shipping.can_open')):
         try:
             mstone = Milestone.objects.get(code=request.POST['ms'])
-            mstone.status = 1
+            mstone.status = Milestone.OPEN
             # XXX create event
             mstone.save()
         except:
@@ -371,11 +372,11 @@ def confirm_drill_mstone(request):
     if not request.user.has_perm('shipping.can_ship'):
         return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
     mstone = get_object_or_404(Milestone, code=request.GET['ms'])
-    if mstone.status != 1:
+    if mstone.status != Milestone.OPEN:
         return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
 
     drill_base = (Milestone.objects
-                  .filter(appver=mstone.appver, status=2)
+                  .filter(appver=mstone.appver, status=Milestone.SHIPPED)
                   .order_by('-pk')
                   .select_related())
     return render(request, 'shipping/confirm-drill.html', {
@@ -406,7 +407,7 @@ def drill_mstone(request):
 
     so_ids = list(base.signoffs.values_list('id', flat=True))
     mstone.signoffs = so_ids  # add signoffs of base ms
-    mstone.status = 2
+    mstone.status = Milestone.SHIPPED
     # XXX create event
     mstone.save()
     return redirect(reverse('shipping.views.milestone.about',

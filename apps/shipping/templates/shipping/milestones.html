@@ -40,12 +40,12 @@
         ex:href-subcontent="{% url shipping.views.milestone.about  "{&#123;.code}}" %}"></a>
       </td>
       <td>
-        <span ex:if=".status = 2">
+        <span ex:if=".status = {{ Milestone.SHIPPED }}">
           <input type="button" {% if not perms.shipping.can_ship %}
           disabled="disabled"{% endif %}
           value="tweak" />
           <span>
-            <span ex:if=".status = 0">
+            <span ex:if=".status = {{ Milestone.UPCOMING }}">
               <input type="button" {% if not perms.shipping.can_open %}
               disabled="disabled"{% endif %}
               ex:onclick-subcontent="doForm('open','{&#123;.code}}')"

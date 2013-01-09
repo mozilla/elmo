@@ -58,8 +58,8 @@
    <tr>
      <td ex:role="viewPanel">
        <div ex:role="view" ex:showAll="true" ex:ViewClass="Tabular"
-         ex:columnLabels="Locale, Revision, Latest, Snapshot {% ifnotequal ms.status  2 %}, Active{% endifnotequal %},Updated from"
-         ex:columns=".label,.revision, .latest_class,.snapshot_class {% ifnotequal ms.status 2 %}, .active_class{% endifnotequal %},.updatedFrom">
+         ex:columnLabels="Locale, Revision, Latest, Snapshot {% ifnotequal ms.status Milestone.SHIPPED %}, Active{% endifnotequal %},Updated from"
+         ex:columns=".label,.revision, .latest_class,.snapshot_class {% ifnotequal ms.status Milestone.SHIPPED %}, .active_class{% endifnotequal %},.updatedFrom">
          <table>
            <tr>
              <td>
@@ -74,7 +74,7 @@
              <td>
                <span ex:content=".snapshot"></span>
             </td>
-{% ifnotequal ms.status 2 %}
+{% ifnotequal ms.status Milestone.SHIPPED %}
             <td>
               <span ex:content=".active" ex:class=".active_class"></span>
             </td>
@@ -95,7 +95,7 @@
        <div ex:role="facet" ex:expression=".snapshot_class" ex:facetLabel="Snapshot"
          id="snapshot-facet"
          ex:fixedOrder="success;warnings;failure;exception"></div>
-{% ifnotequal ms.status 2 %}
+{% ifnotequal ms.status Milestone.SHIPPED %}
        <div ex:role="facet" ex:expression=".active_class" ex:facetLabel="Active"
          id="active-facet"
          ex:fixedOrder="success;warnings;failure;exception"></div>
