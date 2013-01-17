@@ -125,23 +125,33 @@ class SignoffView(TemplateView):
             else:
                 repoquery = Q(**qd)
         pushes_q = pushes_q.filter(repoquery)
-        current_so = None
+        cutoff_dates = []
         action4id = dict((a.id, a) for a in actions)
         initial_diff = []
         if Action.ACCEPTED in flags:
             a = action4id[flags[Action.ACCEPTED]]
-            current_so = a.signoff
+            if not fallback:
+                cutoff_dates.append(a.signoff.push.push_date)
             initial_diff.append(a.signoff_id)
         if Action.PENDING in flags:
-            initial_diff.append(action4id[flags[Action.PENDING]].signoff_id)
-        if Action.REJECTED in flags and len(initial_diff) < 2:
-            initial_diff.append(action4id[flags[Action.REJECTED]].signoff_id)
+            a = action4id[flags[Action.PENDING]]
+            cutoff_dates.append(a.signoff.push.push_date)
+            initial_diff.append(a.signoff_id)
+        if Action.REJECTED in flags:
+            a = action4id[flags[Action.REJECTED]]
+            cutoff_dates.append(a.signoff.push.push_date)
+            # only add this signoff to initial_diff if we don't already have
+            # an ACCEPTED and a PENDING signoff
+            if len(initial_diff) < 2:
+                initial_diff.append(a.signoff_id)
         # if we're having a sign-off on this appversion, i.e no fallback,
         # show only new pushes
-        if current_so is not None and fallback is None:
-            pushes_q = (pushes_q
-                        .filter(push_date__gte=current_so.push.push_date)
-                        .distinct())
+        if cutoff_dates:
+            pushes_q = (
+                    pushes_q
+                    .filter(push_date__gte=min(cutoff_dates))
+                    .distinct()
+                )
         else:
             pushes_q = pushes_q.distinct()[:count]
 

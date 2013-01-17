@@ -2,15 +2,31 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
 from nose.tools import eq_, ok_
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.contrib.auth.models import User, Permission
 from django.utils import simplejson as json
 from commons.tests.mixins import EmbedsTestCaseMixin
-from shipping.models import Milestone, AppVersion, Action, Signoff
+from shipping.models import (
+    Milestone,
+    AppVersion,
+    Action,
+    Signoff,
+    Application,
+    AppVersionTreeThrough
+)
 from shipping import api
-from life.models import Locale
+from life.models import (
+    Locale,
+    Push,
+    Repository,
+    Branch,
+    Changeset,
+    Tree,
+    Forest
+)
 from shipping.views.signoff import SignoffView
 
 
@@ -337,7 +353,6 @@ en-US
                           .get(locale.code, [None, {}]))
         actions = list(Action.objects.filter(id__in=flags.values())
                        .select_related('signoff__push__repository', 'author'))
-        fallback = None
         fallback, = actions
         assert fallback.flag == Action.ACCEPTED, fallback.flag
         pushes, suggested_signoff = view.annotated_pushes(
@@ -352,3 +367,270 @@ en-US
         revisions = [x.revision for x in changesets]
         # only `de` changes in the right order
         eq_(revisions, [u'l10n de 0003', u'l10n de 0002'])
+
+
+class SignOffAnnotatedPushesTest(TestCase):
+    fixtures = ['test_repos.json']
+
+    def setUp(self):
+        _forest = Forest.objects.get(name='l10n')
+        _tree = Tree.objects.create(code='fx', l10n=_forest)
+        _app = Application.objects.create(name='Firefox', code='fx')
+        self.av = AppVersion.objects.create(
+            app=_app,
+            version='1.0',
+            code='fx1.0',
+        )
+        AppVersionTreeThrough.objects.create(
+            start=None,
+            tree=_tree,
+            appversion=self.av,
+            end=None,
+        )
+        self.locale = Locale.objects.get(code='de')
+        self.peter = User.objects.create_user(
+            'peter', 'peter@mozilla.com', 'secret'
+        )
+        self.axel = User.objects.create_user(
+            'axel', 'axel@mozilla.com', 'secret'
+        )
+
+        self._locale_search = {'id': self.locale.id}
+        self._appver_search = {'id': self.av.id}
+
+        repository, = Repository.objects.filter(locale=self.locale)
+        first_date = datetime.datetime.utcnow() - datetime.timedelta(days=12)
+        branch, = Branch.objects.all()
+        self.pushes = []
+        for i in range(1, 6):
+            push = Push.objects.create(
+                user='Bob',
+                repository=repository,
+                push_date=first_date + datetime.timedelta(days=i),
+                push_id=i + 1
+            )
+            change = Changeset.objects.create(
+                revision='abc123-%d' % i,
+                user='user@example.tld',
+                description='Description%d' % i,
+                branch=branch
+            )
+            push.changesets.add(change)
+            self.pushes.append(push)
+
+    def _get_flags_and_actions(self):
+        __, flags = (api.flags4appversions(
+            locales=self._locale_search,
+            appversions=self._appver_search)
+                          .get(self.av, {})
+                          .get(self.locale.code, [None, {}]))
+        actions = Action.objects.filter(id__in=flags.values())
+        return flags, actions
+
+    def test_5_pushes_no_fallback(self):
+        view = SignoffView()
+        flags, actions = self._get_flags_and_actions()
+
+        pushes, suggested_signoff = view.annotated_pushes(
+            actions,
+            flags,
+            None,
+            self.locale,
+            self.av,
+            count=1
+        )
+        # there are more pushes than this but it gets limited
+        # by `count` instead because there is no fallback
+        eq_(len(pushes), 1)
+
+        # equally...
+        # the `count` is what determines how many we get back
+        pushes, suggested_signoff = view.annotated_pushes(
+            actions,
+            flags,
+            None,
+            self.locale,
+            self.av,
+            count=3
+        )
+        eq_(len(pushes), 3)
+
+    def test_5_pushes_2nd_accepted(self):
+        view = SignoffView()
+        flags, actions = self._get_flags_and_actions()
+
+        # Let's make an accepted signoff on the 2nd push
+        push = self.pushes[1]
+        signoff = Signoff.objects.create(
+            push=push,
+            appversion=self.av,
+            author=self.axel,
+            locale=self.locale,
+        )
+        Action.objects.create(
+            signoff=signoff,
+            flag=Action.ACCEPTED,
+            author=self.peter,
+        )
+
+        flags, actions = self._get_flags_and_actions()
+        pushes, suggested_signoff = view.annotated_pushes(
+            actions,
+            flags,
+            None,  # notice, no fallback
+            self.locale,
+            self.av,
+            count=1
+        )
+        eq_(len(pushes), 4)
+        # the last (aka. first) one should have a signoff with an
+        # action on that is accepting
+        eq_(pushes[-1]['signoffs'][0]['action'].flag, Action.ACCEPTED)
+
+    def test_5_pushes_2nd_accepted_3rd_rejected(self):
+        view = SignoffView()
+        flags, actions = self._get_flags_and_actions()
+
+        # Let's make an accepted signoff on the 2nd push
+        push = self.pushes[1]
+        signoff = Signoff.objects.create(
+            push=push,
+            appversion=self.av,
+            author=self.axel,
+            locale=self.locale,
+        )
+        Action.objects.create(
+            signoff=signoff,
+            flag=Action.ACCEPTED,
+            author=self.peter,
+        )
+
+        # Let's make a rejected signoff on the 3rd push
+        push = self.pushes[2]
+        signoff = Signoff.objects.create(
+            push=push,
+            appversion=self.av,
+            author=self.axel,
+            locale=self.locale,
+        )
+        Action.objects.create(
+            signoff=signoff,
+            flag=Action.REJECTED,
+            author=self.peter,
+        )
+
+        flags, actions = self._get_flags_and_actions()
+        pushes, suggested_signoff = view.annotated_pushes(
+            actions,
+            flags,
+            None,  # notice, no fallback
+            self.locale,
+            self.av,
+            count=1
+        )
+        eq_(len(pushes), 4)
+        # the last (aka. first) one should have a signoff with an
+        # action on that is accepting
+        eq_(pushes[-1]['signoffs'][0]['action'].flag, Action.ACCEPTED)
+
+    def test_5_pushes_2nd_accepted_3rd_rejected_4th_pending(self):
+        view = SignoffView()
+        flags, actions = self._get_flags_and_actions()
+
+        # make an accepted signoff on the 2nd push
+        signoff = Signoff.objects.create(
+            push=self.pushes[1],
+            appversion=self.av,
+            author=self.axel,
+            locale=self.locale,
+        )
+        Action.objects.create(
+            signoff=signoff,
+            flag=Action.ACCEPTED,
+            author=self.peter,
+        )
+
+        # make a rejected signoff on the 3rd push
+        signoff = Signoff.objects.create(
+            push=self.pushes[2],
+            appversion=self.av,
+            author=self.axel,
+            locale=self.locale,
+        )
+        Action.objects.create(
+            signoff=signoff,
+            flag=Action.REJECTED,
+            author=self.peter,
+        )
+
+        # make a pending signoff on the 4th push
+        signoff = Signoff.objects.create(
+            push=self.pushes[3],
+            appversion=self.av,
+            author=self.axel,
+            locale=self.locale,
+        )
+        Action.objects.create(
+            signoff=signoff,
+            flag=Action.PENDING,
+            author=self.peter,
+        )
+
+        flags, actions = self._get_flags_and_actions()
+        pushes, suggested_signoff = view.annotated_pushes(
+            actions,
+            flags,
+            None,  # notice, no fallback
+            self.locale,
+            self.av,
+            count=1
+        )
+        eq_(len(pushes), 4)
+        # the last (aka. first) one should have a signoff with an
+        # action on that is accepting
+        eq_(pushes[-1]['signoffs'][0]['action'].flag, Action.ACCEPTED)
+
+    def test_5_pushes_3rd_rejected_4th_pending(self):
+        view = SignoffView()
+        flags, actions = self._get_flags_and_actions()
+
+        # make a rejected signoff on the 3rd push
+        signoff = Signoff.objects.create(
+            push=self.pushes[2],
+            appversion=self.av,
+            author=self.axel,
+            locale=self.locale,
+        )
+        Action.objects.create(
+            signoff=signoff,
+            flag=Action.REJECTED,
+            author=self.peter,
+        )
+
+        # make a pending signoff on the 4th push
+        signoff = Signoff.objects.create(
+            push=self.pushes[3],
+            appversion=self.av,
+            author=self.axel,
+            locale=self.locale,
+        )
+        Action.objects.create(
+            signoff=signoff,
+            flag=Action.PENDING,
+            author=self.peter,
+        )
+
+        flags, actions = self._get_flags_and_actions()
+        pushes, suggested_signoff = view.annotated_pushes(
+            actions,
+            flags,
+            None,  # notice, no fallback
+            self.locale,
+            self.av,
+            count=1
+        )
+        eq_(len(pushes), 3)
+
+        # the last (aka. first) one should have a signoff with an
+        # action on that is rejected
+        eq_(pushes[-1]['signoffs'][0]['action'].flag, Action.REJECTED)
