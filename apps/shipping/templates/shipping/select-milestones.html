@@ -5,6 +5,7 @@
 - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load compress %}
+{% load url from future %}
 
 {% block title_matter %}Milestones Creation{% endblock %}
 
@@ -16,7 +17,7 @@
 
 {% block content %}
 <h4>Select Milestones to create:</h4>
-<form action="{% url shipping.views.release.create_milestones %}" method="POST">{% csrf_token %}
+<form action="{% url 'shipping.views.release.create_milestones' %}" method="POST">{% csrf_token %}
 <select name="branch">
   <option value="beta" selected>Beta</option>
   <option value="aurora">Aurora</option>

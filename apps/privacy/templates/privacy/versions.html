@@ -5,6 +5,8 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load compress %}
+{% load url from future %}
+
 {% block title_matter %}Revision history of Privacy Policies{% endblock %}
 {% block head_matter %}
 
@@ -28,7 +30,7 @@
 <h1>Revision history of Privacy Policies</h1>
 
 {% if perms.privacy.activate_policy %}
-<form action="{% url privacy.views.activate_policy %}" method="post">{% csrf_token %}
+<form action="{% url 'privacy.views.activate_policy' %}" method="post">{% csrf_token %}
 {% endif %}
 <table id="policy_versions" class="standard">
   <thead>
@@ -44,7 +46,7 @@
   <tbody>
 {% for policy in policies %}
    <tr>
-      <td rowspan="{{ policy.noc }}"><a href="{% url privacy.views.show_policy id=policy.id %}">{{ policy.id }}</a></td>
+      <td rowspan="{{ policy.noc }}"><a href="{% url 'privacy.views.show_policy' id=policy.id %}">{{ policy.id }}</a></td>
       <td rowspan="{{ policy.noc }}">{{ policy.created|date }}</td>
 {% if perms.privacy.activate_policy %}
       <td rowspan="{{ policy.noc }}"><input name="active" type="radio" value="{{ policy.id }}"{{ policy.active|yesno:" checked," }}></td>
@@ -73,12 +75,12 @@
 {% if perms.privacy.add_policy %}
 <p><input type="submit" value=" activate policy"></p>
 </form>
-<p id="add_policy">Create a <a href="{% url privacy.views.add_policy %}">new privacy policy</a>.</p>
+<p id="add_policy">Create a <a href="{% url 'privacy.views.add_policy' %}">new privacy policy</a>.</p>
 {% endif %}
 {% if perms.privacy.add_comment %}
 <div id="add-comment" title="Comment on policy">
   <p>Enter a comment on policy <span id="policy-id"></span> with HTML markup.</p>
-  <form name="post_comment" action="{% url privacy.views.add_comment %}" method="post">{% csrf_token %}
+  <form name="post_comment" action="{% url 'privacy.views.add_comment' %}" method="post">{% csrf_token %}
   <textarea name="comment" rows="10" cols="40"></textarea>
   <div style="display:none"><input type="hidden" name="policy"></div>
   </form>

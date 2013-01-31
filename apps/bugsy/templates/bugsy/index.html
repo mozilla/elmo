@@ -6,6 +6,7 @@
 {% endcomment %} -->
 {% load simile %}
 {% load compress %}
+{% load url from future %}
 {% block title_matter %}Localization bugs{% endblock %}
 {% block head_matter %}
 {% exhibit %}
@@ -44,5 +45,5 @@ id="noc">?</span> components.</div>
 </div>
 
 <div>You can file a suite of bugs for a set of localizations with the
-  <a href="{% url bugsy.views.file_bugs %}">bug helper</a>.</div>
+  <a href="{% url 'bugsy.views.file_bugs' %}">bug helper</a>.</div>
 {% endblock %}

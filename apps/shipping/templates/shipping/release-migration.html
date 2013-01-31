@@ -5,11 +5,12 @@
 - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 
+{% load url from future %}
 {% block title_matter %}Channel Migration{% endblock %}
 
 {% block content %}
 <h4>Select the applications you want to migrate:</h4>
-<form action="{% url shipping.views.release.migrate_appversions %}" method="POST">{%csrf_token%}
+<form action="{% url 'shipping.views.release.migrate_appversions' %}" method="POST">{%csrf_token%}
 <table>
 {% for av in appvers %}
   <tr>

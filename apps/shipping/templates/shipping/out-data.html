@@ -6,6 +6,7 @@
 {% endcomment %} -->
 
 {% load compress %}
+{% load url from future %}
 {% block title_matter %}Outreach data{% endblock %}
 
 {% block head_matter %}
@@ -35,7 +36,7 @@
         {% for entry in row.entries %}
           <td class="entry">
             {% if entry %}
-              <a href="{% url shipping.views.signoff.signoff row.loc entry.av%}">{{entry.missing}}</a>
+              <a href="{% url 'shipping.views.signoff.signoff' row.loc entry.av%}">{{entry.missing}}</a>
             {% endif %}
           </td>
         {% endfor %}

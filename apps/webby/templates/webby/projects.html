@@ -4,6 +4,7 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
+{% load url from future %}
 
 {% block head_matter %}
 <style type="text/css">
@@ -51,7 +52,7 @@
 </tr>
 {% for project in projects %}
 <tr>
-  <td><a href="{% url webby.views.project slug=project.slug%}">{{ project.name  }}</td>
+  <td><a href="{% url 'webby.views.project' slug=project.slug%}">{{ project.name  }}</td>
   <td>{{ project.description }}</td>
   <td>{{ project.string_count }}</td>
 {% if perms.webby.change_weblocale %}

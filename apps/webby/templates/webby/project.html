@@ -4,6 +4,7 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
+{% load url from future %}
 {% block head_matter %}
 <style type="text/css">
 #notification {
@@ -96,7 +97,7 @@ Project: <b>{{ project.name }}</b>
 <br/>
 <p>{{ project.description }}</p>
 {% if not project.is_archived and perms.webby.add_weblocale %}
-<form action="{% url webby.views.project slug=project.slug %}" method="post">{% csrf_token %}
+<form action="{% url 'webby.views.project' slug=project.slug %}" method="post">{% csrf_token %}
 <select name="locale" id="id_locale">
   <option value="">----</option>
 {% for locale in new_locales %}
