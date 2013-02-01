@@ -6,6 +6,7 @@
 {% endcomment %} -->
 
 {% load compress %}
+{% load url from future %}
 <html lang="{{ LANG }}" dir="{{ DIR }}">
   <head>
     <meta charset="utf-8">
@@ -38,8 +39,8 @@
 
 
 			<ul>
-				<li><a href="{% url homepage.views.index %}" class="homepage-link">Home</a></li>
-				<li><a href="{% url homepage.views.teams %}">Teams</a></li>
+				<li><a href="{% url 'homepage.views.index' %}" class="homepage-link">Home</a></li>
+				<li><a href="{% url 'homepage.views.teams' %}">Teams</a></li>
 				<li><a href="https://wiki.mozilla.org/L10n">Documentation</a></li>
 				{% block extra_nav_list_items %}{% endblock %}
 
@@ -66,11 +67,11 @@
 		    <p><img src="{{ STATIC_URL }}img/logo_footer.png" alt="Mozilla" /></p>
            <p>Except where otherwise <a href="http://www.mozilla.org/en-US/about/legal.html#site">noted</a>,
                 content on this site is licensed under the <a href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons Attribution Share-Alike License v3.0</a> or any later version. </p>
-                <p class="notices"><a href="{% url privacy.views.show_policy %}">Privacy Policy</a> | <a href="http://www.mozilla.org/en-US/about/legal.html">Legal Notices</a></p>
+                <p class="notices"><a href="{% url 'privacy.views.show_policy' %}">Privacy Policy</a> | <a href="http://www.mozilla.org/en-US/about/legal.html">Legal Notices</a></p>
 		</footer>
 
 <script>
-var CONFIG = {USER_URL: '{% url accounts.views.user_json %}',
+var CONFIG = {USER_URL: '{% url 'accounts.views.user_json' %}',
               CURRENT_URL: {% if request %}'{{ request.get_full_path }}'{% else %}window.location.href{% endif %}, {# needed because of some lack of RequestContext #}
               LOADING_GIF_URL: '{{ STATIC_URL }}img/loading.gif',
               NEEDS_RELOAD: {% if login_form_needs_reload and request %}true{% else %} false{% endif %}

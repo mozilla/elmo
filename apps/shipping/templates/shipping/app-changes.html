@@ -4,6 +4,7 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
+{% load url from future %}
 
 {% block title_matter %}Locale changes for {{appver}}{% endblock %}
 
@@ -32,9 +33,9 @@ white-space: nowrap;
 <table class="standard">
 {% for row in rows %}
 <tr>
-  <td class="milestone">{% if row.code %}<a href="{% if row.isAppVersion %}{% url shipping.views.app.changes row.code %}{% else %}{% url shipping.views.milestone.about row.code %}{% endif %}" target="_blank">{% endif %}{{row.name}}{% if row.code %}</a>{% endif %}</td>
+  <td class="milestone">{% if row.code %}<a href="{% if row.isAppVersion %}{% url 'shipping.views.app.changes' row.code %}{% else %}{% url 'shipping.views.milestone.about' row.code %}{% endif %}" target="_blank">{% endif %}{{row.name}}{% if row.code %}</a>{% endif %}</td>
   <td>
-    {% for loc, cls in row.changes %}<a class="{{cls}}" href="{% url shipping.views.signoff.signoff loc appver.code %}">{{loc}}</a> {% endfor %}
+    {% for loc, cls in row.changes %}<a class="{{cls}}" href="{% url 'shipping.views.signoff.signoff' loc appver.code %}">{{loc}}</a> {% endfor %}
   </td>
 </tr>
 {% endfor %}

@@ -5,6 +5,7 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load compress %}
+{% load url from future %}
 {% block title_matter %}Mozilla Localization{% endblock %}
 {% block body_tag %}id="home"{% endblock %}
 
@@ -51,14 +52,14 @@
 
 		<ul class="double">
                         {% for loc in locales_first_half %}
-                        <li><a href="{% url homepage.views.locale_team loc.code %}">{% if loc.name %}{{loc.name}}{% else %}{{loc.code}}{% endif %}</a></li>
+                        <li><a href="{% url 'homepage.views.locale_team' loc.code %}">{% if loc.name %}{{loc.name}}{% else %}{{loc.code}}{% endif %}</a></li>
                         {% endfor %}
 		</ul>
 		<ul class="double">
                         {% for loc in locales_second_half %}
-                        <li><a href="{% url homepage.views.locale_team loc.code %}">{% if loc.name %}{{loc.name}}{% else %}{{loc.code}}{% endif %}</a></li>
+                        <li><a href="{% url 'homepage.views.locale_team' loc.code %}">{% if loc.name %}{{loc.name}}{% else %}{{loc.code}}{% endif %}</a></li>
                         {% endfor %}
-			<li><a href="{% url homepage.views.teams %}">And {{ locales_rest_count }} more...</a></li>
+			<li><a href="{% url 'homepage.views.teams' %}">And {{ locales_rest_count }} more...</a></li>
 		</ul>
 	</article>
 	<article>

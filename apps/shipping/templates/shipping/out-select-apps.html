@@ -5,11 +5,12 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 
+{% load url from future %}
 {% block title_matter %}Outreach{% endblock %}
 
 {% block content %}
 <h4>Select the applications for which you want to do outreach:</h4>
-<form action="{% url shipping.views.outreach.data %}">
+<form action="{% url 'shipping.views.outreach.data' %}">
 <p>
 {% for app in apps %}
 <input type="checkbox" value="{{app.code}}" name="app" checked>{{app}}<br>

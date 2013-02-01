@@ -6,6 +6,7 @@
 {% endcomment %} -->
 {% load compress %}
 {% load build_extras %}
+{% load url from future %}
 
 {% block title_matter %}Builds{% endblock %}
 
@@ -33,7 +34,7 @@ function updateOnTimeout() {
   random += 1;
   params['after'] = last_id;
   params['random'] = random;
-  $.get('{% url tinder_update_tbpl %}', params,
+  $.get('{% url "tinder_update_tbpl" %}', params,
         function(data, res) {
           if (res == 'success' && data) {
             $('#buildrows>tbody>tr[class*=pending]').remove()

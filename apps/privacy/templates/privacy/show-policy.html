@@ -5,6 +5,7 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load compress %}
+{% load url from future %}
 {% block title_matter %}Privacy Policy{% endblock %}
 {% block head_matter %}
 {% compress css %}
@@ -20,9 +21,9 @@ site.</p>
 {% endif %}
 <div id="policy">{{ policy.text|safe }}</div>
 <p>{%if activation %}Active since {{activation|date}}. {% endif %}Check <a
-href="{% url privacy.views.versions %}">version history</a>.</p>
+href="{% url 'privacy.views.versions' %}">version history</a>.</p>
 {% else %}
 <p class="notice"><span>Policy not found, you may want to to check the <a
-href="{% url privacy.views.versions %}">version history</a>.</span></p>
+href="{% url 'privacy.views.versions' %}">version history</a>.</span></p>
 {% endif %}
 {% endblock %}
