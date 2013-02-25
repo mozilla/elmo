@@ -23,3 +23,7 @@ ARECIBO_SERVER_URL = None
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
 )
+
+# don't accidentally do anything whilst running tests
+RAVEN_CONFIG = {}
+SENTRY_DSN = None

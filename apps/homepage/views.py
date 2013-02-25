@@ -18,30 +18,11 @@ from django.conf import settings
 from django.views.defaults import page_not_found
 from django.core.cache import cache
 from django.views.decorators.http import etag
-import django_arecibo.wrapper
 
 from life.models import Locale
 
 
-def handler404(request):
-    if getattr(settings, 'ARECIBO_SERVER_URL', None):
-        # Make a distinction between Http404 and Resolver404.
-        # Http404 is an explicity exception raised from within the views which
-        # might indicate the wrong usage of arguments to a view for example.
-        # Resolver404 is an implicit exception that Django raises when it can't
-        # resolve a URL to an appropriate view or handler.
-        # We're not interested in sending Arecibo exceptions on URLs like
-        # /blablalb/junk/junk
-        # but we might be interested in /dashboard?from=20LL-02-31
-        exception = sys.exc_info()[0]
-        if isinstance(exception, Http404) or exception is Http404:
-            django_arecibo.wrapper.post(request, 404)
-    return page_not_found(request)
-
-
 def handler500(request):
-    if getattr(settings, 'ARECIBO_SERVER_URL', None):
-        django_arecibo.wrapper.post(request, 500)
     # unlike the default django.views.default.server_error view function we
     # want one that passes a RequestContext so that we can have 500.html
     # template that uses '{% extends "base.html" %}' which depends on various
