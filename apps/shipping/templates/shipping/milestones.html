@@ -6,11 +6,12 @@
 {% endcomment %} -->
 {% load simile %}
 {% load compress %}
+{% load url from future %}
 
 {% block title_matter %}Milestones{% endblock %}
 
 {% block head_matter %}
-<link href="{% url shipping.views.stones_data %}" type="application/json" rel="exhibit/data">
+<link href="{% url 'shipping.views.stones_data' %}" type="application/json" rel="exhibit/data">
 {% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/milestones.css" type="text/css">
 {% endcompress %}
@@ -37,15 +38,15 @@
       <td>
         <a ex:content=".label"
 	   ex:class-subcontent="building-{&#123;.building}}"
-        ex:href-subcontent="{% url shipping.views.milestone.about  "{&#123;.code}}" %}"></a>
+        ex:href-subcontent="{% url 'shipping.views.milestone.about'  "{&#123;.code}}" %}"></a>
       </td>
       <td>
-        <span ex:if=".status = 2">
+        <span ex:if=".status = {{ Milestone.SHIPPED }}">
           <input type="button" {% if not perms.shipping.can_ship %}
           disabled="disabled"{% endif %}
           value="tweak" />
           <span>
-            <span ex:if=".status = 0">
+            <span ex:if=".status = {{ Milestone.UPCOMING }}">
               <input type="button" {% if not perms.shipping.can_open %}
               disabled="disabled"{% endif %}
               ex:onclick-subcontent="doForm('open','{&#123;.code}}')"
@@ -80,15 +81,15 @@
     </td>
    </tr>
  </table>
-You may be able to create <a href="{% url shipping.views.release.selectappversions4milestones %}">new milestones</a>.
+You may be able to create <a href="{% url 'shipping.views.release.selectappversions4milestones' %}">new milestones</a>.
 <div style="display:none">
-  <form id="open_ms" action="{% url shipping.views.open_mstone %}" method="post">{% csrf_token %}
+  <form id="open_ms" action="{% url 'shipping.views.open_mstone' %}" method="post">{% csrf_token %}
   <input type="hidden" name="ms">
   </form>
-  <form id="ship_ms" action="{% url shipping.views.confirm_ship_mstone %}">
+  <form id="ship_ms" action="{% url 'shipping.views.confirm_ship_mstone' %}">
   <input type="hidden" name="ms">
   </form>
-  <form id="drill_ms" action="{% url shipping.views.confirm_drill_mstone %}">
+  <form id="drill_ms" action="{% url 'shipping.views.confirm_drill_mstone' %}">
   <input type="hidden" name="ms" />
   </form>
 </div>

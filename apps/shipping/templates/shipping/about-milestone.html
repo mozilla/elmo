@@ -6,12 +6,13 @@
 {% endcomment %} -->
 {% load compress %}
 {% load simile %}
+{% load url from future %}
 
 {% block title_matter %}About {{ms}}{% endblock %}
 
 {% block head_matter %}
 {% exhibit %}
-<link href="{% url shipping.views.milestone.statuses ms.code %}" type="application/json" rel="exhibit/data" />
+<link href="{% url 'shipping.views.milestone.statuses' ms.code %}" type="application/json" rel="exhibit/data" />
 {% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/about-milestone.css" type="text/css">
 {% endcompress %}
@@ -30,13 +31,13 @@
     <div><span id="ship-expander"><a href="#">Shipping tools</a></span></div>
     <div class="shipping-tools" style="display:none">
       <p>Download
-      <a href="{% url shipping.views.status.shipped_locales %}?ms={{ ms.code }}" target="_blank">shipped-locales</a>
+      <a href="{% url 'shipping.views.status.shipped_locales' %}?ms={{ ms.code }}" target="_blank">shipped-locales</a>
       and
-      <a href="{% url shipping.views.status.l10n_changesets %}?ms={{ ms.code }}" target="_blank">l10n-changesets</a>
+      <a href="{% url 'shipping.views.status.l10n_changesets' %}?ms={{ ms.code }}" target="_blank">l10n-changesets</a>
       for this milestone.
       </p>
       <p>Alternatively, fill out the l10n-changesets.json form:</p>
-      <form id="changes.json" method="get" action="{% url shipping.views.milestone.json_changesets %}">
+      <form id="changes.json" method="get" action="{% url 'shipping.views.milestone.json_changesets' %}">
       <input type="hidden" name="ms" value="{{ ms.code }}" />
       Platforms, comma separated:
       <input type="text" name="platforms" value="android"><br>
@@ -58,8 +59,8 @@
    <tr>
      <td ex:role="viewPanel">
        <div ex:role="view" ex:showAll="true" ex:ViewClass="Tabular"
-         ex:columnLabels="Locale, Revision, Latest, Snapshot {% ifnotequal ms.status  2 %}, Active{% endifnotequal %},Updated from"
-         ex:columns=".label,.revision, .latest_class,.snapshot_class {% ifnotequal ms.status 2 %}, .active_class{% endifnotequal %},.updatedFrom">
+         ex:columnLabels="Locale, Revision, Latest, Snapshot {% ifnotequal ms.status Milestone.SHIPPED %}, Active{% endifnotequal %},Updated from"
+         ex:columns=".label,.revision, .latest_class,.snapshot_class {% ifnotequal ms.status Milestone.SHIPPED %}, .active_class{% endifnotequal %},.updatedFrom">
          <table>
            <tr>
              <td>
@@ -74,14 +75,14 @@
              <td>
                <span ex:content=".snapshot"></span>
             </td>
-{% ifnotequal ms.status 2 %}
+{% ifnotequal ms.status Milestone.SHIPPED %}
             <td>
               <span ex:content=".active" ex:class=".active_class"></span>
             </td>
 {% endifnotequal %}
            <td><span ex:if-exists=".updatedFrom"><span>
               <a target="_blank" ex:content=".updatedFrom" ex:href-subcontent="{{foresturl}}{&#123;.label}}/pushloghtml?changeset={&#123;.updatedFromRev}}"></a>,
-              <a target="_blank" ex:href-subcontent="{% url pushes.views.diff %}?from={&#123;.updatedFromRev}}&to={&#123;.revision}}&repo={{forestname}}/{&#123;.label}}">diff</a></span><span></span></span>
+              <a target="_blank" ex:href-subcontent="{% url 'pushes.views.diff' %}?from={&#123;.updatedFromRev}}&to={&#123;.revision}}&repo={{forestname}}/{&#123;.label}}">diff</a></span><span></span></span>
              <span ex:if-exists=".added"><span class="added">added</span></span>
             </td>
           </tr>
@@ -95,7 +96,7 @@
        <div ex:role="facet" ex:expression=".snapshot_class" ex:facetLabel="Snapshot"
          id="snapshot-facet"
          ex:fixedOrder="success;warnings;failure;exception"></div>
-{% ifnotequal ms.status 2 %}
+{% ifnotequal ms.status Milestone.SHIPPED %}
        <div ex:role="facet" ex:expression=".active_class" ex:facetLabel="Active"
          id="active-facet"
          ex:fixedOrder="success;warnings;failure;exception"></div>

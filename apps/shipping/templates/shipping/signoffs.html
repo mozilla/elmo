@@ -5,6 +5,7 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load compress %}
+{% load url from future %}
 {% block title_matter %}Sign-offs for {{appver}} in {{language}}{% endblock %}
 
 {% block head_matter %}
@@ -22,13 +23,13 @@
 <script>
 var diffData = {
   locale: "{{lang.code}}",
-  url: "{% url pushes.views.diff %}"
+  url: "{% url 'pushes.views.diff' %}"
 };
 var permissions = {
   canAddSignoff: {% if appver.accepts_signoffs %} {{ perms.shipping.add_signoff|yesno:"true,false" }}{% else %}false{% endif %},
   canReviewSignoff: {{ perms.shipping.review_signoff|yesno:"true,false" }}
 };
-var signoffDetailsURL = "{% url shipping.views.signoff.signoff_details language.code appver.code %}";
+var signoffDetailsURL = "{% url 'shipping.views.signoff.signoff_details' language.code appver.code %}";
 </script>
 {% compress js %}
 <script src="{{ STATIC_URL }}shipping/js/signoffs.js"></script>
@@ -38,8 +39,8 @@ var signoffDetailsURL = "{% url shipping.views.signoff.signoff_details language.
 
 {% block content %}
 <ul>
-  <li><a href="{% url shipping.views.dashboard %}?av={{appver.code}}">{{appver}}</a></li>
-  <li><a href="{% url homepage.views.locale_team language.code %}">{{language}}</a></li>
+  <li><a href="{% url 'shipping.views.dashboard' %}?av={{appver.code}}">{{appver}}</a></li>
+  <li><a href="{% url 'homepage.views.locale_team' language.code %}">{{language}}</a></li>
 </ul>
 <h1>Sign-offs for {{appver}} in {{language}}</h1>
 <p>{% if not appver.accepts_signoffs %}{{appver}} is not open for new sign-offs. It's either too early or too late
@@ -56,7 +57,7 @@ looks good to <a href="#{{suggested_signoff}}">sign off on</a>.{% endif %}
 {% if perms.shipping.review_signoff %}
 <div id="review_signoff" style="display:none">
   <form id="review_form" method="POST"
-  action="{% url shipping.views.signoff.review_signoff language.code  appver.code %}">{% csrf_token %}
+  action="{% url 'shipping.views.signoff.review_signoff' language.code  appver.code %}">{% csrf_token %}
   <input type="hidden" name="signoff_id" value="">
   <table>
     <tr>
@@ -87,7 +88,7 @@ looks good to <a href="#{{suggested_signoff}}">sign off on</a>.{% endif %}
 {% if perms.shipping.add_signoff %}
 <div id="cancel_signoff" style="display:none">
   <form id="cancel_signoff_form" method="post"
-  action="{% url shipping.views.signoff.cancel_signoff language.code appver.code %}">{% csrf_token %}
+  action="{% url 'shipping.views.signoff.cancel_signoff' language.code appver.code %}">{% csrf_token %}
   <input type="hidden" name="signoff_id" value="">
   <p>Cancel sign-off.</p>
   <input type="submit" value="Confirm cancellation">
@@ -96,7 +97,7 @@ looks good to <a href="#{{suggested_signoff}}">sign off on</a>.{% endif %}
 
 <div id="reopen_signoff" style="display:none">
   <form id="reopen_signoff_form" method="post"
-  action="{% url shipping.views.signoff.reopen_signoff language.code appver.code %}">{% csrf_token %}
+  action="{% url 'shipping.views.signoff.reopen_signoff' language.code appver.code %}">{% csrf_token %}
   <input type="hidden" name="signoff_id" value="">
   <p>Re-open the canceled sign-off.</p>
   <input type="submit" value="Re-open">
@@ -105,7 +106,7 @@ looks good to <a href="#{{suggested_signoff}}">sign off on</a>.{% endif %}
 
 <div id="add_signoff" style="display:none">
   <form id="signoff_form" method="POST"
-  action="{% url shipping.views.signoff.add_signoff language.code  appver.code %}">{% csrf_token %}
+  action="{% url 'shipping.views.signoff.add_signoff' language.code  appver.code %}">{% csrf_token %}
   <input type="hidden" name="push" value="">
   <input type="hidden" name="run" value="">
   <div id="signoff_desc"></div>

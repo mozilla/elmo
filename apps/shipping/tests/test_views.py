@@ -102,7 +102,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         response = self.client.get(url, {'ms': milestone.code})
         eq_(response.status_code, 302)
 
-        milestone.status = 1
+        milestone.status = Milestone.OPEN
         milestone.save()
         response = self.client.get(url, {'ms': milestone.code})
         eq_(response.status_code, 200)
@@ -133,7 +133,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         response = self.client.get(url, {'ms': milestone.code})
         eq_(response.status_code, 302)
 
-        milestone.status = 1
+        milestone.status = Milestone.OPEN
         milestone.save()
         response = self.client.get(url, {'ms': milestone.code})
         eq_(response.status_code, 200)
@@ -232,7 +232,7 @@ class ShippingTestCase(ShippingTestCaseBase):
 
         # Succeed
         __, ___, milestone = self._create_appver_tree_milestone()
-        milestone.status = 1
+        milestone.status = Milestone.OPEN
         milestone.save()
         response = self.client.get(url, dict(ms=milestone.code))
         eq_(response.status_code, 200)
@@ -273,7 +273,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(response.status_code, 302)
 
         milestone = Milestone.objects.get(code=milestone.code)
-        eq_(milestone.status, 2)
+        eq_(milestone.status, Milestone.SHIPPED)
 
     def test_milestones_static_files(self):
         """render the milestones page and check all static files"""

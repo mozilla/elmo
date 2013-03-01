@@ -4,7 +4,7 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
-
+{% load url from future %}
 {% load compress %}
 {% block title_matter %}Pushes{% endblock %}
 {% block head_matter %}
@@ -35,7 +35,7 @@ var SEARCH = {
   FROM: {% if search.from %}'{{ search.from }}'{% else %}null{% endif %}
 , UNTIL: {% if search.until %}'{{ search.until }}'{% else %}null{% endif %}
 };
-var DIFF_APP_URL = '{% url pushes.views.diff %}';
+var DIFF_APP_URL = '{% url 'pushes.views.diff' %}';
 </script>
 {% compress js %}
 <script type="text/javascript" src="{{ STATIC_URL }}pushes/js/widgets.js"></script>
@@ -95,7 +95,7 @@ var DIFF_APP_URL = '{% url pushes.views.diff %}';
 	  {% for push in pushes %}
 	  <tr class="{{push.class}}" repo="{{push.push.repository.name}}">
 	    <td rowspan="{{push.span}}"><cite>{{push.push.user}}<br /><span class="date">{{push.push.push_date}}</span></cite></td>
-	    <td rowspan="{{push.span}}"><a href="{% url pushes.views.pushlog %}{{push.push.repository.name}}">{{push.push.repository.name}}</a></td>
+	    <td rowspan="{{push.span}}"><a href="{% url 'pushes.views.pushlog' %}{{push.push.repository.name}}">{{push.push.repository.name}}</a></td>
 	    <td class="age">
 	      <a href="{{push.push.repository.url}}rev/{{push.tip.revision|slice:":12"}}"
 	      target="_blank">

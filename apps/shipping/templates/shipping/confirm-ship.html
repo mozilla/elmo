@@ -4,6 +4,7 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
+{% load url from future %}
 
 {% block title_matter %}Shipping {{ mstone }}{% endblock %}
 
@@ -18,7 +19,7 @@ There are pending sign-offs for {{ pending_locs|join:", " }}.
 There are no pending sign-offs.
 </p>
 {% endif %}
-<form id="ship" method="post" action="{% url shipping.views.ship_mstone %}">{% csrf_token %}
+<form id="ship" method="post" action="{% url 'shipping.views.ship_mstone' %}">{% csrf_token %}
 <input type="hidden" name="ms" value="{{ mstone.code }}" />
 <input type="submit" {% if not perms.shipping.can_ship %}
           disabled="disabled"{% endif %} value="Ship it">

@@ -4,6 +4,7 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
+{% load url from future %}
 {% block head_matter %}
 <style>
 #controls {
@@ -19,7 +20,7 @@
 <h1>Shipping {{ mstone }}</h1>
 This chem-spill release will not make any l10n-changes and take the
 shipping information from
-<form id="ship" method="post" action="{% url shipping.views.drill_mstone %}">{% csrf_token %}
+<form id="ship" method="post" action="{% url 'shipping.views.drill_mstone' %}">{% csrf_token %}
 <input type="hidden" name="ms" value="{{ mstone.code }}">
 <select name="base" size="{{ older|length }}">{% for base in older %}
   <option value="{{base.code}}" {% if forloop.first %}selected{% endif %}>

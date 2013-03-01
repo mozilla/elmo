@@ -5,6 +5,7 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load compress %}
+{% load url from future %}
 
 {% block title_matter %}[{{ locale}}, {{ tree }}] l10n stats{% endblock %}
 
@@ -18,7 +19,7 @@
 {% block timeplot_extra_js %}
 <script>
 var tree = "{{ tree }}", locale = "{{ locale }}";
-var compare_link = "{% url l10nstats.views.compare %}";
+var compare_link = "{% url 'l10nstats.views.compare' %}";
 </script>
 {% endblock %}
 

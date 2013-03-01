@@ -4,6 +4,7 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
+{% load url from future %}
 
 {% block content %}
 <div class="nav">
@@ -11,7 +12,7 @@
 <h3>Application versions</h3>
 <ul>
   {% for av in avs %}
-  <li><a href="{% url shipping.views.dashboard %}?av={{av.code}}">{{ av }} [{{av.status}}]</a></li>
+  <li><a href="{% url 'shipping.views.dashboard' %}?av={{av.code}}">{{ av }} [{{av.status}}]</a></li>
   {% endfor %}
 </ul>
 {% endblock %}

@@ -4,6 +4,8 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 
+{% load url from future %}
+
 <a class="site_login" href="#login">Log in</a>
 
 <p class="site_login_error" style="display:none">
@@ -17,5 +19,5 @@ Unable to complete the log in request. Try again a little later.
 
 <div class="site_logout" style="display:none">
   Hello, <span class="username"></span>.
-  <a class="logout" href="{% url accounts.views.logout %}">Log out</a>
+  <a class="logout" href="{% url 'accounts.views.logout' %}">Log out</a>
 </div>
