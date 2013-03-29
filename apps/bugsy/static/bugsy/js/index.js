@@ -2,14 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var apibase = 'https://api-dev.bugzilla.mozilla.org/1.2/';
+var apibase = 'https://api-dev.bugzilla.mozilla.org/1.3/';
 $(document).ready(function() {
   var core_counts, flag_bugs;
   function processBugs() {
     if (!core_counts || !flag_bugs) return;
     var count = 0, flag_vals, flag, loc, bugs_per_flag = {};
     for (var i = 0, ii = flag_bugs.bugs.length; i < ii; ++i) {
-      flag_vals = flag_bugs.bugs[i].cf_locale.split(', ');
+      flag_vals = flag_bugs.bugs[i].cf_locale;
       for (var j = 0, jj = flag_vals.length; j < jj; ++j) {
         flag = flag_vals[j];
         loc = flag.split(' ')[0];
