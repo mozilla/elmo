@@ -18,10 +18,30 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 AUTHENTICATION_SERVER_ERRORS = (ldap.SERVER_DOWN,)
 
 GROUP_MAPPINGS = {
-    # Django name:  LDAP name,
+    # Django name:  LDAP name(s),
     'Localizers': 'scm_l10n',
-    'build': 'buildteam',
+    'build': ('buildteam', 'shipit'),
 }
+
+
+def flatten_group_names(values):
+    """
+    Take something like this:
+        ['a', ('b', 'c'), 'd', ['e', 'f']]
+    and return this:
+        ['a', 'b', 'c', 'd', 'e', 'f']
+
+    """
+    group_names = []
+    if isinstance(values, basestring):
+        return [values]
+    for value in values:
+        if isinstance(value, basestring):
+            group_names.append(value)
+        else:
+            # tuple or list
+            group_names += value
+    return group_names
 
 
 class MozLdapBackend(RemoteUserBackend):
@@ -124,7 +144,7 @@ class MozLdapBackend(RemoteUserBackend):
             uid, result = results[0]
 
             # search by groups
-            group_names = GROUP_MAPPINGS.values()
+            group_names = flatten_group_names(GROUP_MAPPINGS.values())
             search_filter1 = self.make_search_filter(
                 dict(cn=group_names),
                 any_parameter=True
@@ -221,8 +241,9 @@ class MozLdapBackend(RemoteUserBackend):
             if changed:
                 user.save()
 
-        for django_name, ldap_name in GROUP_MAPPINGS.items():
-            if ldap_name in in_groups:
+        for django_name, ldap_names in GROUP_MAPPINGS.items():
+            ldap_names = set(flatten_group_names(ldap_names))
+            if ldap_names & set(in_groups):
                 # make sure the user is in this django group
                 if not user.groups.filter(name=django_name).exists():
                     user.groups.add(Group.objects.get(name=django_name))
