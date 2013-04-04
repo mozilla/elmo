@@ -16,7 +16,7 @@ from django.core.urlresolvers import reverse
 from django.test.client import Client
 from mbdb.models import (Build, Change, Master, Log, Property, SourceStamp,
                          Builder, Slave)
-from tinder.views import _waterfall
+from tinder.views import _waterfall, LogMountKeyError
 from tinder.templatetags import build_extras
 
 
@@ -318,6 +318,24 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         ok_('<span class="pre stdout">stdout content\n</span>' in content)
         ok_('<span class="pre stderr">stderr content\n</span>' in content)
         ok_('json' not in content)
+
+    def test_showlog_invalid_master(self):
+        master = Master.objects.all()[0]
+
+        build = Build.objects.all()[0]
+        step = build.steps.all()[0]
+        log = Log.objects.create(
+          name='foo',
+          filename='foo.log',
+          step=step,
+        )
+        url = reverse('tinder.views.showlog',
+                      args=[master.name, log.filename])
+        self.assertRaises(
+            LogMountKeyError,
+            self.client.get,
+            url
+        )
 
     def test_render_tbpl(self):
         url = reverse('tinder.views.tbpl')

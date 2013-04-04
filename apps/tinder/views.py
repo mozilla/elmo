@@ -30,6 +30,10 @@ from life.models import Push, Repository
 resultclasses = ['success', 'warning', 'failure', 'skip', 'except']
 
 
+class LogMountKeyError(Exception):
+    pass
+
+
 def debug_(*msg):
     if False:
         print ' '.join(msg)
@@ -703,7 +707,10 @@ def generateLog(master, filename):
     try:
         base = settings.LOG_MOUNTS[master]
     except KeyError:
-        raise Http404("Master `%s` not found" % master)
+        raise LogMountKeyError(
+            'The log mount %r is not in settings.LOG_MOUNTS'
+            % master
+        )
     head = re.compile('(\d+):(\d)')
     f = None
     filename = os.path.join(base, filename)
