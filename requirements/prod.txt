@@ -6,3 +6,4 @@ python-memcached
 versiontools
 feedparser==5.1
 pytz==2012d
+raven==3.1.16

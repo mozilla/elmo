@@ -80,8 +80,6 @@ MIDDLEWARE_CLASSES = (
 
     'commonware.middleware.FrameOptionsHeader',
     'commonware.middleware.ScrubRequestOnException',
-
-    'django_arecibo.middleware.AreciboMiddleware',
 )
 
 INSTALLED_APPS += (
@@ -90,8 +88,8 @@ INSTALLED_APPS += (
     # Local apps
     'commons',
     'nashvegas',
-    'django_arecibo',
     'compressor',
+    'raven.contrib.django.raven_compat',
 
     # Third-party apps
 
@@ -131,15 +129,6 @@ PASSWORD_HASHERS = get_password_hashers(BASE_PASSWORD_HASHERS, HMAC_KEYS)
 SESSION_COOKIE_SECURE = True
 
 ## Tests
-
-## Arecibo
-# See http://readthedocs.org/docs/mozweb/en/latest/errors.html
-ARECIBO_PUBLIC_ACCOUNT_NUMBER = ""  # not needed behind firewall
-ARECIBO_SERVER_URL = ""
-ARECIBO_USES_CELERY = False
-ARECIBO_SETTINGS = {
-    'EXCLUDED_POST_VARS': ['password',],
-}
 
 CACHES = {
     'default': {

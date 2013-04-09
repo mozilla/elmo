@@ -50,7 +50,6 @@ urlpatterns = patterns('',
     (r'^admin/', include(admin.site.urls)),
 )
 
-handler404 = 'homepage.views.handler404'
 handler500 = 'homepage.views.handler500'
 
 # Usually, you would include this only for DEBUG, but let's keep

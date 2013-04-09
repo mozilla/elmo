@@ -10,7 +10,11 @@ from optparse import make_option
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
-from lib.auth.backends import MozLdapBackend, GROUP_MAPPINGS
+from lib.auth.backends import (
+    MozLdapBackend,
+    GROUP_MAPPINGS,
+    flatten_group_names
+)
 import ldap
 
 LDAP_IGNORE_ATTRIBUTES = (
@@ -81,7 +85,7 @@ class Command(BaseCommand):
                     show(key, value)
 
             if uid:
-                group_names = GROUP_MAPPINGS.values()
+                group_names = flatten_group_names(GROUP_MAPPINGS.values())
                 search_filter1 = backend.make_search_filter(
                     dict(cn=group_names),
                     any_parameter=True
@@ -102,10 +106,12 @@ class Command(BaseCommand):
                     ['cn']
                 )
                 print "\nLDAP GROUPS ".ljust(79, '-')
-                _group_mappings_reverse = dict(
-                    (b, a) for (a, b) in
-                    GROUP_MAPPINGS.items()
-                )
+                _group_mappings_reverse = {}
+                for django_name, ldap_names in GROUP_MAPPINGS.items():
+                    ldap_names = flatten_group_names(ldap_names)
+                    for name in ldap_names:
+                        _group_mappings_reverse[name] = django_name
+
                 groups = [x[1]['cn'][0] for x in group_results]
                 for group in groups:
                     print group.ljust(16), '-> ',
