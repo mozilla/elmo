@@ -40,7 +40,7 @@
       <form id="changes.json" method="get" action="{% url 'shipping.views.milestone.json_changesets' %}">
       <input type="hidden" name="ms" value="{{ ms.code }}" />
       Platforms, comma separated:
-      <input type="text" name="platforms" value="android"><br>
+      <input type="text" name="platforms" value="android,android-multilocale"><br>
       <input type="button" value="Add" id="add-multi"> a multi-locale
       file for <input id="nextmulti"
       type="text" value="android-multilocale">
