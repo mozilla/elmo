@@ -27,4 +27,7 @@ $(function() {
     return false;
   });
   $("#add-multi").click(addMulti);
+  // We're usually building with the android-multilocale defaults, 
+  // just press the button on load.
+  addMulti();
 });

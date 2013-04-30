@@ -18,8 +18,8 @@ Comparison for {{ run.tree.code }}-{{run.locale.code }} ({{ run.build.buildnumbe
 <h1>Comparison for {{ run.tree.code }}-{{ run.locale.code }}</h1>
 <p id="backlink"><a href="{% url 'tinder_show_build' run.build.builder.name run.build.buildnumber %}">Build {{ run.build.buildnumber }}</a> from
 {{ run.build.starttime|date }} {{ run.build.starttime|time }}</p>
-<p id="stats">
-{{ summary.completion }}% changed, ignoring {{ summary.keys }} keys
+<div id="stats">
+{{ run.completion }}% changed, ignoring {{ run.keys }} keys
 <table class="stats">
 <tr>
 <td title="changed" class="status changed" width="{{ widths.changed }}px">
@@ -29,19 +29,29 @@ Comparison for {{ run.tree.code }}-{{run.locale.code }} ({{ run.build.buildnumbe
 <td title="unchanged" class="status unchanged" width="{{ widths.unchanged }}px">
 </tr>
 </table>
-{% if summary.missing or summary.missingInFiles %}
+{% if run.missing or run.missingInFiles %}
 <p id="missing">
-{% if summary.missing %}
-{{ summary.missing }}  entries missing in existing files{% if summary.missingInFiles %}, {% endif %}
-{% endif %}{% if summary.missingInFiles %}
-{{ summary.missingInFiles }} entries missing in new files
+{% if run.missing %}
+{{ run.missing }}  entries missing in existing files{% if run.missingInFiles %}, {% endif %}
+{% endif %}{% if run.missingInFiles %}
+{{ run.missingInFiles }} entries missing in new files
 {% endif %}
 </p>
 {% endif %}
-</p>
-<p id="blurb">
-Below you see the files and localizable strings missing and obsolete. The obsolete ones are striked through and grey. The data is organized hierarchically, the full path for a file is available as an tooltip.
-</p><p>
+</div>
+
+
+
+{% ifnotequal nodes None %}
+{% if nodes %}
+  <p id="blurb">
+  Below you see the files and localizable strings missing and obsolete. The obsolete ones are striked through and grey. The data is organized hierarchically, the full path for a file is available as an tooltip.
+  </p>
+{% else %}
+  <p>No further details for this comparison.</p>
+{% endif %}
+
+<div>
 {% recurse_children %}
 {% for node in nodes %}
 <div class="json-child">
@@ -68,7 +78,13 @@ Below you see the files and localizable strings missing and obsolete. The obsole
  {% endif %}
 {% endif %}
 </div>
+
 {% endfor %}
 {% endrecurse %}
-</p>
+</div>
+{% else %}
+
+  <p>Detailed information for this comparison is not available.</p>
+
+{% endifnotequal %}
 {% endblock %}

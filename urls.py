@@ -22,11 +22,18 @@ admin.autodiscover()
 ## during Django's start-up.
 ## ...
 
+
+def simple_x_frame_view(request):
+    response = HttpResponse()
+    response['X-Frame-Options'] = 'SAMEORIGIN'
+    return response
+
+
 urlpatterns = patterns('',
     # Example:
     # (r'^dashboard/', include('dashboard.foo.urls')),
                        (r'^privacy/', include('privacy.urls')),
-                       (r'.*/__history__.html$', lambda r: HttpResponse()),
+                       (r'.*/__history__.html$', simple_x_frame_view),
                        (r'^builds/',
                         include('tinder.urls')),
                        (r'^source/', include('pushes.urls')),
@@ -49,6 +56,7 @@ urlpatterns = patterns('',
     # Uncomment the next line to enable the admin:
     (r'^admin/', include(admin.site.urls)),
 )
+
 
 handler500 = 'homepage.views.handler500'
 

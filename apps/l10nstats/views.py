@@ -283,18 +283,19 @@ def compare(request):
                                      log.filename):
                 if chunk['channel'] == 5:
                     json += chunk['data']
-    json = simplejson.loads(json)
-    nodes = JSONAdaptor.adaptChildren(json['details'].get('children', []))
-    summary = json['summary']
-    if 'keys' not in summary:
-        summary['keys'] = 0
+    if json:
+        json = simplejson.loads(json)
+        nodes = list(JSONAdaptor.adaptChildren(json['details'].get('children', [])))
+    else:
+        nodes = None
+
     # create table widths for the progress bar
     widths = {}
     for k in ('changed', 'missing', 'missingInFiles', 'report', 'unchanged'):
-        widths[k] = summary.get(k, 0) * 300 / summary['total']
+        widths[k] = getattr(run, k) * 300 / run.total
+
     return render(request, 'l10nstats/compare.html', {
                     'run': run,
                     'nodes': nodes,
                     'widths': widths,
-                    'summary': summary,
                   })
