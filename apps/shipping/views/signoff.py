@@ -128,15 +128,18 @@ class SignoffView(TemplateView):
         cutoff_dates = []
         action4id = dict((a.id, a) for a in actions)
         initial_diff = []
+
         if Action.ACCEPTED in flags:
             a = action4id[flags[Action.ACCEPTED]]
             if not fallback:
                 cutoff_dates.append(a.signoff.push.push_date)
             initial_diff.append(a.signoff_id)
+
         if Action.PENDING in flags:
             a = action4id[flags[Action.PENDING]]
             cutoff_dates.append(a.signoff.push.push_date)
             initial_diff.append(a.signoff_id)
+
         if Action.REJECTED in flags:
             a = action4id[flags[Action.REJECTED]]
             cutoff_dates.append(a.signoff.push.push_date)
@@ -144,14 +147,26 @@ class SignoffView(TemplateView):
             # an ACCEPTED and a PENDING signoff
             if len(initial_diff) < 2:
                 initial_diff.append(a.signoff_id)
-        # if we're having a sign-off on this appversion, i.e no fallback,
-        # show only new pushes
+
         if cutoff_dates:
+            last_push_date = min(cutoff_dates)
+            if fallback or Action.ACCEPTED not in flags:
+                try:
+                    # go even further back in history then
+                    last_push_date = list(
+                        pushes_q
+                        .filter(push_date__lt=last_push_date)
+                        .values_list('push_date', flat=True)[:count]
+                    )[-1]
+                except IndexError:
+                    # ...but it's ok if there's nothing more, then
+                    # we'll just keep the last_push_date from above
+                    pass
             pushes_q = (
-                    pushes_q
-                    .filter(push_date__gte=min(cutoff_dates))
-                    .distinct()
-                )
+                pushes_q
+                .filter(push_date__gte=last_push_date)
+                .distinct()
+            )
         else:
             pushes_q = pushes_q.distinct()[:count]
 
