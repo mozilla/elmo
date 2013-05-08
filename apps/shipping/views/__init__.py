@@ -13,7 +13,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django import http
 from life.models import Locale, Tree, Push, Changeset
-from l10nstats.models import Run_Revisions
+from l10nstats.models import Run_Revisions, Run
 from shipping.models import Milestone, AppVersion, Action, Application
 from shipping.api import flags4appversions, accepted_signoffs
 from django.conf import settings
@@ -59,7 +59,7 @@ def homesnippet():
             })
 
 
-class Run(dict):
+class RunElement(dict):
     def __getattr__(self, key):  # for dot notation
         return self[key]
 
@@ -67,9 +67,15 @@ class Run(dict):
         self[key] = value
 
 
-def teamsnippet(loc):
-    runs = list(loc.run_set.filter(active__isnull=False).select_related('tree')
-                .order_by('tree__code'))
+def teamsnippet(loc, team_locales):
+    locs = Locale.objects.filter(pk__in=[loc.pk] + list(team_locales))
+    runs = sorted(
+        (Run.objects
+         .filter(locale__in=locs, active__isnull=False)
+         .select_related('tree')),
+        key=lambda r: (r.tree.code,
+                       '' if r.locale.code == loc.code else r.locale.code)
+    )
 
     # this locale isn't active in our trees yet
     if not runs:
@@ -102,11 +108,14 @@ def teamsnippet(loc):
 
     # find good revisions to sign-off, latest run needs to be green.
     # keep in sync with api.annotated_pushes
-    suggested_runs = filter(lambda r: r.allmissing == 0 and r.errors == 0,
-                            runs)
+    suggested_runs = filter(
+        lambda r: r.allmissing == 0 and r.errors == 0,
+        runs
+    )
+
     suggested_rev = dict(Run_Revisions.objects
                          .filter(run__in=suggested_runs,
-                                 changeset__repositories__locale=loc)
+                                 changeset__repositories__locale__in=locs)
                          .values_list('run_id', 'changeset__revision'))
 
     applications = defaultdict(list)
@@ -114,9 +123,10 @@ def teamsnippet(loc):
     for run_ in runs:
         # copy the Run instance into a fancy dict but only copy those whose
         # key doesn't start with an underscore
-        run = Run(dict((k, getattr(run_, k))
+        run = RunElement(dict((k, getattr(run_, k))
                        for k in run_.__dict__
                        if not k.startswith('_')))
+        run.locale = run_.locale
         run.allmissing = run_.allmissing  # a @property of the Run model
         run.tree = run_.tree  # foreign key lookup
         application = tree_to_application(run_.tree)
@@ -140,11 +150,15 @@ def teamsnippet(loc):
                       run.fallback = run.appversion = None
         if appversion and appversion.accepts_signoffs:
             run.appversion = appversion
-            real_av, flags = (flags4appversions(
-                locales={'id': loc.id},
-                appversions={'id': appversion.id})
-                              .get(appversion, {})
-                              .get(loc.code, [None, {}]))
+            real_av, flags = (
+                flags4appversions(
+                    locales={'id': run_.locale.id},
+                    appversions={'id': appversion.id}
+                )
+                .get(appversion, {})
+                .get(run_.locale.code, [None, {}])
+            )
+
             # get current status of signoffs
             # we really only need the shortrevs, we'll get those below
             if flags:
@@ -184,9 +198,11 @@ def teamsnippet(loc):
                     if run[k + '_rev'] == run.suggested_shortrev:
                         run.suggested_shortrev = None
     applications = ((k, v) for (k, v) in applications.items())
+    other_team_locales = Locale.objects.filter(id__in=team_locales)
 
     return render_to_string('shipping/team-snippet.html',
                             {'locale': loc,
+                             'other_team_locales': other_team_locales,
                              'applications': applications,
                             })
 

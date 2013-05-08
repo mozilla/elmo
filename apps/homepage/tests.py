@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
 import re
 import os
 from test_utils import TestCase
@@ -9,7 +10,7 @@ from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.test.client import RequestFactory
 from nose.tools import eq_, ok_
-from life.models import Locale
+from life.models import Locale, TeamLocaleThrough
 from commons.tests.mixins import EmbedsTestCaseMixin
 import urlparse
 
@@ -203,6 +204,98 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
                < content.find('French')
                < content.find('Swedish'))
         ok_('en-US' not in content)
+
+    def test_teams_page_with_team_locales_hidden(self):
+        """locales that are owned by another team
+        should not appear on the teams page."""
+        sr_latn = Locale.objects.create(
+          code='sr-Latn',
+          name=None,
+        )
+        sr = Locale.objects.create(
+          code='sr',
+          name='Serbian',
+        )
+        team_locale = TeamLocaleThrough.objects.create(
+          team=sr,
+          locale=sr_latn
+        )
+
+        url = reverse('homepage.views.teams')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        content = response.content.split('id="teams"')[1]
+        content = content.split('<footer')[0]
+
+        url_sr = reverse('homepage.views.locale_team', args=['sr'])
+        url_sr_latn = reverse('homepage.views.locale_team', args=['sr-Latn'])
+        ok_(url_sr in content)
+        ok_(url_sr_latn not in content)
+
+        today = datetime.datetime.utcnow()
+        tomorrow = today + datetime.timedelta(days=1)
+        team_locale.start = tomorrow
+        team_locale.save()
+        response = self.client.get(url)
+        ok_(url_sr in response.content)
+        ok_(url_sr_latn in response.content)
+
+        yesterday = today - datetime.timedelta(days=1)
+        team_locale.start = None
+        team_locale.end = yesterday
+        team_locale.save()
+        response = self.client.get(url)
+        ok_(url_sr in response.content)
+        ok_(url_sr_latn in response.content)
+
+        team_locale.start = yesterday
+        team_locale.end = tomorrow
+        team_locale.save()
+        response = self.client.get(url)
+        ok_(url_sr in response.content)
+        ok_(url_sr_latn not in response.content)
+
+    def test_team_page_with_owning_team(self):
+        """Trying to reach a locale owned by another team should redirect. """
+        sr_latn = Locale.objects.create(
+          code='sr-Latn',
+          name=None,
+        )
+        sr = Locale.objects.create(
+          code='sr',
+          name='Serbian',
+        )
+        team_locale = TeamLocaleThrough.objects.create(
+          team=sr,
+          locale=sr_latn
+        )
+
+        url_sr = reverse('homepage.views.locale_team', args=['sr'])
+        url_sr_latn = reverse('homepage.views.locale_team', args=['sr-Latn'])
+
+        response = self.client.get(url_sr_latn)
+        self.assertRedirects(response, url_sr)
+
+        # and if the start and end date are "out of window"...
+        today = datetime.datetime.utcnow()
+        tomorrow = today + datetime.timedelta(days=1)
+        team_locale.start = tomorrow
+        team_locale.save()
+        response = self.client.get(url_sr_latn)
+        eq_(response.status_code, 200)
+
+        yesterday = today - datetime.timedelta(days=1)
+        team_locale.start = None
+        team_locale.end = yesterday
+        team_locale.save()
+        response = self.client.get(url_sr_latn)
+        eq_(response.status_code, 200)
+
+        team_locale.start = yesterday
+        team_locale.end = tomorrow
+        team_locale.save()
+        response = self.client.get(url_sr_latn)
+        self.assertRedirects(response, url_sr)
 
     def test_team_page(self):
         """test a team (aka. locale) page"""

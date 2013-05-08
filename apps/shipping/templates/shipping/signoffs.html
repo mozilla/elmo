@@ -41,7 +41,7 @@ var signoffDetailsURL = "{% url 'shipping.views.signoff.signoff_details' languag
 {% block content %}
 <ul>
   <li><a href="{% url 'shipping.views.dashboard' %}?av={{appver.code}}">{{appver}}</a></li>
-  <li><a href="{% url 'homepage.views.locale_team' language.code %}">{{language}}</a></li>
+  <li><a href="{% url 'homepage.views.locale_team' team_locale.code %}">{{team_locale}}</a></li>
 </ul>
 <h1>Sign-offs for {{appver}} in {{language}}</h1>
 <p>{% if not appver.accepts_signoffs %}{{appver}} is not open for new sign-offs. It's either too early or too late

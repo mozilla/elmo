@@ -142,3 +142,8 @@ table.trees tr.treesummary td.productname {
     margin: 0;
     padding: 0;
 }
+
+.trees .locale-team {
+    margin-left: 10px;
+    color: #9d9d9d;
+}
