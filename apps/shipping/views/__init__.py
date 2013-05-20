@@ -202,9 +202,15 @@ def dashboard(request):
     subtitles = []
 
     if request.GET.get('av'):
-        appver = get_object_or_404(AppVersion, code=request.GET['av'])
-        subtitles.append(str(appver))
-        query['av'].append(appver.code)
+        appvers_list = request.GET.getlist('av')
+        appvers = (AppVersion.objects
+                   .filter(code__in=appvers_list)
+                   .select_related('app'))
+        for av in appvers:
+            query['av'].append(av.code)
+            subtitles.append(str(av))
+        if len(appvers_list) != len(query['av']):
+            raise http.Http404("Invalid list of AppVersions")
 
     if request.GET.get('locale'):
         locales_list = request.GET.getlist('locale')
