@@ -27,14 +27,17 @@ class Nesting(models.Model):
 
 class ProtoTask(models.Model):
     summary = models.CharField(max_length=140)
-    process = models.ForeignKey(ProtoProcess, related_name='steps')
+    # `process` should only by `null` while setting it up
+    process = models.ForeignKey(ProtoProcess, related_name='steps',
+                                null=True, blank=True)
     template = models.TextField()
     
     
 class ProtoStep(models.Model):
     summary = models.CharField(max_length=140)
     task = models.ForeignKey(ProtoTask, related_name='steps')
-    parent = models.ForeignKey('self', related_name='children')
+    parent = models.ForeignKey('self', related_name='children',
+                               null=True, blank=True)
     order = models.PositiveIntegerField()
     owner = models.ForeignKey(Actor, related_name='protosteps')
 
