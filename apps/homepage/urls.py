@@ -5,7 +5,7 @@
 '''URL mappings for the l10n_site integration pages.
 '''
 
-from django.conf.urls.defaults import patterns
+from django.conf.urls import patterns
 
 urlpatterns = patterns('homepage.views',
                        (r'^$', 'index'),

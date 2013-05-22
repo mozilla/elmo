@@ -5,7 +5,7 @@
 '''URL mappings for the privacy app.
 '''
 
-from django.conf.urls.defaults import patterns
+from django.conf.urls import patterns
 
 urlpatterns = patterns('privacy.views',
                        (r'^(?P<id>\d+)?$', 'show_policy'),

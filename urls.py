@@ -2,13 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from django.conf.urls.defaults import *
+from django.conf.urls import include, patterns, url
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf import settings
 from django.http import HttpResponse
-import base64
-import re
-
 
 from funfactory.monkeypatches import patch
 patch()
@@ -34,20 +31,14 @@ urlpatterns = patterns('',
     # (r'^dashboard/', include('dashboard.foo.urls')),
                        (r'^privacy/', include('privacy.urls')),
                        (r'.*/__history__.html$', simple_x_frame_view),
-                       (r'^builds/',
-                        include('tinder.urls')),
+                       (r'^builds/', include('tinder.urls')),
                        (r'^source/', include('pushes.urls')),
                        (r'^dashboard/', include('l10nstats.urls')),
-                       (r'^shipping',
-                            include('shipping.urls')),
-                       (r'^bugs/',
-                            include('bugsy.urls')),
-                       (r'^webby/',
-                            include('webby.urls')),
-                       (r'^accounts/',
-                            include('accounts.urls')),
-                       (r'^',
-                        include('homepage.urls')),
+                       (r'^shipping', include('shipping.urls')),
+                       (r'^bugs/', include('bugsy.urls')),
+                       (r'^webby/', include('webby.urls')),
+                       (r'^accounts/', include('accounts.urls')),
+                       (r'^', include('homepage.urls')),
 
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
     # to INSTALLED_APPS to enable admin documentation:
