@@ -5,7 +5,7 @@
 '''URL mappings for the shipping app.
 '''
 
-from django.conf.urls.defaults import patterns
+from django.conf.urls import patterns
 
 urlpatterns = patterns('shipping.views',
     (r'^/?$', 'index'),
