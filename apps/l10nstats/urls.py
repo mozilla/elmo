@@ -5,7 +5,7 @@
 '''URL mappings for l10nstats application.
 '''
 
-from django.conf.urls.defaults import patterns
+from django.conf.urls import patterns
 
 urlpatterns = patterns('l10nstats.views',
     (r'^$', 'index'),

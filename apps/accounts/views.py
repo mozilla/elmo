@@ -14,7 +14,11 @@ from django.core.context_processors import csrf
 from django.utils import simplejson as json
 from django.contrib.auth.views import login as django_login
 from forms import AuthenticationForm
-from lib.auth.backends import AUTHENTICATION_SERVER_ERRORS
+try:
+    from lib.auth.backends import AUTHENTICATION_SERVER_ERRORS
+except ImportError:
+    # we don't have ldap installed, let's not catch any ldap errors
+    AUTHENTICATION_SERVER_ERRORS = tuple()
 from session_csrf import anonymous_csrf
 
 

@@ -629,8 +629,40 @@ class SignOffAnnotatedPushesTest(TestCase):
             self.av,
             count=1
         )
-        eq_(len(pushes), 3)
+        eq_(len(pushes), 4)
 
         # the last (aka. first) one should have a signoff with an
         # action on that is rejected
-        eq_(pushes[-1]['signoffs'][0]['action'].flag, Action.REJECTED)
+        eq_(pushes[-2]['signoffs'][0]['action'].flag, Action.REJECTED)
+
+    def test_5_pushes_1st_pending(self):
+        view = SignoffView()
+        flags, actions = self._get_flags_and_actions()
+
+        # make a pending signoff on the 1st push
+        signoff = Signoff.objects.create(
+            push=self.pushes[0],
+            appversion=self.av,
+            author=self.axel,
+            locale=self.locale,
+        )
+        Action.objects.create(
+            signoff=signoff,
+            flag=Action.PENDING,
+            author=self.peter,
+        )
+
+        flags, actions = self._get_flags_and_actions()
+        pushes, suggested_signoff = view.annotated_pushes(
+            actions,
+            flags,
+            None,  # notice, no fallback
+            self.locale,
+            self.av,
+            count=1
+        )
+        eq_(len(pushes), 5)
+
+        # the last (aka. first) one should have a signoff with an
+        # action on that is rejected
+        eq_(pushes[-1]['signoffs'][0]['action'].flag, Action.PENDING)

@@ -556,6 +556,17 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(response.status_code, 200)
         eq_(get_query(response.content), 'av=%s' % appver.code)
 
+        appver2 = AppVersion.objects.create(
+          app=appver.app,
+          version='2',
+          code='fx2',
+          codename='foxier'
+        )
+        response = self.client.get(url, {'av': [appver.code, appver2.code]})
+        eq_(response.status_code, 200)
+        eq_(get_query(response.content),
+            'av=%s&av=%s' % (appver.code, appver2.code))
+
         # combine them all
         data = {
           'locale': ['en-US', 'ta'],
