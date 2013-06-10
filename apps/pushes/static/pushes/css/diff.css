@@ -44,3 +44,12 @@ table.diff td {
 tr.line-newval td {
   padding-bottom: 5px;
 }
+.ui-accordion .ui-accordion-header .ui-icon {
+  position: absolute;
+  left: 0.5em;
+  top: 50%;
+  margin-top: -8px;
+}
+.ui-accordion-icons .ui-accordion-header a {
+    padding-left: 1.2em;
+}

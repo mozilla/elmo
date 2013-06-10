@@ -22,7 +22,12 @@ var EX_OPTIONS = ["tree", "result", "locale", "shipping", "signoff"];
 {% endblock %}
 
 {% block title_matter %}Sign-offs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}
-{% block header_h1 %}Sign-offs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}
+
+{% block alt_header %}
+<hgroup id="main-feature">
+  <h1 class="large">Sign-offs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}</h1>
+</hgroup>
+{% endblock %}
 
 {% block body_content_class %}page-wider{% endblock %}
 

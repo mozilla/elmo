@@ -31,7 +31,7 @@ var compare_link = "{% url 'l10nstats.views.compare' %}";
 {% endblock %}
 
 {% block content %}
-<h1>Statistics for {{ locale }}, {{ tree }}, {{starttime.date}}-{{endtime.date}}</h1>
+<h2>Statistics for {{ locale }}, {{ tree }}, {{starttime.date}}-{{endtime.date}}</h2>
 <div id="my-timeplot" style="height: 400px;"></div>
 <div class="legend" style="float:right">
   left scale:

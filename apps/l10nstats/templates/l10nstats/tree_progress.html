@@ -35,8 +35,12 @@ var LOCALE_DATA = [{% for item in data %}
 {% endcompress %}
 {% endblock %}
 
-{% block header_h1 %}Statistics for {{ tree }}{% endblock %}
-{% block header_content_extra %}<p>String completeness for {{ tree }} localizations over time.</p>{% endblock %}
+{% block alt_header %}
+<hgroup id="main-feature">
+  <h1 class="large">Statistics for {{ tree }}</h1>
+  <h2>String completeness for {{ tree }} localizations over time.</h2>
+</hgroup>
+{% endblock %}
 
 {% block content %}
 <div id="my-timeplot"></div>

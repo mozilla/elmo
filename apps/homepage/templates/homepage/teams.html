@@ -7,6 +7,7 @@
 {% load compress %}
 {% load url from future %}
 {% block title_matter %}Mozilla Localization Teams{% endblock %}
+
 {% block head_matter %}
 {% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}homepage/css/teams.css" type="text/css">
@@ -19,11 +20,14 @@
 {% endcompress %}
 {% endblock %}
 
-{% block header_h1 %}Mozilla Localization Teams{% endblock %}
-{% block header_content_extra %}<p>Find the different localization teams and the projects they work on on the pages beneath.</p>{% endblock %}
+{% block alt_header %}
+<hgroup id="main-feature">
+  <h1 class="large">Localization Teams</h1>
+  <h2>Find the different localization teams<br/>and the projects they work on on the pages beneath.</h2>
+</hgroup>
+{% endblock %}
 
 {% block content %}
-
 <p class="highlight"><em>Don't find your Language?</em> You may want to check the list of
 <a href="https://wiki.mozilla.org/L10n:Teams">existing and upcoming teams</a> on our wiki, or
 <a href="https://developer.mozilla.org/en/Localization_Quick_Start_Guide">start a new localization</a>.</p>

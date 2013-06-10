@@ -10,7 +10,7 @@
 {% block head_matter %}
 
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/smoothness/jquery-ui-1.8.16.custom.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/smoothness/jquery-ui-1.10.3.custom.css" type="text/css">
 {% endcompress %}
 
 <style type="text/css">
@@ -29,7 +29,7 @@ table.ui-widget {padding: 0px;}
 </style>
 {% endblock %}
 {% block javascript_matter %}
-<script src="{{ STATIC_URL }}js/jquery.ui/jquery-ui-1.8.16.custom.min.js"></script>
+<script src="{{ STATIC_URL }}js/jquery.ui/jquery-ui-1.10.3.custom.min.js"></script>
 <script>
 var SEARCH = {
   FROM: {% if search.from %}'{{ search.from }}'{% else %}null{% endif %}

@@ -25,37 +25,30 @@ var LOCALE_CODE = '{{ locale.code }}';
 {% endcompress %}
 {% endblock %}
 
-{% block header_h1 %}
-Mozilla Localization Team {{ locale.name }}
-<span class="lang">({{ locale.code }})</span>
+{% block alt_header %}
+<hgroup id="main-feature">
+  <h1 class="large">{{ locale.name }} <span class="lang">({{ locale.code }})</span></h1>
+  <h2>Localization Team</h2>
+</hgroup>
 {% endblock %}
 
-
-{% block content %}
-
-<div class="subnav">
+{% block breadcrumbs %}
+<nav id="products-nav" class="menu-bar billboard">
   <ul>
     {% if shipping %}
-    <li>
-      <a href="#applications">Applications &amp; Sign-offs</a>
-    </li>
+    <li><a href="#applications">Applications &amp; Sign-offs</a></li>
     {% endif %}
-    <li>
-      <a href="#bugzilla">Bugzilla</a>
-    </li>
-    <li>
-      <a href="#webdashboard">Web Dashboard</a>
-    </li>
-    <li {% if not verbatim_url %}class="last"{% endif %}>
-      <a href="https://wiki.mozilla.org/L10n:Teams:{{locale.code}}" class="external-link">Contact</a>
-    </li>
+    <li><a href="#bugzilla">Bugzilla</a></li>
+    <li><a href="#webdashboard">Web Dashboard</a></li>
+    <li><a href="https://wiki.mozilla.org/L10n:Teams:{{locale.code}}" class="external-link">Contact</a></li>
     {% if verbatim_url %}
-    <li class="last">
-      <a href="{{ verbatim_url }}" class="external-link">Verbatim</a>
-    </li>
+    <li><a href="{{ verbatim_url }}" class="external-link">Verbatim</a></li>
     {% endif %}
   </ul>
-</div>
+</nav>
+{% endblock %}
+
+{% block content %}
 
 {{ shipping }}
 

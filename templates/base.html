@@ -7,94 +7,111 @@
 
 {% load compress %}
 {% load url from future %}
-<html lang="{{ LANG }}" dir="{{ DIR }}">
-  <head>
-    <meta charset="utf-8">
-    <link rel="shortcut icon" href="{{ STATIC_URL }}img/favicon.ico" type="image/x-icon">
-    <link rel="icon" href="{{ STATIC_URL }}img/favicon.ico" type="image/x-icon">
-    {% compress css %}
-    <link rel="stylesheet" href="{{ STATIC_URL }}css/style.css" type="text/css">
-    {% endcompress %}
-    <style type="text/css">
-    /* MetaWebPro font family licensed from fontshop.com. WOFF-FTW! */
-    @font-face {
-        font-family: 'MetaBold';
-	src: url('{{ STATIC_URL }}fonts/MetaWebPro-Bold.eot');
-	src: local('☺'), url('{{ STATIC_URL }}fonts/MetaWebPro-Bold.woff') format('woff');
-        font-weight: bold;
-   }
-   </style>
-<title>{% block title_matter %}{% endblock %}</title>
-{% block head_matter %}{% endblock %}
-</head>
+<html class="windows no-js" lang="{{ LANG }}" dir="{{ DIR }}">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {% block extra_meta %}{% endblock %}
 
-<body {% block body_tag %}{% endblock %}>
-<div id="wrapper">
-		<nav>
+        <title>{% block title_matter %}{% endblock %}</title>
 
-			<div id="auth">
-				{% include "accounts/user_forms.html" %}
-				<noscript>Not logged in</noscript>
-			</div>
+        {% block favicon %}<link rel="shortcut icon" href="{{ STATIC_URL }}img/favicon.ico" />{% endblock %}
+        <link rel="stylesheet" type="text/css" href="//mozorg.cdn.mozilla.net/media/css/tabzilla-min.css" media="screen" />
 
+        <!--[if lte IE 8]>
+        <script src="{{ STATIC_URL }}js/libs/html5shiv.js"></script>
+        <![endif]-->
 
-			<ul>
-				<li><a href="{% url 'homepage.views.index' %}" class="homepage-link">Home</a></li>
-				<li><a href="{% url 'homepage.views.teams' %}">Teams</a></li>
-				<li><a href="https://wiki.mozilla.org/L10n">Documentation</a></li>
-				{% block extra_nav_list_items %}{% endblock %}
+        {% compress css %}
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/sandstone-resp.css" media="screen" />
+        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/style.css" />
+        {% endcompress %}
+        {% block site_css %}{% endblock %}
 
-			</ul>
+        {% block head_matter %}{% endblock %}
+    </head>
+    <!-- The four different themes of sandstone are, stone, sand, sky, space. Replace the class on the
+         body tag below, with the theme you wish to use for your project -->
+    <body {% block body_tag %}{% endblock %}>
+        <div id="outer-wrapper">
+            <div id="wrapper">
 
-		</nav>
+                {% block site_header %}
+                <header id="masthead">
+                    <a href="http://www.mozilla.org/" id="tabzilla">{{ _('Mozilla') }}</a>
+                    <nav id="nav-main" role="menubar">
+                        <span class="toggle" role="button" aria-controls="nav-main-menu" tabindex="0">{{ _('Menu') }}</span>
+                        <ul role="menu" id="nav-main-menu">
+                            <li role="menuitem"><a href="{% url 'homepage.views.teams' %}">{{_('Teams')}}</a></li>
+                            <li role="menuitem"><a href="//wiki.mozilla.org/L10n">{{_('Docs')}}</a></li>
+                            <li role="menuitem"><a href="//blog.mozilla.com/l10n">{{_('Blog')}}</a></li>
+                            <li role="menuitem"><a href="//wiki.mozilla.org/L10n:Communication">{{_('Contact')}}</a></li>
+                            <li role="menuitem"><a href="//wiki.mozilla.org/L10n:Contribute">{{_('Get Involved')}}</a></li>
+                            <li role="menuitem"><div id="auth">{% include "accounts/user_forms.html" %}</div></li>
+                            {% block extra_nav_list_items %}{% endblock %}
+                        </ul>
+                    </nav>
 
-		<header>
-			<h1>{% block header_h1 %}<a href="/" title="Back to home page">{% block header_h1_inner %}mozilla Localization{% endblock %}</a>{% endblock %}</h1>
-            {% block header_content_extra %}
+                    {% block site_header_logo %}
+                    <h2><a href="{% url 'homepage.views.index' %}"><img src="{{ STATIC_URL }}img/mozilla-l10n-logo.png" alt="mozilla l10n"></a></h2>
+                    {% endblock %}
+                </header>
+                {% endblock %}
+
+                {% block alt_header %}{% endblock %}
+                {% block breadcrumbs %}{% endblock %}
+                {% block content %}{% endblock %}
+                {% block aside %}{% endblock %}
+            </div>
+
+            {% block site_footer %}
+            <footer id="colophon">
+              <div class="row">
+                  <div class="footer-logo">
+                      <a href="http://mozilla.org"><img src="{{ STATIC_URL }}img/sandstone/footer-mozilla.png" alt="mozilla"></a>
+                  </div>
+
+                  <div class="footer-license">
+                      <p>Except where otherwise <a href="http://www.mozilla.org/en-US/about/legal.html#site">noted</a>, content on this site is licensed under the <a href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons Attribution Share-Alike License v3.0</a> or any later version.</p>
+                  </div>
+
+                  <ul class="footer-nav">
+                    <li><a href="{% url 'privacy.views.show_policy' %}">{{_('Privacy Policy')}}</a></li>
+                    <li><a href="http://mozilla.org/about/legal.html">{{_('Legal Notices')}}</a></li>
+                  </ul>
+              </div>
+            </footer>
             {% endblock %}
-		</header>
-		<div id="body-content" class="{% block body_content_class %}page-standard{% endblock %}">
-			<div id="main-content" class="{% block main_content_class %}{% endblock %}">
-			{% block content %}{% endblock %}
-			</div>
-                        {% block aside %}{% endblock %}
+        </div>
+        <script>
+        var CONFIG = {USER_URL: '{% url 'accounts.views.user_json' %}',
+                      CURRENT_URL: {% if request %}'{{ request.get_full_path }}'{% else %}window.location.href{% endif %}, {# needed because of some lack of RequestContext #}
+                      LOADING_GIF_URL: '{{ STATIC_URL }}img/loading.gif',
+                      NEEDS_RELOAD: {% if login_form_needs_reload and request %}true{% else %} false{% endif %}
+                      };
+        </script>
 
+        {% block js %}
+          <script src="{{ STATIC_URL }}js/libs/jquery-1.8.3.js"></script>
+          <script src="//mozorg.cdn.mozilla.net/en-US/tabzilla/tabzilla.js"></script>
+          {% compress js %}
+            <script src="{{ STATIC_URL }}js/site.js"></script>
+            <script src="{{ STATIC_URL }}js/base.js"></script>
+          {% endcompress %}
+        {% endblock %}
+        {% block javascript_matter %}{% endblock %}
 
-
-		</div>
-</div>
-		<footer>
-		    <p><img src="{{ STATIC_URL }}img/logo_footer.png" alt="Mozilla" /></p>
-           <p>Except where otherwise <a href="http://www.mozilla.org/en-US/about/legal.html#site">noted</a>,
-                content on this site is licensed under the <a href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons Attribution Share-Alike License v3.0</a> or any later version. </p>
-                <p class="notices"><a href="{% url 'privacy.views.show_policy' %}">Privacy Policy</a> | <a href="http://www.mozilla.org/en-US/about/legal.html">Legal Notices</a></p>
-		</footer>
-
-<script>
-var CONFIG = {USER_URL: '{% url 'accounts.views.user_json' %}',
-              CURRENT_URL: {% if request %}'{{ request.get_full_path }}'{% else %}window.location.href{% endif %}, {# needed because of some lack of RequestContext #}
-              LOADING_GIF_URL: '{{ STATIC_URL }}img/loading.gif',
-              NEEDS_RELOAD: {% if login_form_needs_reload and request %}true{% else %} false{% endif %}
-              };
-</script>
-
-{% compress js %}
-<script src="{{ STATIC_URL }}js/libs/jquery-1.6.2.min.js"></script>
-<script src="{{ STATIC_URL }}js/base.js"></script>
-{% endcompress %}
-{% block javascript_matter %}{% endblock %}
-
-{% if include_analytics %}
-<script type="text/javascript">
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-35433268-7']);
-  _gaq.push(['_trackPageview']);
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
-</script>
-{% endif %}
-	</body>
+        {% if include_analytics %}
+        <script type="text/javascript">
+          var _gaq = _gaq || [];
+          _gaq.push(['_setAccount', 'UA-35433268-7']);
+          _gaq.push(['_trackPageview']);
+          (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+          })();
+        </script>
+        {% endif %}
+    </body>
 </html>

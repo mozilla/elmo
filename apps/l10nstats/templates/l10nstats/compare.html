@@ -15,7 +15,7 @@ Comparison for {{ run.tree.code }}-{{run.locale.code }} ({{ run.build.buildnumbe
 {% endcompress %}
 {% endblock %}
 {% block content %}
-<h1>Comparison for {{ run.tree.code }}-{{ run.locale.code }}</h1>
+<h2>Comparison for {{ run.tree.code }}-{{ run.locale.code }}</h2>
 <p id="backlink"><a href="{% url 'tinder_show_build' run.build.builder.name run.build.buildnumber %}">Build {{ run.build.buildnumber }}</a> from
 {{ run.build.starttime|date }} {{ run.build.starttime|time }}</p>
 <div id="stats">

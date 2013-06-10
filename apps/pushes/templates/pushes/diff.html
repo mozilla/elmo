@@ -9,13 +9,10 @@
 
 {% block title_matter %}{% if given_title %}{{given_title}}{% else %}{{repo}} from {{old_rev}} to {{new_rev}}{% endif %}{% endblock %}
 
-{% block head_matter %}
-
+{% block site_css %}
 {# this is now exactly the same as on confirm-drill.html so the cache can be re-used #}
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/smoothness/jquery-ui-1.8.16.custom.css" type="text/css">
-{% endcompress %}
-{% compress css %}
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/smoothness/jquery-ui-1.10.3.custom.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}pushes/css/diff.css" type="text/css">
 {% endcompress %}
 {% endblock %}
@@ -27,53 +24,60 @@
 {% endblock %}
 
 {% block content %}
+
 {% if diffs %}
-Changed files:
-{% recurse_children %}
-{% for fragment, diff in diffs %}
-{% if diff.value and diff.value.isFile %}
-<div class="diff file-{{diff.value.class}}">
-  <a href="{{repo_url}}file/{{diff.value.rev}}/{{diff.value.path}}" target="_blank">{{fragment}}</a> Cannot parse file
-    {% if diff.value.renamed %}
-    <span class="renamed">(renamed from <code>{{ diff.value.renamed }}</code>)</span>
-    {% endif %}
-    {% if diff.value.copied %}
-    <span class="copied">(copied from <code>{{ diff.value.copied }}</code>)</span>
-    {% endif %}
-</div>
-{% else %}
-<div class="diff-container {{diff.value.class}} ui-accordion ui-accordion-icons
-  ui-widget ui-helper-reset"><div title="{{diff.value.path}}"
-    class="ui-accordion-header ui-helper-reset"><span class="ui-icon ui-icon-triangle-1-s"></span><a>{{fragment}}
-    {% if diff.value.renamed %}
-    <span class="renamed">(renamed from <code>{{ diff.value.renamed }}</code>)</span>
-    {% endif %}
-    {% if diff.value.copied %}
-    <span class="copied">(copied from <code>{{ diff.value.copied }}</code>)</span>
-    {% endif %}
-    </a></div>
-  {% if diff.value %}
-<table class="diff">
-  {% for line in diff.value.lines %}
-  <tr class="line-{{line.class}}"><td rowspan="2">{{line.entity}}</td>
-    <td>
-      {% for chunk in line.oldval %}<span class="{{chunk.class}}">{{chunk.value}}</span>{% endfor %}
-    </td></tr>
-  <tr class="line-{{line.class}}{% if line.class == 'changed' %} line-newval{% endif %}">
-    <td>
-      {% for chunk in line.newval %}<span class="{{chunk.class}}">{{chunk.value}}</span>{% endfor %}
-    </td>
-  </tr>
-  {% endfor %}
-  </table>
-  {% else %}
-  <div class="children">
-    {% recurse diff.children as diffs %}
-  </div>
-  {% endif %}
-</div>
+  Changed files:
+  {% recurse_children %}
+    {% for fragment, diff in diffs %}
+
+      {% if diff.value and diff.value.isFile %}
+      <div class="diff file-{{diff.value.class}}">
+        <a href="{{repo_url}}file/{{diff.value.rev}}/{{diff.value.path}}" target="_blank">{{fragment}}</a> Cannot parse file
+          {% if diff.value.renamed %}
+          <span class="renamed">(renamed from <code>{{ diff.value.renamed }}</code>)</span>
+          {% endif %}
+          {% if diff.value.copied %}
+          <span class="copied">(copied from <code>{{ diff.value.copied }}</code>)</span>
+          {% endif %}
+      </div>
+
+      {% else %}
+      <div class="diff-container {{diff.value.class}} ui-accordion ui-accordion-icons ui-widget ui-helper-reset">
+
+        <div title="{{diff.value.path}}" class="ui-accordion-header ui-helper-reset">
+          <span class="ui-icon ui-icon-triangle-1-s"></span>
+          <a>{{fragment}}
+            {% if diff.value.renamed %}
+            <span class="renamed">(renamed from <code>{{ diff.value.renamed }}</code>)</span>
+            {% endif %}
+            {% if diff.value.copied %}
+            <span class="copied">(copied from <code>{{ diff.value.copied }}</code>)</span>
+            {% endif %}
+          </a>
+        </div>
+
+        {% if diff.value %}
+        <table class="diff">
+          {% for line in diff.value.lines %}
+          <tr class="line-{{line.class}}">
+            <td rowspan="2">{{line.entity}}</td>
+            <td>{% for chunk in line.oldval %}<span class="{{chunk.class}}">{{chunk.value}}</span>{% endfor %}</td>
+          </tr>
+          <tr class="line-{{line.class}}{% if line.class == 'changed' %} line-newval{% endif %}">
+            <td>{% for chunk in line.newval %}<span class="{{chunk.class}}">{{chunk.value}}</span>{% endfor %}</td>
+          </tr>
+          {% endfor %}
+        </table>
+
+        {% else %}
+        <div class="file-content children">{% recurse diff.children as diffs %}</div>
+        {% endif %}
+
+      </div>
+      {% endif %}
+
+    {% endfor %}
+  {% endrecurse %}
 {% endif %}
-{% endfor %}
-{% endrecurse %}
-{% endif %}
+
 {% endblock %}
