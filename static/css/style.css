@@ -7,6 +7,10 @@ table {
     border-spacing: 0;
 }
 
+#masthead {
+    margin-bottom: 48px;
+}
+
 #main-feature {
     text-align: center;
 }

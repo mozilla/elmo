@@ -12,125 +12,71 @@
 {% block head_matter %}
 {% compress css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}homepage/css/index.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/chosen/chosen.css" />
 {% endcompress %}
 {% endblock %}
 
-{% block header_content_extra %}
-<p>Users first, no matter where they are.</p>
+{% block javascript_matter %}
+<script src="{{ STATIC_URL }}js/libs/chosen.jquery.js"></script>
+<script src="{{ STATIC_URL }}homepage/js/index.js"></script>
 {% endblock %}
 
-{% block main_content_class %}left-floated-container{% endblock %}
+{% block alt_header %}
+<hgroup id="main-feature">
+  <h1 class="large">Mozilla in your language</h1>
+</hgroup>
+{% endblock %}
 
 {% block content %}
-
-<section>
-	<article class="introduction full">
-		<h1>Getting started with Localization (L10n)</h1>
-		<p>No matter where you live, your contributions can open the web to the world.
-		Everything you want to know about getting involved in our L10n effort, your L10n team's
-		progress, each mozilla project's overall progress, the mozilla L10n process, and
-		joining the growing community of Mozillians is at your fingertips. Feel free to explore,
-		share, and get involved!</p>
-		<p>Are you new to L10n? Visit these links to start localizing:</p>
-		<ul>
-			<li><a href="https://wiki.mozilla.org/L10n:Contribute">How and where we need your help.
-			</a></li>
-			<li><a href="https://developer.mozilla.org/en/Localization_Quick_Start_Guide">Our
-			technical quick start guide.</a></li>
-			<li><a href="https://wiki.mozilla.org/L10n:Overview">Learn about the L10n process.
-			</a></li>
-			<li><a href="https://wiki.mozilla.org/L10n:Home_Page">More frequently asked questions...</a></li>
-		</ul>
-	</article>
+<section class="container introduction">
+    <video
+        class="mozilla-video-shadow"
+        width="580"
+        height="326"
+        poster="{{ STATIC_URL }}/img/poster.jpg"
+        controls="controls"
+    >
+        <source src="//videos-cdn.mozilla.net/serv/drafts/FFxGlobal.webm" type="video/webm" />
+        <source src="//videos-cdn.mozilla.net/serv/drafts/FFxGlobal.mp4" type="video/mp4" />
+    </video>
+    <article>
+        <h2>Users first, no matter where they are.</h2>
+        <p>Mozilla's translation and localization (l10n) efforts spread Firefox and the web throughout the world.</p>
+        <p>No matter your language, technical skill, or education, there are many ways you can help us put users first in your corner of the world.</p>
+        <a class="button arrow" href="https://wiki.mozilla.org/L10n:Contribute"><span>Get Involved</span></a>
+    </article>
 </section>
 
-<section>
-	<article>
-		<h1>Localization Teams</h1>
-		<p>We speak 90+ languages, how about you? Each language listed here represents the efforts
-		of a L10n team. See what your language is working on here: </p>
-
-		<ul class="double">
-                        {% for loc in locales_first_half %}
-                        <li><a href="{% url 'homepage.views.locale_team' loc.code %}">{% if loc.name %}{{loc.name}}{% else %}{{loc.code}}{% endif %}</a></li>
-                        {% endfor %}
-		</ul>
-		<ul class="double">
-                        {% for loc in locales_second_half %}
-                        <li><a href="{% url 'homepage.views.locale_team' loc.code %}">{% if loc.name %}{{loc.name}}{% else %}{{loc.code}}{% endif %}</a></li>
-                        {% endfor %}
-			<li><a href="{% url 'homepage.views.teams' %}">And {{ locales_rest_count }} more...</a></li>
-		</ul>
-	</article>
-	<article>
-		<h1>Projects to Localize</h1>
-		<p>We track the L10n progress of Firefox and other mozilla applications here.
-		You can also see and make contributions to mozilla web projects below.</p>
-		<ul>
-			<li><a href="https://localize.mozilla.org">View the status of mozilla web projects.</a></li>
-			<li><a href="https://support.mozilla.org/en-US/kb/localize-firefox-help">Translate
-			support articles on SUMO.</a></li>
-			<li><a href="https://developer.mozilla.org/Project:en/Localization_Projects">Translate
-			developer articles on the MDN.</a></li>
-			<li><a href="http://babelzilla.org/">Localize add-ons here.</a></li>
-		</ul>
-	</article>
-</section>
-
-<section>
-	<article>
-		<h1>Learn About Localization</h1>
-		<p>Is L10n a foreign concept? Everything you need to know about L10n at mozilla can be
-		found here:</p>
-		<ul>
-			<li><a href="https://wiki.mozilla.org/L10n:Localizing_Overview">A down-to-basics guide
-			to localizing.</a></li>
-			<li><a href="https://wiki.mozilla.org/L10n:Localization_Process">How we localize at
-			mozilla.</a></li>
-			<li><a href="https://blog.mozilla.com/l10n">The official Mozilla L10n blog.</a></li>
-			<li><a href="https://wiki.mozilla.org/L10n:Resources">Resources for localizers.</a></li>
-		</ul>
-	</article>
-	<article>
-		<h1>Join the Community</h1>
-		<p>Our Mozillian L10n community is legendary! Become part of the legend here:</p>
-		<ul>
-			<li><a href="https://mozillians.org/en-US/">Add yourself to Mozillians here!</a></li>
-			<li><a href="http://www.mozilla.org/about/forums/#dev-l10n-new-locales">Do you
-			want to start a new L10n community?</a></li>
-			<li><a href="http://www.mozilla.org/about/forums/#dev-l10n">Get in on the
-			discussion with all of mozilla L10n.</a></li>
-			<li><a href="http://www.mozilla.org/about/forums/#dev-l10n-web">Tell us what you know
-			about web L10n.
-			</a></li>
-		</ul>
-	</article>
-</section>
-<section>
-	<article class="full">
-		<h1>For Developers</h1>
-		<p>All projects at mozilla are Open Source, even this one! You can find it
-                on <a href="https://github.com/mozilla/elmo">Github</a> and make it even better.</p>
-	</article>
-</section>
-
-
-{% endblock %}
-
-{% block aside %}
-<div id="blogroll">
-<aside>
-	<section>
-		<h1>
-			<a href="http://planet.mozilla.org/l10n/" class="rss-icon"><img src="{{ STATIC_URL }}img/icons/feed.png" alt="Subscribe to our feed" /></a>Mozilla L10n Blog
-		</h1>
-		<ul class="blog-links">
-            {% for item in feed_items %}
-		    <li><a href="{{ item.url }}">{{ item.title|truncatewords:8 }}</a></li>
+<section class="container content">
+    <article>
+        <h2>Projects we localize</h2>
+        <p>These are some of the projects translation and localization contributors work on:</p>
+        <ul>
+            <li>Mozilla products, like Firefox</li>
+            <li>Mozilla websites, services, and <br />marketing campaigns</li>
+            <li>SUMO product support documentation</li>
+            <li>MDN developer documentation</li>
+        </ul>
+    </article>
+    <article>
+        <h2>L10n Teams</h2>
+        <p>We speak 90+ languages, how about you?</p>
+        <p>Search for your language below to see what your l10n team is working on:</p>
+        <select data-placeholder="Choose a team...">
+            <option></option>
+            {% for loc in locales %}
+            <option value="{{ loc.code|lower }}">{% if loc.name %}{{loc.name}}{% else %}{{loc.code}}{% endif %}</option>
             {% endfor %}
-         </ul>
-	</section>
-</aside>
-</div>
-
+        </select>
+    </article>
+    <article>
+        <h2>L10n Discussion</h2>
+        <ul class="blog-links">
+            {% for item in feed_items %}
+            <li><a href="{{ item.url }}">{{ item.title|truncatewords:8 }}</a></li>
+            {% endfor %}
+            <li><a href="https://blog.mozilla.org/l10n/">See all news</a></li>
+        </ul>
+    </article>
+</section>
 {% endblock %}

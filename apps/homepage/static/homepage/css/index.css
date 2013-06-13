@@ -2,29 +2,64 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-.blog-links {
-    list-style: none;
-}
-.blog-links li {
-    margin-bottom: .5em;
-}
-body#home > header {
-    height: auto;
+.introduction {
+    margin-bottom: 60px;
+    width: 960px;
 }
 
-@media (max-width: 960px) {
-    #blogroll aside section {
-        float: left;
-        background-image: none;
-        margin: 0 0 30px 0;
-        padding: 10px 15px;
-        min-width: 0;
-        width: 93%;
-        border-radius: 4px;
-        box-shadow: 1px 1px 4px #999;
-        overflow: auto;
-    }
-    #blogroll aside h1 {
-        padding-bottom: 5px;
-    }
+.introduction video {
+    float: left;
+    padding-left: 10px;
+}
+
+.introduction article {
+    float: right;
+    width: 300px;
+    padding-right: 10px;
+}
+
+.introduction article .button {
+    width: 200px;
+    height: 40px;
+    font-family: 'Open Sans Light', 'Open Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 400;
+}
+
+.introduction article .button span {
+    margin-top: 10px;
+    background-position: 160px 0;
+}
+
+.content article {
+    float: left;
+    margin: 0 10px;
+    width: 300px;
+}
+
+.content article:nth-child(2) {
+    margin: 0 30px;
+    width: 260px;
+}
+
+.content .chzn-container .chzn-results {
+    max-height: 150px;
+}
+
+.content .blog-links {
+    list-style: none;
+}
+
+.content .blog-links li {
+    border-bottom: 1px dotted #D6D6D6;
+    margin: 0 0 .5em 0;
+    padding-bottom: 5px;
+}
+
+.content .blog-links li:last-child {
+    border-bottom: none;
+}
+
+.content .blog-links li a:after {
+    content:" »";
 }
