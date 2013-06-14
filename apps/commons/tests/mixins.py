@@ -26,6 +26,9 @@ class EmbedsTestCaseMixin:
 
     def _check(self, response, regex, only_extension):
         for found in regex.findall(response):
+            if found.startswith('//'):
+                # external urls like tabzilla, ignore
+                continue
             if found.endswith(only_extension):
                 if settings.DEBUG:
                     resp = self.client.get(found)
