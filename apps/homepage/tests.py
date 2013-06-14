@@ -254,33 +254,6 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
                 'tree': ['fx_beta'],
                 'repo': ['some_repo']})
 
-    def test_get_homepage_locales(self):
-        for i in range(1, 40 + 1):
-            Locale.objects.create(
-              name='Language-%d' % i,
-              code='L%d' % i
-            )
-        assert Locale.objects.all().count() == 40
-        # add one that doesn't count
-        Locale.objects.create(
-          name=None,
-          code='en-us'
-        )
-
-        from homepage.views import get_homepage_locales
-        first, second, rest = get_homepage_locales(4)
-        eq_(len(first), 4)
-        eq_(len(second), 4 - 1)
-        eq_(rest, 40 - len(first) - len(second))
-
-        # if you want to split by the first 30
-        # which, doubled, is more than the total number of locales,
-        # it gets reduced to the minimum which is 20
-        first, second, rest = get_homepage_locales(30)
-        eq_(len(first), 20)
-        eq_(len(second), 20 - 1)
-        eq_(rest, 1)
-
     def test_get_homepage_etag(self):
         arabic = Locale.objects.create(code='ar', name='Arabic')
         for i in range(1, 40 + 1):
