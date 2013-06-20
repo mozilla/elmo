@@ -34,16 +34,14 @@ var compare_link = "{% url 'l10nstats.views.compare' %}";
 {% block content %}
 <h2>Statistics for {{ locale }}, {{ tree }}, {{starttime.date}}-{{endtime.date}}</h2>
 <div id="my-timeplot" style="height: 400px;"></div>
-<div class="legend" style="float:right">
-  left scale:
-  red area: missing<br>
-  black line: obsolete<br>
-  right scale, grey area: unchanged
-</div>
-<div id="txtData" style="display:none">{% for run in runs %}
+
+<div id="txtData" class="hidden">{% for run in runs %}
 {{ run.srctime.isoformat }}Z,{{ run.run }},{{ run.missing }},{{ run.obsolete }},{{ run.unchanged }}{% endfor %}
 </div>
-
-<div style="clear:right">&nbsp;</div>
-
+<p class="divider"></p>
+<h5>Legend</h5>
+<p>Missing strings are depicted as red area, the circle markers are
+links to the detailed stats. The black line is obsolete strings. Both
+are drawn to the left scale. Obsolete strings depicted by the grey
+area, drawn to the right scale.</p>
 {% endblock %}
