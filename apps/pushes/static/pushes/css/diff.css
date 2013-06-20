@@ -14,7 +14,7 @@
 .line-removed, .file-removed {
   color: red;
 }
-.diff-container a {
+a.nolink {
   color: black;
 }
 .empty-diff {
