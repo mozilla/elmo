@@ -6,10 +6,11 @@
 {% endcomment %} -->
 {% load build_extras %}
 {% load compress %}
+{% load staticfiles %}
 {% block title_matter %}Waterfall{% endblock %}
 {% block head_matter %}
 {% compress css %}
-<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}tinder/css/waterfall.css">
+<link rel="stylesheet" type="text/css" href="{% static "tinder/css/waterfall.css" %}">
 {% endcompress %}
 {% endblock %}
 {% block content %}

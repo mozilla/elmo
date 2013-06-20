@@ -5,6 +5,7 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load compress %}
+{% load staticfiles %}
 {% block title_matter %}Mozilla Localization Team {{ locale.name }}{% endblock %}
 {% block javascript_matter %}
 <script>
@@ -12,16 +13,16 @@ var WEBDASHBOARD_URL = '{{ webdashboard_url }}';
 var LOCALE_CODE = '{{ locale.code }}';
 </script>
 {% compress js %}
-<script src="{{ STATIC_URL }}bugsy/js/bugcount.js"></script>
-<script src="{{ STATIC_URL }}homepage/js/webdashboard.js"></script>
+<script src="{% static "bugsy/js/bugcount.js" %}"></script>
+<script src="{% static "homepage/js/webdashboard.js" %}"></script>
 {% endcompress %}
 {% endblock %}
 
 {% block head_matter %}
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}homepage/css/locale-team.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/dashboard.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/snippet.css" type="text/css">
+<link rel="stylesheet" href="{% static "homepage/css/locale-team.css" %}" type="text/css">
+<link rel="stylesheet" href="{% static "shipping/css/dashboard.css" %}" type="text/css">
+<link rel="stylesheet" href="{% static "shipping/css/snippet.css" %}" type="text/css">
 {% endcompress %}
 {% endblock %}
 
@@ -55,7 +56,7 @@ var LOCALE_CODE = '{{ locale.code }}';
 {{ bugs }}
 
 <div id="webdashboard">
-<p class="rss-icon-outer" style="float:right"><a href="{{ webdashboard_url }}?locale={{ locale.code }}"><img src="{{ STATIC_URL }}img/icons/feed.png" alt="Subscribe to our feed"></a></p>
+<p class="rss-icon-outer" style="float:right"><a href="{{ webdashboard_url }}?locale={{ locale.code }}"><img src="{% static "img/icons/feed.png" %}" alt="Subscribe to our feed"></a></p>
 <h2>Web Dashboard <a href="#webdashboard" class="permalink">#</a></h2>
 
 <p class="intro">The team's work on the <a href="http://www.mozilla.org/{{ locale.code }}/">mozilla.org website</a>

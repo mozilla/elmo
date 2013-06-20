@@ -5,13 +5,14 @@
 - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load compress %}
+{% load staticfiles %}
 {% load url from future %}
 
 {% block title_matter %}Milestones Creation{% endblock %}
 
 {% block javascript_matter %}
 {% compress js %}
-<script src="{{ STATIC_URL }}shipping/js/select-milestones.js"></script>
+<script src="{% static "shipping/js/select-milestones.js" %}"></script>
 {% endcompress %}
 {% endblock %}
 

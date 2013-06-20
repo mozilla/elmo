@@ -5,20 +5,21 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load compress %}
+{% load staticfiles %}
 {% load url from future %}
 {% block title_matter %}Mozilla Localization{% endblock %}
 {% block body_tag %}id="home"{% endblock %}
 
 {% block head_matter %}
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}homepage/css/index.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/chosen/chosen.css" />
+<link rel="stylesheet" href="{% static "homepage/css/index.css" %}" type="text/css">
+<link rel="stylesheet" href="{% static "css/chosen/chosen.css" %}" />
 {% endcompress %}
 {% endblock %}
 
 {% block javascript_matter %}
-<script src="{{ STATIC_URL }}js/libs/chosen.jquery.js"></script>
-<script src="{{ STATIC_URL }}homepage/js/index.js"></script>
+<script src="{% static "js/libs/chosen.jquery.js" %}"></script>
+<script src="{% static "homepage/js/index.js" %}"></script>
 {% endblock %}
 
 {% block alt_header %}
@@ -33,7 +34,7 @@
         class="mozilla-video-shadow"
         width="580"
         height="326"
-        poster="{{ STATIC_URL }}/img/poster.jpg"
+        poster="{% static "img/poster.jpg" %}"
         controls="controls"
     >
         <source src="//videos-cdn.mozilla.net/serv/drafts/FFxGlobal.webm" type="video/webm" />

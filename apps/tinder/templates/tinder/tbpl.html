@@ -6,13 +6,14 @@
 {% endcomment %} -->
 {% load compress %}
 {% load build_extras %}
+{% load staticfiles %}
 {% load url from future %}
 
 {% block title_matter %}Builds{% endblock %}
 
 {% block head_matter %}
 {% compress css %}
-<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}tinder/css/tbpl.css">
+<link rel="stylesheet" type="text/css" href="{% static "tinder/css/tbpl.css" %}">
 {% endcompress %}
 {% endblock %}
 

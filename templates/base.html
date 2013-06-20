@@ -6,6 +6,7 @@
 {% endcomment %} -->
 
 {% load compress %}
+{% load staticfiles %}
 {% load url from future %}
 <html class="windows no-js" lang="{{ LANG }}" dir="{{ DIR }}">
     <head>
@@ -15,16 +16,16 @@
 
         <title>{% block title_matter %}{% endblock %}</title>
 
-        {% block favicon %}<link rel="shortcut icon" href="{{ STATIC_URL }}img/favicon.ico" />{% endblock %}
+        {% block favicon %}<link rel="shortcut icon" href="{% static "img/favicon.ico" %}" />{% endblock %}
         <link rel="stylesheet" type="text/css" href="//mozorg.cdn.mozilla.net/media/css/tabzilla-min.css" media="screen" />
 
         <!--[if lte IE 8]>
-        <script src="{{ STATIC_URL }}js/libs/html5shiv.js"></script>
+        <script src="{% static "js/libs/html5shiv.js" %}"></script>
         <![endif]-->
 
         {% compress css %}
-        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/sandstone-resp.css" media="screen" />
-        <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/style.css" />
+        <link rel="stylesheet" type="text/css" href="{% static "css/sandstone-resp.css" %}" media="screen" />
+        <link rel="stylesheet" type="text/css" href="{% static "css/style.css" %}" />
         {% endcompress %}
         {% block site_css %}{% endblock %}
 
@@ -53,7 +54,7 @@
                     </nav>
 
                     {% block site_header_logo %}
-                    <h2><a href="{% url 'homepage.views.index' %}"><img src="{{ STATIC_URL }}img/mozilla-l10n-logo.png" alt="mozilla l10n"></a></h2>
+                    <h2><a href="{% url 'homepage.views.index' %}"><img src="{% static "img/mozilla-l10n-logo.png" %}" alt="mozilla l10n"></a></h2>
                     {% endblock %}
                 </header>
                 {% endblock %}
@@ -68,7 +69,7 @@
             <footer id="colophon">
               <div class="row">
                   <div class="footer-logo">
-                      <a href="http://mozilla.org"><img src="{{ STATIC_URL }}img/sandstone/footer-mozilla.png" alt="mozilla"></a>
+                      <a href="http://mozilla.org"><img src="{% static "img/sandstone/footer-mozilla.png" %}" alt="mozilla"></a>
                   </div>
 
                   <div class="footer-license">
@@ -86,17 +87,17 @@
         <script>
         var CONFIG = {USER_URL: '{% url 'accounts.views.user_json' %}',
                       CURRENT_URL: {% if request %}'{{ request.get_full_path }}'{% else %}window.location.href{% endif %}, {# needed because of some lack of RequestContext #}
-                      LOADING_GIF_URL: '{{ STATIC_URL }}img/loading.gif',
+                      LOADING_GIF_URL: '{% static "img/loading.gif" %}',
                       NEEDS_RELOAD: {% if login_form_needs_reload and request %}true{% else %} false{% endif %}
                       };
         </script>
 
         {% block js %}
-          <script src="{{ STATIC_URL }}js/libs/jquery-1.8.3.js"></script>
+          <script src="{% static "js/libs/jquery-1.8.3.js" %}"></script>
           <script src="//mozorg.cdn.mozilla.net/en-US/tabzilla/tabzilla.js"></script>
           {% compress js %}
-            <script src="{{ STATIC_URL }}js/site.js"></script>
-            <script src="{{ STATIC_URL }}js/base.js"></script>
+            <script src="{% static "js/site.js" %}"></script>
+            <script src="{% static "js/base.js" %}"></script>
           {% endcompress %}
         {% endblock %}
         {% block javascript_matter %}{% endblock %}

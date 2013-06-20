@@ -5,11 +5,12 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load simile %}
+{% load staticfiles %}
 {% load url from future %}
 
 {% block head_matter %}
 <link href="{{ webdashboard_url }}json/?tag=URGENT" type="application/json" rel="exhibit/data" />
-<link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/dashboard.css" type="text/css">
+<link rel="stylesheet" href="{% static "shipping/css/dashboard.css" %}" type="text/css">
 <link href="{% url 'shipping.views.status.status_json' %}?{{ query }}" type="application/json" rel="exhibit/data"/>
 {% exhibit autoCreate=false %}
 <script>
@@ -18,7 +19,7 @@ var EX_OPTIONS = ["tree", "result", "locale", "shipping", "signoff"];
 {% endblock %}
 
 {% block javascript_matter %}
-<script src="{{ STATIC_URL }}shipping/js/dashboard.js"></script>
+<script src="{% static "shipping/js/dashboard.js" %}"></script>
 {% endblock %}
 
 {% block title_matter %}Sign-offs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}

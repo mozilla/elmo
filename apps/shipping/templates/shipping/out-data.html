@@ -6,18 +6,19 @@
 {% endcomment %} -->
 
 {% load compress %}
+{% load staticfiles %}
 {% load url from future %}
 {% block title_matter %}Outreach data{% endblock %}
 
 {% block head_matter %}
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/outreach.css" type="text/css">
+<link rel="stylesheet" href="{% static "shipping/css/outreach.css" %}" type="text/css">
 {% endcompress %}
 {% endblock %}
 
 {% block javascript_matter %}
 {% compress js %}
-<script src="{{ STATIC_URL }}shipping/js/outreach.js"></script>
+<script src="{% static "shipping/js/outreach.js" %}"></script>
 {% endcompress %}
 {% endblock %}
 

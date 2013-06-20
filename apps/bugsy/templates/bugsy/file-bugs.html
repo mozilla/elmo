@@ -6,13 +6,14 @@
 {% endcomment %} -->
 {% load simile %}
 {% load compress %}
+{% load staticfiles %}
 {% load url from future %}
 {% block title_matter %}L10n Bug helper{% endblock %}
 {% block head_matter %}
 <link rel="exhibit/data" type="x-bugzilla-components"
       href="https://api-dev.bugzilla.mozilla.org/1.3/configuration?flags=0&amp;cached_ok=1">
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}bugsy/css/file_bugs.css" type="text/css">
+<link rel="stylesheet" href="{% static "bugsy/css/file_bugs.css" %}" type="text/css">
 {% endcompress %}
 
 {# must be loaded in the head :( #}
@@ -25,7 +26,7 @@
 var BUG_LINKS_URL = '{% url "bugsy.views.get_bug_links" %}';
 </script>
 {% compress js %}
-<script src="{{ STATIC_URL }}bugsy/js/file_bug.js"></script>
+<script src="{% static "bugsy/js/file_bug.js" %}"></script>
 {% endcompress %}
 {% endblock %}
 {% block content %}

@@ -6,6 +6,7 @@
 {% endcomment %} -->
 {% load compress %}
 {% load simile %}
+{% load staticfiles %}
 {% load url from future %}
 
 {% block title_matter %}About {{ms}}{% endblock %}
@@ -14,12 +15,12 @@
 {% exhibit %}
 <link href="{% url 'shipping.views.milestone.statuses' ms.code %}" type="application/json" rel="exhibit/data" />
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/about-milestone.css" type="text/css">
+<link rel="stylesheet" href="{% static "shipping/css/about-milestone.css" %}" type="text/css">
 {% endcompress %}
 {% endblock %}
 {% block javascript_matter %}
 {% compress js %}
-<script src="{{ STATIC_URL }}shipping/js/about-milestone.js"></script>
+<script src="{% static "shipping/js/about-milestone.js" %}"></script>
 {% endcompress %}
 {% endblock %}
 

@@ -5,14 +5,15 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load compress %}
+{% load staticfiles %}
 {% load url from future %}
 
 {% block title_matter %}[{{ locale}}, {{ tree }}] l10n stats{% endblock %}
 
 {% block timeplot_styles %}
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}l10nstats/css/timeplot.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}l10nstats/css/history.css" type="text/css">
+<link rel="stylesheet" href="{% static "l10nstats/css/timeplot.css" %}" type="text/css">
+<link rel="stylesheet" href="{% static "l10nstats/css/history.css" %}" type="text/css">
 {% endcompress %}
 {% endblock %}
 
@@ -25,8 +26,8 @@ var compare_link = "{% url 'l10nstats.views.compare' %}";
 
 {% block timeplot_scripts %}
 {% compress js %}
-<script src="{{ STATIC_URL }}l10nstats/js/timeplot.js"></script>
-<script src="{{ STATIC_URL }}l10nstats/js/history.js"></script>
+<script src="{% static "l10nstats/js/timeplot.js" %}"></script>
+<script src="{% static "l10nstats/js/history.js" %}"></script>
 {% endcompress %}
 {% endblock %}
 

@@ -5,16 +5,18 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load compress %}
+{% load staticfiles %}
+
 {% block title_matter %}Add new Privacy Policy{% endblock %}
 {% block head_matter %}
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}privacy/css/privacy.css" type="text/css">
+<link rel="stylesheet" href="{% static "privacy/css/privacy.css" %}" type="text/css">
 {% endcompress %}
 {% endblock %}
 
 {% block javascript_matter %}
 {% compress js %}
-<script src="{{ STATIC_URL }}privacy/js/add.js"></script>
+<script src="{% static "privacy/js/add.js" %}"></script>
 {% endcompress %}
 {% endblock %}
 
