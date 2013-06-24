@@ -29,10 +29,21 @@ var AjaxLogin = (function() {
          }
        });
 
-
        /* Initially a 'Log in' link appears on every page */
        $('a.site_login', container).click(function() {
          AjaxLogin.show_login_form();
+         return false;
+       });
+
+       /* Show menu when username clicked */
+       $('a.site_logout', container).click(function() {
+         AjaxLogin.show_logout_form();
+         return false;
+       });
+
+       /* Show menu when username clicked */
+       $('.logout .button', container).click(function() {
+         window.location = $(this).data('href');
          return false;
        });
 
@@ -46,8 +57,7 @@ var AjaxLogin = (function() {
            p[o.name] = o.value;
          });
 
-         $('form', container)
-           .empty()
+         $('form .login', container)
            .append($('<img>', {src: CONFIG.LOADING_GIF_URL}));
 
          $.post($(this).attr('action'), p, function(res) {
@@ -58,7 +68,7 @@ var AjaxLogin = (function() {
                $('form', container).hide();
                $('a.site_login', container).hide();
                $('.username', container).text(res.user_name);
-               $('div.site_logout', container).show();
+               $('.site_logout', container).show();
              }
            } else {
              // if it failed we get the whole form as HTML
@@ -74,8 +84,7 @@ var AjaxLogin = (function() {
              }
            }
          }).error(function(jqXHR, textStatus, errorThrown) {
-           $('form.site_login').hide();
-           $('a.site_login').hide();
+           $('form.site_login > .login > *:not(".site_login_error")').hide();
            $('.site_login_error').show();
            $('.site_login_error code').text(errorThrown);
          });
@@ -83,9 +92,13 @@ var AjaxLogin = (function() {
        });
      },
     show_login_form: function() {
-      $('a.site_login', container).hide();
-      $('form', container).show();
+      $('form', container).toggle();
       $('#id_username').trigger('focus');
+    },
+    show_logout_form: function() {
+      $('section.login', container).hide();
+      $('section.logout', container).show();
+      $('form', container).toggle();
     }
   };
 })();
@@ -96,4 +109,21 @@ $(function() {
   if (location.hash == '#login') {
     AjaxLogin.show_login_form();
   }
+
+  function closePopup() {
+    $('#auth form').hide();
+  }
+
+  // If Esc pressed or clicked outside popup, close it
+  $(document).keyup(function(e) {
+    if (e.keyCode == 27) {
+      closePopup();
+    }
+  });
+  $('body').live("click", function() {
+    closePopup();
+  });
+  $('#auth form').live("click", function(e) {
+    e.stopPropagation();
+  });
 });

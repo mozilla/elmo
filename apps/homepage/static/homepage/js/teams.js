@@ -5,14 +5,14 @@
 var styleRule = false;
 function searchFor(s) {
   if (styleRule) {
-    document.styleSheets[0].deleteRule(0);
+    document.styleSheets[1].deleteRule(0);
     styleRule = false;
   }
   if (typeof s === 'string' && s.length) {
     var ruletxt = '#teams>li:not([class*=' +
       s.toLowerCase() + ']){display:none}';
     try {
-      document.styleSheets[0].insertRule(ruletxt, 0);
+      document.styleSheets[1].insertRule(ruletxt, 0);
       styleRule = true;
     } catch (e) {
       'catch';

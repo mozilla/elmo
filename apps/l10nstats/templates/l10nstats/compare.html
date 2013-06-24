@@ -6,16 +6,17 @@
 {% endcomment %} -->
 {% load recurse %}
 {% load compress %}
+{% load staticfiles %}
 {% load url from future %}
 {% block title_matter %}
 Comparison for {{ run.tree.code }}-{{run.locale.code }} ({{ run.build.buildnumber }}) {% endblock %}
 {% block head_matter %}
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}l10nstats/css/compare.css" type="text/css">
+<link rel="stylesheet" href="{% static "l10nstats/css/compare.css" %}" type="text/css">
 {% endcompress %}
 {% endblock %}
 {% block content %}
-<h1>Comparison for {{ run.tree.code }}-{{ run.locale.code }}</h1>
+<h2>Comparison for {{ run.tree.code }}-{{ run.locale.code }}</h2>
 <p id="backlink"><a href="{% url 'tinder_show_build' run.build.builder.name run.build.buildnumber %}">Build {{ run.build.buildnumber }}</a> from
 {{ run.build.starttime|date }} {{ run.build.starttime|time }}</p>
 <div id="stats">

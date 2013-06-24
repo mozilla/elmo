@@ -6,11 +6,12 @@
 {% endcomment %} -->
 {% load build_extras %}
 {% load compress %}
+{% load staticfiles %}
 {% load url from future %}
 {% block title_matter %}{{ build.builder.name }} build {{ build.buildnumber }}{% endblock %}
 {% block head_matter %}
 {% compress css %}
-<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}tinder/css/showbuild.css">
+<link rel="stylesheet" type="text/css" href="{% static "tinder/css/showbuild.css" %}">
 {% endcompress %}
 {% endblock %}
 {% block content %}

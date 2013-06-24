@@ -6,6 +6,7 @@
 {% endcomment %} -->
 {% load simile %}
 {% load compress %}
+{% load staticfiles %}
 {% load url from future %}
 {% block title_matter %}Localization bugs{% endblock %}
 {% block head_matter %}
@@ -14,7 +15,7 @@
 
 {% block javascript_matter %}
 {% compress js %}
-<script src="{{ STATIC_URL }}bugsy/js/index.js"></script>
+<script src="{% static "bugsy/js/index.js" %}"></script>
 {% endcompress %}
 {% endblock %}
 {% block content %}

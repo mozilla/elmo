@@ -118,6 +118,7 @@ table.trees tr.treesummary td.productname {
 }
 
 .trees .signoffstatus .hidden {
+    position: relative;
     visibility: hidden;
 }
 

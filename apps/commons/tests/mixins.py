@@ -14,7 +14,6 @@ SCRIPTS_REGEX = re.compile('<script\s*[^>]*src=["\']([^"\']+)["\'].*?</script>',
 STYLES_REGEX = re.compile('<link.*?href=["\']([^"\']+)["\'].*?>',
                           re.M|re.DOTALL)
 
-MISSING_STATIC_URL = re.compile('\!\{\s*STATIC_URL\s\}')
 
 class EmbedsTestCaseMixin:
     """Checks that any static files referred to in the response exist.
@@ -26,6 +25,9 @@ class EmbedsTestCaseMixin:
 
     def _check(self, response, regex, only_extension):
         for found in regex.findall(response):
+            if found.startswith('//'):
+                # external urls like tabzilla, ignore
+                continue
             if found.endswith(only_extension):
                 if settings.DEBUG:
                     resp = self.client.get(found)
@@ -42,7 +44,3 @@ class EmbedsTestCaseMixin:
         response = re.sub('<!--(.*)-->', '', response, re.M)
         self._check(response, SCRIPTS_REGEX, '.js')
         self._check(response, STYLES_REGEX, '.css')
-
-        # '{! STATIC_URL }' is something you might guess if the template does
-        # a {{ STATIC_URL }} and the view doesn't use a RequestContext
-        ok_(not MISSING_STATIC_URL.findall(response))

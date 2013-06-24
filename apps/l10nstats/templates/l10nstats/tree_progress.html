@@ -5,13 +5,14 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load compress %}
+{% load staticfiles %}
 
 {% block title_matter %}{{ tree }} l10n stats{% endblock %}
 
 {% block timeplot_styles %}
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}l10nstats/css/timeplot.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}l10nstats/css/tree_progress.css" type="text/css">
+<link rel="stylesheet" href="{% static "l10nstats/css/timeplot.css" %}" type="text/css">
+<link rel="stylesheet" href="{% static "l10nstats/css/tree_progress.css" %}" type="text/css">
 {% endcompress %}
 {% endblock %}
 
@@ -29,14 +30,18 @@ var LOCALE_DATA = [{% for item in data %}
 
 {% block timeplot_scripts %}
 {% compress js %}
-<script src="{{ STATIC_URL }}l10nstats/js/timeplot.js"></script>
-<script src="{{ STATIC_URL }}l10nstats/js/clusterer.js"></script>
-<script src="{{ STATIC_URL }}l10nstats/js/tree_progress.js"></script>
+<script src="{% static "l10nstats/js/timeplot.js" %}"></script>
+<script src="{% static "l10nstats/js/clusterer.js" %}"></script>
+<script src="{% static "l10nstats/js/tree_progress.js" %}"></script>
 {% endcompress %}
 {% endblock %}
 
-{% block header_h1 %}Statistics for {{ tree }}{% endblock %}
-{% block header_content_extra %}<p>String completeness for {{ tree }} localizations over time.</p>{% endblock %}
+{% block alt_header %}
+<hgroup id="main-feature">
+  <h1 class="large">Statistics for {{ tree }}</h1>
+  <h2>String completeness for {{ tree }} localizations over time.</h2>
+</hgroup>
+{% endblock %}
 
 {% block content %}
 <div id="my-timeplot"></div>

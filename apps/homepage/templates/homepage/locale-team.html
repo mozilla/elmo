@@ -5,6 +5,7 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load compress %}
+{% load staticfiles %}
 {% block title_matter %}Mozilla Localization Team {{ locale.name }}{% endblock %}
 {% block javascript_matter %}
 <script>
@@ -12,57 +13,50 @@ var WEBDASHBOARD_URL = '{{ webdashboard_url }}';
 var LOCALE_CODE = '{{ locale.code }}';
 </script>
 {% compress js %}
-<script src="{{ STATIC_URL }}bugsy/js/bugcount.js"></script>
-<script src="{{ STATIC_URL }}homepage/js/webdashboard.js"></script>
+<script src="{% static "bugsy/js/bugcount.js" %}"></script>
+<script src="{% static "homepage/js/webdashboard.js" %}"></script>
 {% endcompress %}
 {% endblock %}
 
 {% block head_matter %}
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}homepage/css/locale-team.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/dashboard.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}shipping/css/snippet.css" type="text/css">
+<link rel="stylesheet" href="{% static "homepage/css/locale-team.css" %}" type="text/css">
+<link rel="stylesheet" href="{% static "shipping/css/dashboard.css" %}" type="text/css">
+<link rel="stylesheet" href="{% static "shipping/css/snippet.css" %}" type="text/css">
 {% endcompress %}
 {% endblock %}
 
-{% block header_h1 %}
-Mozilla Localization Team {{ locale.name }}
-<span class="lang">({{ locale.code }})</span>
+{% block alt_header %}
+<hgroup id="main-feature">
+  <h1 class="large">{{ locale.name }} <span class="lang">({{ locale.code }})</span></h1>
+  <h2>Localization Team</h2>
+</hgroup>
 {% endblock %}
 
-
-{% block content %}
-
-<div class="subnav">
+{% block breadcrumbs %}
+<nav id="products-nav" class="menu-bar billboard">
   <ul>
     {% if shipping %}
-    <li>
-      <a href="#applications">Applications &amp; Sign-offs</a>
-    </li>
+    <li><a href="#applications">Applications &amp; Sign-offs</a></li>
     {% endif %}
-    <li>
-      <a href="#bugzilla">Bugzilla</a>
-    </li>
-    <li>
-      <a href="#webdashboard">Web Dashboard</a>
-    </li>
-    <li {% if not verbatim_url %}class="last"{% endif %}>
-      <a href="https://wiki.mozilla.org/L10n:Teams:{{locale.code}}" class="external-link">Contact</a>
-    </li>
+    <li><a href="#bugzilla">Bugzilla</a></li>
+    <li><a href="#webdashboard">Web Dashboard</a></li>
+    <li><a href="https://wiki.mozilla.org/L10n:Teams:{{locale.code}}" class="external-link">Contact</a></li>
     {% if verbatim_url %}
-    <li class="last">
-      <a href="{{ verbatim_url }}" class="external-link">Verbatim</a>
-    </li>
+    <li><a href="{{ verbatim_url }}" class="external-link">Verbatim</a></li>
     {% endif %}
   </ul>
-</div>
+</nav>
+{% endblock %}
+
+{% block content %}
 
 {{ shipping }}
 
 {{ bugs }}
 
 <div id="webdashboard">
-<p class="rss-icon-outer" style="float:right"><a href="{{ webdashboard_url }}?locale={{ locale.code }}"><img src="{{ STATIC_URL }}img/icons/feed.png" alt="Subscribe to our feed"></a></p>
+<p class="rss-icon-outer" style="float:right"><a href="{{ webdashboard_url }}?locale={{ locale.code }}"><img src="{% static "img/icons/feed.png" %}" alt="Subscribe to our feed"></a></p>
 <h2>Web Dashboard <a href="#webdashboard" class="permalink">#</a></h2>
 
 <p class="intro">The team's work on the <a href="http://www.mozilla.org/{{ locale.code }}/">mozilla.org website</a>

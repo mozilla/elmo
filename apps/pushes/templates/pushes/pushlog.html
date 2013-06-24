@@ -6,11 +6,12 @@
 {% endcomment %} -->
 {% load url from future %}
 {% load compress %}
+{% load staticfiles %}
 {% block title_matter %}Pushes{% endblock %}
 {% block head_matter %}
 
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/smoothness/jquery-ui-1.8.16.custom.css" type="text/css">
+<link rel="stylesheet" href="{% static "css/jquery.ui/smoothness/jquery-ui-1.10.3.custom.css" %}" type="text/css">
 {% endcompress %}
 
 <style type="text/css">
@@ -29,7 +30,7 @@ table.ui-widget {padding: 0px;}
 </style>
 {% endblock %}
 {% block javascript_matter %}
-<script src="{{ STATIC_URL }}js/jquery.ui/jquery-ui-1.8.16.custom.min.js"></script>
+<script src="{% static "js/jquery.ui/jquery-ui-1.10.3.custom.min.js" %}"></script>
 <script>
 var SEARCH = {
   FROM: {% if search.from %}'{{ search.from }}'{% else %}null{% endif %}
@@ -38,8 +39,8 @@ var SEARCH = {
 var DIFF_APP_URL = '{% url 'pushes.views.diff' %}';
 </script>
 {% compress js %}
-<script type="text/javascript" src="{{ STATIC_URL }}pushes/js/widgets.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}pushes/js/pushlog.js"></script>
+<script type="text/javascript" src="{% static "pushes/js/widgets.js" %}"></script>
+<script type="text/javascript" src="{% static "pushes/js/pushlog.js" %}"></script>
 {% endcompress %}
 {% endblock %}
 

@@ -7,17 +7,8 @@
 {% load url from future %}
 
 <a class="site_login" href="#login">Log in</a>
-
-<p class="site_login_error" style="display:none">
-<strong>Server Error!</strong><br>
-Unable to complete the log in request. Try again a little later.
-</p>
+<a class="site_logout logout" style="display:none" href="#logout">Hello, <span class="username"></span></a>
 
 {% with login_form as form %}
 {% include "accounts/login_form.html" %}
 {% endwith %}
-
-<div class="site_logout" style="display:none">
-  Hello, <span class="username"></span>.
-  <a class="logout" href="{% url 'accounts.views.logout' %}">Log out</a>
-</div>

@@ -5,11 +5,12 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load compress %}
+{% load staticfiles %}
 
 {% block head_matter %}
 {% block timeplot_styles %}
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}l10nstats/css/timeplot.css" type="text/css">
+<link rel="stylesheet" href="{% static "l10nstats/css/timeplot.css" %}" type="text/css">
 {% endcompress %}
 {% endblock %}
 {% endblock %}
@@ -22,10 +23,10 @@ var startdate = new Date({{stamps.start}}*1000),
 </script>
 {% block timeplot_extra_js %}{% endblock %}
 
-<script src="{{ STATIC_URL }}js/d3/d3.v2.min.js"></script>
+<script src="{% static "js/d3/d3.v2.min.js" %}"></script>
 {% block timeplot_scripts %}
 {% compress js %}
-<script src="{{ STATIC_URL }}l10nstats/js/timeplot.js"></script>
+<script src="{% static "l10nstats/js/timeplot.js" %}"></script>
 {% endcompress %}
 {% endblock %}
 {% endblock %}

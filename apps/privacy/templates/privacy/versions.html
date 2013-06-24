@@ -5,24 +5,25 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load compress %}
+{% load staticfiles %}
 {% load url from future %}
 
 {% block title_matter %}Revision history of Privacy Policies{% endblock %}
 {% block head_matter %}
 
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}privacy/css/privacy.css" type="text/css">
+<link rel="stylesheet" href="{% static "privacy/css/privacy.css" %}" type="text/css">
 {% endcompress %}
 
 {% compress css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.ui/smoothness/jquery-ui-1.8.16.custom.css" type="text/css">
+<link rel="stylesheet" href="{% static "css/jquery.ui/smoothness/jquery-ui-1.10.3.custom.css" %}" type="text/css">
 {% endcompress %}
 {% endblock %}
 
 {% block javascript_matter %}
-<script src="{{ STATIC_URL }}js/jquery.ui/jquery-ui-1.8.16.custom.min.js"></script>
+<script src="{% static "js/jquery.ui/jquery-ui-1.10.3.custom.min.js" %}"></script>
 {% compress js %}
-<script src="{{ STATIC_URL }}privacy/js/versions.js"></script>
+<script src="{% static "privacy/js/versions.js" %}"></script>
 {% endcompress %}
 {% endblock %}
 

@@ -47,37 +47,16 @@ def etag_index(request):
 
 @etag(etag_index)
 def index(request):
-    limit = getattr(settings, 'HOMEPAGE_LOCALES_LIMIT', 10)
-
-    locales_first_half, locales_second_half, locales_rest_count = \
-      get_homepage_locales(limit / 2)
-
     feed_items = get_feed_items()
 
+    locs = Locale.objects.all().order_by('name')
+    locs = locs.exclude(code='en-US')
+
     options = {
+      'locales': locs,
       'feed_items': feed_items,
-      'locales_first_half': locales_first_half,
-      'locales_second_half': locales_second_half,
-      'locales_rest_count': locales_rest_count,
     }
     return render(request, 'homepage/index.html', options)
-
-
-def get_homepage_locales(split):
-    # we're only going to show the `split+split-1` first locales
-    # and in the interest to avoid excessive db queries, download
-    # them all as a python list and split up accordingly
-    locales = list(Locale.objects
-                   .filter(name__isnull=False)
-                   .order_by('name')
-                   .values('name', 'code'))
-    length = len(locales)
-    if split * 2 > length:
-        split = length / 2  # new minimum split
-    first_half = locales[:split]
-    second_half = locales[split:split * 2 - 1]
-    rest_count = length - split * 2 + 1
-    return first_half, second_half, rest_count
 
 
 def get_feed_items(max_count=settings.HOMEPAGE_FEED_SIZE,

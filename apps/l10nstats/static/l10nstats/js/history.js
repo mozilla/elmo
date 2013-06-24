@@ -83,12 +83,13 @@ function renderPlot() {
     .attr("stroke", "red")
     .attr("fill", "url(#missingGradient)");
   svg.selectAll('a.marker')
-    .data(data)
+    .data(data.slice(0, -1))
     .enter()
     .append('svg:a')
     .attr('class','marker missing')
     .attr('xlink:href', function(d) {return compare_link + '?run=' + d.run;})
     .attr('xlink:show', 'new')
+    .attr('title', function(d) {return 'missing: ' + d.missing})
     .append('path')
     .attr('transform',
           function(d) {
