@@ -9,16 +9,10 @@
 {% load url from future %}
 {% block title_matter %}Bugs for a new localization{% endblock %}
 {% block head_matter %}
-<style type="text/css">
-#account {
-  position:fixed;
-  bottom:0;
-  right:0;
-  width:300px;
-  height:100px;
-  border:1px solid black
-}
-</style>
+{% compress css %}
+<link rel="stylesheet" href="{% static "bugsy/css/new-locale.css" %}" type="text/css">
+{% endcompress %}
+
 {% endblock %}
 {% block javascript_matter %}
 <script>
