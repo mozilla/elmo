@@ -27,10 +27,18 @@
   color: grey;
 }
 #stats {
-  background-color: white;
   cell-padding:0px;
   border-spacing:0px;
-  padding: 3px;
+  padding: 16px 0;
+  border-bottom: 1px solid #CCC;
+  border-top: 1px solid #CCC;
+  margin-bottom: 20px;
+}
+#stats p{
+  margin: 0;
+}
+#stats table{
+  margin: 3px 0;
 }
 .status {
   height: 2ex;
