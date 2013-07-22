@@ -4,6 +4,3 @@
 [submodule "vendor-local/src/compare-locales"]
 	path = vendor-local/src/compare-locales
 	url = git://github.com/Pike/compare-locales.git
-[submodule "vendor-local/src/nashvegas"]
-	path = vendor-local/src/nashvegas
-	url = git://github.com/paltman/nashvegas.git

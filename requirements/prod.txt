@@ -2,3 +2,4 @@ ftp://ftp.tummy.com/pub/python-memcached/old-releases/python-memcached-1.47.tar.
 feedparser==5.1
 pytz==2012d
 raven==3.1.16
+South==0.8.1

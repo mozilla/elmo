@@ -15,6 +15,8 @@ try:
 except ImportError:
     import pickle
 
+from south.modelsinspector import add_introspection_rules
+
 
 class PickledObject(str):
     """A subclass of string so it can be told whether a string is
@@ -23,7 +25,7 @@ class PickledObject(str):
     pass
 
 
-class PickledObjectField(models.Field):
+class PickledObjectField(models.TextField):
     __metaclass__ = models.SubfieldBase
 
     def to_python(self, value):
@@ -66,7 +68,11 @@ class PickledObjectField(models.Field):
                                     connection=connection, prepared=True))
 
 
-class ListField(models.Field):
+# For South migrations to understand what this field is
+add_introspection_rules([], ["^mbdb\.fields\.PickledObjectField"])
+
+
+class ListField(models.TextField):
     __metaclass__ = models.SubfieldBase
 
     def to_python(self, value):
@@ -103,3 +109,7 @@ class ListField(models.Field):
         return super(ListField, self).get_db_prep_lookup(lookup_type, value,
                                                          connection=connection,
                                                          prepared=True)
+
+
+# For South migrations to understand what this field is
+add_introspection_rules([], ["^mbdb\.fields\.ListField"])

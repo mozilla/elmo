@@ -87,7 +87,7 @@ INSTALLED_APPS += (
 
     # Local apps
     'commons',
-    'nashvegas',
+    'south',
     'compressor',
     'raven.contrib.django.raven_compat',
 
