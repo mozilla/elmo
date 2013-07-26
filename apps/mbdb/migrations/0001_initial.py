@@ -92,7 +92,7 @@ class Migration(SchemaMigration):
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('name', self.gf('django.db.models.fields.CharField')(max_length=20, db_index=True)),
             ('source', self.gf('django.db.models.fields.CharField')(max_length=20, db_index=True)),
-            ('value', self.gf('mbdb.fields.PickledObjectField')(db_index=True, null=True, blank=True)),
+            ('value', self.gf('mbdb.fields.PickledObjectField')(null=True, blank=True)),
         ))
         db.send_create_signal('mbdb', ['Property'])
 
@@ -314,7 +314,7 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '20', 'db_index': 'True'}),
             'source': ('django.db.models.fields.CharField', [], {'max_length': '20', 'db_index': 'True'}),
-            'value': ('mbdb.fields.PickledObjectField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'})
+            'value': ('mbdb.fields.PickledObjectField', [], {'null': 'True', 'blank': 'True'})
         },
         'mbdb.slave': {
             'Meta': {'object_name': 'Slave'},

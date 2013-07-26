@@ -25,8 +25,15 @@ class PickledObject(str):
     pass
 
 
-class PickledObjectField(models.TextField):
+class PickledObjectField(models.Field):
     __metaclass__ = models.SubfieldBase
+
+    def __init__(self, *args, **kwargs):
+        super(PickledObjectField, self).__init__(*args, **kwargs)
+        # By default, South will make this field an index. MySQL doesn't
+        # accept TEXT fields to be indexed, and will raise an error.
+        # We thus need to force this to *not* be indexed by MySQL.
+        self.db_index = False
 
     def to_python(self, value):
         if value is None:
@@ -72,8 +79,15 @@ class PickledObjectField(models.TextField):
 add_introspection_rules([], ["^mbdb\.fields\.PickledObjectField"])
 
 
-class ListField(models.TextField):
+class ListField(models.Field):
     __metaclass__ = models.SubfieldBase
+
+    def __init__(self, *args, **kwargs):
+        super(ListField, self).__init__(*args, **kwargs)
+        # By default, South will make this field an index. MySQL doesn't
+        # accept TEXT fields to be indexed, and will raise an error.
+        # We thus need to force this to *not* be indexed by MySQL.
+        self.db_index = False
 
     def to_python(self, value):
         if value is not None:
