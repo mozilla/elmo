@@ -59,7 +59,7 @@ class Migration(SchemaMigration):
         db.create_table('l10nstats_unchangedinfile', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('module', self.gf('django.db.models.fields.CharField')(max_length=50, db_index=True)),
-            ('file', self.gf('django.db.models.fields.CharField')(max_length=400, db_index=True)),
+            ('file', self.gf('django.db.models.fields.CharField')(max_length=400)),
             ('count', self.gf('django.db.models.fields.IntegerField')(db_index=True)),
             ('run', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['l10nstats.Run'])),
         ))
@@ -129,7 +129,7 @@ class Migration(SchemaMigration):
         'l10nstats.unchangedinfile': {
             'Meta': {'object_name': 'UnchangedInFile'},
             'count': ('django.db.models.fields.IntegerField', [], {'db_index': 'True'}),
-            'file': ('django.db.models.fields.CharField', [], {'max_length': '400', 'db_index': 'True'}),
+            'file': ('django.db.models.fields.CharField', [], {'max_length': '400'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'module': ('django.db.models.fields.CharField', [], {'max_length': '50', 'db_index': 'True'}),
             'run': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['l10nstats.Run']"})

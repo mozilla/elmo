@@ -7,10 +7,11 @@ most notable locales and hg repositories.
 '''
 
 from django.db import models
-from django.conf import settings
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.core.cache import cache
+from mbdb.models import File
+File  # silence pyflakes
 
 
 class LocaleManager(models.Manager):
@@ -54,20 +55,6 @@ class Branch(models.Model):
 
     def __unicode__(self):
         return self.name
-
-
-if 'mbdb' in settings.INSTALLED_APPS:
-    from mbdb.models import File
-    File  # silence pyflakes
-else:
-    class File(models.Model):
-        class Meta:
-            db_table = 'mbdb_file'
-
-        path = models.CharField(max_length=400, db_index=True)
-
-        def __unicode__(self):
-            return self.path
 
 
 class ChangesetManager(models.Manager):

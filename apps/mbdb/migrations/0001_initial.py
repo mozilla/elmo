@@ -25,7 +25,7 @@ class Migration(SchemaMigration):
         # Adding model 'File'
         db.create_table('mbdb_file', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('path', self.gf('django.db.models.fields.CharField')(max_length=400, db_index=True)),
+            ('path', self.gf('django.db.models.fields.CharField')(max_length=400)),
         ))
         db.send_create_signal('mbdb', ['File'])
 
@@ -286,7 +286,7 @@ class Migration(SchemaMigration):
         'mbdb.file': {
             'Meta': {'object_name': 'File'},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'path': ('django.db.models.fields.CharField', [], {'max_length': '400', 'db_index': 'True'})
+            'path': ('django.db.models.fields.CharField', [], {'max_length': '400'})
         },
         'mbdb.log': {
             'Meta': {'object_name': 'Log'},

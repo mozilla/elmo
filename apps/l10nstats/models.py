@@ -135,7 +135,7 @@ class UnchangedInFile(models.Model):
     """Abstraction for untranslated count per file.
     """
     module = models.CharField(max_length=50, db_index=True)
-    file = models.CharField(max_length=400, db_index=True)
+    file = models.CharField(max_length=400)
     count = models.IntegerField(db_index=True)
     run = models.ForeignKey(Run)
 
