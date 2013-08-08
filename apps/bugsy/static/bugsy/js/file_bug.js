@@ -18,17 +18,17 @@ BugComponentImporter.load = function(link, database, cont) {
     }
     try {
       var items = [], o = {items: items};
-      function getComponent(comp) {
-        if (!/ \/ /.test(comp)) {return;}
-        var loc = comp.split(' / ')[0];
+      function getComponent(_, comp) {
+        if (!/ \/ /.test(comp.name)) {return;}
+        var loc = comp.name.split(' / ')[0];
         var item = {'id': loc,
-          'label': comp,
+          'label': comp.name,
           'product': 'Mozilla Localizations',
-          'component': comp,
+          'component': comp.name,
           'type': 'Component'};
         items.push(item);
       }
-      $.each(json.product['Mozilla Localizations'].component, getComponent);
+      $.each(json.products[0].components, getComponent);
       if (o != null) {
         database.loadData(o, Exhibit.Persistence.getBaseURL(url));
       }
