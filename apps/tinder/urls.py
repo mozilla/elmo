@@ -5,7 +5,7 @@
 '''URL mappings for the tinder app.
 '''
 
-from django.conf.urls import patterns
+from django.conf.urls import patterns, url
 from views import BuildsForChangeFeed
 
 
@@ -17,6 +17,7 @@ urlpatterns = patterns('tinder.views',
                        (r'^builders/([^/]+)/(\d+)', 'showbuild',
                         {}, 'tinder_show_build'),
                        (r'^log/([^/]+)/(.+)', 'showlog', {}, 'showlog'),
-                       (r'^feeds/builds_for_change/(\d+)/$',
-                        BuildsForChangeFeed()),
+                       # feed instances need a name so use url() here
+                       url(r'^feeds/builds_for_change/(\d+)/$',
+                           BuildsForChangeFeed(), name='BuildsForChangeFeed'),
                        )
