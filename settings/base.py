@@ -82,7 +82,18 @@ MIDDLEWARE_CLASSES = (
     'commonware.middleware.ScrubRequestOnException',
 )
 
-INSTALLED_APPS += (
+INSTALLED_APPS = (
+    # a manually maintained list of apps "from funfactory"
+    'funfactory',
+    'compressor',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.staticfiles',
+    'commonware.response.cookies',
+    'session_csrf',
+
+    # this elmo package itself
     ROOT_PACKAGE,
 
     # Local apps
@@ -114,8 +125,9 @@ INSTALLED_APPS += (
     'webby',
     'elmo_commons',
 
+    # django-nose has to be last
+    'django_nose',
 )
-
 
 ## Auth
 PWD_ALGORITHM = 'bcrypt'
