@@ -15,6 +15,8 @@ try:
 except ImportError:
     import pickle
 
+from south.modelsinspector import add_introspection_rules
+
 
 class PickledObject(str):
     """A subclass of string so it can be told whether a string is
@@ -25,6 +27,13 @@ class PickledObject(str):
 
 class PickledObjectField(models.Field):
     __metaclass__ = models.SubfieldBase
+
+    def __init__(self, *args, **kwargs):
+        super(PickledObjectField, self).__init__(*args, **kwargs)
+        # By default, South will make this field an index. MySQL doesn't
+        # accept TEXT fields to be indexed, and will raise an error.
+        # We thus need to force this to *not* be indexed by MySQL.
+        self.db_index = False
 
     def to_python(self, value):
         if value is None:
@@ -66,8 +75,19 @@ class PickledObjectField(models.Field):
                                     connection=connection, prepared=True))
 
 
+# For South migrations to understand what this field is
+add_introspection_rules([], ["^mbdb\.fields\.PickledObjectField"])
+
+
 class ListField(models.Field):
     __metaclass__ = models.SubfieldBase
+
+    def __init__(self, *args, **kwargs):
+        super(ListField, self).__init__(*args, **kwargs)
+        # By default, South will make this field an index. MySQL doesn't
+        # accept TEXT fields to be indexed, and will raise an error.
+        # We thus need to force this to *not* be indexed by MySQL.
+        self.db_index = False
 
     def to_python(self, value):
         if value is not None:
@@ -103,3 +123,7 @@ class ListField(models.Field):
         return super(ListField, self).get_db_prep_lookup(lookup_type, value,
                                                          connection=connection,
                                                          prepared=True)
+
+
+# For South migrations to understand what this field is
+add_introspection_rules([], ["^mbdb\.fields\.ListField"])

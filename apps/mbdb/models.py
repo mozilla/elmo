@@ -29,7 +29,7 @@ class Slave(models.Model):
 class File(models.Model):
     """Model for files throughout"""
     # not  unique = True, mysql doesn't like long unique utf-8 strings
-    path = models.CharField(max_length=400, db_index=True)
+    path = models.CharField(max_length=400)
 
     def __unicode__(self):
         return self.path
@@ -113,8 +113,7 @@ class Property(models.Model):
     """
     name = models.CharField(max_length=20, db_index=True)
     source = models.CharField(max_length=20, db_index=True)
-    value = fields.PickledObjectField(null=True, blank=True,
-                                      db_index=True)
+    value = fields.PickledObjectField(null=True, blank=True)
 
     class Meta:
         if not database_engine.endswith('mysql'):

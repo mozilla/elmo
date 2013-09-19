@@ -367,6 +367,18 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
+    def test_render_builds_for_change(self):
+        url = reverse('tinder.views.builds_for_change')
+        response = self.client.get(url)
+        eq_(response.status_code, 404)
+
+        change, = Change.objects.all()[:1]
+        response = self.client.get(url, {'change': change.number})
+        eq_(response.status_code, 200)
+
+        feed_url = reverse('BuildsForChangeFeed', args=(change.number,))
+        ok_(feed_url in response.content)
+
 
 SAMPLE_BUILD_LOG_PAYLOAD = '''16:2header content
 ,16:1stderr content

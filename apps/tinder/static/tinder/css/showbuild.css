@@ -9,3 +9,9 @@ dl#steps > dd {
 dl#steps {
   margin: 15px 0;
 }
+
+/* override the defaults from Sandstone */
+dl#steps dt {
+  font: inherit;
+  letter-spacing: 0;
+}

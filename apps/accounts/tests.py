@@ -73,8 +73,11 @@ class AccountsTestCase(TestCase):
         token_key = response.cookies['anoncsrf'].value
         # before we can pick up from the cache we need to know
         # what prefix it was stored with
-        from session_csrf import PREFIX
-        eq_(cache.get(PREFIX + token_key), data['csrf_token'])
+        from session_csrf import prep_key
+        # session_csrf hashes the combined key to normalize its potential
+        # max length
+        cache_key = prep_key(token_key)
+        eq_(cache.get(cache_key), data['csrf_token'])
         ok_('user_name' not in data)
 
         user = User.objects.create_user(
