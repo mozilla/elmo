@@ -33,6 +33,9 @@ class MockLDAP:
         return self.search_result[search]
 
     def simple_bind_s(self, dn, password):
+        # to simulate how _ldap works we have to have byte strings here
+        assert isinstance(dn, str)
+        assert isinstance(password, str)
         if self.credentials is None:
             # password check passed
             return
@@ -142,6 +145,60 @@ class LDAPAuthTestCase(TestCase):
         eq_(user.last_name, u'Bengtss\xa2n')
         ok_(not user.has_usable_password())
         ok_(not user.check_password('secret'))
+
+    def test_authenticate_with_non_ascii_mail(self):
+        assert not User.objects.all().exists()
+        ldap.open = Mock('ldap.open')
+        ldap.open.mock_returns = Mock('ldap_connection')
+        ldap.set_option = Mock(return_value=None)
+
+        email = u'm\xc3@example.com'
+        fake_user = [
+          ('mail=%s,...' % email,
+           {'cn': ['Peter Bengtsson'],
+            'givenName': ['Peter'],
+            'mail': [email],
+            'sn': ['Bengtsson'],
+            'uid': ['pbengtsson']
+            })
+        ]
+
+        ldap.initialize = Mock(return_value=MockLDAP({
+          'dc=mozilla': fake_user,
+          'ou=groups,dc=mozilla': self.fake_group
+        }))
+        backend = MozLdapBackend()
+
+        user = backend.authenticate(email, 'secret')
+        ok_(user)
+        ok_(User.objects.get(email=email))
+
+    def test_authenticate_with_non_ascii_password(self):
+        assert not User.objects.all().exists()
+        ldap.open = Mock('ldap.open')
+        ldap.open.mock_returns = Mock('ldap_connection')
+        ldap.set_option = Mock(return_value=None)
+
+        email = 'meh@example.com'
+        fake_user = [
+          ('mail=%s,...' % email,
+           {'cn': ['Peter Bengtsson'],
+            'givenName': ['Peter'],
+            'mail': [email],
+            'sn': ['Bengtsson'],
+            'uid': ['pbengtsson']
+            })
+        ]
+
+        ldap.initialize = Mock(return_value=MockLDAP({
+          'dc=mozilla': fake_user,
+          'ou=groups,dc=mozilla': self.fake_group
+        }))
+        backend = MozLdapBackend()
+
+        user = backend.authenticate(email, u's\xc4cret')
+        ok_(user)
+        ok_(User.objects.get(email=email))
 
     def test_authenticate_with_ldap_existing_user(self):
         assert not User.objects.all().exists()
