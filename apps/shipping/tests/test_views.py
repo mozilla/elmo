@@ -329,6 +329,8 @@ class ShippingTestCase(ShippingTestCaseBase):
         response = self.client.get(url)
         struct = json.loads(response.content)
         ok_(struct['items'])
+        ok_('Access-Control-Allow-Origin' in response)
+        eq_(response['Access-Control-Allow-Origin'], '*')
 
     def test_status_json_by_treeless_appversion(self):
         url = reverse('shipping.views.status.status_json')

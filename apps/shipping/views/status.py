@@ -78,6 +78,7 @@ class SignoffDataView(View):
         r = HttpResponse(content, content_type='text/plain; charset=utf-8')
         if self.filename:
             r['Content-Disposition'] = 'inline; filename="%s"' % self.filename
+        r['Access-Control-Allow-Origin'] = '*'
         return r
 
 
