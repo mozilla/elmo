@@ -15,7 +15,9 @@ from django.core.urlresolvers import reverse
 from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView
 
-from life.models import Locale, Push, Repository, Push_Changesets
+from life.models import (
+    Locale, Push, Repository, Push_Changesets, TeamLocaleThrough
+)
 from l10nstats.models import Run_Revisions, Run
 from shipping.models import AppVersion, Signoff, Action
 from shipping.api import flags4appversions
@@ -73,9 +75,17 @@ class SignoffView(TemplateView):
             appver,
         )
 
+        try:
+            team_locale = (
+                TeamLocaleThrough.objects.current().get(locale=lang).team
+            )
+        except TeamLocaleThrough.DoesNotExist:
+            team_locale = lang
+
         return {
             'appver': appver,
             'language': lang,
+            'team_locale': team_locale,
             'pushes': pushes,
             'pending': pending,
             'rejected': rejected,

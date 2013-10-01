@@ -19,7 +19,7 @@ from django.views.defaults import page_not_found
 from django.core.cache import cache
 from django.views.decorators.http import etag
 
-from life.models import Locale
+from life.models import Locale, TeamLocaleThrough
 
 
 def handler500(request):
@@ -49,8 +49,13 @@ def etag_index(request):
 def index(request):
     feed_items = get_feed_items()
 
+    active_locales_ids = (
+        TeamLocaleThrough.objects.current()
+        .values_list('locale', flat=True)
+    )
     locs = Locale.objects.all().order_by('name')
     locs = locs.exclude(code='en-US')
+    locs = locs.exclude(pk__in=active_locales_ids)
 
     options = {
       'locales': locs,
@@ -87,7 +92,15 @@ def get_feed_items(max_count=settings.HOMEPAGE_FEED_SIZE,
 
 
 def teams(request):
-    locs = Locale.objects.all().order_by('name')
+    active_locales_ids = (
+        TeamLocaleThrough.objects.current()
+        .values_list('locale', flat=True)
+    )
+    locs = (
+        Locale.objects
+        .exclude(pk__in=active_locales_ids)
+        .order_by('name')
+    )
     # This is an artifact of the addon trees
     # see https://bugzilla.mozilla.org/show_bug.cgi?id=701218
     locs = locs.exclude(code='en-US')
@@ -101,9 +114,18 @@ def locale_team(request, code):
         loc = Locale.objects.get(code=code)
     except Locale.DoesNotExist:
         return redirect('homepage.views.teams')
+    try:
+        team_locale = TeamLocaleThrough.objects.current().get(locale=loc)
+        return redirect('homepage.views.locale_team', team_locale.team.code)
+    except TeamLocaleThrough.DoesNotExist:
+        pass
 
+    team_locales = (
+        TeamLocaleThrough.objects.current()
+        .filter(team=loc).values_list('locale', flat=True)
+    )
     from shipping.views import teamsnippet as ship_snippet
-    ship_div = mark_safe(ship_snippet(loc))
+    ship_div = mark_safe(ship_snippet(loc, team_locales))
 
     from bugsy.views import teamsnippet as bug_snippet
     bug_div = mark_safe(bug_snippet(loc))

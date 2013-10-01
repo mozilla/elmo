@@ -12,6 +12,7 @@ from django.db.models.signals import post_save
 from django.core.cache import cache
 from mbdb.models import File
 File  # silence pyflakes
+from elmo_commons.models import DurationThrough
 
 
 class LocaleManager(models.Manager):
@@ -46,6 +47,22 @@ class Locale(models.Model):
 def invalidate_homepage_index_cache(sender, **kwargs):
     cache_key = 'homepage.views.index.etag'
     cache.delete(cache_key)
+
+
+class TeamLocaleThrough(DurationThrough):
+    team = models.ForeignKey(Locale, related_name='locales_over_time')
+    locale = models.ForeignKey(Locale, related_name='teams_over_time')
+
+    class Meta(DurationThrough.DurationMeta):
+        unique_together = (DurationThrough.unique + ('team', 'locale'),)
+
+    def __unicode__(self):
+        rv = u'%s \u2014 %s' % (self.team.code, self.locale.code)
+        if self.start or self.end:
+            rv += u' [%s:%s]' % (
+                self.start and str(self.start.date()) or '',
+                self.end and str(self.end.date()) or '')
+        return rv
 
 
 class Branch(models.Model):
