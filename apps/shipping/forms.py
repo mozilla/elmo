@@ -30,3 +30,11 @@ class SignoffFilterForm(forms.Form):
     ms = ModelInstanceField(Milestone, key='code', required=False)
     av = ModelInstanceField(AppVersion, key='code', required=False)
     up_until = forms.fields.DateTimeField(required=False)
+
+
+class SignoffsPaginationForm(forms.Form):
+    push_date = forms.DateTimeField(
+        input_formats=forms.DateTimeField.input_formats + (
+            '%Y-%m-%dT%H:%M:%S',  # isoformat
+        )
+    )

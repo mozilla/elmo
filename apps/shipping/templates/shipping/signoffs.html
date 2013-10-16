@@ -31,6 +31,9 @@ var permissions = {
   canReviewSignoff: {{ perms.shipping.review_signoff|yesno:"true,false" }}
 };
 var signoffDetailsURL = "{% url 'shipping.views.signoff.signoff_details' language.code appver.code %}";
+{% if next_push_date %}
+var next_push_date = '{{ next_push_date }}';
+{% endif %}
 </script>
 {% compress js %}
 <script src="{% static "shipping/js/signoffs.js" %}"></script>
@@ -117,8 +120,13 @@ looks good to <a href="#{{suggested_signoff}}">sign off on</a>.{% endif %}
 {% endif %}
 <table id="pushtable" class="standard">
 {% include "shipping/signoff-rows.html" %}
-  <tr><td colspan="4" class="note">Loading more data will be part of
-  <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=658656">bug 658656</a></td></tr>
+{% if pushes_left %}
+  <tr>
+    <td colspan="4" class="note">
+      <button class="load-more">Load more</button> (<span class="pushes-left">{{ pushes_left }}</span> left)
+    </td>
+  </tr>
+{% endif %}
 {% if fallback %}
   <tr class="tree-change-spacer"></tr>
   <tr class="pushrow" id="{{fallback.tip.shortrev}}" data-push="{{fallback.tip.shortrev}}">

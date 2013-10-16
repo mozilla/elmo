@@ -213,6 +213,29 @@ en-US
         url = url.replace(locale.code, '')
         eq_(self.client.get(url).status_code, 404)
 
+    def test_signoff_rows_invalid_next_push_date(self):
+        url = reverse('shipping.views.signoff.signoff_rows',
+                      args=['de', self.av.code])
+        response = self.client.get(url)
+        # missing the push_date GET parameter
+        eq_(response.status_code, 400)
+
+        response = self.client.get(url, {'push_date': 'xxx'})
+        # not a valid date
+        eq_(response.status_code, 400)
+
+    def test_signoff_rows(self):
+        url = reverse('shipping.views.signoff.signoff_rows',
+                      args=['de', self.av.code])
+        p1, p2, p3 = Push.objects.all().order_by('push_date')[:3]
+        next_push_date = p3.push_date.isoformat()
+        response = self.client.get(url, {'push_date': next_push_date})
+        eq_(response.status_code, 200)
+        eq_(response['content-type'], 'application/json; charset=UTF-8')
+        structure = json.loads(response.content)
+        ok_(structure['html'])
+        ok_(not structure['pushes_left'])
+
     def test_cancel_pending_signoff(self):
         appver, = AppVersion.objects.all()
         # gotta know your signoffs.json
@@ -355,14 +378,16 @@ en-US
                        .select_related('signoff__push__repository', 'author'))
         fallback, = actions
         assert fallback.flag == Action.ACCEPTED, fallback.flag
-        pushes, suggested_signoff = view.annotated_pushes(
-            actions,
-            flags,
-            fallback,
+        pushes_data = view.annotated_pushes(
             locale,
-            self.av
+            self.av,
+            actions=actions,
+            flags=flags,
+            fallback=fallback,
         )
+        suggested_signoff = pushes_data['suggested_signoff']
         eq_(suggested_signoff, None)
+        pushes = pushes_data['pushes']
         changesets = [c for p in pushes for c in p['changes']]
         revisions = [x.revision for x in changesets]
         # only `de` changes in the right order
@@ -431,28 +456,28 @@ class SignOffAnnotatedPushesTest(TestCase):
         view = SignoffView()
         flags, actions = self._get_flags_and_actions()
 
-        pushes, suggested_signoff = view.annotated_pushes(
-            actions,
-            flags,
-            None,
+        pushes_data = view.annotated_pushes(
             self.locale,
             self.av,
+            actions=actions,
+            flags=flags,
             count=1
         )
+        pushes = pushes_data['pushes']
         # there are more pushes than this but it gets limited
         # by `count` instead because there is no fallback
         eq_(len(pushes), 1)
 
         # equally...
         # the `count` is what determines how many we get back
-        pushes, suggested_signoff = view.annotated_pushes(
-            actions,
-            flags,
-            None,
+        pushes_data = view.annotated_pushes(
             self.locale,
             self.av,
+            actions=actions,
+            flags=flags,
             count=3
         )
+        pushes = pushes_data['pushes']
         eq_(len(pushes), 3)
 
     def test_5_pushes_2nd_accepted(self):
@@ -474,14 +499,14 @@ class SignOffAnnotatedPushesTest(TestCase):
         )
 
         flags, actions = self._get_flags_and_actions()
-        pushes, suggested_signoff = view.annotated_pushes(
-            actions,
-            flags,
-            None,  # notice, no fallback
+        pushes_data = view.annotated_pushes(
             self.locale,
             self.av,
+            actions=actions,
+            flags=flags,
             count=1
         )
+        pushes = pushes_data['pushes']
         eq_(len(pushes), 4)
         # the last (aka. first) one should have a signoff with an
         # action on that is accepting
@@ -520,14 +545,14 @@ class SignOffAnnotatedPushesTest(TestCase):
         )
 
         flags, actions = self._get_flags_and_actions()
-        pushes, suggested_signoff = view.annotated_pushes(
-            actions,
-            flags,
-            None,  # notice, no fallback
+        pushes_data = view.annotated_pushes(
             self.locale,
             self.av,
+            actions=actions,
+            flags=flags,
             count=1
         )
+        pushes = pushes_data['pushes']
         eq_(len(pushes), 4)
         # the last (aka. first) one should have a signoff with an
         # action on that is accepting
@@ -577,14 +602,14 @@ class SignOffAnnotatedPushesTest(TestCase):
         )
 
         flags, actions = self._get_flags_and_actions()
-        pushes, suggested_signoff = view.annotated_pushes(
-            actions,
-            flags,
-            None,  # notice, no fallback
+        pushes_data = view.annotated_pushes(
             self.locale,
             self.av,
+            actions=actions,
+            flags=flags,
             count=1
         )
+        pushes = pushes_data['pushes']
         eq_(len(pushes), 4)
         # the last (aka. first) one should have a signoff with an
         # action on that is accepting
@@ -621,14 +646,14 @@ class SignOffAnnotatedPushesTest(TestCase):
         )
 
         flags, actions = self._get_flags_and_actions()
-        pushes, suggested_signoff = view.annotated_pushes(
-            actions,
-            flags,
-            None,  # notice, no fallback
+        pushes_data = view.annotated_pushes(
             self.locale,
             self.av,
+            actions=actions,
+            flags=flags,
             count=1
         )
+        pushes = pushes_data['pushes']
         eq_(len(pushes), 4)
 
         # the last (aka. first) one should have a signoff with an
@@ -653,16 +678,71 @@ class SignOffAnnotatedPushesTest(TestCase):
         )
 
         flags, actions = self._get_flags_and_actions()
-        pushes, suggested_signoff = view.annotated_pushes(
-            actions,
-            flags,
-            None,  # notice, no fallback
+        pushes_data = view.annotated_pushes(
             self.locale,
             self.av,
+            actions=actions,
+            flags=flags,
+            fallback=None,
             count=1
         )
+        pushes = pushes_data['pushes']
         eq_(len(pushes), 5)
 
         # the last (aka. first) one should have a signoff with an
         # action on that is rejected
         eq_(pushes[-1]['signoffs'][0]['action'].flag, Action.PENDING)
+
+    def test_next_push_date(self):
+        view = SignoffView()
+        flags, actions = self._get_flags_and_actions()
+
+        pushes_data = view.annotated_pushes(
+            self.locale,
+            self.av,
+            actions=actions,
+            flags=flags,
+            fallback=None,
+            count=2
+        )
+        pushes = pushes_data['pushes']
+        # there are more pushes than this but it gets limited
+        # by `count` instead because there is no fallback
+        eq_(len(pushes), 2)
+        # because there are 5 in this fixture, we can expect...
+        eq_(pushes_data['pushes_left'], 3)
+
+        p1, p2, p3, p4, p5 = Push.objects.all().order_by('push_date')
+        eq_(p4.push_date, pushes_data['next_push_date'])
+
+        # get the next two
+        pushes_data = view.annotated_pushes(
+            self.locale,
+            self.av,
+            actions=actions,
+            flags=flags,
+            fallback=None,
+            count=2,
+            next_push_date=pushes_data['next_push_date']
+        )
+        pushes = pushes_data['pushes']
+        eq_(len(pushes), 2)
+        eq_(pushes_data['pushes_left'], 1)
+
+        eq_(p2.push_date, pushes_data['next_push_date'])
+
+        # and get the last remaining one
+        pushes_data = view.annotated_pushes(
+            self.locale,
+            self.av,
+            actions=actions,
+            flags=flags,
+            fallback=None,
+            count=2,
+            next_push_date=pushes_data['next_push_date']
+        )
+        pushes = pushes_data['pushes']
+        eq_(len(pushes), 1)
+        eq_(pushes_data['pushes_left'], 0)
+
+        eq_(p1.push_date, pushes_data['next_push_date'])

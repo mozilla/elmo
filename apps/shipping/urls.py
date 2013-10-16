@@ -41,6 +41,7 @@ urlpatterns += patterns('shipping.views.app',
 )
 
 urlpatterns += patterns('shipping.views.signoff',
+    (r'^/signoffs/(.*)/(.*)/more/$', 'signoff_rows'),
     (r'^/signoffs/(.*)/$', 'signoff_locale'),
     (r'^/signoffs/(.*?)/(.*)', 'signoff'),
     (r'^/signoffs-details/(.*?)/(.*)', 'signoff_details'),
