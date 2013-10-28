@@ -161,6 +161,19 @@ var Review = {
 function showSignoff(details_content) {
   $('#signoff_desc').html(details_content);
   $('#add_signoff').dialog('open');
+
+  // In first sign-offs, add checkboxes that will have to be checked before
+  // the user can click the Sign-off button.
+  var needed_checkboxes = $('.first_signoff_needed');
+  if (needed_checkboxes.length > 0) {
+    var signoff_button = document.querySelector('#add_signoff input[type=submit]');
+    signoff_button.disabled = true;
+
+    needed_checkboxes.click(function (e) {
+      // If all needed checkboxes are checked, enable the button.
+      signoff_button.disabled = !!document.querySelector('.first_signoff_needed:not(:checked)');
+    });
+  }
 }
 
 function doSignoff(event) {
@@ -171,5 +184,5 @@ function doSignoff(event) {
   sf.children('[name=push]').val(push);
   var run = t.attr('data-run');
   sf.children('[name=run]').val(run);
-  $.get(signoffDetailsURL, {push: push, run: run}, showSignoff, 'html');
+  $.get(signoffDetailsURL, {push: push, run: run, first: firstSignoff}, showSignoff, 'html');
 }

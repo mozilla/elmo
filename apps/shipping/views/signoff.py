@@ -84,6 +84,10 @@ class SignoffView(TemplateView):
             count=self.count,
         )
 
+        # Check if this is the very first release.
+        # Only applies to products that have a fallback (Firefox for example).
+        first = appver.fallback is not None and accepted is None
+
         try:
             team_locale = (
                 TeamLocaleThrough.objects.current().get(locale=lang).team
@@ -106,6 +110,7 @@ class SignoffView(TemplateView):
             'pending': pending,
             'rejected': rejected,
             'accepted': accepted,
+            'first': first,
             'suggested_signoff': pushes_data['suggested_signoff'],
             'login_form_needs_reload': True,
             'fallback': fallback,
@@ -428,6 +433,11 @@ def signoff_details(request, locale_code, app_code):
         runid = int(request.GET['run'])
     except (KeyError, ValueError):
         runid = None
+    try:
+        # it is possible that this sign-off is the first one
+        first = bool(request.GET['first'])
+    except (KeyError, ValueError):
+        first = False
     appver = get_object_or_404(AppVersion, code=app_code)
     lang = get_object_or_404(Locale, code=locale_code)
     push = get_object_or_404(Push, id=push_id)
@@ -481,10 +491,12 @@ def signoff_details(request, locale_code, app_code):
         newer = sorted(newer)
 
     return render(request, 'shipping/signoff-details.html', {
+                    'language': lang,
                     'run': run,
                     'good': good,
                     'doubled': doubled,
                     'newer': newer,
+                    'first': first,
                     'accepts_signoffs': appver.accepts_signoffs,
                   })
 
