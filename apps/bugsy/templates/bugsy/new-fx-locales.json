@@ -29,12 +29,12 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
   }, 
   {
     "comment": "Please create a new releases/l10n/mozilla-aurora, -beta, and -release hg repositories for a new Firefox localization. The repositories should be releases/l10n/mozilla-aurora/{{ loc }}/ etc, with the common scm_l10n permissions and hooks, both python:mozhghooks.pushlog and python:mozhghooks.single_head_per_branch.hook.\n\nPlease make sure that mxr is updated to pick up the new repos.\n\nPS: to be clear to the localization team, this bug is handled by Mozilla staff.", 
-    "product": "mozilla.org", 
+    "product": "Release Engineering", 
     "title": "hg_repo", 
     "cc": "l10n@mozilla.com", 
     "rep_platform": "All", 
     "short_desc": "l10n aurora/beta/release mercurial repository for '{{ loc }}'", 
-    "component": "Release Engineering: Repos and Hooks", 
+    "component": "Repos and Hooks", 
     "op_sys": "All", 
     "blocked": "fx-l10n-{{ loc }}"
   }, 
@@ -51,12 +51,12 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
   }, 
   {
     "comment": "We need to add '{{ loc }}' to the Firefox Aurora l10n builds.\n\nPS: to be clear to the localization team, this bug is handled by Mozilla staff.", 
-    "product": "mozilla.org", 
+    "product": "Release Engineering", 
     "title": "releng", 
     "cc": "l10n@mozilla.com", 
     "rep_platform": "All", 
     "short_desc": "Add '{{ loc }}' to the Firefox build", 
-    "component": "Release Engineering", 
+    "component": "General Automation", 
     "op_sys": "All", 
     "blocked": "fx-l10n-{{ loc }}"
   }, 
