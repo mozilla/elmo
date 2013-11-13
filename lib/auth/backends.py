@@ -9,7 +9,7 @@ from django.contrib.auth.models import User, Group
 from django.contrib.auth.backends import RemoteUserBackend
 from django.core.validators import email_re
 from django.utils.hashcompat import md5_constructor
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_unicode, smart_str
 import os
 
 HERE = os.path.abspath(os.path.dirname(__file__))
@@ -125,6 +125,11 @@ class MozLdapBackend(RemoteUserBackend):
     def _authenticate_ldap(self, mail, password, user=None):
         self.connect()
 
+        # Because the mail and password is taken in request.POST it's
+        # unicode strings, we have to convert it to a byte strings
+        # before sending.
+        # However, we want to do this as late as possible.
+
         # first, figure out the uid
         search_filter = self.make_search_filter(dict(mail=mail))
 
@@ -134,7 +139,7 @@ class MozLdapBackend(RemoteUserBackend):
             results = self.ldo.search_s(
                 "dc=mozilla",
                 ldap.SCOPE_SUBTREE,
-                search_filter,
+                smart_str(search_filter),
                 ['uid', 'givenName', 'sn', 'mail']
             )
             if not results:
@@ -165,7 +170,7 @@ class MozLdapBackend(RemoteUserBackend):
             group_results = self.ldo.search_s(
                 "ou=groups,dc=mozilla",
                 ldap.SCOPE_SUBTREE,
-                search_filter,
+                smart_str(search_filter),
                 ['cn']
             )
             groups = []
@@ -179,7 +184,7 @@ class MozLdapBackend(RemoteUserBackend):
         # need to check if their password is correct
         self.initialize()
         try:
-            self.ldo.simple_bind_s(uid, password)
+            self.ldo.simple_bind_s(smart_str(uid), smart_str(password))
         except ldap.INVALID_CREDENTIALS:  # Bad password, credentials are bad.
             return
         except ldap.UNWILLING_TO_PERFORM:  # Bad password, credentials are bad.

@@ -11,7 +11,7 @@
 {% block title_matter %}L10n Bug helper{% endblock %}
 {% block head_matter %}
 <link rel="exhibit/data" type="x-bugzilla-components"
-      href="https://bugzilla.mozilla.org/rest/product/Mozilla%20Localizations">
+      href="https://bugzilla.mozilla.org/rest/product/Mozilla%20Localizations?include_fields=components.name">
 {% compress css %}
 <link rel="stylesheet" href="{% static "bugsy/css/file-bugs.css" %}" type="text/css">
 {% endcompress %}

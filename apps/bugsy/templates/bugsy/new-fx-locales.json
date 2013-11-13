@@ -8,7 +8,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
     "comment": "This is a tracker bug for releasing Firefox {{ loc }}.\n\nYour team's dashboard should be up on http://l10n.mozilla.org/teams/{{ loc }}. The dashboard displays your project's status and helps you (and us) determine what's left to do. Follow it closely to track your Firefox localization progress. You will see this bug listed as part of your dashboard. This helps us to track your project's progress and provide visibilty to your work.\n\nThe \"bugs\" here are tracking individual items of work. Some of those will depend on the localization team driving them to completion, while others are for infrastructure that will be handled by Mozilla staff. I'll indicate who is responsible in each bug.\n\nWe'll also be using two terms for interacting with version control. That's commonly mercurial, or hg, in short. \"commit\" is used when talking about the actual 'hg commit' command, adding changes to the local version history. \"landing\" means to commit something and to use 'hg push' to push it from your local version history to the one on hg.mozilla.org, mozilla's server. That's when your changes are public, and make it into the builds mozilla generates, and puts on ftp.\n\nIf you're unsure what any of the terminology means, feel free to ask. Good places are http://www.mozilla.org/about/forums/#dev-l10n-new-locales or #l10n. Ask in public, you shouldn't assume that you're the only one with the question.", 
     "product": "Mozilla Localizations", 
     "title": "shipping", 
-    "cc": "{{ bugmail }},l10n@mozilla.com,pascalc@gmail,milos@moz", 
+    "cc": "{{ bugmail }},l10n@mozilla.com,pascalc@gmail,francesco.lodolo@gmail.com", 
     "rep_platform": "All", 
     "short_desc": "[{{ loc }}] Firefox release tracker {{ language }}", 
     "component": "{{ component }}", 
@@ -29,12 +29,12 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
   }, 
   {
     "comment": "Please create a new releases/l10n/mozilla-aurora, -beta, and -release hg repositories for a new Firefox localization. The repositories should be releases/l10n/mozilla-aurora/{{ loc }}/ etc, with the common scm_l10n permissions and hooks, both python:mozhghooks.pushlog and python:mozhghooks.single_head_per_branch.hook.\n\nPlease make sure that mxr is updated to pick up the new repos.\n\nPS: to be clear to the localization team, this bug is handled by Mozilla staff.", 
-    "product": "mozilla.org", 
+    "product": "Release Engineering", 
     "title": "hg_repo", 
     "cc": "l10n@mozilla.com", 
     "rep_platform": "All", 
     "short_desc": "l10n aurora/beta/release mercurial repository for '{{ loc }}'", 
-    "component": "Release Engineering: Developer Tools", 
+    "component": "Repos and Hooks", 
     "op_sys": "All", 
     "blocked": "fx-l10n-{{ loc }}"
   }, 
@@ -51,12 +51,12 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
   }, 
   {
     "comment": "We need to add '{{ loc }}' to the Firefox Aurora l10n builds.\n\nPS: to be clear to the localization team, this bug is handled by Mozilla staff.", 
-    "product": "mozilla.org", 
+    "product": "Release Engineering", 
     "title": "releng", 
     "cc": "l10n@mozilla.com", 
     "rep_platform": "All", 
     "short_desc": "Add '{{ loc }}' to the Firefox build", 
-    "component": "Release Engineering", 
+    "component": "General Automation", 
     "op_sys": "All", 
     "blocked": "fx-l10n-{{ loc }}"
   }, 
@@ -72,10 +72,10 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "We want to ship Firefox with a good list of search engines for {{ language }}. \n\nWe'll do this in three phases: First, the localization team and Milos (Milos Dinic) will look at the market for the language and come up with a good set of search providers. {{ name }}, we'll need your input on this. The guidelines for making recommendations are found on <https://wiki.mozilla.org/L10n:Firefox/Productization>. \n\nWe currently use this set for en-US, to which we can fall back in the case of lacking localized alternatives:\nGoogle, Yahoo!, Bing, Amazon, eBay, Twitter, Wikipedia\n\nAfter we decided on a particular search engine, Milos will contact the owner and ask for permission and for specifics, like proper search flags. {{ name }}, we'll likely need your help to at least get the owner's contact information.\n\nOnce we have a specification on what the search engines for {{ language }} should look like, Milos and the localization team will work on an implementation on that. Milos will create and attach patches for the desired changes and get them reviewed. After a successful review, Milos will land them. {{ name }}, if you're interested, you could create the patches, too. You'd ask Milos for review on those before landing.\n\nPlease don't commit any modifications in browser/searchplugins to the hg repository without a patch reviewed by Milos, Stas, Axel or someone else appointed by Milos. The data here is sensitive to users and our search partners, thus requiring extra care here.\n\nThe {{ language }} team and Milos will be driving this bug to completion.", 
+    "comment": "We want to ship Firefox with a good list of search engines for {{ language }}. \n\nWe'll do this in three phases: First, the localization team and flod (Francesco Lodolo) will look at the market for the language and come up with a good set of search providers. {{ name }}, we'll need your input on this. The guidelines for making recommendations are found on <https://wiki.mozilla.org/L10n:Firefox/Productization>. \n\nWe currently use this set for en-US, to which we can fall back in the case of lacking localized alternatives:\nGoogle, Yahoo!, Bing, Amazon, eBay, Twitter, Wikipedia\n\nAfter we decided on a particular search engine, flod will contact the owner and ask for permission and for specifics, like proper search flags. {{ name }}, we'll likely need your help to at least get the owner's contact information.\n\nOnce we have a specification on what the search engines for {{ language }} should look like, flod and the localization team will work on an implementation on that. flod will create and attach patches for the desired changes and get them reviewed. After a successful review, flod will land them. {{ name }}, if you're interested, you could create the patches, too. You'd ask flod for review on those before landing.\n\nPlease don't commit any modifications in browser/searchplugins to the hg repository without a patch reviewed by flod, Stas, Axel or someone else appointed by flod. The data here is sensitive to users and our search partners, thus requiring extra care here.\n\nThe {{ language }} team and flod will be driving this bug to completion.", 
     "product": "Mozilla Localizations", 
     "title": "search", 
-    "cc": "l10n@mozilla.com,{{ bugmail }},milos@moz", 
+    "cc": "l10n@mozilla.com,{{ bugmail }},francesco.lodolo@gmail.com", 
     "rep_platform": "All", 
     "short_desc": "[{{ loc }}] Search engine setup for Firefox for {{ language }}", 
     "component": "{{ component }}", 
@@ -85,10 +85,10 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "Protocol handlers allow links like mailto:nobody@mozilla.org to be handled by a webmail application.\n\nIn order to do that, the site needs to support a special API described on https://developer.mozilla.org/en-US/docs/Web-based_protocol_handlers.\n\nFor en-US, we're currently shipping with GMail and Yahoo! Mail for mailto:, 30boxes for webcal: and Mibbit for irc: urls. For {{ language }}, we'd like to do that, too.\n\nFirst, the localization team and Milos (Milos Dinic) will look at the market for the language and come up with a good candidates. {{ name }}, we'll need your input on this. The guidelines for making recommendations are on <https://wiki.mozilla.org/L10n:Firefox/Productization>. Following that, the evangelism team reaches out to try to get the vendor to support protocol handlers. http://people.mozilla.org/~ctalbert/ has test cases for mailto:.\n\nOnce that happens, Milos will take over the actual implementation, which will need to change the gecko.handlerService.* entries in browser/chrome/browser-region/region.properties. Please don't make changes to that file without getting a positive review by Milos or somebody else appointed by Milos/Stas on a patch for that change upfront.\n\nThe {{ language }} team and Milos will be driving this bug to completion.", 
+    "comment": "Protocol handlers allow links like mailto:nobody@mozilla.org to be handled by a webmail application.\n\nIn order to do that, the site needs to support a special API described on https://developer.mozilla.org/en-US/docs/Web-based_protocol_handlers.\n\nFor en-US, we're currently shipping with GMail and Yahoo! Mail for mailto:, 30boxes for webcal: and Mibbit for irc: urls. For {{ language }}, we'd like to do that, too.\n\nFirst, the localization team and flod (Francesco Lodolo) will look at the market for the language and come up with a good candidates. {{ name }}, we'll need your input on this. The guidelines for making recommendations are on <https://wiki.mozilla.org/L10n:Firefox/Productization>. Following that, the evangelism team reaches out to try to get the vendor to support protocol handlers. http://people.mozilla.org/~ctalbert/ has test cases for mailto:.\n\nOnce that happens, flod will take over the actual implementation, which will need to change the gecko.handlerService.* entries in browser/chrome/browser-region/region.properties. Please don't make changes to that file without getting a positive review by flod or somebody else appointed by flod/Stas on a patch for that change upfront.\n\nThe {{ language }} team and flod will be driving this bug to completion.", 
     "product": "Mozilla Localizations", 
     "title": "protocol", 
-    "cc": "l10n@mozilla.com,{{ bugmail }},milos@moz", 
+    "cc": "l10n@mozilla.com,{{ bugmail }},francesco.lodolo@gmail.com", 
     "rep_platform": "All", 
     "short_desc": "[{{ loc }}] Firefox protocol handler setup for {{ language }}", 
     "component": "{{ component }}", 
@@ -98,10 +98,10 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "News readers are web services allowing users to subscribe to RSS/ATOM feeds online and view them. If Firefox detects a feed, it offers the user the option to subscribe to it, either as a live bookmark or via one of the web services.\n\nThe current News Readers in en-US are Google and My Yahoo!.\n\nWe want to ship a good set of defaults for {{ language }} and will do that in three stages.\n\nFirst, the localization team and Milos (Milos Dinic) will look at the market for the language and come up with a good candidates. {{ name }}, we'll need your input on this. The guidelines for making recommendations are on <https://wiki.mozilla.org/L10n:Firefox/Productization>. After we decide on a particular news reader, Milos will contact the owner and ask for permission. {{ name }}, we'll likely need your help to at least get the contact information.\n\nOnce we have a specification on what the set of news readers for {{ language }} should look like, Milos will work on an implementation for that. Milos will create and attach patches for the desired changes and request a review. After a successful review, Milos team will land them. If you're interested, you can provide those patches too and request a review from Milos before landing.\n\nPlease don't commit any modifications in browser/chrome/browser-region/region.properties to the hg repository without a patch reviewed by Milos, Stas, Axel or someone else appointed by Milos/Stas. The data here is sensitive to users and our search partners, thus requiring the extra care here.\n\nThe {{ language }} team will be driving this bug to completion.", 
+    "comment": "News readers are web services allowing users to subscribe to RSS/ATOM feeds online and view them. If Firefox detects a feed, it offers the user the option to subscribe to it, either as a live bookmark or via one of the web services.\n\nThe current News Reader in en-US is My Yahoo!.\n\nWe want to ship a good set of defaults for {{ language }} and will do that in three stages.\n\nFirst, the localization team and flod (Francesco Lodolo) will look at the market for the language and come up with good candidates. {{ name }}, we'll need your input on this. The guidelines for making recommendations are on <https://wiki.mozilla.org/L10n:Firefox/Productization>. After we decide on a particular news reader, flod will contact the owner and ask for permission. {{ name }}, we'll likely need your help to at least get the contact information.\n\nOnce we have a specification on what the set of news readers for {{ language }} should look like, flod will work on an implementation for that. flod will create and attach patches for the desired changes and request a review. After a successful review, flod team will land them. If you're interested, you can provide those patches too and request a review from flod before landing.\n\nPlease don't commit any modifications in browser/chrome/browser-region/region.properties to the hg repository without a patch reviewed by flod, Stas, Axel or someone else appointed by flod/Stas. The data here is sensitive to users and our search partners, thus requiring the extra care here.\n\nThe {{ language }} team will be driving this bug to completion.", 
     "product": "Mozilla Localizations", 
     "title": "readers", 
-    "cc": "l10n@mozilla.com,{{ bugmail }},milos@moz", 
+    "cc": "l10n@mozilla.com,{{ bugmail }},francesco.lodolo@gmail.com", 
     "rep_platform": "All", 
     "short_desc": "[{{ loc }}] Firefox News reader setup for {{ language }}", 
     "component": "{{ component }}", 
@@ -111,20 +111,20 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "Milos, Pascal, please set up the webdashboard for {{ language }}, and add web pages to this locale's folder on mozilla.org.\n\nSet up\n\n download.lang\n firefoxtesting.lang\n home.lang\n main.lang\n mobile.lang\n newsletter.lang\n plugincheck.lang\n upgradedialog.lang\n whatsnew.lang\n\nin locales/{{ loc }} and \n\n 404.html\n download/content.inc.html\n firefox/4/firstrun/fallback.inc.html\n firefox/channel/content.inc.html\n\nin {{ loc }}.\n\nAlso add {{ loc }} to the staging site, http://www-dev.allizom.org/{{ loc }}/firefox/.\n\nPlease notify in the actual translation bug when this is done.", 
+    "comment": "flod, Pascal, please set up the webdashboard for {{ language }}, and add web pages to this locale's folder on mozilla.org.\n\nIn https://svn.mozilla.org/projects/mozilla.com/trunk/locales set up\n download_button.lang\n firefox/new.lang\n firefox/channel.lang\n firefox/whatsnew.lang\n firefox/installer-help.lang\n firefoxtesting.lang\n main.lang\n mobile.lang\n mozorg/plugincheck.lang\n mozorg/home.lang\n mozorg/products.lang\n newsletter.lang\n tabzilla/tabzilla.lang\n upgradedialog.lang\n\nIn https://svn.mozilla.org/projects/l10n-misc/trunk/firefoxhealthreport/locale/{{ loc }}/ set up\n\n fhr.lang\n date.lang\n\nAlso add {{ loc }} to the staging site, http://www-dev.allizom.org/{{ loc }}/firefox/.\n\nPlease notify in the actual translation bug when this is done.", 
     "product": "Mozilla Localizations", 
     "title": "websetup", 
-    "cc": "pascalc@gmail,{{ bugmail }},milos@moz,l10n@mozilla.com", 
+    "cc": "pascalc@gmail,{{ bugmail }},francesco.lodolo@gmail.com,l10n@mozilla.com", 
     "rep_platform": "All", 
     "short_desc": "[{{ loc }}] bootstrap {{ language }} on svn and the web dashboard", 
     "component": "Infrastructure", 
     "op_sys": "All"
   }, 
   {
-    "comment": "To release Firefox in {{ language }}, we need a way to promote it. We do that via http://www.mozilla.org/firefox/ web pages. There's a set of pages that are essential to having a successful Firefox localization and promotion, and those depend on the files listed below. \n\nMilos or Pascal will follow up here when the initial setup work is done. After that, you'll find the files to localize in SVN.\n\nThe repositories you want to work with are located at https://svn.mozilla.org/projects/mozilla.com/trunk/{{ loc }}/  and https://svn.mozilla.org/projects/mozilla.com/trunk/locales/{{ loc }}/ . Files that need to be translated are, namely:\n\nin https://svn.mozilla.org/projects/mozilla.com/trunk/{{ loc }}/\n\n 404.html\n download/content.inc.html\n firefox/4/firstrun/fallback.inc.html\n firefox/channel/content.inc.html\n\nin https://svn.mozilla.org/projects/mozilla.com/trunk/locales/{{ loc }}/\n\n download.lang\n firefoxtesting.lang\n home.lang\n main.lang\n mobile.lang\n newsletter.lang\n plugincheck.lang\n upgradedialog.lang\n whatsnew.lang\n\nAll the translations you do will be available on the testing website, http://www-dev.allizom.org/{{ loc }}/firefox/ , around 15-30 minutes after commit.\n\nThe {{ language }} team will be driving this bug to completion.", 
+    "comment": "To release Firefox in {{ language }}, we need a way to promote it. We do that via https://www.mozilla.org/firefox/ web pages. There's a set of pages that are essential to having a successful Firefox localization and promotion, and those depend on the files listed below. \n\nflod or Pascal will follow up here when the initial setup work is done. After that, you'll find the files to localize in SVN.\n\nThe repositories you want to work with are located at https://svn.mozilla.org/projects/mozilla.com/trunk/locales/{{ loc }}/ and https://svn.mozilla.org/projects/l10n-misc/trunk/firefoxhealthreport/locale/{{ loc }}/ . Files that need to be translated are, namely:\n\nin https://svn.mozilla.org/projects/mozilla.com/trunk/locales/{{ loc }}/\n\n download_button.lang\n firefox/new.lang\n firefox/channel.lang\n firefox/whatsnew.lang\n firefox/installer-help.lang\n firefoxtesting.lang\n main.lang\n mobile.lang\n mozorg/plugincheck.lang\n mozorg/home.lang\n mozorg/products.lang\n newsletter.lang\n tabzilla/tabzilla.lang\n upgradedialog.lang\n\nin https://svn.mozilla.org/projects/l10n-misc/trunk/firefoxhealthreport/locale/{{ loc }}/\n fhr.lang\n\nAll the translations you do will be available on the testing website, http://www-dev.allizom.org/{{ loc }}/ , around 15-30 minutes after commit.\n\nThe {{ language }} team will be driving this bug to completion.", 
     "product": "www.mozilla.org", 
     "title": "webparts", 
-    "cc": "pascalc@gmail,{{ bugmail }},milos@moz,l10n@mozilla.com", 
+    "cc": "pascalc@gmail,{{ bugmail }},francesco.lodolo@gmail.com,l10n@mozilla.com", 
     "rep_platform": "All", 
     "short_desc": "[{{ loc }}] Firefox initial web parts for {{ language }}", 
     "component": "L10N", 
