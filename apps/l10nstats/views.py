@@ -84,7 +84,9 @@ def history_plot(request):
     locale = get_object_or_404(Locale, code=request.GET.get('locale'))
     q = q2 = Run.objects.filter(tree=tree, locale=locale)
     try:
-        startrange = q.order_by('srctime').values_list('srctime', flat=True)[0]
+        startrange = (q.order_by('srctime')
+                      .exclude(srctime=None)
+                      .values_list('srctime', flat=True)[0])
     except IndexError:
         # oops, we're obviously not building this, 404
         raise Http404("We're not building %s on %s" % (locale.code, tree.code))
