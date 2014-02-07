@@ -172,9 +172,10 @@ class SignoffView(TemplateView):
         else:
             # This is the first load whereby we want to select all pushes up
             # to a certain cutoff.
-            # All pushes in our query count
-            pushes_left = pushes_q.distinct().count()
-            cutoff_dates = []
+            pushes_left = (pushes_q
+                           .distinct()
+                           .count())  # count pushes for this appversion
+            cutoff_dates = []  # sign-off push dates, oldest is of interest
             action4id = dict((a.id, a) for a in actions)
 
             if Action.ACCEPTED in flags:
@@ -191,8 +192,8 @@ class SignoffView(TemplateView):
             if Action.REJECTED in flags:
                 a = action4id[flags[Action.REJECTED]]
                 cutoff_dates.append(a.signoff.push.push_date)
-                # only add this signoff to initial_diff if we don't already have
-                # an ACCEPTED and a PENDING signoff
+                # only add this signoff to initial_diff if we don't already
+                # have an ACCEPTED and a PENDING signoff
                 if len(initial_diff) < 2:
                     initial_diff.append(a.signoff_id)
 
