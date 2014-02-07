@@ -166,12 +166,14 @@ class SignoffView(TemplateView):
             pushes_q = pushes_q.filter(
                 push_date__lt=next_push_date
             ).distinct()
-            pushes_left = pushes_q.count()
+            pushes_left = pushes_q.distinct().count()
             pushes_q = pushes_q[:count]
 
         else:
             # This is the first load whereby we want to select all pushes up
             # to a certain cutoff.
+            # All pushes in our query count
+            pushes_left = pushes_q.distinct().count()
             cutoff_dates = []
             action4id = dict((a.id, a) for a in actions)
 
@@ -213,9 +215,7 @@ class SignoffView(TemplateView):
                     pushes_q
                     .filter(push_date__gte=last_push_date)
                 ).distinct()
-                pushes_left = pushes_q.count()
             else:
-                pushes_left = pushes_q.distinct().count()
                 pushes_q = pushes_q.distinct()[:count]
 
         # get pushes, changesets and signoffs/actions

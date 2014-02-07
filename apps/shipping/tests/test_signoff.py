@@ -467,6 +467,7 @@ class SignOffAnnotatedPushesTest(TestCase):
         # there are more pushes than this but it gets limited
         # by `count` instead because there is no fallback
         eq_(len(pushes), 1)
+        eq_(pushes_data['pushes_left'], 4)
 
         # equally...
         # the `count` is what determines how many we get back
@@ -479,6 +480,7 @@ class SignOffAnnotatedPushesTest(TestCase):
         )
         pushes = pushes_data['pushes']
         eq_(len(pushes), 3)
+        eq_(pushes_data['pushes_left'], 2)
 
     def test_5_pushes_2nd_accepted(self):
         view = SignoffView()
@@ -508,6 +510,7 @@ class SignOffAnnotatedPushesTest(TestCase):
         )
         pushes = pushes_data['pushes']
         eq_(len(pushes), 4)
+        eq_(pushes_data['pushes_left'], 1)
         # the last (aka. first) one should have a signoff with an
         # action on that is accepting
         eq_(pushes[-1]['signoffs'][0]['action'].flag, Action.ACCEPTED)
@@ -554,6 +557,7 @@ class SignOffAnnotatedPushesTest(TestCase):
         )
         pushes = pushes_data['pushes']
         eq_(len(pushes), 4)
+        eq_(pushes_data['pushes_left'], 1)
         # the last (aka. first) one should have a signoff with an
         # action on that is accepting
         eq_(pushes[-1]['signoffs'][0]['action'].flag, Action.ACCEPTED)
@@ -611,6 +615,7 @@ class SignOffAnnotatedPushesTest(TestCase):
         )
         pushes = pushes_data['pushes']
         eq_(len(pushes), 4)
+        eq_(pushes_data['pushes_left'], 1)
         # the last (aka. first) one should have a signoff with an
         # action on that is accepting
         eq_(pushes[-1]['signoffs'][0]['action'].flag, Action.ACCEPTED)
@@ -655,6 +660,7 @@ class SignOffAnnotatedPushesTest(TestCase):
         )
         pushes = pushes_data['pushes']
         eq_(len(pushes), 4)
+        eq_(pushes_data['pushes_left'], 1)
 
         # the last (aka. first) one should have a signoff with an
         # action on that is rejected
@@ -688,6 +694,7 @@ class SignOffAnnotatedPushesTest(TestCase):
         )
         pushes = pushes_data['pushes']
         eq_(len(pushes), 5)
+        eq_(pushes_data['pushes_left'], 0)
 
         # the last (aka. first) one should have a signoff with an
         # action on that is rejected
