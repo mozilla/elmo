@@ -52,14 +52,34 @@ def changes(request, app_code):
                 if Action.ACCEPTED in flags:
                     locs4av[real_av] = flags[Action.ACCEPTED]
     # let's keep the current appver data around for later,
-    # and order the fallbacks
+    # and order the fallbacks.
+    # Also, keep track of how many locales fell back to
+    #  * the previous cycle
+    #  * the two cycles before that (2 and 3)
+    #  * older cycles (4 and more)
     accepted = locs4av.pop(av.code, {})
     av_ = av
+    fallback = 0  # how deep are we falling back
+    buckets = {0: 0, 1: 1, 2: 2, 3: 2}  # which fallback to which bucket
+    bucket = 0  # bucket we're in
+    rowspan = 0  # how many rows are in this bucket
+    locales_group = set()  # which locales are in this bucket
     while av_ and locs4av:
+        thisbucket = buckets.get(fallback, 3)
+        if thisbucket != bucket and locales_group:
+            rows[-1].update({
+                'rowspan': rowspan,
+                'group_locales_count': len(locales_group)
+                })
+            locales_group.clear()
+            rowspan = 0
+        bucket = thisbucket
         if av_.code in locs4av:
             accepted4loc = locs4av.pop(av_.code)
             # store actions for now, we'll get the push_ids later
             current.update(accepted4loc)
+            locales_group.update(accepted4loc.keys())
+            rowspan += 1
             rows.append({
                 'name': str(av_),
                 'code': av_.code,
@@ -67,6 +87,12 @@ def changes(request, app_code):
                 'changes': [(loc, 'added') for loc in sorted(accepted4loc)]
                 })
         av_ = av_.fallback
+        fallback += 1
+    if locales_group and rows:
+        rows[-1].update({
+            'rowspan': rowspan,
+            'group_locales_count': len(locales_group)
+            })
     rows.reverse()
     for loc, pid in (Signoff.objects
                      .filter(action__in=current.values())
@@ -78,6 +104,10 @@ def changes(request, app_code):
                      .values_list('locale__code',
                                   'push__id')):
         accepted[loc] = pid
+    # reset group data for the current appversion, all one group
+    avrow = None  # keep track of the first row
+    rowspan = 0
+    locales_group.clear()
     for _mid, loc, pid in (Milestone_Signoffs.objects
                            .filter(milestone__appver=av)
                            .order_by('milestone__id',
@@ -99,18 +129,30 @@ def changes(request, app_code):
             rows.append({'name': ms_name,
                          'code': ms_codes[ms_id],
                          'changes': changes})
+            rowspan += 1
+            if avrow is None:
+                avrow = rows[-1]
         if loc not in latest:
             changes.append((loc, 'added'))
+            locales_group.add(loc)
         else:
             lpid = latest.pop(loc)
             if lpid != pid:
                 changes.append((loc, 'changed'))
         current[loc] = pid
+
     # see if we have some locales dropped in the last milestone
     if latest:
         # previous milestone has locales left, update previous changes
         changes += [(loc, 'dropped') for loc in latest.iterkeys()]
         changes.sort()
+    # add group info to the avrow
+    if avrow:
+        avrow.update({
+            'rowspan': rowspan,
+            'rowspan_last': True,
+            'group_locales_count': len(locales_group)
+            })
     # finally, check if there's more signoffs after the last shipped milestone
     newso = [(loc, loc in current and 'changed' or 'added')
         for loc, pid in accepted.iteritems()

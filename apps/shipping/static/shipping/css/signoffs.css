@@ -141,3 +141,16 @@ td.diff {
 .tree-change-spacer {
   height: 10px;
 }
+
+/* Overwrite jQuery UI's style for links in the Sign-off window.
+Copied over from sandstone -
+https://github.com/mozilla/elmo/blob/master/static/css/sandstone-resp.css#L1015
+*/
+#signoff_desc a {
+    color: #0096DD;
+    text-decoration: none;
+}
+#signoff_desc a:hover, #signoff_desc a:active {
+      color: #0073aa;
+      text-decoration: underline;
+}

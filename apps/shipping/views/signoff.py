@@ -5,11 +5,14 @@
 """Views and helpers for sign-off views.
 """
 
+import json
 from collections import defaultdict
 
 from django.db.models import Max, Q
-from django.http import Http404, HttpResponseBadRequest
+from django.http import Http404, HttpResponseBadRequest, HttpResponse
+from django.template import RequestContext
 from django.shortcuts import render, get_object_or_404, redirect
+from django.template.loader import render_to_string
 # TODO: from django.views.decorators.cache import cache_control
 from django.core.urlresolvers import reverse
 from django.views.decorators.http import require_POST
@@ -21,6 +24,7 @@ from life.models import (
 from l10nstats.models import Run_Revisions, Run
 from shipping.models import AppVersion, Signoff, Action
 from shipping.api import flags4appversions
+from shipping.forms import SignoffsPaginationForm
 
 
 def signoff_locale(request, locale_code):
@@ -37,6 +41,10 @@ class SignoffView(TemplateView):
     It's also the entry point for drivers to review existing sign-offs.
     """
     template_name = 'shipping/signoffs.html'
+
+    count = 10
+
+    attach_diffbases = True
 
     def get(self, request, locale_code, app_code):
         appver = get_object_or_404(AppVersion, code=app_code)
@@ -67,13 +75,18 @@ class SignoffView(TemplateView):
         else:
             fallback = None
 
-        pushes, suggested_signoff = self.annotated_pushes(
-            actions,
-            flags,
-            fallback,
+        pushes_data = self.annotated_pushes(
             lang,
             appver,
+            actions=actions,
+            flags=flags,
+            fallback=fallback,
+            count=self.count,
         )
+
+        # Check if this is the very first release.
+        # Only applies to products that have a fallback (Firefox for example).
+        first = appver.fallback is not None and accepted is None
 
         try:
             team_locale = (
@@ -82,22 +95,35 @@ class SignoffView(TemplateView):
         except TeamLocaleThrough.DoesNotExist:
             team_locale = lang
 
+        if pushes_data['next_push_date']:
+            next_push_date = pushes_data['next_push_date'].isoformat()
+        else:
+            next_push_date = None
+
         return {
             'appver': appver,
             'language': lang,
             'team_locale': team_locale,
-            'pushes': pushes,
+            'pushes': pushes_data['pushes'],
+            'pushes_left': pushes_data['pushes_left'],
+            'next_push_date': next_push_date,
             'pending': pending,
             'rejected': rejected,
             'accepted': accepted,
-            'suggested_signoff': suggested_signoff,
+            'first': first,
+            'suggested_signoff': pushes_data['suggested_signoff'],
             'login_form_needs_reload': True,
             'fallback': fallback,
             'real_av': real_av,
         }
 
-    def annotated_pushes(self, actions, flags, fallback,
-                         lang, appver, count=10):
+    def annotated_pushes(self,
+                         lang, appver,
+                         next_push_date=None,
+                         actions=None, flags=None, fallback=None,
+                         count=None):
+        if count is None:
+            count = self.count
         pushes_q = (Push.objects
                     .filter(changesets__branch__id=1)
                     .order_by('-push_date'))
@@ -135,50 +161,68 @@ class SignoffView(TemplateView):
             else:
                 repoquery = Q(**qd)
         pushes_q = pushes_q.filter(repoquery)
-        cutoff_dates = []
-        action4id = dict((a.id, a) for a in actions)
+
+        # used when there is not a next_push_date
         initial_diff = []
 
-        if Action.ACCEPTED in flags:
-            a = action4id[flags[Action.ACCEPTED]]
-            if not fallback:
-                cutoff_dates.append(a.signoff.push.push_date)
-            initial_diff.append(a.signoff_id)
+        if next_push_date:
+            # We're asked for pushes beyond the original cutoffs,
+            # just use next_push_date and the limit.
+            pushes_q = pushes_q.filter(
+                push_date__lt=next_push_date
+            ).distinct()
+            pushes_left = pushes_q.distinct().count()
+            pushes_q = pushes_q[:count]
 
-        if Action.PENDING in flags:
-            a = action4id[flags[Action.PENDING]]
-            cutoff_dates.append(a.signoff.push.push_date)
-            initial_diff.append(a.signoff_id)
+        else:
+            # This is the first load whereby we want to select all pushes up
+            # to a certain cutoff.
+            pushes_left = (pushes_q
+                           .distinct()
+                           .count())  # count pushes for this appversion
+            cutoff_dates = []  # sign-off push dates, oldest is of interest
+            action4id = dict((a.id, a) for a in actions)
 
-        if Action.REJECTED in flags:
-            a = action4id[flags[Action.REJECTED]]
-            cutoff_dates.append(a.signoff.push.push_date)
-            # only add this signoff to initial_diff if we don't already have
-            # an ACCEPTED and a PENDING signoff
-            if len(initial_diff) < 2:
+            if Action.ACCEPTED in flags:
+                a = action4id[flags[Action.ACCEPTED]]
+                if not fallback:
+                    cutoff_dates.append(a.signoff.push.push_date)
                 initial_diff.append(a.signoff_id)
 
-        if cutoff_dates:
-            last_push_date = min(cutoff_dates)
-            if fallback or Action.ACCEPTED not in flags:
-                try:
-                    # go even further back in history then
-                    last_push_date = list(
-                        pushes_q
-                        .filter(push_date__lt=last_push_date)
-                        .values_list('push_date', flat=True)[:count]
-                    )[-1]
-                except IndexError:
-                    # ...but it's ok if there's nothing more, then
-                    # we'll just keep the last_push_date from above
-                    pass
-            pushes_q = (
-                pushes_q
-                .filter(push_date__gte=last_push_date)
-                .distinct()
-            )
-        else:
-            pushes_q = pushes_q.distinct()[:count]
+            if Action.PENDING in flags:
+                a = action4id[flags[Action.PENDING]]
+                cutoff_dates.append(a.signoff.push.push_date)
+                initial_diff.append(a.signoff_id)
+
+            if Action.REJECTED in flags:
+                a = action4id[flags[Action.REJECTED]]
+                cutoff_dates.append(a.signoff.push.push_date)
+                # only add this signoff to initial_diff if we don't already
+                # have an ACCEPTED and a PENDING signoff
+                if len(initial_diff) < 2:
+                    initial_diff.append(a.signoff_id)
+
+            last_push_date = None
+            if cutoff_dates:
+                last_push_date = min(cutoff_dates)
+                if fallback or Action.ACCEPTED not in flags:
+                    try:
+                        # go even further back in history then
+                        last_push_date = list(
+                            pushes_q
+                            .filter(push_date__lt=last_push_date)
+                            .values_list('push_date', flat=True)[:count]
+                        )[-1]
+                    except IndexError:
+                        # ...but it's ok if there's nothing more, then
+                        # we'll just keep the last_push_date from above
+                        pass
+                pushes_q = (
+                    pushes_q
+                    .filter(push_date__gte=last_push_date)
+                ).distinct()
+            else:
+                pushes_q = pushes_q.distinct()[:count]
 
         # get pushes, changesets and signoffs/actions
         _p = list(pushes_q.values_list('id', flat=True))
@@ -226,10 +270,18 @@ class SignoffView(TemplateView):
         # merge data back into pushes list
         suggested_signoff = None
         # initial_diff and runs
-        if len(initial_diff) < 2 and pushes:
+        if self.attach_diffbases and len(initial_diff) < 2 and pushes:
             pushes[0]['changes'][0].diffbases = (
               [None] * (2 - len(initial_diff))
             )
+
+        # We did a count before, and then we did `pushes = pushes_q[:count]`
+        # which will reduce the number ultimately left
+        pushes_left -= len(pushes)
+
+        # the oldest push_date of all these
+        next_push_date = pushes[-1]['push_date'] if pushes else None
+
         for p in pushes:
             # initial_diff
             for sod in p['signoffs']:
@@ -251,12 +303,18 @@ class SignoffView(TemplateView):
                         # last push is signed off or red,
                         # don't suggest anything
                         suggested_signoff = False
+
         # mark up pushes that change forests/trees
         for i in xrange(len(pushes) - 1, 0, -1):
             if pushes[i]['forest'] != pushes[i - 1]['forest']:
                 pushes[i]['new_forest'] = True
 
-        return pushes, suggested_signoff
+        return {
+            'pushes': pushes,
+            'suggested_signoff': suggested_signoff,
+            'pushes_left': pushes_left,
+            'next_push_date': next_push_date,
+        }
 
     def collect(self, pcs, actions4push):
         """Prepare for collecting pushes. Result is set in self.pushes.
@@ -297,6 +355,7 @@ class SignoffView(TemplateView):
         if push is not None:
             self.pushes.append({'changes': [],
                                 'push_id': push.id,
+                                'push_date': push.push_date,
                                 'who': push.user,
                                 'when': push.push_date,
                                 'repo': push.repository.name,
@@ -306,7 +365,55 @@ class SignoffView(TemplateView):
             self.rowcount = 0
             self._prev = push.id
 
+
 signoff = SignoffView.as_view()
+
+
+class SignoffRowsView(SignoffView):
+
+    template_name = 'shipping/signoff-rows.html'
+
+    attach_diffbases = False
+
+    def get(self, request, locale_code, app_code):
+        appver = get_object_or_404(AppVersion, code=app_code)
+        lang = get_object_or_404(Locale, code=locale_code)
+        form = SignoffsPaginationForm(request.GET)
+        if form.is_valid():
+            next_push_date = form.cleaned_data['push_date']
+        else:
+            return HttpResponseBadRequest(str(form.errors))
+        context = self.get_context_data(lang, appver, next_push_date)
+        html = render_to_string(
+            self.template_name,
+            context,
+            context_instance=RequestContext(request)
+        )
+        if context['next_push_date']:
+            next_push_date = context['next_push_date'].isoformat()
+        else:
+            next_push_date = None
+        result = {
+            'html': html,
+            'pushes_left': context['pushes_left'],
+            'next_push_date': next_push_date
+        }
+        return HttpResponse(
+            json.dumps(result),
+            mimetype="application/json; charset=UTF-8"
+        )
+
+    def get_context_data(self, lang, appver, next_push_date):
+
+        return self.annotated_pushes(
+            lang,
+            appver,
+            next_push_date=next_push_date,
+            count=self.count
+        )
+
+
+signoff_rows = SignoffRowsView.as_view()
 
 
 def signoff_details(request, locale_code, app_code):
@@ -326,6 +433,11 @@ def signoff_details(request, locale_code, app_code):
         runid = int(request.GET['run'])
     except (KeyError, ValueError):
         runid = None
+    try:
+        # it is possible that this sign-off is the first one
+        first = bool(request.GET['first'])
+    except (KeyError, ValueError):
+        first = False
     appver = get_object_or_404(AppVersion, code=app_code)
     lang = get_object_or_404(Locale, code=locale_code)
     push = get_object_or_404(Push, id=push_id)
@@ -379,10 +491,12 @@ def signoff_details(request, locale_code, app_code):
         newer = sorted(newer)
 
     return render(request, 'shipping/signoff-details.html', {
+                    'language': lang,
                     'run': run,
                     'good': good,
                     'doubled': doubled,
                     'newer': newer,
+                    'first': first,
                     'accepts_signoffs': appver.accepts_signoffs,
                   })
 

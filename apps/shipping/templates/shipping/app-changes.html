@@ -25,6 +25,14 @@ a.obsoleted {
 .milestone {
 white-space: nowrap;
 }
+
+/* Due to a bug in Gecko, sometimes the tr+td borders span into cells
+   that don't exist due to rowspan masking them out.
+   https://bugzilla.mozilla.org/show_bug.cgi?id=935914
+*/
+table.standard td[rowspan] {
+    border-left: 1px solid #ccc;
+}
 </style>
 {% endblock %}
 
@@ -37,6 +45,11 @@ white-space: nowrap;
   <td>
     {% for loc, cls in row.changes %}<a class="{{cls}}" href="{% url 'shipping.views.signoff.signoff' loc appver.code %}">{{loc}}</a> {% endfor %}
   </td>
+  {% if row.rowspan %}
+  <td rowspan="{{ row.rowspan }}" style="{% if row.rowspan_last %}vertical-align:top{% else %}vertical-align:bottom{% endif %}">
+    {{ row.group_locales_count }}
+  </td>
+  {% endif %}
 </tr>
 {% endfor %}
 </table>

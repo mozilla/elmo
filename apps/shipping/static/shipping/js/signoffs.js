@@ -117,6 +117,29 @@ $(document).ready(function() {
       rs.dialog('open');
     });
   }
+
+  $('button.load-more').click(function() {
+    var button = $(this);
+    var this_row = button.parents('tr');
+    var url = location.pathname;
+    // `next_push_date` is defined in the global window scope
+    var req = $.get(url + '/more/', {push_date: next_push_date});
+    req.then(function(response) {
+      $(response.html).insertBefore(this_row);
+      if (!response.pushes_left) {
+        button.attr('disabled', 'disabled');
+      } else {
+        next_push_date = response.next_push_date;
+      }
+      $('.pushes-left', this_row).text(response.pushes_left);
+    });
+    return false;
+  });
+
+  // Firefox has a tendency to "cache" that a button should remain disabled
+  // even if you refresh the page without a force-refresh
+  $('button.load-more[disabled=""]').removeProp('disabled')
+
 });
 
 var Review = {
@@ -138,6 +161,19 @@ var Review = {
 function showSignoff(details_content) {
   $('#signoff_desc').html(details_content);
   $('#add_signoff').dialog('open');
+
+  // In first sign-offs, add checkboxes that will have to be checked before
+  // the user can click the Sign-off button.
+  var needed_checkboxes = $('.first_signoff_needed');
+  if (needed_checkboxes.length > 0) {
+    var signoff_button = document.querySelector('#add_signoff input[type=submit]');
+    signoff_button.disabled = true;
+
+    needed_checkboxes.click(function (e) {
+      // If all needed checkboxes are checked, enable the button.
+      signoff_button.disabled = !!document.querySelector('.first_signoff_needed:not(:checked)');
+    });
+  }
 }
 
 function doSignoff(event) {
@@ -148,5 +184,5 @@ function doSignoff(event) {
   sf.children('[name=push]').val(push);
   var run = t.attr('data-run');
   sf.children('[name=run]').val(run);
-  $.get(signoffDetailsURL, {push: push, run: run}, showSignoff, 'html');
+  $.get(signoffDetailsURL, {push: push, run: run, first: firstSignoff}, showSignoff, 'html');
 }

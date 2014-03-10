@@ -154,5 +154,16 @@ def _hg_repository_sync(name, url, submits, do_update=True):
                  force=False, update=False,
                  rev=[])
             if do_update:
+                # Make sure that we're not triggering workers in post 2.6
+                # hg. That's not stable, at least as we do it.
+                # Monkey patch time
+                try:
+                    from mercurial import worker
+                    if hasattr(worker, '_startupcost'):
+                        # use same value as hg for non-posix
+                        worker._startupcost = 1e30
+                except ImportError:
+                    # no worker, no problem
+                    pass
                 update(ui_, hgrepo)
     return hgrepo
