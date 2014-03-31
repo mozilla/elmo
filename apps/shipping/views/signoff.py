@@ -433,11 +433,8 @@ def signoff_details(request, locale_code, app_code):
         runid = int(request.GET['run'])
     except (KeyError, ValueError):
         runid = None
-    try:
-        # it is possible that this sign-off is the first one
-        first = bool(request.GET['first'])
-    except (KeyError, ValueError):
-        first = False
+    # it is possible that this sign-off is the first one
+    first = request.GET.get('first', 'false') == 'true'
     appver = get_object_or_404(AppVersion, code=app_code)
     lang = get_object_or_404(Locale, code=locale_code)
     push = get_object_or_404(Push, id=push_id)
