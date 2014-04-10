@@ -38,7 +38,8 @@ class Run(models.Model):
 
     locale = models.ForeignKey(Locale, db_index=True)
     tree = models.ForeignKey(Tree, db_index=True)
-    build = models.OneToOneField(Build, null=True, blank=True)
+    build = models.OneToOneField(Build, null=True, blank=True,
+                                 on_delete=models.SET_NULL)
     srctime = models.DateTimeField(db_index=True, null=True, blank=True)
     unchangedmodules = models.ManyToManyField(ModuleCount, related_name='runs')
     revisions = models.ManyToManyField(Changeset)
