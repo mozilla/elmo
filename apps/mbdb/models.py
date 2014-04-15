@@ -221,6 +221,9 @@ class URL(models.Model):
 
 
 class Log(models.Model):
+    STDOUT, STDERR, HEADER = range(3)
+    JSON = 5
+    CHANNEL_NAMES = ('stdout', 'stderr', 'header', None, None, 'json')
     name = models.CharField(max_length=100, null=True, blank=True)
     filename = models.CharField(max_length=200, unique=True,
                                 null=True, blank=True)

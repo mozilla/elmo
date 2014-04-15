@@ -21,7 +21,7 @@
 <dt>{{ step.text|join:" " }}</dt>
 <dd>
   {% for log in step.logs.all %}
- <a href="{% url 'tinder.views.showlog' build.builder.master.name log.filename %}">{{log.name}}</a>
+ <a href="{% url 'tinder.views.showlog' step.pk log.name %}">{{log.name}}</a>
   {% endfor %}
   {{ step.starttime|timedelta:step.endtime }}</dd>
 {% endfor %}

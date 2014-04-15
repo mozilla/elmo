@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+<!-- {% comment %}
+   - This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/.
+{% endcomment %} -->
+{% load build_extras %}
+{% block title_matter %}{{ build.builder.name }} {{ file }}{% endblock %}
+{% block head_matter %}
+<style type="text/css">
+.pre { white-space: pre; }
+.header { color: blue; }
+.stderr { color: red; }
+</style>
+{% endblock %}
+{% block content %}
+<h1>{{ build.builder.name }} {{ file }}</h1>
+<div class="buildbot-html">
+  {{content|safe}}
+</div>
+{% endblock %}
