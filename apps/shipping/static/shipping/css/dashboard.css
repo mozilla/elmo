@@ -23,6 +23,10 @@ div.thumbnail {
 .tree_cell.failure {
     background-color: rgba(255, 0, 0, 0.5);
 }
+.progress {
+    border-right: solid 1px grey;
+    border-bottom: solid 1px grey;
+}
 .stats {
     cell-padding:0px;
     border-spacing:0px;

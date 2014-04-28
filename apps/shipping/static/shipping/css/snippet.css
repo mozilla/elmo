@@ -71,6 +71,15 @@ table.trees tr.treesummary td.productname {
     color: #ff6c00;
 }
 
+.trees .treeprogress-graph {
+    border-bottom: solid 1px grey;
+    border-right: solid 1px grey;
+}
+
+.trees .treeprogress {
+    vertical-align: middle;
+}
+
 .trees tbody td:last-child {
     border-right: 1px solid #d3d3d3;
 }

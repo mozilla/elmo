@@ -8,3 +8,5 @@ py-bcrypt==0.2
 
 mercurial==2.8
 python-ldap==2.3.13
+
+Pillow==2.4.0

@@ -9,7 +9,7 @@ from collections import defaultdict
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.generic import View
 from life.models import Changeset
-from l10nstats.models import Run
+from l10nstats.models import Run, ProgressPosition
 from shipping.api import accepted_signoffs, flags4appversions
 from shipping.models import (Milestone, Action,
                              Application, AppVersion)
@@ -198,10 +198,20 @@ class StatusJSON(SignoffDataView):
     def get_runs(self):
         q = (Run.objects.filter(active__isnull=False)
                         .order_by('tree__code', 'locale__code'))
+        posq = ProgressPosition.objects.all()
         if self.trees:
             q = q.filter(tree__code__in=self.trees)
+            posq = posq.filter(tree__code__in=self.trees)
         if self.locales:
             q = q.filter(locale__code__in=self.locales)
+            posq = posq.filter(locale__code__in=self.locales)
+        prog_pos_items = [
+            {
+                'label': '%s/%s' % (pp.tree.code, pp.locale.code),
+                'type': 'Progress',
+                'background_offset_x': pp.x,
+                'background_offset_y': pp.y
+            } for pp in posq.select_related('tree', 'locale')]
         leafs = ['tree__code', 'locale__code', 'id',
                  'missing', 'missingInFiles', 'report', 'warnings',
                  'errors', 'unchanged', 'total', 'obsolete', 'changed',
@@ -237,7 +247,7 @@ class StatusJSON(SignoffDataView):
             if 'obsolete' in d and d['obsolete']:
                 rd['obsolete'] = d['obsolete']
             return rd
-        return map(toExhibit, q.values(*leafs))
+        return prog_pos_items + map(toExhibit, q.values(*leafs))
 
     def get_signoffs(self):
         avq = defaultdict(set)

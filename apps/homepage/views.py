@@ -148,6 +148,8 @@ def locale_team(request, code):
                     'bugs': bug_div,
                     'webdashboard_url': settings.WEBDASHBOARD_URL,
                     'verbatim_url': verbatim_url,
+                    'PROGRESS_IMG_SIZE': settings.PROGRESS_IMG_SIZE,
+                    'PROGRESS_IMG_NAME': settings.PROGRESS_IMG_NAME,
                   })
 
 # redirects for moves within pushes app, and moving the diff view

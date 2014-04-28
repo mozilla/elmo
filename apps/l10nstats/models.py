@@ -148,3 +148,12 @@ class Active(models.Model):
     """Keep track of the currently active Runs.
     """
     run = models.OneToOneField(Run)
+
+
+class ProgressPosition(models.Model):
+    """Position in the background image
+    """
+    tree = models.ForeignKey(Tree)
+    locale = models.ForeignKey(Locale)
+    x = models.IntegerField()
+    y = models.IntegerField()

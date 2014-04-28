@@ -6,6 +6,7 @@
 '''
 
 from collections import defaultdict
+from datetime import datetime, timedelta
 import re
 import urllib
 
@@ -13,7 +14,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django import http
 from life.models import Locale, Tree, Push, Changeset
-from l10nstats.models import Run_Revisions, Run
+from l10nstats.models import Run_Revisions, Run, ProgressPosition
 from shipping.models import Milestone, AppVersion, Action, Application
 from shipping.api import flags4appversions, accepted_signoffs
 from django.conf import settings
@@ -72,7 +73,7 @@ def teamsnippet(loc, team_locales):
     runs = sorted(
         (Run.objects
          .filter(locale__in=locs, active__isnull=False)
-         .select_related('tree')),
+         .select_related('tree', 'locale')),
         key=lambda r: (r.tree.code,
                        '' if r.locale.code == loc.code else r.locale.code)
     )
@@ -118,6 +119,13 @@ def teamsnippet(loc, team_locales):
                                  changeset__repositories__locale__in=locs)
                          .values_list('run_id', 'changeset__revision'))
 
+    progresses = dict(
+        ((pp.tree.code, pp.locale.code), pp) for pp in (
+            ProgressPosition.objects
+            .filter(tree__run__in=runs)
+            .select_related('tree', 'locale')
+            )
+        )
     applications = defaultdict(list)
     pushes = set()
     for run_ in runs:
@@ -141,6 +149,7 @@ def teamsnippet(loc, team_locales):
                 if ratio:
                     ratio -= 1
                     break
+        run.prog_pos = progresses.get((run.tree.code, run.locale.code))
 
         appversion = tree_to_appversion(run.tree)
         # because Django templates (stupidly) swallows lookup errors we
@@ -200,10 +209,13 @@ def teamsnippet(loc, team_locales):
     applications = ((k, v) for (k, v) in applications.items())
     other_team_locales = Locale.objects.filter(id__in=team_locales)
 
+    progress_start = datetime.utcnow() - timedelta(days=settings.PROGRESS_DAYS)
+
     return render_to_string('shipping/team-snippet.html',
                             {'locale': loc,
                              'other_team_locales': other_team_locales,
                              'applications': applications,
+                             'progress_start': progress_start,
                             })
 
 
@@ -245,9 +257,13 @@ def dashboard(request):
             raise http.Http404("Invalid list of trees")
         query['tree'].extend(trees)
 
+    progress_start = datetime.utcnow() - timedelta(days=settings.PROGRESS_DAYS)
+
     return render(request, 'shipping/dashboard.html', {
                     'subtitles': subtitles,
-                    'webdashboard_url': settings.WEBDASHBOARD_URL,
+                    'PROGRESS_IMG_SIZE': settings.PROGRESS_IMG_SIZE,
+                    'PROGRESS_IMG_NAME': settings.PROGRESS_IMG_NAME,
+                    'progress_start': progress_start,
                     'query': mark_safe(urlencode(query, True)),
                   })
 
