@@ -142,6 +142,7 @@ class Forest(models.Model):
     objects = ForestManager()
     name = models.CharField(max_length=100, unique=True)
     url = models.URLField()
+    archived = models.BooleanField(default=False)
 
     def __unicode__(self):
         return self.name
@@ -172,6 +173,7 @@ class Repository(models.Model):
     forest = models.ForeignKey(Forest, null=True, blank=True,
                                related_name='repositories')
     locale = models.ForeignKey(Locale, null=True, blank=True)
+    archived = models.BooleanField(default=False)
 
     def last_known_push(self):
         try:

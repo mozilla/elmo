@@ -21,6 +21,7 @@ from django.utils import simplejson
 
 from l10nstats.models import Active, Run
 from life.models import Locale, Tree
+from mbdb.models import Step
 from tinder.views import generateLog
 
 
@@ -279,7 +280,8 @@ def compare(request):
     except ValueError:
         return HttpResponseBadRequest('Invalid ID')
     json = ''
-    for step in run.build.steps.filter(name__startswith='moz_inspectlocales'):
+    for step in Step.objects.filter(name__startswith='moz_inspectlocales',
+                                    build__run=run):
         for log in step.logs.all():
             for chunk in generateLog(run.build.builder.master.name,
                                      log.filename):
