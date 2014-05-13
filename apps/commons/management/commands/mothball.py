@@ -11,7 +11,8 @@ import os
 import os.path
 
 from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Max
+from django.db.models import Max, Count
+from django.db.utils import DatabaseError
 from django.conf import settings
 
 from life.models import Tree, Forest
@@ -28,14 +29,16 @@ class Repl(cmd.Cmd):
         '''show the list of inactive trees'''
         tree_width = len(sorted(Tree.objects.values_list('code', flat=True),
                                 key=lambda c:-len(c))[0])
-        fmt = '{0!s:<10}  {1:<' + str(tree_width+2) + '}{2:>6}\n'
-        self.stdout.write(fmt.format('end date', 'code', 'runs'))
+        fmt = '{0!s:<10}  {1:<' + str(tree_width+2) + '}{2:>6}{3:>8}\n'
+        self.stdout.write(fmt.format('end date', 'code', 'runs', 'builds'))
         for t in (Tree.objects
                   .exclude(run__active__isnull=False)
                   .distinct()
-                  .annotate(sm=Max("run__srctime")).order_by('sm')):
+                  .annotate(sm=Max("run__srctime"),
+                            rc=Count("run"),
+                            bc=Count("run__build")).order_by('sm')):
             self.stdout.write(fmt.format(t.sm.date() if t.sm else '',
-                                         t.code, t.run_set.count()))
+                                         t.code, t.rc, t.bc))
 
     def do_builds(self, rest):
         '''clobber database and logs for builds for a given tree'''
@@ -46,6 +49,9 @@ class Repl(cmd.Cmd):
             return
         builds = (Build.objects
                   .filter(run__tree=tree))
+        if not builds:
+            self.stdout.write('No builds found, done\n')
+            return
         self.stdout.write('Found {0} builds\n'.format(builds.count()))
         steps = (Step.objects
                  .filter(build__in=builds))
@@ -71,11 +77,11 @@ class Repl(cmd.Cmd):
                 fname += '.bz2'
                 if os.path.exists(fname):
                     os.remove(fname)
-        logs.delete()
+        self.bisect_delete(logs)
         self.stdout.write('Deleting steps\n')
-        steps.delete()
+        self.bisect_delete(steps)
         self.stdout.write('Deleting builds\n')
-        builds.delete()
+        self.bisect_delete(builds)
         self.dirty = True
 
     def complete_builds(self, text, line, begidx, endidx):
@@ -106,6 +112,31 @@ class Repl(cmd.Cmd):
             self.stdout.write('\n')
             return True
         return cmd.Cmd.default(self, line)
+
+    def bisect_delete(self, query, recursion=0):
+        """Try to delete a query. If it fails, try again on half the problem.
+
+        MySQL Error 1153 - Got a packet bigger than 'max_allowed_packet' bytes
+
+        The queries in this command failed on maximum packet size in
+        practice. This helper does a binary tree of queries to cut
+        them down into digestible chunks.
+        It dies after a recursion depth of 10, assuming that that's
+        good enough. After that, DatabaseError is actually just a
+        DatabaseError, we guess.
+        """
+        try:
+            query.delete()
+        except DatabaseError:
+            if recursion > 10:
+                raise
+            limit = int(query.count() / 2)
+            limit = query.order_by('pk').values_list('pk',flat=True)[limit]
+            self.stdout.write('Bisecting at %d\n' % limit)
+            self.bisect_delete(query.filter(pk__lt=limit),
+                               recursion + 1)
+            self.bisect_delete(query.filter(pk__gte=limit),
+                               recursion + 1)
 
 
 class Command(BaseCommand):
