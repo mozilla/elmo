@@ -20,6 +20,7 @@
 {% block javascript_matter %}
 <script src="{% static "js/libs/chosen.jquery.js" %}"></script>
 <script src="{% static "homepage/js/index.js" %}"></script>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
 {% endblock %}
 
 {% block alt_header %}
@@ -72,11 +73,12 @@
     </article>
     <article>
         <h2>L10n Discussion</h2>
+        <a href="https://twitter.com/mozilla_l10n" class="twitter-follow-button" data-size="large" data-lang="en">Follow @mozilla_l10n</a>
         <ul class="blog-links">
             {% for item in feed_items %}
             <li><a href="{{ item.url }}">{{ item.title|truncatewords:8 }}</a></li>
             {% endfor %}
-            <li><a href="https://blog.mozilla.org/l10n/">See all news</a></li>
+            <li><a href="http://planet.mozilla.org/l10n/">See all news</a></li>
         </ul>
     </article>
 </section>

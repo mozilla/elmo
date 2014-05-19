@@ -2,6 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+h2 {
+    margin-bottom: 22px;
+}
+
 .introduction {
     margin-bottom: 60px;
     width: 960px;
@@ -44,6 +48,11 @@
 
 .content .chzn-container .chzn-results {
     max-height: 150px;
+}
+
+.twitter-follow-button {
+    display: block;
+    min-height: 45px;
 }
 
 .content .blog-links {
