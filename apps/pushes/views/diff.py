@@ -157,10 +157,12 @@ class DiffView(View):
             # the favored repo doesn't have a changeset, look for an
             # active repo that does.
             try:
-                dbrepo = (Repository.objects
-                          .filter(changesets__revision__startswith=rev)
-                          .annotate(last_push=Max('push__push_date'))
-                          .order_by('-last_push'))[0]
+                dbrepo = (
+                    Repository.objects
+                    .filter(changesets__revision__startswith=rev)
+                    .annotate(last_changeset=Max('changesets'))
+                    .order_by('-last_changeset')
+                    )[0]
             except IndexError:
                 # can't find the changeset in other repos, raise the
                 # original error
