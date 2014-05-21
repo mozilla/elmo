@@ -28,7 +28,7 @@ var LOCALE_CODE = '{{ locale.code }}';
 .treeprogress-graph {
     width: {{ PROGRESS_IMG_SIZE.x }}px;
     height: {{ PROGRESS_IMG_SIZE.y }}px;
-    background-image: url("{% static PROGRESS_IMG_NAME %}");
+    background-image: url("{% static PROGRESS_IMG_NAME %}{{ cachebuster }}");
 }
 </style>
 {% endblock %}

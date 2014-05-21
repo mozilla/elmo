@@ -258,11 +258,18 @@ def dashboard(request):
         query['tree'].extend(trees)
 
     progress_start = datetime.utcnow() - timedelta(days=settings.PROGRESS_DAYS)
+    try:
+        cachebuster = (
+            '?%d' % Run.objects.order_by('-pk').values_list('id', flat=True)[0]
+            )
+    except IndexError:
+        cachebuster = ''
 
     return render(request, 'shipping/dashboard.html', {
                     'subtitles': subtitles,
                     'PROGRESS_IMG_SIZE': settings.PROGRESS_IMG_SIZE,
                     'PROGRESS_IMG_NAME': settings.PROGRESS_IMG_NAME,
+                    'cachebuster': cachebuster,
                     'progress_start': progress_start,
                     'query': mark_safe(urlencode(query, True)),
                   })

@@ -20,6 +20,7 @@ from django.core.cache import cache
 from django.views.decorators.http import etag
 
 from life.models import Locale, TeamLocaleThrough
+from l10nstats.models import Run
 
 
 def handler500(request):
@@ -140,6 +141,12 @@ def locale_team(request, code):
         verbatim_url = 'https://localize.mozilla.org/%s/' % gliblocale
     else:
         verbatim_url = None
+    try:
+        cachebuster = (
+            '?%d' % Run.objects.order_by('-pk').values_list('id', flat=True)[0]
+            )
+    except IndexError:
+        cachebuster = ''
 
     return render(request, 'homepage/locale-team.html', {
                     'locale': loc,
@@ -150,6 +157,7 @@ def locale_team(request, code):
                     'verbatim_url': verbatim_url,
                     'PROGRESS_IMG_SIZE': settings.PROGRESS_IMG_SIZE,
                     'PROGRESS_IMG_NAME': settings.PROGRESS_IMG_NAME,
+                    'cachebuster': cachebuster,
                   })
 
 # redirects for moves within pushes app, and moving the diff view
