@@ -82,30 +82,21 @@ def teamsnippet(loc, team_locales):
     if not runs:
         return ''
 
-    _application_codes = [(x.code, x) for x in Application.objects.all()]
-    # sort their keys so that the longest application codes come first
-    # otherwise, suppose we had these keys:
-    #   'fe', 'foo', 'fennec' then when matching against a tree code called
-    #   'fennec_10x' then, it would "accidentally" match on 'fe' and not
-    #   'fennec'.
-    _application_codes.sort(lambda x, y: -cmp(len(x[0]), len(y[0])))
-
     # Create these two based on all appversions attached to a tree so that in
     # the big loop on runs we don't need to make excessive queries for
     # appversions and applications
     _trees_to_appversions = {}
     for avt in (AppVersion.trees.through.objects
                 .current()
-                .select_related('appversion', 'tree')):
+                .select_related('appversion__app', 'tree')):
         _trees_to_appversions[avt.tree] = avt.appversion
-
-    def tree_to_application(tree):
-        for key, app in _application_codes:
-            if tree.code.startswith(key):
-                return app
 
     def tree_to_appversion(tree):
         return _trees_to_appversions.get(tree)
+
+    def tree_to_application(tree):
+        av = tree_to_appversion(tree)
+        return av and av.app or None
 
     # find good revisions to sign-off, latest run needs to be green.
     # keep in sync with api.annotated_pushes
@@ -206,7 +197,10 @@ def teamsnippet(loc, team_locales):
                     # unset the suggestion if there's existing signoff action
                     if run[k + '_rev'] == run.suggested_shortrev:
                         run.suggested_shortrev = None
-    applications = ((k, v) for (k, v) in applications.items())
+    applications = sorted(
+        ((k, v) for (k, v) in applications.items()),
+        key=lambda t: t[0] and t[0].name or None
+    )
     other_team_locales = Locale.objects.filter(id__in=team_locales)
 
     progress_start = datetime.utcnow() - timedelta(days=settings.PROGRESS_DAYS)
