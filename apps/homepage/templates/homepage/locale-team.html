@@ -24,6 +24,13 @@ var LOCALE_CODE = '{{ locale.code }}';
 <link rel="stylesheet" href="{% static "shipping/css/dashboard.css" %}" type="text/css">
 <link rel="stylesheet" href="{% static "shipping/css/snippet.css" %}" type="text/css">
 {% endcompress %}
+<style>
+.treeprogress-graph {
+    width: {{ PROGRESS_IMG_SIZE.x }}px;
+    height: {{ PROGRESS_IMG_SIZE.y }}px;
+    background-image: url("{% static PROGRESS_IMG_NAME %}{{ cachebuster }}");
+}
+</style>
 {% endblock %}
 
 {% block alt_header %}

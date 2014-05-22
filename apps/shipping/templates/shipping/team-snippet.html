@@ -17,6 +17,7 @@
           <tr>
               <th>Tree</th>
               <th>Translation Status</th>
+              <th>Progress</th>
               <th>Sign-off Status</th>
           </tr>
       </thead>
@@ -49,6 +50,13 @@
                   <td style="width:{{ run.unchanged_ratio }}px" class="status unchanged"></td>
                   <td style="width:{{ run.changed_ratio }}px" class="status changed"></td>
               </tr></tbody></table>
+          </td>
+          <td class="treeprogress">
+            {% if run.prog_pos %}
+            <a href="{% url 'l10nstats.views.history_plot' %}?tree={{run.tree.code}}&amp;locale={{run.locale.code}}&amp;starttime={{ progress_start|date:"Y-m-d" }}">
+              <div class="treeprogress-graph" style="background-position:{{run.prog_pos.x}}px {{run.prog_pos.y}}px;"></div>
+            </a>
+            {% endif %}
           </td>
           <td class="signoffstatus">
 

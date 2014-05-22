@@ -220,3 +220,8 @@ VERBATIM_CONVERSIONS = {
     'xh': None,
     'zu': None,
 }
+
+# settings for the compare-locales progress preview images
+PROGRESS_DAYS = 50
+PROGRESS_IMG_SIZE = {'x': 100, 'y': 20}
+PROGRESS_IMG_NAME = 'l10nstats/progress.png'

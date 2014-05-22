@@ -6,6 +6,7 @@
 '''
 
 from collections import defaultdict
+from datetime import datetime, timedelta
 import re
 import urllib
 
@@ -13,7 +14,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django import http
 from life.models import Locale, Tree, Push, Changeset
-from l10nstats.models import Run_Revisions, Run
+from l10nstats.models import Run_Revisions, Run, ProgressPosition
 from shipping.models import Milestone, AppVersion, Action, Application
 from shipping.api import flags4appversions, accepted_signoffs
 from django.conf import settings
@@ -72,7 +73,7 @@ def teamsnippet(loc, team_locales):
     runs = sorted(
         (Run.objects
          .filter(locale__in=locs, active__isnull=False)
-         .select_related('tree')),
+         .select_related('tree', 'locale')),
         key=lambda r: (r.tree.code,
                        '' if r.locale.code == loc.code else r.locale.code)
     )
@@ -81,30 +82,21 @@ def teamsnippet(loc, team_locales):
     if not runs:
         return ''
 
-    _application_codes = [(x.code, x) for x in Application.objects.all()]
-    # sort their keys so that the longest application codes come first
-    # otherwise, suppose we had these keys:
-    #   'fe', 'foo', 'fennec' then when matching against a tree code called
-    #   'fennec_10x' then, it would "accidentally" match on 'fe' and not
-    #   'fennec'.
-    _application_codes.sort(lambda x, y: -cmp(len(x[0]), len(y[0])))
-
     # Create these two based on all appversions attached to a tree so that in
     # the big loop on runs we don't need to make excessive queries for
     # appversions and applications
     _trees_to_appversions = {}
     for avt in (AppVersion.trees.through.objects
                 .current()
-                .select_related('appversion', 'tree')):
+                .select_related('appversion__app', 'tree')):
         _trees_to_appversions[avt.tree] = avt.appversion
-
-    def tree_to_application(tree):
-        for key, app in _application_codes:
-            if tree.code.startswith(key):
-                return app
 
     def tree_to_appversion(tree):
         return _trees_to_appversions.get(tree)
+
+    def tree_to_application(tree):
+        av = tree_to_appversion(tree)
+        return av and av.app or None
 
     # find good revisions to sign-off, latest run needs to be green.
     # keep in sync with api.annotated_pushes
@@ -118,6 +110,13 @@ def teamsnippet(loc, team_locales):
                                  changeset__repositories__locale__in=locs)
                          .values_list('run_id', 'changeset__revision'))
 
+    progresses = dict(
+        ((pp.tree.code, pp.locale.code), pp) for pp in (
+            ProgressPosition.objects
+            .filter(tree__run__in=runs)
+            .select_related('tree', 'locale')
+            )
+        )
     applications = defaultdict(list)
     pushes = set()
     for run_ in runs:
@@ -141,6 +140,7 @@ def teamsnippet(loc, team_locales):
                 if ratio:
                     ratio -= 1
                     break
+        run.prog_pos = progresses.get((run.tree.code, run.locale.code))
 
         appversion = tree_to_appversion(run.tree)
         # because Django templates (stupidly) swallows lookup errors we
@@ -197,13 +197,19 @@ def teamsnippet(loc, team_locales):
                     # unset the suggestion if there's existing signoff action
                     if run[k + '_rev'] == run.suggested_shortrev:
                         run.suggested_shortrev = None
-    applications = ((k, v) for (k, v) in applications.items())
+    applications = sorted(
+        ((k, v) for (k, v) in applications.items()),
+        key=lambda t: t[0] and t[0].name or None
+    )
     other_team_locales = Locale.objects.filter(id__in=team_locales)
+
+    progress_start = datetime.utcnow() - timedelta(days=settings.PROGRESS_DAYS)
 
     return render_to_string('shipping/team-snippet.html',
                             {'locale': loc,
                              'other_team_locales': other_team_locales,
                              'applications': applications,
+                             'progress_start': progress_start,
                             })
 
 
@@ -245,9 +251,20 @@ def dashboard(request):
             raise http.Http404("Invalid list of trees")
         query['tree'].extend(trees)
 
+    progress_start = datetime.utcnow() - timedelta(days=settings.PROGRESS_DAYS)
+    try:
+        cachebuster = (
+            '?%d' % Run.objects.order_by('-pk').values_list('id', flat=True)[0]
+            )
+    except IndexError:
+        cachebuster = ''
+
     return render(request, 'shipping/dashboard.html', {
                     'subtitles': subtitles,
-                    'webdashboard_url': settings.WEBDASHBOARD_URL,
+                    'PROGRESS_IMG_SIZE': settings.PROGRESS_IMG_SIZE,
+                    'PROGRESS_IMG_NAME': settings.PROGRESS_IMG_NAME,
+                    'cachebuster': cachebuster,
+                    'progress_start': progress_start,
                     'query': mark_safe(urlencode(query, True)),
                   })
 
