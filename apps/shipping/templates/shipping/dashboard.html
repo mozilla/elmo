@@ -129,6 +129,7 @@ var EX_OPTIONS = ["result", "shipping", "signoff"];
          ex:height="5em" ex:facetLabel="Shipped in ..." id="shipping-facet"></div>
        <div ex:role="facet" ex:expression=".signoff"
          ex:height="5em" ex:facetLabel="Sign-off" id="signoff-facet"></div>
+       <div><a href="{% url 'shipping.views.index' %}?{{ request.GET.urlencode }}">Edit</a> this dashboard.</div>
      </td>
    </tr>
  </table>

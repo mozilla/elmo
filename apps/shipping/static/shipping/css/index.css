@@ -1,0 +1,43 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+.spacer-row {
+    line-height: .5em;
+    border-bottom: 1px solid #ccc;
+}
+
+th {
+    vertical-align: top;
+    text-align: left
+}
+
+.button-row {
+    text-align: center;
+}
+
+.dashboard-block {
+    width: 450px;
+    vertical-align: top;
+}
+
+.dashboard-block .scroll {
+    overflow-y: scroll;
+    max-height: 50em;
+}
+
+.dashboard-block .header {
+    font-weight: bold;
+}
+
+.av-tree td {
+    padding-left: 10px;
+}
+
+.dashboard-header {
+    font-style: italic;
+}
+
+#trigger {
+    font-weight: bold;
+}

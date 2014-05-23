@@ -27,26 +27,43 @@ from django.utils.safestring import mark_safe
 
 
 def index(request):
+    '''Dashboard to create dashboard links'''
+    trees = set(
+        Tree.objects
+        .filter(run__active__isnull=False)
+        .distinct()
+    )
+    avts = (
+        AppVersion.trees.through.objects
+        .current()
+        .filter(tree__in=trees)
+        .select_related('appversion__app', 'tree')
+    )
     locales = Locale.objects.all().order_by('code')
-    avs = AppVersion.objects.all().order_by('code')
+    apps = defaultdict(list)
+    for avt in avts:
+        apps[avt.appversion.app].append(avt)
+        trees.remove(avt.tree)
+    for avtlist in apps.itervalues():
+        avtlist.sort(key=lambda avt: avt.appversion.version)
 
-    for i in avs:
-        statuses = (Milestone.objects
-                    .filter(appver=i.id)
-                    .values_list('status', flat=True)
-                    .distinct())
-        if Milestone.OPEN in statuses:
-            i.status = 'open'
-        elif Milestone.UPCOMING in statuses:
-            i.status = 'upcoming'
-        elif Milestone.SHIPPED in statuses:
-            i.status = 'shipped'
-        else:
-            i.status = 'unknown'
+    applist = sorted(
+        ({'name': str(app), 'avts': vals}
+         for app, vals in apps.iteritems()),
+         key=lambda d: d['name']
+    )
+
+    selected_trees = request.GET.getlist('tree')
+    selected_avs = request.GET.getlist('av')
+    selected_locales = request.GET.getlist('locale')
 
     return render(request, 'shipping/index.html', {
                     'locales': locales,
-                    'avs': avs,
+                    'apps': applist,
+                    'trees': trees,
+                    'selected_trees': selected_trees,
+                    'selected_avs': selected_avs,
+                    'selected_locales': selected_locales
                   })
 
 
