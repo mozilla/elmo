@@ -167,7 +167,7 @@ def locale_team(request, code):
 
 def pushlog_redirect(request, path):
     return HttpResponsePermanentRedirect(
-        reverse('pushes.views.pushlog.pushlog',
+        reverse('pushes.views.pushlog',
                 kwargs={'repo_name': path}) + '?' + request.GET.urlencode())
 
 
