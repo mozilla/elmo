@@ -1,18 +1,82 @@
-{% extends "shipping/base.html" %}
+{% extends "base.html" %}
 <!-- {% comment %}
    - This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
+{% load staticfiles %}
 {% load url from future %}
 
+{% block title_matter %}Create your Dashboard{% endblock %}
+{% block javascript_matter %}
+<script src="{% static "shipping/js/index.js" %}"></script>
+{% endblock %}
+
+{% block head_matter %}
+<link rel="stylesheet" href="{% static "shipping/css/index.css" %}" type="text/css">
+{% endblock %}
 {% block content %}
 <div class="nav">
 </div>
-<h3>Application versions</h3>
-<ul>
-  {% for av in avs %}
-  <li><a href="{% url 'shipping.views.dashboard' %}?av={{av.code}}">{{ av }} [{{av.status}}]</a></li>
-  {% endfor %}
-</ul>
+<h3>Create your dashboard:</h3>
+<p class="dashboard-header">You can select versions of applications,
+or branches. <code>fx_aurora</code> is Aurora branch, independent
+which Firefox version is on Aurora at this point, for example. The
+versions and branches in one line give the same data today. They'll
+result in different data when you come back in 6 weeks.
+</p>
+<p class="dashboard-header">You can also select a subset of
+localizations that you're interested in. Not all projects use the same
+codes, so when in doubt which to use, be generous.
+</p>
+<p class="dashboard-header">Empty selections gives all data available.
+</p>
+<p>See <span class="loccount">all</span> localizations and
+<span class="avcount">all</span> application versions or trees on this
+<a data-base="{% url 'shipping.views.dashboard' %}" id="trigger" href="?">dashboard</a>&hellip;</p>
+<table class="dashboard-container">
+<tr>
+  <td class="dashboard-block av-tree">
+    <table>
+      {% for app in apps %}
+      {% if not forloop.first %}
+      <tr class="spacer-row"><td colspan="3">&nbsp;</td></tr>
+      {% endif %}
+      {% for avt in app.avts %}
+      <tr>
+        {% if forloop.first %}
+        <th rowspan="{{ app.avts|length }}">{{app.name}}</th>
+        {% endif %}
+        <td><input {% if avt.appversion.code in selected_avs %}checked{% endif %} {% if avt.tree.code in selected_trees %}disabled{% endif %} type="checkbox" data-key="av" value="{{avt.appversion.code}}">{{avt.appversion}}</td>
+        <td><input {% if avt.tree.code in selected_trees %}checked{% endif %} type="checkbox" data-key="tree" value="{{avt.tree.code}}">{{avt.tree.code}}</td>
+      </tr>
+      {% endfor %}
+      {% endfor %}
+      {% if trees %}
+      <tr class="spacer-row"><td colspan="3">&nbsp;</td></tr>
+      {% for tree in trees %}
+      <tr>
+        {% if forloop.first %}
+        <th rowspan="{{ trees|length }}"></th>
+        <td rowspan="{{ trees|length }}"></td>
+        {% endif %}
+        <td><input {% if avt.tree.code in selected_trees %}checked{% endif %} type="checkbox" data-key="tree" value="{{tree.code}}">{{tree.code}}</td>
+      </tr>
+      {% endfor %}
+      {% endif %}
+      <tr class="button-row"><td colspan="3"><button class="clear-selection">Clear</button></td></tr>
+    </table>
+  </td>
+
+  <td class="dashboard-block">
+  <div class="header">Localizations:</div>
+  <div class="scroll">
+    {% for loc in locales %}
+    <input {% if loc.code in selected_locales %}checked{% endif %} type="checkbox" data-key="locale" value="{{loc.code}}">{{loc.code}} - {{loc.name}}<br>
+    {% endfor %}
+  </div>
+  <div><button class="clear-selection">Clear</button></div>
+  </td>
+</tr>
+</table>
 {% endblock %}
