@@ -69,12 +69,3 @@ def exhibit(parser, token):
     """Add simile exhibit to the page.
     """
     return simile(parser, token, ('exhibit',))
-
-
-@register.tag
-def timeplot(parser, token):
-    """Add simile timeplot to the page.
-
-    Includes timeline.
-    """
-    return simile(parser, token, ('timeline', 'timeplot'), forceBundle=True)

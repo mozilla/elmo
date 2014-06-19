@@ -39,7 +39,7 @@ class Recurse(TestCase):
 
 
 class Simile(unittest.TestCase):
-    """Test the simile tags to include script tags for exhibit and timeplot."""
+    """Test the simile tags to include script tags for exhibit."""
 
     def test_exhibit(self):
         t = template.Template("{% load simile %} {% exhibit %}")
@@ -47,16 +47,5 @@ class Simile(unittest.TestCase):
         out = t.render(c)
         self.assertTrue("exhibit-api.js" in out,
                         "exhibit-api.js is not in " + out)
-        self.assertTrue("simile-ajax-api.js" in out,
-                        "simile-ajax-api.js is not in " + out)
-
-    def test_timeplot(self):
-        t = template.Template("{% load simile %} {% timeplot %}")
-        c = template.Context({})
-        out = t.render(c)
-        self.assertTrue("timeplot-api.js" in out,
-                        "timeplot-api.js is not in " + out)
-        self.assertTrue("timeline-api.js" in out,
-                        "timeline-api.js is not in " + out)
         self.assertTrue("simile-ajax-api.js" in out,
                         "simile-ajax-api.js is not in " + out)
