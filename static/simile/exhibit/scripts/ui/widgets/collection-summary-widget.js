@@ -1,18 +1,37 @@
-/*==================================================
- *  Exhibit.CollectionSummaryWidget
- *==================================================
+/**
+ * @fileOverview Collection summary information
+ * @author David Huynh
+ * @author <a href="mailto:ryanlee@zepheira.com">Ryan Lee</a>
+ */
+
+/**
+ * @constructor
+ * @class
+ * @param {Element} containerElmt
+ * @param {Exhibit.UIContext} uiContext
  */
 Exhibit.CollectionSummaryWidget = function(containerElmt, uiContext) {
-    this._exhibit = uiContext.getExhibit();
+    this._exhibit = uiContext.getMain();
     this._collection = uiContext.getCollection();
     this._uiContext = uiContext;
     this._div = containerElmt;
 
     var widget = this;
-    this._listener = { onItemsChanged: function() { widget._reconstruct(); } };
-    this._collection.addListener(this._listener);
+    this._onItemsChanged = function() {
+        widget._reconstruct();
+    };
+    Exhibit.jQuery(this._collection.getElement()).bind(
+        "onItemsChanged.exhibit",
+        this._onItemsChanged
+    );
 };
 
+/**
+ * @param {Object} configuration
+ * @param {Element} containerElmt
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Exhibit.CollectionSummaryWidget}
+ */
 Exhibit.CollectionSummaryWidget.create = function(configuration, containerElmt, uiContext) {
     var widget = new Exhibit.CollectionSummaryWidget(
         containerElmt,
@@ -22,18 +41,31 @@ Exhibit.CollectionSummaryWidget.create = function(configuration, containerElmt, 
     return widget;
 };
 
+/**
+ * @param {Element} configElmt
+ * @param {Element} containerElmt
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Exhibit.CollectionSummaryWidget}
+ */
 Exhibit.CollectionSummaryWidget.createFromDOM = function(configElmt, containerElmt, uiContext) {
     var widget = new Exhibit.CollectionSummaryWidget(
-        containerElmt != null ? containerElmt : configElmt, 
+        (typeof containerElmt !== "undefined" && containerElmt !== null) ?
+            containerElmt : configElmt, 
         Exhibit.UIContext.createFromDOM(configElmt, uiContext)
     );
     widget._initializeUI();
     return widget;
 };
 
+/**
+ *
+ */
 Exhibit.CollectionSummaryWidget.prototype.dispose = function() {
-    this._collection.removeListener(this._listener);
-    this._div.innerHTML = "";
+    Exhibit.jQuery(this._uiContext.getCollection().getElement()).unbind(
+        "onItemsChanged.exhibit",
+        this._onItemsChanged
+    );
+    Exhibit.jQuery(this._div).empty();
     
     this._noResultsDom = null;
     this._allResultsDom = null;
@@ -43,87 +75,98 @@ Exhibit.CollectionSummaryWidget.prototype.dispose = function() {
     this._exhibit = null;
 };
 
+/**
+ *
+ */
 Exhibit.CollectionSummaryWidget.prototype._initializeUI = function() {
-    var self = this;
+    var self, onClearFilters;
+    self = this;
     
-    var l10n = Exhibit.CollectionSummaryWidget.l10n;
-    var onClearFilters = function(elmt, evt, target) {
+    onClearFilters = function(evt) {
+        evt.preventDefault();
+        evt.stopPropagation();
         self._resetCollection();
-        SimileAjax.DOM.cancelEvent(evt);
-        return false;
-    }
+    };
 
-    this._allResultsDom = SimileAjax.DOM.createDOMFromString(
-        "span", 
-        String.substitute(
-            l10n.allResultsTemplate,
-            [ "exhibit-collectionSummaryWidget-results" ]
-        )
+    Exhibit.jQuery(this._div).hide();
+    this._allResultsDom = Exhibit.jQuery.simileDOM(
+        "string",
+        "span",
+        Exhibit._("%widget.collectionSummary.allResultsTemplate", "exhibit-collectionSummaryWidget-results")
     );
-    this._filteredResultsDom = SimileAjax.DOM.createDOMFromString(
-        "span", 
-        String.substitute(
-            l10n.filteredResultsTemplate,
-            [ "exhibit-collectionSummaryWidget-results" ]
-        ),
-        {   resetActionLink: Exhibit.UI.makeActionLink(l10n.resetFiltersLabel, onClearFilters)
+    this._filteredResultsDom = Exhibit.jQuery.simileDOM(
+        "string", 
+        "span",
+        Exhibit._("%widget.collectionSummary.filteredResultsTemplate", "exhibit-collectionSummaryWidget-results"),
+        {   resetActionLink: Exhibit.UI.makeActionLink(Exhibit._("%widget.collectionSummary.resetFiltersLabel"), onClearFilters)
         }
     );
-    this._noResultsDom = SimileAjax.DOM.createDOMFromString(
-        "span", 
-        String.substitute(
-            l10n.noResultsTemplate,
-            [ "exhibit-collectionSummaryWidget-results", "exhibit-collectionSummaryWidget-count" ]
-        ),
-        {   resetActionLink: Exhibit.UI.makeActionLink(l10n.resetFiltersLabel, onClearFilters)
+    this._noResultsDom = Exhibit.jQuery.simileDOM(
+        "string",
+        "span",
+        Exhibit._("%widget.collectionSummary.noResultsTemplate", "exhibit-collectionSummaryWidget-results", "exhibit-collectionSummaryWidget-count"),
+        {   resetActionLink: Exhibit.UI.makeActionLink(Exhibit._("%widget.collectionSummary.resetFiltersLabel"), onClearFilters)
         }
     );
-    
-    this._div.innerHTML = "";
+    Exhibit.jQuery(this._div).append(this._allResultsDom.elmt);
+    Exhibit.jQuery(this._div).append(this._filteredResultsDom.elmt);
+    Exhibit.jQuery(this._div).append(this._noResultsDom.elmt);
     this._reconstruct();
 };
 
+/**
+ *
+ */
 Exhibit.CollectionSummaryWidget.prototype._reconstruct = function() {
-    var originalSize = this._collection.countAllItems();
-    var currentSize = this._collection.countRestrictedItems();
-    var database = this._uiContext.getDatabase();
-    var dom = this._dom;
+    var originalSize, currentSize, database, dom, typeIDs, typeID, description;
+    originalSize = this._collection.countAllItems();
+    currentSize = this._collection.countRestrictedItems();
+    database = this._uiContext.getDatabase();
+    dom = this._dom;
 
-    while (this._div.childNodes.length > 0) {
-        this._div.removeChild(this._div.firstChild);
-    }
+    Exhibit.jQuery(this._div).hide();
+    Exhibit.jQuery(this._allResultsDom.elmt).hide();
+    Exhibit.jQuery(this._filteredResultsDom.elmt).hide();
+    Exhibit.jQuery(this._noResultsDom.elmt).hide();
     
     if (originalSize > 0) {
-        if (currentSize == 0) {
-            this._div.appendChild(this._noResultsDom.elmt);
+        if (currentSize === 0) {
+            Exhibit.jQuery(this._noResultsDom.elmt).show();
         } else {
-            var typeIDs = database.getTypeIDs(this._collection.getRestrictedItems()).toArray();
-            var typeID = typeIDs.length == 1 ? typeIDs[0] : "Item";
+            typeIDs = database.getTypeIDs(this._collection.readRestrictedItems()).toArray();
+            typeID = typeIDs.length === 1 ? typeIDs[0] : "Item";
             
-            var description = 
-                Exhibit.Database.l10n.labelItemsOfType(currentSize, typeID, database, "exhibit-collectionSummaryWidget-count");
+            description = 
+                database.labelItemsOfType(currentSize, typeID, "exhibit-collectionSummaryWidget-count");
             
-            if (currentSize == originalSize) {
-                this._div.appendChild(this._allResultsDom.elmt);
-                this._allResultsDom.resultDescription.innerHTML = "";
-                this._allResultsDom.resultDescription.appendChild(description);
+            if (currentSize === originalSize) {
+                Exhibit.jQuery(this._allResultsDom.elmt).show();
+                Exhibit.jQuery(this._allResultsDom.resultDescription).empty();
+                Exhibit.jQuery(this._allResultsDom.resultDescription).append(description);
             } else {
-                this._div.appendChild(this._filteredResultsDom.elmt);
-                this._filteredResultsDom.resultDescription.innerHTML = "";
-                this._filteredResultsDom.resultDescription.appendChild(description);
-                this._filteredResultsDom.originalCountSpan.innerHTML = originalSize;
+                Exhibit.jQuery(this._filteredResultsDom.elmt).show();
+                Exhibit.jQuery(this._filteredResultsDom.resultDescription).empty();
+                Exhibit.jQuery(this._filteredResultsDom.resultDescription).append(description);
+                Exhibit.jQuery(this._filteredResultsDom.originalCountSpan).html(originalSize);
             }
         }
     }
+
+    Exhibit.jQuery(this._div).show();
 };
 
+/**
+ *
+ */
 Exhibit.CollectionSummaryWidget.prototype._resetCollection = function() {
-    var state = {};
-    var collection = this._collection;
-    
-    SimileAjax.History.addLengthyAction(
-        function() { state.restrictions = collection.clearAllRestrictions(); },
-        function() { collection.applyRestrictions(state.restrictions); },
-        Exhibit.CollectionSummaryWidget.l10n.resetActionTitle
+    var state, collection;
+    collection = this._collection;
+
+    Exhibit.jQuery(this._collection.getElement()).trigger("onResetAllFilters.exhibit");
+    state = this._collection.clearAllRestrictions();
+
+    Exhibit.History.pushState(
+        state.data,
+        Exhibit._("%widget.collectionSummary.resetActionTitle")
     );
 };

@@ -1,136 +1,211 @@
-/*==================================================
- *  Exhibit.LegendWidget
- *==================================================
+/**
+ * @fileOverview Provide an easy way to attach classifications to a
+ *     view with a legend widget.
+ * @author David Huynh
+ * @author Johan Sundström
+ * @author Margaret Leibovic
+ * @author David Karger
+ * @author <a href="mailto:ryanlee@zepheira.com">Ryan Lee</a>
+ */
+
+/**
+ * @constructor
+ * @class
+ * @param {Object} configuration
+ * @param {Element} containerElmt
+ * @param {Exhibit.UIContext} uiContext
  */
 Exhibit.LegendWidget = function(configuration, containerElmt, uiContext) {
     this._configuration = configuration;
     this._div = containerElmt;
     this._uiContext = uiContext;
     
-    this._colorMarkerGenerator = "colorMarkerGenerator" in configuration ?
+    this._colorMarkerGenerator = typeof configuration.colorMarkerGenerator !== "undefined" ?
         configuration.colorMarkerGenerator :
         Exhibit.LegendWidget._defaultColorMarkerGenerator;	 
-	this._sizeMarkerGenerator = "sizeMarkerGenerator" in configuration ?
+	this._sizeMarkerGenerator = typeof configuration.sizeMarkerGenerator !== "undefined" ?
 		configuration.sizeMarkerGenerator :
 		Exhibit.LegendWidget._defaultSizeMarkerGenerator;
-	this._iconMarkerGenerator = "iconMarkerGenerator" in configuration ?
+	this._iconMarkerGenerator = typeof configuration.iconMarkerGenerator !== "undefined" ?
 		configuration.iconMarkerGenerator :
 		Exhibit.LegendWidget._defaultIconMarkerGenerator;
 
-    this._labelStyler = "labelStyler" in configuration ?
+    this._labelStyler = typeof configuration.labelStyler !== "undefined" ?
         configuration.labelStyler :
         Exhibit.LegendWidget._defaultColorLabelStyler;
     
     this._initializeUI();
 };
 
+/**
+ * @static
+ * @param {Object} configuration
+ * @param {Element} containerElmt
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Exhibit.LegendWidget}
+ */
 Exhibit.LegendWidget.create = function(configuration, containerElmt, uiContext) {
     return new Exhibit.LegendWidget(configuration, containerElmt, uiContext);
 };
 
+/**
+ *
+ */
 Exhibit.LegendWidget.prototype.dispose = function() {
-    this._div.innerHTML = "";
+    Exhibit.jQuery(this._div).empty();
     
     this._div = null;
     this._uiContext = null;
 };
 
+/**
+ *
+ */
 Exhibit.LegendWidget.prototype._initializeUI = function() {
-    this._div.className = "exhibit-legendWidget";
-    this._div.innerHTML = "<div id='exhibit-color-legend'></div><div id='exhibit-size-legend'></div><div id='exhibit-icon-legend'></div>";
+    Exhibit.jQuery(this._div).addClass("exhibit-legendWidget");
+    this.clear();
 };
 
+/**
+ *
+ */
 Exhibit.LegendWidget.prototype.clear = function() {
-    this._div.innerHTML = "<div id='exhibit-color-legend'></div><div id='exhibit-size-legend'></div><div id='exhibit-icon-legend'></div>";
+    Exhibit.jQuery(this._div).html('<div class="exhibit-color-legend"></div><div class="exhibit-size-legend"></div><div class="exhibit-icon-legend"></div>');
 };
 
+/**
+ * @param {String} label
+ * @param {String} type
+ */
 Exhibit.LegendWidget.prototype.addLegendLabel = function(label, type) {
-	var dom = SimileAjax.DOM.createDOMFromString(
+    var dom;
+	dom = Exhibit.jQuery.simileDOM("string",
 			"div",
-			"<div id='legend-label'>" +
-				"<span id='label' class='exhibit-legendWidget-entry-title'>" + 
-					label.replace(/\s+/g, "\u00a0") + 
+			'<div class="legend-label">' +
+				'<span class="label" class="exhibit-legendWidget-entry-title">' + 
+					label.replace(/\s+/g, "&nbsp;") + 
 				"</span>" +
-			"\u00a0\u00a0 </div>",
+			"&nbsp;&nbsp; </div>",
 			{ }
 		);
-	dom.elmt.className = "exhibit-legendWidget-label";
-	var id = 'exhibit-' + type + '-legend';
-    document.getElementById(id).appendChild(dom.elmt);
-}
-
-Exhibit.LegendWidget.prototype.addEntry = function(value, label, type) {
-	type = type || 'color';
-    label = (label != null) ? label.toString() : key.toString();
-    if (type == 'color') {
-		var dom = SimileAjax.DOM.createDOMFromString(
-			"span",
-			"<span id='marker'></span>\u00a0" +
-				"<span id='label' class='exhibit-legendWidget-entry-title'>" + 
-					label.replace(/\s+/g, "\u00a0") + 
-				"</span>" +
-				"\u00a0\u00a0 ",
-			{ marker: this._colorMarkerGenerator(value) }
-		);
-		var legendDiv = document.getElementById('exhibit-color-legend');
-	}
-	if (type == 'size') {
-		var dom = SimileAjax.DOM.createDOMFromString(
-			"span",
-			"<span id='marker'></span>\u00a0" +
-				"<span id='label' class='exhibit-legendWidget-entry-title'>" + 
-					label.replace(/\s+/g, "\u00a0") + 
-				"</span>" +
-				"\u00a0\u00a0 ",
-			{ marker: this._sizeMarkerGenerator(value) }
-		);
-		var legendDiv = document.getElementById('exhibit-size-legend');
-	}
-	if (type == 'icon') {
-		var dom = SimileAjax.DOM.createDOMFromString(
-			"span",
-			"<span id='marker'></span>\u00a0" +
-				"<span id='label' class='exhibit-legendWidget-entry-title'>" + 
-					label.replace(/\s+/g, "\u00a0") + 
-				"</span>" +
-				"\u00a0\u00a0 ",
-			{ marker: this._iconMarkerGenerator(value) }
-		);
-		var legendDiv = document.getElementById('exhibit-icon-legend');
-	}
-    dom.elmt.className = "exhibit-legendWidget-entry";
-    this._labelStyler(dom.label, value);
-    legendDiv.appendChild(dom.elmt);
+	Exhibit.jQuery(dom.elmt).addClass("exhibit-legendWidget-label");
+	Exhibit.jQuery('.exhibit-' + type + '-legend', this._div).append(dom.elmt);
 };
 
-Exhibit.LegendWidget._localeSort = function(a,b) {
+/**
+ * @param {} value
+ * @param {String} label
+ * @param {String} type
+ */
+Exhibit.LegendWidget.prototype.addEntry = function(value, label, type) {
+    var dom, legendDiv;
+
+	type = type || "color";
+    label = (typeof label !== "string") ? label.toString() : label;
+    legendDiv = Exhibit.jQuery('.exhibit-' + type + '-legend', this._div);
+
+    if (type === "color") {
+		dom = Exhibit.jQuery.simileDOM("string",
+			"span",
+			'<span id="marker"></span>&nbsp;' +
+				'<span id="label" class="exhibit-legendWidget-entry-title">' + 
+					label.replace(/\s+/g, "&nbsp;") + 
+				"</span>" +
+				"&nbsp;&nbsp; ",
+			{ marker: this._colorMarkerGenerator(value) }
+		);
+	}
+
+	if (type === "size") {
+		dom = Exhibit.jQuery.simileDOM("string",
+			"span",
+			'<span id="marker"></span>&nbsp;' +
+				'<span id="label" class="exhibit-legendWidget-entry-title">' + 
+					label.replace(/\s+/g, "&nbsp;") + 
+				"</span>" +
+				"&nbsp;&nbsp; ",
+			{ marker: this._sizeMarkerGenerator(value) }
+		);
+	}
+
+	if (type === "icon") {
+		dom = Exhibit.jQuery.simileDOM("string",
+			"span",
+			'<span id="marker"></span>&nbsp;' +
+				'<span id="label" class="exhibit-legendWidget-entry-title">' + 
+					label.replace(/\s+/g, "&nbsp;") + 
+				"</span>" +
+				"&nbsp; ",
+			{ marker: this._iconMarkerGenerator(value) }
+		);
+	}
+    Exhibit.jQuery(dom.elmt).addClass("exhibit-legendWidget-entry");
+    this._labelStyler(dom.label, value);
+    Exhibit.jQuery(legendDiv).append(dom.elmt);
+};
+
+/**
+ * @static
+ * @private
+ * @param {} a
+ * @param {} b
+ * @returns {Number}
+ */
+Exhibit.LegendWidget._localeSort = function(a, b) {
     return a.localeCompare(b);
 }
 
+/**
+ * @static
+ * @private
+ * @param {String} value
+ * @returns {Element}
+ */
 Exhibit.LegendWidget._defaultColorMarkerGenerator = function(value) {
-    var span = document.createElement("span");
-    span.className = "exhibit-legendWidget-entry-swatch";
-    span.style.background = value;
-    span.innerHTML = "\u00a0\u00a0";
-    return span;
+    var span;
+    span = Exhibit.jQuery("<span>")
+        .attr("class", "exhibit-legendWidget-entry-swatch")
+        .css("background", value)
+        .html("&nbsp;&nbsp;");
+    return span.get(0);
 };
 
+/** 
+ * @static
+ * @private
+ * @param {Number} value
+ * @returns {Element}
+ */
 Exhibit.LegendWidget._defaultSizeMarkerGenerator = function(value) {
-    var span = document.createElement("span");
-    span.className = "exhibit-legendWidget-entry-swatch";
-    span.style.height = value;
-    span.style.width = value;
-    span.style.background = "#C0C0C0";
-    span.innerHTML = "\u00a0\u00a0";
-    return span;
+    var span;
+    span = Exhibit.jQuery("<span>")
+        .attr("class", "exhibit-legendWidget-entry-swatch")
+        .height(value)
+        .width(value)
+        .css("background", "#C0C0C0")
+        .html("&nbsp;&nbsp;");
+    return span.get(0);
 }
 
+/**
+ * @static
+ * @private
+ * @param {String} value
+ * @returns {Element}
+ */
 Exhibit.LegendWidget._defaultIconMarkerGenerator = function(value) {
-    var span = document.createElement("span");
-    span.className = "<img src="+value+"/>";
-    return span;
+    var span;
+    span = Exhibit.jQuery("<span>")
+        .append('<img src="'+value+'"/>');
+    return span.get(0);
 }
 
+/**
+ * @static
+ * @private
+ * @param {Element} elmt
+ * @param {String} value
+ */
 Exhibit.LegendWidget._defaultColorLabelStyler = function(elmt, value) {
-    //elmt.style.color = "#" + value;
+    // Exhibit.jQuery(elmt).css("color", "#" + value);
 };

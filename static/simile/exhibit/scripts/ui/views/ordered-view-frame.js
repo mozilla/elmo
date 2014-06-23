@@ -1,16 +1,32 @@
-/*==================================================
- *  Exhibit.OrderedViewFrame
- *==================================================
+/**
+ * @fileOverview
+ * @author David Huynh
+ * @author <a href="mailto:ryanlee@zepheira.com">Ryan Lee</a>
  */
- 
+
+/**
+ * @constructor
+ * @class
+ * @param {Exhibit.UIContext} uiContext
+ */ 
 Exhibit.OrderedViewFrame = function(uiContext) {
     this._uiContext = uiContext;
-    
     this._orders = null;
     this._possibleOrders = null;
     this._settings = {};
+
+    this._historyKey = "orderedViewFrame";
+
+    // functions to be defined by framed view
+    this.parentReconstruct = null;
+    this.parentHistoryAction = null;
+
+    this._caches = {};
 };
 
+/**
+ * @constant
+ */
 Exhibit.OrderedViewFrame._settingSpecs = {
     "showAll":                  { type: "boolean", defaultValue: false },
     "grouped":                  { type: "boolean", defaultValue: true },
@@ -25,15 +41,19 @@ Exhibit.OrderedViewFrame._settingSpecs = {
     "pageWindow":               { type: "int",     defaultValue: 2 },
     "page":                     { type: "int",     defaultValue: 0 },
     "alwaysShowPagingControls": { type: "boolean", defaultValue: false },
-    "pagingControlLocations":   { type: "enum",    defaultValue: "topbottom", choices: [ "top", "bottom", "topbottom" ] }
+    "pagingControlLocations":   { type: "enum",    defaultValue: "topbottom",
+                                  choices: [ "top", "bottom", "topbottom" ] }
 };
-    
+
+/**
+ * @param {Object} configuration
+ */
 Exhibit.OrderedViewFrame.prototype.configure = function(configuration) {
-    if ("orders" in configuration) {
+    if (typeof configuration.orders !== "undefined") {
         this._orders = [];
         this._configureOrders(configuration.orders);
     }
-    if ("possibleOrders" in configuration) {
+    if (typeof configuration.possibleOrders !== "undefined") {
         this._possibleOrders = [];
         this._configurePossibleOrders(configuration.possibleOrders);
     }
@@ -44,30 +64,34 @@ Exhibit.OrderedViewFrame.prototype.configure = function(configuration) {
     this._internalValidate();
 };
 
+/**
+ * @param {Element} domConfiguration
+ */
 Exhibit.OrderedViewFrame.prototype.configureFromDOM = function(domConfiguration) {
-    var orders = Exhibit.getAttribute(domConfiguration, "orders", ",");
-    if (orders != null && orders.length > 0) {
+    var orders, directions, i, possibleOrders, possibleDirections;
+    orders = Exhibit.getAttribute(domConfiguration, "orders", ",");
+    if (typeof orders !== "undefined" && orders !== null && orders.length > 0) {
         this._orders = [];
         this._configureOrders(orders);
     }
     
-    var directions = Exhibit.getAttribute(domConfiguration, "directions", ",");
-    if (directions != null && directions.length > 0 && this._orders != null) {
-        for (var i = 0; i < directions.length && i < this._orders.length; i++) {
-            this._orders[i].ascending = (directions[i].toLowerCase() != "descending");
+    directions = Exhibit.getAttribute(domConfiguration, "directions", ",");
+    if (typeof directions !== "undefined" && directions !== null && directions.length > 0 && this._orders !== null) {
+        for (i = 0; i < directions.length && i < this._orders.length; i++) {
+            this._orders[i].ascending = (directions[i].toLowerCase() !== "descending");
         }
     }
     
-    var possibleOrders = Exhibit.getAttribute(domConfiguration, "possibleOrders", ",");
-    if (possibleOrders != null && possibleOrders.length > 0) {
+    possibleOrders = Exhibit.getAttribute(domConfiguration, "possibleOrders", ",");
+    if (typeof possibleOrders !== "undefined" && possibleOrders !== null && possibleOrders.length > 0) {
         this._possibleOrders = [];
         this._configurePossibleOrders(possibleOrders);
     }
 
-    var possibleDirections = Exhibit.getAttribute(domConfiguration, "possibleDirections", ",");
-    if (possibleDirections != null && possibleDirections.length > 0 && this._possibleOrders != null) {
-        for (var i = 0; i < possibleDirections.length && i < this._possibleOrders.length; i++) {
-            this._possibleOrders[i].ascending = (possibleDirections[i].toLowerCase() != "descending");
+    possibleDirections = Exhibit.getAttribute(domConfiguration, "possibleDirections", ",");
+    if (typeof possibleDirections !== "undefined" && possibleDirections !== null && possibleDirections.length > 0 && typeof this._possibleOrders !== "undefined" && this._possibleOrders !== null) {
+        for (i = 0; i < possibleDirections.length && i < this._possibleOrders.length; i++) {
+            this._possibleOrders[i].ascending = (possibleDirections[i].toLowerCase() !== "descending");
         }
     }
     
@@ -75,8 +99,11 @@ Exhibit.OrderedViewFrame.prototype.configureFromDOM = function(domConfiguration)
         domConfiguration, Exhibit.OrderedViewFrame._settingSpecs, this._settings);
         
     this._internalValidate();
-}
+};
 
+/**
+ *
+ */
 Exhibit.OrderedViewFrame.prototype.dispose = function() {
     if (this._headerDom) {
         this._headerDom.dispose();
@@ -92,11 +119,14 @@ Exhibit.OrderedViewFrame.prototype.dispose = function() {
     this._uiContext = null;
 };
 
+/**
+ *
+ */
 Exhibit.OrderedViewFrame.prototype._internalValidate = function() {
-    if (this._orders != null && this._orders.length == 0) {
+    if (this._orders !== null && this._orders.length === 0) {
         this._orders = null;
     }
-    if (this._possibleOrders != null && this._possibleOrders.length == 0) {
+    if (this._possibleOrders !== null && this._possibleOrders.length === 0) {
         this._possibleOrders = null;
     }
     if (this._settings.paginate) {
@@ -104,86 +134,87 @@ Exhibit.OrderedViewFrame.prototype._internalValidate = function() {
     }
 };
 
+/**
+ * @param {Array} orders
+ * @param {Array} output object to receive orders
+ * @param {String} error message for unparsable order expr
+ * @param {Strong} error message for invalid order object
+ */
+
+Exhibit.OrderedViewFrame.prototype._internalConfigureOrders =
+    function(orders, output, exprMsg, objMessage) {
+    var i, order, expr, ascending, expression, path, segment;
+    for (i = 0; i < orders.length; i++) {
+        order = orders[i];
+        ascending = true;
+        expr = null;
+        
+        if (typeof order === "string") {
+            expr = order;
+        } else if (typeof order === "object") {
+            expr = order.expression;
+            ascending = (typeof order.ascending !== "undefined") ?
+                (order.ascending) :
+                true;
+        }
+
+        if (expr !== null) {
+            try {
+                expression = Exhibit.ExpressionParser.parse(expr);
+                if (expression.isPath()) {
+                    path = expression.getPath();
+                    if (path.getSegmentCount() === 1) {
+                        segment = path.getSegment(0);
+                        output.push({
+                            property:   segment.property,
+                            forward:    segment.forward,
+                            ascending:  ascending
+                        });
+                    }
+                }
+            } catch (e) {
+                Exhibit.Debug.warn(Exhibit._(exprMsg, expr));
+            }
+        }  else {
+            Exhibit.Debug.warn(Exhibit._(orderMsg, JSON.stringify(order)));
+        }
+    }
+};
+
+/**
+ * @param {Array} orders
+ */
 Exhibit.OrderedViewFrame.prototype._configureOrders = function(orders) {
-    for (var i = 0; i < orders.length; i++) {
-        var order = orders[i];
-        var expr;
-        var ascending = true;
-        
-        if (typeof order == "string") {
-            expr = order;
-        } else if (typeof order == "object") {
-            expr = order.expression,
-            ascending = ("ascending" in order) ? (order.ascending) : true;
-        } else {
-            SimileAjax.Debug.warn("Bad order object " + order);
-            continue;
-        }
-            
-        try {
-            var expression = Exhibit.ExpressionParser.parse(expr);
-            if (expression.isPath()) {
-                var path = expression.getPath();
-                if (path.getSegmentCount() == 1) {
-                    var segment = path.getSegment(0);
-                    this._orders.push({
-                        property:   segment.property,
-                        forward:    segment.forward,
-                        ascending:  ascending
-                    });
-                }
-            }
-        } catch (e) {
-            SimileAjax.Debug.warn("Bad order expression " + expr);
-        }
-    }
+    Exhibit.OrderedViewFrame.prototype
+        ._internalConfigureOrders(orders, this._orders,
+                                  "%orderedViewFrame.error.orderExpression",
+                                  "%orderedViewFrame.error.orderObject");
 };
 
+/**
+ * @param {Array} possibleOrders
+ */
 Exhibit.OrderedViewFrame.prototype._configurePossibleOrders = function(possibleOrders) {
-    for (var i = 0; i < possibleOrders.length; i++) {
-        var order = possibleOrders[i];
-        var expr;
-        var ascending = true;
-        
-        if (typeof order == "string") {
-            expr = order;
-        } else if (typeof order == "object") {
-            expr = order.expression,
-            ascending = ("ascending" in order) ? (order.ascending) : true;
-        } else {
-            SimileAjax.Debug.warn("Bad possible order object " + order);
-            continue;
-        }
-            
-        try {
-            var expression = Exhibit.ExpressionParser.parse(expr);
-            if (expression.isPath()) {
-                var path = expression.getPath();
-                if (path.getSegmentCount() == 1) {
-                    var segment = path.getSegment(0);
-                    this._possibleOrders.push({
-                        property:   segment.property,
-                        forward:    segment.forward,
-                        ascending:  ascending
-                    });
-                }
-            }
-        } catch (e) {
-            SimileAjax.Debug.warn("Bad possible order expression " + expr);
-        }
-    }
+    Exhibit.OrderedViewFrame.prototype
+        ._internalConfigureOrders(possibleOrders, this._possibleOrders,
+                                  "%orderedViewFrame.error.possibleOrderExpression", 
+                                  "%orderedViewFrame.error.possibleOrderObject");
 };
 
+/**
+ *
+ */
 Exhibit.OrderedViewFrame.prototype.initializeUI = function() {
-    var self = this;
+    var self;
+    self = this;
     if (this._settings.showHeader) {
         this._headerDom = Exhibit.OrderedViewFrame.createHeaderDom(
             this._uiContext,
             this._divHeader, 
             this._settings.showSummary,
             this._settings.showControls,
-            function(elmt, evt, target) { self._openSortPopup(elmt, -1); },
-            function(elmt, evt, target) { self._toggleGroup(); },
+            function(evt) { self._openSortPopup(evt, -1); },
+            function(evt) { self._toggleGroup(evt); },
             function(pageIndex) { self._gotoPage(pageIndex); }
         );
     }
@@ -191,46 +222,51 @@ Exhibit.OrderedViewFrame.prototype.initializeUI = function() {
         this._footerDom = Exhibit.OrderedViewFrame.createFooterDom(
             this._uiContext,
             this._divFooter, 
-            function(elmt, evt, target) { self._setShowAll(true); },
-            function(elmt, evt, target) { self._setShowAll(false); },
+            function(evt) { self._setShowAll(true); },
+            function(evt) { self._setShowAll(false); },
             function(pageIndex) { self._gotoPage(pageIndex); }
         );
     }
 };
 
+/**
+ *
+ */
 Exhibit.OrderedViewFrame.prototype.reconstruct = function() {
-    var self = this;
-    var collection = this._uiContext.getCollection();
-    var database = this._uiContext.getDatabase();
+    var self, collection, database, originalSize, currentSize, hasSomeGrouping, currentSet, orderElmts, buildOrderElmt, orders;
+    self = this;
+    collection = this._uiContext.getCollection();
+    database = this._uiContext.getDatabase();
     
-    var originalSize = collection.countAllItems();
-    var currentSize = collection.countRestrictedItems();
+    originalSize = collection.countAllItems();
+    currentSize = collection.countRestrictedItems();
     
-    var hasSomeGrouping = false;
+    hasSomeGrouping = false;
     if (currentSize > 0) {
-        var currentSet = collection.getRestrictedItems();
+        currentSet = collection.getRestrictedItems();
         
         hasSomeGrouping = this._internalReconstruct(currentSet);
         
         /*
          *  Build sort controls
          */
-        var orderElmts = [];
-        var buildOrderElmt = function(order, index) {
-            var property = database.getProperty(order.property);
-            var label = property != null ?
+        orderElmts = [];
+        buildOrderElmt = function(order, index) {
+            var property, label;
+            property = database.getProperty(order.property);
+            label = (typeof property !== "undefined" && property !== null) ?
                 (order.forward ? property.getPluralLabel() : property.getReversePluralLabel()) :
                 (order.forward ? order.property : "reverse of " + order.property);
                 
             orderElmts.push(Exhibit.UI.makeActionLink(
                 label,
-                function(elmt, evt, target) {
-                    self._openSortPopup(elmt, index);
+                function(evt) {
+                    self._openSortPopup(evt, index);
                 }
             ));
         };
-        var orders = this._getOrders();
-        for (var i = 0; i < orders.length; i++) {
+        orders = this._getOrders();
+        for (i = 0; i < orders.length; i++) {
             buildOrderElmt(orders[i], i);
         }
         
@@ -243,87 +279,169 @@ Exhibit.OrderedViewFrame.prototype.reconstruct = function() {
     if (this._settings.showHeader && this._settings.showControls) {
         this._headerDom.groupOptionWidget.setChecked(this._settings.grouped);
     }
+
     if (this._settings.showFooter) {
         this._footerDom.setCounts(
             currentSize, 
             this._settings.abbreviatedCount, 
             this._settings.showAll, 
-            !(hasSomeGrouping && this._grouped) && !this._settings.paginate
+            (!(hasSomeGrouping && this._settings.grouped)
+             && !this._settings.paginate)
         );
     }
 };
 
+/** 
+ * @param {Exhibit.Set} allItems
+ * @returns {Boolean}
+ */
 Exhibit.OrderedViewFrame.prototype._internalReconstruct = function(allItems) {
-    var self = this;
-    var settings = this._settings;
-    var database = this._uiContext.getDatabase();
-    var orders = this._getOrders();
-    var itemIndex = 0;
+    var self, settings, database, orders, itemIndex, hasSomeGrouping, createItem, createGroup, processLevel, processNonNumericLevel, processNumericLevel, totalCount, pageCount, fromIndex, toIndex, expr, i, sortTop;
+    self = this;
+    settings = this._settings;
+    database = this._uiContext.getDatabase();
+    collection = this._uiContext.getCollection();
+    orders = this._getOrders();
+    caches = this._caches;
+    itemIndex = 0;
     
-    var hasSomeGrouping = false;
-    var createItem = function(itemID) {
+    hasSomeGrouping = false;
+    createItem = function(itemID) {
         if ((itemIndex >= fromIndex && itemIndex < toIndex) || (hasSomeGrouping && settings.grouped)) {
             self.onNewItem(itemID, itemIndex);
         }
         itemIndex++;
     };
-    var createGroup = function(label, valueType, index) {
+    createGroup = function(label, valueType, index) {
         if ((itemIndex >= fromIndex && itemIndex < toIndex) || (hasSomeGrouping && settings.grouped)) {
             self.onNewGroup(label, valueType, index);
         }
     };
 
-    var processLevel = function(items, index) {
-        var order = orders[index];
-        var values = order.forward ? 
-            database.getObjectsUnion(items, order.property) : 
-            database.getSubjectsUnion(items, order.property);
+    //It's overkill to sort many items if you're just planning to show
+    //the top 10.  This function splits the item set down to roughly
+    //the intended size before sorting.
+    sortTop = function(array, compare, limit) {
+        var nextArray, key
+        , split = function(array, key) {
+            var l = array.length, out = [];
+            for (i=0; i < l; i++) {
+                if (compare(array[i], key) <= 0) {
+                    out.push(array[i]);
+                }
+            }
+            return out;
+        }
+        , nearMedian = function(array) {
+            //choose middle of 3 random keys as pivot
+            var k
+            , key1 = array[Math.floor(Math.random()*array.length)]
+            , key2 = array[Math.floor(Math.random()*array.length)]
+            , key3 = array[Math.floor(Math.random()*array.length)];
+            if (compare(key1, key2) > 0) {
+                k = key1;
+                key1 = key2;
+                key2 = k;
+            }
+            if (compare(key2, key3) > 0) {
+                k = key2;
+                key2 = key3;
+                key3 = k;
+            }
+            if (compare(key1, key2) > 0) {
+                k = key1;
+                key1 = key2;
+                key2 = k;
+            }
+            return key2;
+        }
+        if (limit < 10) {
+            //avoid small-array edge-cases;
+            limit = 10;
+        }
+        nextArray = array;
+        while (nextArray.length >= limit) {
+            array = nextArray;
+            key = nearMedian(array);
+            nextArray = split(array, key);
+        }
+        return array.sort(compare);
+    }
+
+    processLevel = function(items, index) {
+        var order, values, valueCounts, valueType
+        , expr
+        , property, keys, grouped, k, key, keyItems, missingCount;
+
+        order = orders[index];
+        expr = order.forward ? 
+            "."+order.property :
+            "!"+order.property;
+        if (!caches.hasOwnProperty(expr)) {
+            caches[expr] = new Exhibit.FacetUtilities.Cache(
+                database, collection,
+                Exhibit.ExpressionParser.parse(expr)
+            );
+        }
+        values = caches[expr].getValuesFromItems(items);
+        missingCount = caches[expr].countItemsMissingValue(items);
         
-        var valueType = "text";
+        valueType = "text";
         if (order.forward) {
-            var property = database.getProperty(order.property);
-            valueType = property != null ? property.getValueType() : "text";
+            property = database.getProperty(order.property);
+            valueType = (typeof property !== "undefined" && property !== null) ? property.getValueType() : "text";
         } else {
             valueType = "item";
         }
         
-        var keys = (valueType == "item" || valueType == "text") ?
+        keys = (valueType === "item" || valueType === "text") ?
             processNonNumericLevel(items, index, values, valueType) :
             processNumericLevel(items, index, values, valueType);
         
-        var grouped = false;
-        for (var k = 0; k < keys.length; k++) {
-            if (keys[k].items.size() > 1) {
-                grouped = true;
-            }
-        }
-        //grouped = grouped && keys.length > 1;
+        /** all-grouping
+        grouped = true;
+        */
+        // The idea here appears to be to avoid considering a set of
+        // one item a group; but this ends up producing very confusing
+        // grouping with multiple ordering - a single-item set without a group
+        // has no label and subsequent sibling entities (items or groups) then
+        // end up appearing as children instead, depending on position
+        // relative to the end of the supergroup.  A hybrid between the two
+        // approaches appears to be necessary - grouping single items only
+        // when multiple orderings are in play.
+
+        // mono-grouping
+        grouped = items.size() > keys.length + 
+            ((missingCount > 0) ? 1 : 0);
+
         if (grouped) {
             hasSomeGrouping = true;
         }
+        // end mono-grouping
         
-        for (var k = 0; k < keys.length; k++) {
-            var key = keys[k];
-            if (key.items.size() > 0) {
+        for (k = 0; (k < keys.length && itemIndex < toIndex); k++) {
+            key = keys[k];
+            keyItems = keys.retrieveItems(key);
+            if (keyItems.size() > 0) {
                 if (grouped && settings.grouped) {
                     createGroup(key.display, valueType, index);
                 }
-                
-                items.removeSet(key.items);
-                if (key.items.size() > 1 && index < orders.length - 1) {
-                    processLevel(key.items, index+1);
+                if (keyItems.size() > 1 && index < orders.length - 1) {
+                    processLevel(keyItems, index+1);
                 } else {
-                    key.items.visit(createItem);
+                    keyItems.visit(createItem);
                 }
             }
         }
+
         
-        if (items.size() > 0) {
+        if ((itemIndex < toIndex) && (missingCount > 0)) {
+            items = caches[expr].getItemsMissingValue(items);
             if (grouped && settings.grouped) {
-                createGroup(Exhibit.l10n.missingSortKey, valueType, index);
+                createGroup(Exhibit._("%general.missingSortKey"),
+                            valueType, index);
             }
-            
-            if (items.size() > 1 && index < orders.length - 1) {
+            if (index < orders.length - 1) {
                 processLevel(items, index+1);
             } else {
                 items.visit(createItem);
@@ -331,68 +449,76 @@ Exhibit.OrderedViewFrame.prototype._internalReconstruct = function(allItems) {
         }
     };
     
-    var processNonNumericLevel = function(items, index, values, valueType) {
-        var keys = [];
-        var compareKeys;
-        var retrieveItems;
-        var order = orders[index];
+    processNonNumericLevel = function(items, index, values, valueType) {
+        var compareKeys, k, key, vals
+        , retrieveItems
+        , keys = []
+        , order = orders[index]
+        , expr = order.forward ? "."+order.property : "!"+order.property
+        , cache = caches[expr];
         
-        if (valueType == "item") {
+        if (valueType === "item") {
             values.visit(function(itemID) {
                 var label = database.getObject(itemID, "label");
-                label = label != null ? label : itemID;
+                label = (typeof label !== "undefined" && label !== null) 
+                    ? label : itemID;
                 keys.push({ itemID: itemID, display: label });
             });
             
             compareKeys = function(key1, key2) {
                 var c = key1.display.localeCompare(key2.display);
-                return c != 0 ? c : key1.itemID.localeCompare(key2.itemID);
+                return c !== 0 ? c : key1.itemID.localeCompare(key2.itemID);
             };
-            
-            retrieveItems = order.forward ? function(key) {
-                return database.getSubjects(key.itemID, order.property, null, items);
-            } : function(key) {
-                return database.getObjects(key.itemID, order.property, null, items);
+
+            retrieveItems = function(key) {
+                return cache.getItemsFromValues(new Exhibit.Set([key.itemID]),
+                                                items);
             };
         } else { //text
             values.visit(function(value) {
-                keys.push({ display: value });
+                keys.push({display: value});
             });
             
             compareKeys = function(key1, key2) {
                 return key1.display.localeCompare(key2.display);
             };
-            retrieveItems = order.forward ? function(key) {
-                return database.getSubjects(key.display, order.property, null, items);
-            } : function(key) {
-                return database.getObjects(key.display, order.property, null, items);
+            retrieveItems = function(key) {
+                return cache.getItemsFromValues(new Exhibit.Set([key.display]),
+                                                items);
             };
         }
-        
-        keys.sort(function(key1, key2) { 
-            return (order.ascending ? 1 : -1) * compareKeys(key1, key2); 
-        });
-        
-        for (var k = 0; k < keys.length; k++) {
-            var key = keys[k];
-            key.items = retrieveItems(key);
+
+//        keys.sort(function(key1, key2) { 
+//            return (order.ascending ? 1 : -1) * compareKeys(key1, key2); 
+//        });
+
+        sortTop(keys, 
+                function(key1, key2) { 
+                    return (order.ascending ? 1 : -1) *
+                        compareKeys(key1, key2); 
+                },
+                toIndex);
+        keys.retrieveItems = function(key) {
+            var keyItems = retrieveItems(key);
             if (!settings.showDuplicates) {
-                items.removeSet(key.items);
+                items.removeSet(keyItems);
             }
-        }
-        
+            return keyItems;
+        };
         return keys;
     };
     
-    var processNumericLevel = function(items, index, values, valueType) {
-        var keys = [];
-        var keyMap = {};
-        var order = orders[index];
+    processNumericLevel = function(items, index, values, valueType) {
+        var valueParser, key, k, v
+        , keys = []
+        , keyMap = {}
+        , order = orders[index]
+        , expr = order.forward ? "."+order.property : "!"+order.property
+        , cache = caches[expr];
         
-        var valueParser;
-        if (valueType == "number") {
+        if (valueType === "number") {
             valueParser = function(value) {
-                if (typeof value == "number") {
+                if (typeof value === "number") {
                     return value;
                 } else {
                     try {
@@ -408,7 +534,8 @@ Exhibit.OrderedViewFrame.prototype._internalReconstruct = function(allItems) {
                     return value.getTime();
                 } else {
                     try {
-                        return SimileAjax.DateTime.parseIso8601DateTime(value.toString()).getTime();
+                        return Exhibit.DateTime
+                            .parseIso8601DateTime(value.toString()).getTime();
                     } catch (e) {
                         return null;
                     }
@@ -417,58 +544,53 @@ Exhibit.OrderedViewFrame.prototype._internalReconstruct = function(allItems) {
         }
         
         values.visit(function(value) {
-            var sortkey = valueParser(value);
-            if (sortkey != null) {
-                var key = keyMap[sortkey];
+            var sortkey, key;
+            sortkey = valueParser(value);
+            if (typeof sortkey !== "undefined" && sortkey !== null) {
+                key = keyMap[sortkey];
                 if (!key) {
-                    key = { sortkey: sortkey, display: value, values: [], items: new Exhibit.Set() };
+                    key = { sortkey: sortkey, display: value, 
+                            values: new Exhibit.Set() };
                     keyMap[sortkey] = key;
                     keys.push(key);
                 }
-                key.values.push(value);
+                key.values.add(value);
             }
         });
         
         keys.sort(function(key1, key2) { 
             return (order.ascending ? 1 : -1) * (key1.sortkey - key2.sortkey); 
         });
-        
-        for (var k = 0; k < keys.length; k++) {
-            var key = keys[k];
-            var values = key.values;
-            for (var v = 0; v < values.length; v++) {
-                if (order.forward) {
-                    database.getSubjects(values[v], order.property, key.items, items);
-                } else {
-                    database.getObjects(values[v], order.property, key.items, items);
-                }
-            }
-            
+
+        keys.retrieveItems = function(key) {
+            var v, vals = key.values
+            keyItems = cache.getItemsFromValues(key.values, items);
             if (!settings.showDuplicates) {
-                items.removeSet(key.items);
+                items.removeSet(keyItems);
             }
+            return keyItems;
         }
-        
+            
         return keys;
     };
-    
-    var totalCount = allItems.size();
-    var pageCount = Math.ceil(totalCount / settings.pageSize);
-    var fromIndex = 0;
-    var toIndex = settings.showAll ? totalCount : Math.min(totalCount, settings.abbreviatedCount);
+
+    totalCount = allItems.size();
+    pageCount = Math.ceil(totalCount / settings.pageSize);
+    fromIndex = 0;
+    toIndex = settings.showAll ? totalCount : Math.min(totalCount, settings.abbreviatedCount);
     
     if (!settings.grouped && settings.paginate && (pageCount > 1 || (pageCount > 0 && settings.alwaysShowPagingControls))) {
         fromIndex = settings.page * settings.pageSize;
         toIndex = Math.min(fromIndex + settings.pageSize, totalCount);
         
-        if (settings.showHeader && (settings.pagingControlLocations == "top" || settings.pagingControlLocations == "topbottom")) {
+        if (settings.showHeader && (settings.pagingControlLocations === "top" || settings.pagingControlLocations === "topbottom")) {
             this._headerDom.renderPageLinks(
                 settings.page,
                 pageCount,
                 settings.pageWindow
             );
         }
-        if (settings.showFooter && (settings.pagingControlLocations == "bottom" || settings.pagingControlLocations == "topbottom")) {
+        if (settings.showFooter && (settings.pagingControlLocations === "bottom" || settings.pagingControlLocations === "topbottom")) {
             this._footerDom.renderPageLinks(
                 settings.page,
                 pageCount,
@@ -483,27 +605,37 @@ Exhibit.OrderedViewFrame.prototype._internalReconstruct = function(allItems) {
             this._footerDom.hidePageLinks();
         }
     }
+    
     processLevel(allItems, 0);
     
     return hasSomeGrouping;
 };
 
+/**
+ * @returns {Array}
+ */
 Exhibit.OrderedViewFrame.prototype._getOrders = function() {
     return this._orders || [ this._getPossibleOrders()[0] ];
 };
 
+/**
+ * @returns {Array}
+ */
 Exhibit.OrderedViewFrame.prototype._getPossibleOrders = function() {
-    var possibleOrders = null;
-    if (this._possibleOrders == null) {
+    var possibleOrders, i, p;
+    possibleOrders = null;
+    if (typeof this._possibleOrders === "undefined" ||
+        this._possibleOrders === null) {
         possibleOrders = this._uiContext.getDatabase().getAllProperties();
-        for (var i = 0, p; p = possibleOrders[i]; i++ ) {
+        for (i = 0; i < possibleOrders.length; i++ ) {
+            p = possibleOrders[i];
             possibleOrders[i] = { ascending:true, forward:true, property:p };
         }
     } else {
         possibleOrders = [].concat(this._possibleOrders);
     }
     
-    if (possibleOrders.length == 0) {
+    if (possibleOrders.length === 0) {
         possibleOrders.push({
             property:   "label", 
             forward:    true, 
@@ -513,94 +645,104 @@ Exhibit.OrderedViewFrame.prototype._getPossibleOrders = function() {
     return possibleOrders;
 };
 
-Exhibit.OrderedViewFrame.prototype._openSortPopup = function(elmt, index) {
-    var self = this;
-    var database = this._uiContext.getDatabase();
+/**
+ * @pararm {jQuery.Event} evt
+ * @param {Number} index
+ * @returns {Object}
+ */
+Exhibit.OrderedViewFrame.prototype._openSortPopup = function(evt, index) {
+    var self, database, popupDom, configuredOrders, order, property, propertyLabel, valueType, sortLabels, orders, possibleOrders, possibleOrder, skip, j, existingOrder, appendOrder;
+    self = this;
+    database = this._uiContext.getDatabase();
     
-    var popupDom = Exhibit.UI.createPopupMenuDom(elmt);
+    popupDom = Exhibit.UI.createPopupMenuDom(evt.target);
 
     /*
      *  Ascending/descending/remove options for the current order
      */
-    var configuredOrders = this._getOrders();
+    configuredOrders = this._getOrders();
     if (index >= 0) {
-        var order = configuredOrders[index];
-        var property = database.getProperty(order.property);
-        var propertyLabel = order.forward ? property.getPluralLabel() : property.getReversePluralLabel();
-        var valueType = order.forward ? property.getValueType() : "item";
-        var sortLabels = Exhibit.Database.l10n.sortLabels[valueType];
-        sortLabels = (sortLabels != null) ? sortLabels : 
-            Exhibit.Database.l10n.sortLabels["text"];
-        
-        popupDom.appendMenuItem(
-            sortLabels.ascending, 
-            Exhibit.urlPrefix +
-                (order.ascending ? "images/option-check.png" : "images/option.png"),
-            order.ascending ?
-                function() {} :
-                function() {
-                    self._reSort(
-                        index, 
-                        order.property, 
-                        order.forward, 
-                        true,
-                        false
-                    );
-                }
-        );
-        popupDom.appendMenuItem(
-            sortLabels.descending, 
-            Exhibit.urlPrefix +
-                (order.ascending ? "images/option.png" : "images/option-check.png"),
-            order.ascending ?
-                function() {
-                    self._reSort(
-                        index, 
-                        order.property, 
-                        order.forward, 
-                        false,
-                        false
-                    );
-                } :
-                function() {}
-        );
-        if (configuredOrders.length > 1) {
-            popupDom.appendSeparator();
+        order = configuredOrders[index];
+        property = database.getProperty(order.property);
+        if (property === null) {
+            Exhibit.Debug.warn(Exhibit._("%orderedViewFrame.error.noSuchPropertyOrderWarning", order.property));
+        } else {
+            propertyLabel = order.forward ? property.getPluralLabel() : property.getReversePluralLabel();
+            valueType = order.forward ? property.getValueType() : "item";
+            sortLabels = Exhibit.ViewUtilities.getSortLabels(valueType);
+
             popupDom.appendMenuItem(
-                Exhibit.OrderedViewFrame.l10n.removeOrderLabel, 
-                null,
-                function() {self._removeOrder(index);}
+                sortLabels.ascending, 
+                Exhibit.urlPrefix +
+                    (order.ascending ? "images/option-check.png" : "images/option.png"),
+                order.ascending ?
+                    function() {} :
+                    function() {
+                        self._reSort(
+                            index, 
+                            order.property, 
+                            order.forward, 
+                            true,
+                            false
+                        );
+                    }
             );
+            popupDom.appendMenuItem(
+                sortLabels.descending, 
+                Exhibit.urlPrefix +
+                    (order.ascending ? "images/option.png" : "images/option-check.png"),
+                order.ascending ?
+                    function() {
+                        self._reSort(
+                            index, 
+                            order.property, 
+                            order.forward, 
+                            false,
+                            false
+                        );
+                    } :
+                    function() {}
+            );
+            if (configuredOrders.length > 1) {
+                popupDom.appendSeparator();
+                popupDom.appendMenuItem(
+                    Exhibit._("%orderedViewFrame.removeOrderLabel"),
+                    null,
+                    function() {self._removeOrder(index);}
+                );
+            }
         }
     }
     
     /*
      *  The remaining possible orders
      */
-    var orders = [];
-    var possibleOrders = this._getPossibleOrders();
+    orders = [];
+    possibleOrders = this._getPossibleOrders();
     for (i = 0; i < possibleOrders.length; i++) {
-        var possibleOrder = possibleOrders[i];
-        var skip = false;
-        for (var j = (index < 0) ? configuredOrders.length - 1 : index; j >= 0; j--) {
-            var existingOrder = configuredOrders[j];
-            if (existingOrder.property == possibleOrder.property && 
-                existingOrder.forward == possibleOrder.forward) {
+        possibleOrder = possibleOrders[i];
+        skip = false;
+        for (j = (index < 0) ? configuredOrders.length - 1 : index; j >= 0; j--) {
+            existingOrder = configuredOrders[j];
+            if (existingOrder.property === possibleOrder.property && 
+                existingOrder.forward === possibleOrder.forward) {
                 skip = true;
                 break;
             }
         }
         
         if (!skip) {
-            var property = database.getProperty(possibleOrder.property);
-            orders.push({
-                property:   possibleOrder.property,
-                forward:    possibleOrder.forward,
-                ascending:  possibleOrder.ascending,
-                label:      possibleOrder.forward ? 
-                                property.getPluralLabel() : 
-                                property.getReversePluralLabel()
-            });
+            property = database.getProperty(possibleOrder.property);
+            if (property !== null) {
+                orders.push({
+                    property:   possibleOrder.property,
+                    forward:    possibleOrder.forward,
+                    ascending:  possibleOrder.ascending,
+                    label:      possibleOrder.forward ? 
+                        property.getPluralLabel() : 
+                        property.getReversePluralLabel()
+                });
+            }
         }
     }
     
@@ -613,7 +755,7 @@ Exhibit.OrderedViewFrame.prototype._openSortPopup = function(elmt, index) {
             return order1.label.localeCompare(order2.label);
         });
         
-        var appendOrder = function(order) {
+        appendOrder = function(order) {
             popupDom.appendMenuItem(
                 order.label,
                 null,
@@ -627,154 +769,159 @@ Exhibit.OrderedViewFrame.prototype._openSortPopup = function(elmt, index) {
                     );
                 }
             );
-        }
+        };
         
-        for (var i = 0; i < orders.length; i++) {
+        for (i = 0; i < orders.length; i++) {
             appendOrder(orders[i]);
         }
     }
-    popupDom.open();
+    popupDom.open(evt);
 };
 
+/**
+ * @param {Number} index
+ * @param {String} propertyID
+ * @param {Boolean} forward
+ * @param {Boolean} ascending
+ * @param {Number} slice
+ */
 Exhibit.OrderedViewFrame.prototype._reSort = function(index, propertyID, forward, ascending, slice) {
-    var oldOrders = this._getOrders();
+    var newOrders, property, propertyLabel, valueType, sortLabels;
+    oldOrders = this._getOrders();
     index = (index < 0) ? oldOrders.length : index;
     
-    var newOrders = oldOrders.slice(0, index);
+    newOrders = oldOrders.slice(0, index);
     newOrders.push({ property: propertyID, forward: forward, ascending: ascending });
     if (!slice) {
         newOrders = newOrders.concat(oldOrders.slice(index+1));
     }
     
-    var property = this._uiContext.getDatabase().getProperty(propertyID);
-    var propertyLabel = forward ? property.getPluralLabel() : property.getReversePluralLabel();
-    var valueType = forward ? property.getValueType() : "item";
-    var sortLabels = Exhibit.Database.l10n.sortLabels[valueType];
-    sortLabels = (sortLabels != null) ? sortLabels : 
-        Exhibit.Database.l10n.sortLabels["text"];
-    
-    var self = this;
-    SimileAjax.History.addLengthyAction(
-        function() {
-            self._orders = newOrders;
-            self.parentReconstruct();
-        },
-        function() {
-            self._orders = oldOrders;
-            self.parentReconstruct();
-        },
-        Exhibit.OrderedViewFrame.l10n.formatSortActionTitle(
-            propertyLabel, ascending ? sortLabels.ascending : sortLabels.descending)
+    property = this._uiContext.getDatabase().getProperty(propertyID);
+    propertyLabel = forward ? property.getPluralLabel() : property.getReversePluralLabel();
+    valueType = forward ? property.getValueType() : "item";
+    sortLabels = Exhibit.ViewUtilities.getSortLabels(valueType);
+
+    this.parentHistoryAction(
+        this._historyKey,
+        this.makeState(newOrders),
+        Exhibit._("%orderedViewFrame.formatSortActionTitle",
+            propertyLabel,
+            ascending ?
+                sortLabels.ascending :
+                sortLabels.descending
+        )
     );
 };
 
+/**
+ * @param {Number} index
+ */
 Exhibit.OrderedViewFrame.prototype._removeOrder = function(index) {
-    var oldOrders = this._getOrders();
-    var newOrders = oldOrders.slice(0, index).concat(oldOrders.slice(index + 1));
+    var oldOrders, newOrders, order, property, propertyLabel, valueType, sortLabels;
+    oldOrders = this._getOrders();
+    newOrders = oldOrders.slice(0, index).concat(oldOrders.slice(index + 1));
     
-    var order = oldOrders[index];
-    var property = this._uiContext.getDatabase().getProperty(order.property);
-    var propertyLabel = order.forward ? property.getPluralLabel() : property.getReversePluralLabel();
-    var valueType = order.forward ? property.getValueType() : "item";
-    var sortLabels = Exhibit.Database.l10n.sortLabels[valueType];
-    sortLabels = (sortLabels != null) ? sortLabels : 
-        Exhibit.Database.l10n.sortLabels["text"];
+    order = oldOrders[index];
+    property = this._uiContext.getDatabase().getProperty(order.property);
+    propertyLabel = order.forward ?
+        property.getPluralLabel() :
+        property.getReversePluralLabel();
+    valueType = order.forward ?
+        property.getValueType() :
+        "item";
+    sortLabels = Exhibit.ViewUtilities.getSortLabels(valueType);
     
-    var self = this;
-    SimileAjax.History.addLengthyAction(
-        function() {
-            self._orders = newOrders;
-            self.parentReconstruct();
-        },
-        function() {
-            self._orders = oldOrders;
-            self.parentReconstruct();
-        },
-        Exhibit.OrderedViewFrame.l10n.formatRemoveOrderActionTitle(
-            propertyLabel, order.ascending ? sortLabels.ascending : sortLabels.descending)
+    this.parentHistoryAction(
+        this._historyKey,
+        this.makeState(newOrders),
+        Exhibit._("%orderedViewFrame.formatRemoveOrderActionTitle",
+            propertyLabel, order.ascending ?
+                sortLabels.ascending :
+                sortLabels.descending)
     );
 };
 
+/**
+ * @param {Boolean} showAll
+ */
 Exhibit.OrderedViewFrame.prototype._setShowAll = function(showAll) {
-    var self = this;
-    var settings = this._settings;
-    SimileAjax.History.addLengthyAction(
-        function() {
-            settings.showAll = showAll;
-            self.parentReconstruct();
-        },
-        function() {
-            settings.showAll = !showAll;
-            self.parentReconstruct();
-        },
-        Exhibit.OrderedViewFrame.l10n[
-            showAll ? "showAllActionTitle" : "dontShowAllActionTitle"]
+    this.parentHistoryAction(
+        this._historyKey,
+        this.makeState(null, showAll),
+        Exhibit._(
+            showAll ?
+                "%orderedViewFrame.showAllActionTitle" :
+                "%orderedViewFrame.dontShowAllActionTitle")
     );
 };
 
+/**
+ *
+ */
 Exhibit.OrderedViewFrame.prototype._toggleGroup = function() {
-    var settings = this._settings;
-    var oldGrouped = settings.grouped;
-    var self = this;
-    SimileAjax.History.addLengthyAction(
-        function() {
-            settings.grouped = !oldGrouped;
-            self.parentReconstruct();
-        },
-        function() {
-            settings.grouped = oldGrouped;
-            self.parentReconstruct();
-        },
-        Exhibit.OrderedViewFrame.l10n[
-            oldGrouped ? "ungroupAsSortedActionTitle" : "groupAsSortedActionTitle"]
+    var oldGrouped;
+    oldGrouped = this._settings.grouped;
+
+    this.parentHistoryAction(
+        this._historyKey,
+        this.makeState(null, !oldGrouped ? true : null, null, !oldGrouped),
+        Exhibit._(
+            oldGrouped ?
+                "%orderedViewFrame.ungroupAsSortedActionTitle" :
+                "%orderedViewFrame.groupAsSortedActionTitle")
     );
 };
 
+/**
+ *
+ */
 Exhibit.OrderedViewFrame.prototype._toggleShowDuplicates = function() {
-    var settings = this._settings;
-    var oldShowDuplicates = settings.showDuplicates;
-    var self = this;
-    SimileAjax.History.addLengthyAction(
-        function() {
-            settings.showDuplicates = !oldShowDuplicates;
-            self.parentReconstruct();
-        },
-        function() {
-            settings.showDuplicates = oldShowDuplicates;
-            self.parentReconstruct();
-        },
-        Exhibit.OrderedViewFrame.l10n[
-            oldShowDuplicates ? "hideDuplicatesActionTitle" : "showDuplicatesActionTitle"]
+    var oldShowDuplicates;
+    oldShowDuplicates = this._settings.showDuplicates;
+
+    this.parentHistoryAction(
+        this._historyKey,
+        this.makeState(null, null, !oldShowDuplicates),
+        Exhibit._(
+            oldShowDuplicates ?
+                "%orderedViewFrame.hideDuplicatesActionTitle" :
+                "%orderedViewFrame.showDuplicatesActionTitle")
     );
 };
 
+/**
+ * @param {Number} pageIndex
+ */ 
 Exhibit.OrderedViewFrame.prototype._gotoPage = function(pageIndex) {
-    var settings = this._settings;
-    var oldPageIndex = settings.page;
-    
-    var self = this;
-    SimileAjax.History.addLengthyAction(
-        function() {
-            settings.page = pageIndex;
-            self.parentReconstruct();
-        },
-        function() {
-            settings.page = oldPageIndex;
-            self.parentReconstruct();
-        },
-        Exhibit.OrderedViewFrame.l10n.makePagingActionTitle(pageIndex)
+    this.parentHistoryAction(
+        this._historyKey,
+        this.makeState(null, null, null, null, pageIndex),
+        Exhibit.ViewUtilities.makePagingActionTitle(pageIndex)
     );
 };
 
+/**
+ * @constant
+ */
 Exhibit.OrderedViewFrame.headerTemplate =
-    "<div id='collectionSummaryDiv' style='display: none;'></div>" +
-    "<div class='exhibit-collectionView-header-sortControls' style='display: none;' id='controlsDiv'>" +
-        "%0" + // sorting controls template
-        "<span class='exhibit-collectionView-header-groupControl'> \u2022 " +
-            "<a id='groupOption' class='exhibit-action'></a>" + 
-        "</span>" +
-    "</div>";
+    '<div id="collectionSummaryDiv" style="display: none;"></div>' +
+    '<div class="exhibit-collectionView-header-sortControls" style="display: none;" id="controlsDiv">' +
+        '%1$s' + // sorting controls template
+        '<span class="exhibit-collectionView-header-groupControl"> &bull; ' +
+            '<a id="groupOption" class="exhibit-action"></a>' + 
+        '</span>' +
+    '</div>';
 
+/**
+ * @param {Exhibit.UIContext} uiContext
+ * @param {Element} headerDiv
+ * @param {Boolean} showSummary
+ * @param {Boolean} showControls
+ * @param {Function} onThenSortBy
+ * @param {Function} onGroupToggle
+ * @param {Function} gotoPage
+ * @returns {Object}
+ */
 Exhibit.OrderedViewFrame.createHeaderDom = function(
     uiContext,
     headerDiv,
@@ -784,17 +931,17 @@ Exhibit.OrderedViewFrame.createHeaderDom = function(
     onGroupToggle,
     gotoPage
 ) {
-    var l10n = Exhibit.OrderedViewFrame.l10n;
-    var template = String.substitute(
+    var template, dom;
+    template = sprintf(
         Exhibit.OrderedViewFrame.headerTemplate +
-        "<" + l10n.pagingControlContainerElement + " class='exhibit-collectionView-pagingControls' style='display: none;' id='topPagingDiv'></" + l10n.pagingControlContainerElement + ">", 
-        [ l10n.sortingControlsTemplate ]);
-        
-    var dom = SimileAjax.DOM.createDOMFromString(headerDiv, template, {});
-    headerDiv.className = "exhibit-collectionView-header";
+            '<div class="exhibit-collectionView-pagingControls" style="display: none;" id="topPagingDiv"></div>',
+        Exhibit._("%orderedViewFrame.sortingControlsTemplate"));
+
+    dom = Exhibit.jQuery.simileDOM("string", headerDiv, template, {});
+    Exhibit.jQuery(headerDiv).addClass("exhibit-collectionView-header");
     
     if (showSummary) {
-        dom.collectionSummaryDiv.style.display = "block";
+        Exhibit.jQuery(dom.collectionSummaryDiv).show();
         dom.collectionSummaryWidget = Exhibit.CollectionSummaryWidget.create(
             {},
             dom.collectionSummaryDiv, 
@@ -802,54 +949,65 @@ Exhibit.OrderedViewFrame.createHeaderDom = function(
         );
     }
     if (showControls) {
-        dom.controlsDiv.style.display = "block";
+        Exhibit.jQuery(dom.controlsDiv).show();
         dom.groupOptionWidget = Exhibit.OptionWidget.create(
-            {   label:      l10n.groupedAsSortedOptionLabel,
+            {   label:      Exhibit._("%orderedViewFrame.groupedAsSortedOptionLabel"),
                 onToggle:   onGroupToggle
             },
             dom.groupOption,
             uiContext
         );
-        
-        SimileAjax.WindowManager.registerEvent(dom.thenSortByAction, "click", onThenSortBy);
+
+        Exhibit.jQuery(dom.thenSortByAction).bind("click", onThenSortBy);
+
         dom.enableThenByAction = function(enabled) {
             Exhibit.UI.enableActionLink(dom.thenSortByAction, enabled);
         };
         dom.setOrders = function(orderElmts) {
-            dom.ordersSpan.innerHTML = "";
+            var addDelimter, i;
+            Exhibit.jQuery(dom.ordersSpan).empty();
             
-            var addDelimiter = Exhibit.Formatter.createListDelimiter(dom.ordersSpan, orderElmts.length, uiContext);
-            for (var i = 0; i < orderElmts.length; i++) {
+            addDelimiter = Exhibit.Formatter.createListDelimiter(dom.ordersSpan, orderElmts.length, uiContext);
+            for (i = 0; i < orderElmts.length; i++) {
                 addDelimiter();
-                dom.ordersSpan.appendChild(orderElmts[i]);
+                Exhibit.jQuery(dom.ordersSpan).append(orderElmts[i]);
             }
             addDelimiter();
         };
     }
     dom.renderPageLinks = function(page, totalPage, pageWindow) {
         Exhibit.OrderedViewFrame.renderPageLinks(dom.topPagingDiv, page, totalPage, pageWindow, gotoPage);
-        dom.topPagingDiv.style.display = "block";
+        Exhibit.jQuery(dom.topPagingDiv).show();
     };
     dom.hidePageLinks = function() {
-        dom.topPagingDiv.style.display = "none";
+        Exhibit.jQuery(dom.topPagingDiv).hide();
     };
-    
     dom.dispose = function() {
-        if ("collectionSummaryWidget" in dom) {
+        if (typeof dom.collectionSummaryWidget !== "undefined") {
             dom.collectionSummaryWidget.dispose();
             dom.collectionSummaryWidget = null;
         }
         
         dom.groupOptionWidget.dispose();
         dom.groupOptionWidget = null;
-    }
+    };
     
     return dom;
 };
 
-Exhibit.OrderedViewFrame.footerTemplate = 
-    "<div id='showAllSpan'></div>";
-    
+/**
+ * @constant
+ */
+Exhibit.OrderedViewFrame.footerTemplate = "<div id='showAllSpan'></div>";
+
+/**
+ * @param {Exhibit.UIContext} uiContext
+ * @param {Element} footerDiv
+ * @param {Function} onShowAll
+ * @param {Function} onDontShowAll
+ * @param {Function} gotoPage
+ * @returns {Object}
+ */ 
 Exhibit.OrderedViewFrame.createFooterDom = function(
     uiContext,
     footerDiv,
@@ -857,100 +1015,111 @@ Exhibit.OrderedViewFrame.createFooterDom = function(
     onDontShowAll,
     gotoPage
 ) {
-    var l10n = Exhibit.OrderedViewFrame.l10n;
+    var dom;
     
-    var dom = SimileAjax.DOM.createDOMFromString(
+    dom = Exhibit.jQuery.simileDOM(
+        "string",
         footerDiv,
         Exhibit.OrderedViewFrame.footerTemplate +
-        "<" + l10n.pagingControlContainerElement + " class='exhibit-collectionView-pagingControls' style='display: none;' id='bottomPagingDiv'></" + l10n.pagingControlContainerElement + ">",
+            '<div class="exhibit-collectionView-pagingControls" style="display: none;" id="bottomPagingDiv"></div>',
         {}
     );
-    footerDiv.className = "exhibit-collectionView-footer";
+    Exhibit.jQuery(footerDiv).addClass("exhibit-collectionView-footer");
     
     dom.setCounts = function(count, limitCount, showAll, canToggle) {
-        dom.showAllSpan.innerHTML = "";
+        Exhibit.jQuery(dom.showAllSpan).empty();
         if (canToggle && count > limitCount) {
-            dom.showAllSpan.style.display = "block";
+            Exhibit.jQuery(dom.showAllSpan).show();
             if (showAll) {
-                dom.showAllSpan.appendChild(
+                Exhibit.jQuery(dom.showAllSpan).append(
                     Exhibit.UI.makeActionLink(
-                        l10n.formatDontShowAll(limitCount), onDontShowAll));
+                        Exhibit._("%orderedViewFrame.formatDontShowAll", limitCount), onDontShowAll));
             } else {
-                dom.showAllSpan.appendChild(
+                Exhibit.jQuery(dom.showAllSpan).append(
                     Exhibit.UI.makeActionLink(
-                        l10n.formatShowAll(count), onShowAll));
+                        Exhibit._("%orderedViewFrame.formatShowAll", count), onShowAll));
             }
         }
     };
     dom.renderPageLinks = function(page, totalPage, pageWindow) {
         Exhibit.OrderedViewFrame.renderPageLinks(dom.bottomPagingDiv, page, totalPage, pageWindow, gotoPage);
-        dom.bottomPagingDiv.style.display = "block";
-        dom.showAllSpan.style.display = "none";
+        Exhibit.jQuery(dom.bottomPagingDiv).show();
+        Exhibit.jQuery(dom.showAllSpan).hide();
     };
     dom.hidePageLinks = function() {
-        dom.bottomPagingDiv.style.display = "none";
+        Exhibit.jQuery(dom.bottomPagingDiv).hide();
     };
     dom.dispose = function() {};
     
     return dom;
 };
 
+/**
+ * @param {Element} parentElmt
+ * @param {Number} page
+ * @param {Number} pageCount
+ * @param {Number} pageWindow
+ * @param {Function} gotoPage
+ */
 Exhibit.OrderedViewFrame.renderPageLinks = function(parentElmt, page, pageCount, pageWindow, gotoPage) {
-    var l10n = Exhibit.OrderedViewFrame.l10n;
+    var self, renderPageLink, renderPageNumber, renderHTML, pageWindowStart, pageWindowEnd, i;
     
-    parentElmt.className = "exhibit-collectionView-pagingControls";
-    parentElmt.innerHTML = "";
+    Exhibit.jQuery(parentElmt).addClass("exhibit-collectionView-pagingControls");
+    Exhibit.jQuery(parentElmt).empty();
     
-    var self = this;
-    var renderPageLink = function(label, index) {
-        var elmt = document.createElement(l10n.pagingControlElement);
-        elmt.className = "exhibit-collectionView-pagingControls-page";
-        parentElmt.appendChild(elmt);
+    self = this;
+    renderPageLink = function(label, index) {
+        var elmt, a, handler;
+        elmt = Exhibit.jQuery("<span>")
+            .attr("class", "exhibit-collectionView-pagingControls-page");
+        Exhibit.jQuery(parentElmt).append(elmt);
         
-        var a = document.createElement("a");
-        a.innerHTML = label;
-        a.href = "javascript:{}";
-        a.title = l10n.makePagingLinkTooltip(index);
-        elmt.appendChild(a);
+        a = Exhibit.jQuery("<a>")
+            .html(label)
+            .attr("href", "#")
+            .attr("title", Exhibit.ViewUtilities.makePagingLinkTooltip(index));
+        elmt.append(a);
         
-        var handler = function(elmt, evt, target) {
+        handler = function(evt) {
             gotoPage(index);
-            SimileAjax.DOM.cancelEvent(evt);
-            return false;
-        }
-        SimileAjax.WindowManager.registerEvent(a, "click", handler);
+            evt.preventDefault();
+            evt.stopPropagation();
+        };
+        a.bind("click", handler);
     };
-    var renderPageNumber = function(index) {
-        if (index == page) {
-            var elmt = document.createElement(l10n.pagingControlElement);
-            elmt.className = "exhibit-collectionView-pagingControls-currentPage";
-            elmt.innerHTML = (index + 1);
+
+    renderPageNumber = function(index) {
+        if (index === page) {
+            var elmt = Exhibit.jQuery("<span>")
+                .attr("class",
+                      "exhibit-collectionView-pagingControls-currentPage")
+                .html(index + 1);
             
-            parentElmt.appendChild(elmt);
+            Exhibit.jQuery(parentElmt).append(elmt);
         } else {
             renderPageLink(index + 1, index);
         }
     };
-    var renderHTML = function(html) {
-        var elmt = document.createElement(l10n.pagingControlElement);
-        elmt.innerHTML = html;
+    renderHTML = function(html) {
+        var elmt = Exhibit.jQuery("<span>")
+            .html(html);
         
-        parentElmt.appendChild(elmt);
+        Exhibit.jQuery(parentElmt).append(elmt);
     };
     
     if (page > 0) {
-        renderPageLink(l10n.previousPage, page - 1);
-        if (l10n.pageSeparator.length > 0) {
+        renderPageLink(Exhibit._("%orderedViewFrame.previousPage"), page - 1);
+        if (Exhibit._("%orderedViewFrame.pageSeparator").length > 0) {
             renderHTML(" ");
         }
     }
     
-    var pageWindowStart = 0;
-    var pageWindowEnd = pageCount - 1;
+    pageWindowStart = 0;
+    pageWindowEnd = pageCount - 1;
     
     if (page - pageWindow > 1) {
         renderPageNumber(0);
-        renderHTML(l10n.pageWindowEllipses);
+        renderHTML(Exhibit._("%orderedViewFrame.pageWindowEllipses"));
         
         pageWindowStart = page - pageWindow;
     }
@@ -958,22 +1127,155 @@ Exhibit.OrderedViewFrame.renderPageLinks = function(parentElmt, page, pageCount,
         pageWindowEnd = page + pageWindow;
     }
     
-    for (var i = pageWindowStart; i <= pageWindowEnd; i++) {
-        if (i > pageWindowStart && l10n.pageSeparator.length > 0) {
-            renderHTML(l10n.pageSeparator);
+    for (i = pageWindowStart; i <= pageWindowEnd; i++) {
+        if (i > pageWindowStart && Exhibit._("%orderedViewFrame.pageSeparator").length > 0) {
+            renderHTML(Exhibit._("%orderedViewFrame.pageSeparator"));
         }
         renderPageNumber(i);
     }
     
     if (pageWindowEnd < pageCount - 1) {
-        renderHTML(l10n.pageWindowEllipses);
+        renderHTML(Exhibit._("%orderedViewFrame.pageWindowEllipses"));
         renderPageNumber(pageCount - 1);
     }
     
     if (page < pageCount - 1) {
-        if (l10n.pageSeparator.length > 0) {
+        if (Exhibit._("%orderedViewFrame.pageSeparator").length > 0) {
             renderHTML(" ");
         }
-        renderPageLink(l10n.nextPage, page + 1);
+        renderPageLink(Exhibit._("%orderedViewFrame.nextPage"), page + 1);
     }
+};
+
+/**
+ * Sub-component of components with identifiers, does not need its
+ * own identifier.
+ * @param {Object} [state]
+ * @returns {Object}
+ */
+Exhibit.OrderedViewFrame.prototype.exportState = function(state) {
+    if (typeof state === "undefined" || state === null) {
+        return this.makeState();
+    } else {
+        return state;
+    }
+};
+
+/**
+ * @param {Object} state
+ * @param {Array} state.orders
+ * @param {Boolean} state.showAll
+ * @param {Boolean} state.showDuplicates
+ * @param {Boolean} state.grouped
+ * @param {Number} state.page
+ */
+Exhibit.OrderedViewFrame.prototype.importState = function(state) {
+    var changed, i, currentOrders;
+    changed = false;
+
+    // too many toggles to bother with monolithic state difference checking,
+    // check each in turn
+    if (state.grouped !== this._settings.grouped) {
+        this._settings.grouped = state.grouped;
+        changed = true;
+    }
+    if (state.showAll !== this._settings.showAll) {
+        this._settings.showAll = state.showAll;
+        changed = true;
+    }
+    if (state.showDuplicates !== this._settings.showDuplicates) {
+        this._settings.showDuplicates = showDuplicates;
+        changed = true;
+    }
+    if (state.page !== this._settings.page) {
+        this._settings.page = state.page;
+        changed = true;
+    }
+    if (state.orders.length !== this._getOrders().length) {
+        this._orders = state.orders;
+        changed = true;
+    } else {
+        currentOrders = this._getOrders();
+        for (i = 0; i < state.orders.length; i++) {
+            if (state.orders[i].property !== currentOrders[i].property ||
+                state.orders[i].ascending !== currentOrders[i].ascending ||
+                state.orders[i].descending !== currentOrders[i].descending) {
+                this._orders = state.orders;
+                changed = true;
+                break;
+            }
+        }
+    }
+
+    if (changed) {
+        this.parentReconstruct();
+    }
+};
+
+/**
+ * @param {Array} orders
+ * @param {Boolean} showAll
+ * @param {Boolean} showDuplicates
+ * @param {Boolean} grouped
+ * @param {Number} page
+ * @returns {Object}
+ */
+Exhibit.OrderedViewFrame.prototype.makeState = function(
+    orders,
+    showAll,
+    showDuplicates,
+    grouped,
+    page
+) {
+    orders = (typeof orders !== "undefined" && orders !== null) ?
+        orders :
+        this._getOrders();
+    showAll = (typeof showAll !== "undefined" && showAll !== null) ?
+        showAll :
+        this._settings.showAll;
+    showDuplicates = (typeof showDuplicates !== "undefined" &&
+                      showDuplicates !== null) ?
+        showDuplicates :
+        this._settings.showDuplicates;
+    grouped = (typeof grouped !== "undefined" && grouped !== null) ?
+        grouped :
+        this._settings.grouped;
+    page = (typeof page !== "undefined" && page !== null) ?
+        page :
+        this._settings.page;
+    
+    return {
+        "orders": orders,
+        "showAll": showAll,
+        "showDuplicates": showDuplicates,
+        "grouped": grouped,
+        "page": page
+    };
+};
+
+/**
+ * @param {Object} state
+ * @returns {Boolean}
+ */
+Exhibit.OrderedViewFrame.prototype.stateDiffers = function(state) {
+    var differs, currentOrders;
+    differs = false;
+    differs = (state.page !== this._settings.page ||
+               state.grouped !== this._settings.grouped ||
+               state.showAll !== this._settings.showAll ||
+               state.showDuplicates !== this._settings.showDuplicates ||
+               state.orders.length !== this._getOrders().length);
+    if (!differs) {
+        currentOrders = this._getOrders();
+        for (i = 0; i < state.orders.length; i++) {
+            if (state.orders[i].property !== currentOrders[i].property ||
+                state.orders[i].ascending !== currentOrders[i].ascending ||
+                state.orders[i].descending !== currentOrders[i].descending) {
+                differs = true;
+                break;
+            }
+        }
+    }
+
+    return differs;
 };

@@ -1,36 +1,50 @@
-/*==================================================
- *  Exhibit.TextSearchFacet
- *==================================================
+/**
+ * @fileOverview Text search facet functions and UI
+ * @author David Huynh
+ * @author <a href="mailto:ryanlee@zepheira.com">Ryan Lee</a>
  */
 
+/**
+ * @constructor
+ * @class
+ * @param {Element} containerElmt
+ * @param {Exhibit.UIContext} uiContext
+ */
 Exhibit.TextSearchFacet = function(containerElmt, uiContext) {
-    this._div = containerElmt;
-    this._uiContext = uiContext;
-    
-    this._expressions = [];
+    var self = this;
+    Exhibit.jQuery.extend(this, new Exhibit.Facet("text", containerElmt, uiContext));
+    this.addSettingSpecs(Exhibit.TextSearchFacet._settingSpecs);
+
     this._text = null;
-    
-    this._settings = {};
     this._dom = null;
     this._timerID = null;
     
-    var self = this;
-    this._listener = { 
-        onRootItemsChanged: function() {
-            if ("_itemToValue" in self) {
-                delete self._itemToValue;
-            }
+    this._onRootItemsChanged = function(evt) {
+        if (typeof self._itemToValue !== "undefined") {
+            delete self._itemToValue;
         }
     };
-    uiContext.getCollection().addListener(this._listener);
+    Exhibit.jQuery(uiContext.getCollection().getElement()).bind(
+        "onRootItemsChanged.exhibit",
+        this._onRootItemsChanged
+    );
 };
 
+/**
+ * @private
+ * @constant
+ */ 
 Exhibit.TextSearchFacet._settingSpecs = {
-    "facetLabel":       { type: "text" },
-    "queryParamName":   { type: "text" },
-    "requiresEnter":    {type: "boolean", defaultValue: false}
-    };
+    "queryParamName":   { "type": "text" },
+    "requiresEnter":    { "type": "boolean", "defaultValue": false}
+};
 
+/**
+ * @param {Object} configuration
+ * @param {Element} containerElmt
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Exhibit.TextSearchFacet}
+ */
 Exhibit.TextSearchFacet.create = function(configuration, containerElmt, uiContext) {
     var uiContext = Exhibit.UIContext.create(configuration, uiContext);
     var facet = new Exhibit.TextSearchFacet(containerElmt, uiContext);
@@ -39,134 +53,171 @@ Exhibit.TextSearchFacet.create = function(configuration, containerElmt, uiContex
     
     facet._initializeUI();
     uiContext.getCollection().addFacet(facet);
+    facet.register();
     
     return facet;
 };
 
+/**
+ * @param {Element} configElmt
+ * @param {Element} containerElmt
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Exhibit.TextSearchFacet}
+ */
 Exhibit.TextSearchFacet.createFromDOM = function(configElmt, containerElmt, uiContext) {
     var configuration = Exhibit.getConfigurationFromDOM(configElmt);
     var uiContext = Exhibit.UIContext.createFromDOM(configElmt, uiContext);
     var facet = new Exhibit.TextSearchFacet(
-        containerElmt != null ? containerElmt : configElmt, 
+        (typeof containerElmt !== "undefined" && containerElmt !== null) ? containerElmt : configElmt, 
         uiContext
     );
     
-    Exhibit.SettingsUtilities.collectSettingsFromDOM(configElmt, Exhibit.TextSearchFacet._settingSpecs, facet._settings);
+    Exhibit.SettingsUtilities.collectSettingsFromDOM(configElmt, facet.getSettingSpecs(), facet._settings);
     
     try {
         var s = Exhibit.getAttribute(configElmt, "expressions");
-        if (s != null && s.length > 0) {
-            facet._expressions = Exhibit.ExpressionParser.parseSeveral(s);
+        if (typeof s !== "undefined" && s !== null && s.length > 0) {
+            facet.setExpressionString(s);
+            facet.setExpression(Exhibit.ExpressionParser.parseSeveral(s));
         }
         
         var query = Exhibit.getAttribute(configElmt, "query");
-        if (query != null && query.length > 0) {
+        if (typeof query !== "undefined" && query !== null && query.length > 0) {
             facet._text = query;
         }
     } catch (e) {
-        SimileAjax.Debug.exception(e, "TextSearchFacet: Error processing configuration of list facet");
+        Exhibit.Debug.exception(e, Exhibit._("%facets.error.configuration", "TextSearchFacet"));
     }
     Exhibit.TextSearchFacet._configure(facet, configuration);
     
     facet._initializeUI();
     uiContext.getCollection().addFacet(facet);
+    facet.register();
     
     return facet;
 };
 
+/**
+ * @param {Exhibit.TextSearchFacet} facet
+ * @param {Object} configuration
+ */
 Exhibit.TextSearchFacet._configure = function(facet, configuration) {
-    Exhibit.SettingsUtilities.collectSettings(configuration, Exhibit.TextSearchFacet._settingSpecs, facet._settings);
+    var expressions, expressionsStrings;
+    Exhibit.SettingsUtilities.collectSettings(configuration, facet.getSettingSpecs(), facet._settings);
     
-    if ("expressions" in configuration) {
+    if (typeof configuration.expressions !== "undefined") {
+        expressions = [];
+        expressionsStrings = [];
         for (var i = 0; i < configuration.expressions.length; i++) {
-            facet._expressions.push(Exhibit.ExpressionParser.parse(configuration.expressions[i]));
+            expressionsStrings.push(configuration.expressions[i]);
+            expressions.push(Exhibit.ExpressionParser.parse(configuration.expressions[i]));
         }
+        facet.setExpressionString(expressionStrings.join(",").replace(/ /g, ""));
+        facet.setExpression(expressions);
     }
-    if ("selection" in configuration) {
+    if (typeof configuration.selection !== "undefined") {
         var selection = configuration.selection;
         for (var i = 0; i < selection.length; i++) {
             facet._valueSet.add(selection[i]);
         }
     }
-    if ("query" in configuration) {
+    if (typeof configuration.query !== "undefined") {
         facet._text = configuration.query;
     }
-    if ("queryParamName" in facet._settings) {
-        var params = SimileAjax.parseURLParameters();
-        if (facet._settings["queryParamName"] in params) {
-            facet._text = params[facet._settings["queryParamName"]];
+    if (typeof facet._settings.queryParamName !== "undefined") {
+        var params = Exhibit.parseURLParameters();
+        if (typeof params[facet._settings.queryParamName] !== "undefined") {
+            facet._text = params[facet._settings.queryParamName];
         }
     }
-    
-    if (!("facetLabel" in facet._settings)) {
-        facet._settings.facetLabel = "";
-    }
-}
+};
 
-Exhibit.TextSearchFacet.prototype.dispose = function() {
-    this._uiContext.getCollection().removeFacet(this);
+/**
+ *
+ */
+Exhibit.TextSearchFacet.prototype._dispose = function() {
+    Exhibit.jQuery(this.getUIContext().getCollection().getElement()).unbind(
+        "onRootItemsChanged.exhibit",
+        this._onRootItemsChanged
+    );
     
-    this._uiContext.getCollection().removeListener(this._listener);
-    this._uiContext = null;
-    
-    this._div.innerHTML = "";
-    this._div = null;
+    this._text = null;
     this._dom = null;
-    
-    this._expressions = null;
     this._itemToValue = null;
-    this._settings = null;
+    this._timerID = null;
 };
 
+/**
+ * @returns {Boolean}
+ */
 Exhibit.TextSearchFacet.prototype.hasRestrictions = function() {
-    return this._text != null;
+    return this._text !== null;
 };
 
+/**
+ *
+ */
 Exhibit.TextSearchFacet.prototype.clearAllRestrictions = function() {
+    Exhibit.jQuery(this.getContainer()).trigger("onBeforeFacetReset.exhibit");
     var restrictions = this._text;
-    if (this._text != null) {
+    if (this._text !== null) {
         this._text = null;
         this._notifyCollection();
     }
-    this._dom.input.value = "";
-    
-    return restrictions;
+    Exhibit.jQuery(this._dom.input).val("");
 };
 
+/**
+ * @param {Object} restrictions
+ * @param {String} restrictions.text
+ */
 Exhibit.TextSearchFacet.prototype.applyRestrictions = function(restrictions) {
-    this.setText(restrictions);
+    this.setText(restrictions.text);
 };
 
+/**
+ * @param {String} text
+ */
 Exhibit.TextSearchFacet.prototype.setText = function(text) {
-    if (text != null) {
+    if (typeof text !== "undefined" && text !== null) {
         text = text.trim();
-        this._dom.input.value = text;
+        Exhibit.jQuery(this._dom.input).val(text);
         
         text = text.length > 0 ? text : null;
     } else {
-        this._dom.input.value = "";
+        Exhibit.jQuery(this._dom.input).val("");
     }
     
-    if (text != this._text) {
+    if (text !== this._text) {
         this._text = text;
         this._notifyCollection();
     }
-}
+};
 
+/**
+ * @param {Exhibit.Set} items
+ * @returns {Exhibit.Set}
+ */
 Exhibit.TextSearchFacet.prototype.restrict = function(items) {
-    if (this._text == null) {
+    var set, itemToValue, text;
+    if (this._text === null) {
         return items;
     } else {
+        Exhibit.jQuery(this.getContainer()).trigger(
+            "onTextSearchFacetSearch.exhibit",
+            [ this._text ]
+        );
         this._buildMaps();
         
-        var set = new Exhibit.Set();
-        var itemToValue = this._itemToValue;
-        var text = this._text.toLowerCase();
+        set = new Exhibit.Set();
+        itemToValue = this._itemToValue;
+        text = this._text.toLowerCase();
         
         items.visit(function(item) {
-            if (item in itemToValue) {
-                var values = itemToValue[item];
-                for (var v = 0; v < values.length; v++) {
+            var values, v;
+            if (typeof itemToValue[item] !== "undefined") {
+                values = itemToValue[item];
+                for (v = 0; v < values.length; v++) {
                     if (values[v].indexOf(text) >= 0) {
                         set.add(item);
                         break;
@@ -178,103 +229,139 @@ Exhibit.TextSearchFacet.prototype.restrict = function(items) {
     }
 };
 
+/**
+ * @param {Exhibit.Set} items
+ */
 Exhibit.TextSearchFacet.prototype.update = function(items) {
     // nothing to do
 };
 
+/**
+ *
+ */
 Exhibit.TextSearchFacet.prototype._notifyCollection = function() {
-    this._uiContext.getCollection().onFacetUpdated(this);
+    this.getUIContext().getCollection().onFacetUpdated(this);
 };
 
+/**
+ *
+ */
 Exhibit.TextSearchFacet.prototype._initializeUI = function() {
     var self = this;
-    this._dom = Exhibit.TextSearchFacet.constructFacetFrame(this._div, this._settings.facetLabel);
-    
-    if (this._text != null) {
-        this._dom.input.value = this._text;
+    this._dom = Exhibit.TextSearchFacet.constructFacetFrame(this.getContainer(), this._settings.facetLabel);
+
+    if (this._text !== null) {
+        Exhibit.jQuery(this._dom.input).val(this._text);
     }
-    
-    SimileAjax.WindowManager.registerEvent(this._dom.input, "keyup",
-        function(elmt, evt, target) { self._onTextInputKeyUp(evt); });
+
+    Exhibit.jQuery(this._dom.input).bind("keyup", function(evt) {
+        self._onTextInputKeyUp(evt);
+    });
 };
 
+/**
+ * @param {Element} div
+ * @param {String} facetLabel
+ */
 Exhibit.TextSearchFacet.constructFacetFrame = function(div, facetLabel) {
-    if (facetLabel !== "" && facetLabel !== null) {
-        return SimileAjax.DOM.createDOMFromString(
+    if (typeof facetLabel !== "undefined"
+        && facetLabel !== null
+        && facetLabel !== "") {
+        return Exhibit.jQuery.simileDOM("string",
             div,
-            "<div class='exhibit-facet-header'>" +
-                "<span class='exhibit-facet-header-title'>" + facetLabel + "</span>" +
-            "</div>" +
-            "<div class='exhibit-text-facet'><input type='text' id='input'></div>"
+            '<div class="exhibit-facet-header">' +
+                '<span class="exhibit-facet-header-title">' + facetLabel + '</span>' +
+            '</div>' +
+            '<div class="exhibit-text-facet"><input type="text" id="input"></div>'
         );
     } else {
-        return SimileAjax.DOM.createDOMFromString(
+        return Exhibit.jQuery.simileDOM(
+            "string",
             div,
-            "<div class='exhibit-text-facet'><input type='text' id='input'></div>"
+            '<div class="exhibit-text-facet"><input type="text" id="input"></div>'
         );
     }
 };
 
+/**
+ * @param {jQuery.Event} evt
+ */
 Exhibit.TextSearchFacet.prototype._onTextInputKeyUp = function(evt) {
-    if (this._timerID != null) {
+    var self, newText;
+    if (this._timerID !== null) {
         window.clearTimeout(this._timerID);
     }
-    var self = this;
-    if (this._settings.requiresEnter  == false) {
-    	this._timerID = window.setTimeout(function() { self._onTimeout(); }, 500);
+    self = this;
+    if (this._settings.requiresEnter === false) {
+        this._timerID = window.setTimeout(function() {
+            self._onTimeout();
+        }, 500);
     } else {
-    	var newText = this._dom.input.value.trim(); 
-   		if (newText.length == 0 || evt.keyCode == 13) { // arbitrary
-    	this._timerID = window.setTimeout(function() { self._onTimeout(); }, 0);
-    } 
-  }
+        newText = Exhibit.jQuery(this._dom.input).val().trim(); 
+        if (newText.length === 0 || evt.which === 13) { // arbitrary
+            this._timerID = window.setTimeout(function() {
+                self._onTimeout();
+            }, 0);
+        }
+    }
 };
 
+/**
+ *
+ */
 Exhibit.TextSearchFacet.prototype._onTimeout = function() {
+    var newText, self, oldText;
+
     this._timerID = null;
     
-    var newText = this._dom.input.value.trim();
-    if (newText.length == 0) {
+    newText = Exhibit.jQuery(this._dom.input).val().trim();
+    if (newText.length === 0) {
         newText = null;
     }
     
-    if (newText != this._text) {
-        var self = this;
-        var oldText = this._text;
+    if (newText !== this._text) {
+        self = this;
+        oldText = this._text;
         
-        SimileAjax.History.addLengthyAction(
-            function() { self.setText(newText); },
-            function() { self.setText(oldText); },
-            newText != null ?
-                String.substitute(
-                    Exhibit.FacetUtilities.l10n["facetTextSearchActionTitle"],
-                    [ newText ]) :
-                Exhibit.FacetUtilities.l10n["facetClearTextSearchActionTitle"]
+        Exhibit.History.pushComponentState(
+            this,
+            Exhibit.Facet._registryKey,
+            { "text": newText },
+            newText !== null ?
+                Exhibit._("%facets.facetTextSearchActionTitle", newText) :
+                Exhibit._("%facets.facetClearTextSearchActionTitle"),
+            true
         );
     }
-}
+};
 
+/**
+ *
+ */
 Exhibit.TextSearchFacet.prototype._buildMaps = function() {
-    if (!("_itemToValue" in this)) {
-        var itemToValue = {};
-        var allItems = this._uiContext.getCollection().getAllItems();
-        var database = this._uiContext.getDatabase();
+    var itemToValue, allItems, database, expressions, propertyIDs;
+    if (typeof this._itemToValue === "undefined") {
+        itemToValue = {};
+        allItems = this.getUIContext().getCollection().getAllItems();
+        database = this.getUIContext().getDatabase();
         
-        if (this._expressions.length > 0) {
-            var expressions = this._expressions;
+        expressions = this.getExpression();
+        if (expressions !== null && expressions.length > 0) {
             allItems.visit(function(item) {
-                var values = [];
-                for (var x = 0; x < expressions.length; x++) {
-                    var expression = expressions[x];
+                var values, x, expression;
+                values = [];
+                for (x = 0; x < expressions.length; x++) {
+                    expression = expressions[x];
                     expression.evaluateOnItem(item, database).values.visit(function(v) { values.push(v.toLowerCase()); });
                 }
                 itemToValue[item] = values;
             });
         } else {
-            var propertyIDs = database.getAllProperties();
+            propertyIDs = database.getAllProperties();
             allItems.visit(function(item) {
-                var values = [];
-                for (var p = 0; p < propertyIDs.length; p++) {
+                var values, p;
+                values = [];
+                for (p = 0; p < propertyIDs.length; p++) {
                     database.getObjects(item, propertyIDs[p]).visit(function(v) { values.push(v.toLowerCase()); });
                 }
                 itemToValue[item] = values;
@@ -285,10 +372,35 @@ Exhibit.TextSearchFacet.prototype._buildMaps = function() {
     }
 };
 
-Exhibit.TextSearchFacet.prototype.exportFacetSelection = function() { 
-  return this._text;
-}; 
- 
-Exhibit.TextSearchFacet.prototype.importFacetSelection = function(settings) { 
-  this.setText(settings);
-}
+/**
+ * @returns {Object}
+ */
+Exhibit.TextSearchFacet.prototype.exportState = function() {
+    return this._exportState(false);
+};
+
+/**
+ * @returns {Object}
+ */
+Exhibit.TextSearchFacet.prototype.exportEmptyState = function() {
+    return this._exportState(true);
+};
+
+/**
+ * @private
+ * @param {Boolean} empty
+ @ returns {Object}
+ */
+Exhibit.TextSearchFacet.prototype._exportState = function(empty) {
+    return {
+        "text": empty ? null : this._text
+    };
+};
+
+/**
+ * @param {Object} state
+ * @param {String} state.text
+ */
+Exhibit.TextSearchFacet.prototype.importState = function(state) {
+    this.applyRestrictions(state);
+};

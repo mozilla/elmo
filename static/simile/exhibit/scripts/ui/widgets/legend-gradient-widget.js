@@ -1,171 +1,247 @@
-/*==================================================
- *  Exhibit.LegendGradientWidget
- *==================================================
+/**
+ * @fileOverview Legend gradient widget.
+ * @author Nina Guo
+ * @author David Huynh
+ * @author <a href="mailto:ryanlee@zepheira.com">Ryan Lee</a>
+ */
+
+/**
+ * @constructor
+ * @class
+ * @param {Element} containerElmt
+ * @param {Exhibit.UIContext} uiContext
  */
 Exhibit.LegendGradientWidget = function(containerElmt, uiContext) {
     this._div = containerElmt;
     this._uiContext = uiContext;
+
+    this._row1 = null;
+    this._row2 = null;
+    this._row3 = null;
     
     this._initializeUI();
 };
 
+/**
+ * @static
+ * @param {Element} containerElmt
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Exhibit.LegendGradientWidget}
+ */
 Exhibit.LegendGradientWidget.create = function (containerElmt, uiContext) {
     return new Exhibit.LegendGradientWidget(containerElmt, uiContext);
 };
 
-Exhibit.LegendGradientWidget.prototype.addGradient = function(configuration) {
-	var gradientPoints = [];
-	var gradientPoints = configuration;
-	var sortObj = function(a, b) {
-		return a.value - b.value;
-	};
-	gradientPoints.sort(sortObj);
-	
-	var theTable = document.createElement("table");
-	var tableBody = document.createElement("tbody");
-	var theRow1 = document.createElement("tr");
-	var theRow2 = document.createElement("tr");
-	var theRow3 = document.createElement("tr");
-	
-	theRow1.style.height="2em";
-	theRow2.style.height="2em";
-	theRow3.style.height="2em";
-	theTable.style.width="80%";
-	theTable.cellSpacing="0";
-	theTable.style.emptyCells="show";
-	theTable.style.marginLeft="auto";
-	theTable.style.marginRight="auto";
-	tableBody.appendChild(theRow1);
-	tableBody.appendChild(theRow2);
-	tableBody.appendChild(theRow3);
-	theTable.appendChild(tableBody);
-	
-	this._theRow1 = theRow1;
-	this._theRow2 = theRow2;
-	this._theRow3 = theRow3;
-
-	var globLowPoint = gradientPoints[0].value;
-	var globHighPoint = gradientPoints[gradientPoints.length - 1].value;
-	var stepSize = (globHighPoint - globLowPoint) / 50;
-	var counter = 0;
-	
-	for(var i = 0; i < gradientPoints.length-1; i++) {
-		var lowPoint = gradientPoints[i].value;
-		var highPoint = gradientPoints[i+1].value;
-		
-		var colorRect = document.createElement("td");
-		colorRect.style.backgroundColor = "rgb(" + gradientPoints[i].red + "," + gradientPoints[i].green + "," + gradientPoints[i].blue + ")";
-		var numberRect = document.createElement("td");
-		var textDiv = document.createElement("div");
-		var theText = document.createTextNode(gradientPoints[i].value);
-		textDiv.appendChild(theText);
-		numberRect.appendChild(textDiv);
-		theRow1.appendChild(document.createElement("td"));
-		theRow2.appendChild(colorRect);
-		theRow3.appendChild(numberRect);
-		
-		colorRect.onmouseover = function() {
-			this.style.border="solid 1.2px";
-		};
-		colorRect.onmouseout = function() {
-			this.style.border="none";	
-		};
-		
-		counter++;
-		
-		for(var j = lowPoint + stepSize; j < highPoint; j += stepSize) {
-			var fraction = (j - lowPoint)/(highPoint - lowPoint);
-			var newRed = Math.floor(gradientPoints[i].red + fraction*(gradientPoints[i+1].red - gradientPoints[i].red));
-			var newGreen = Math.floor(gradientPoints[i].green + fraction*(gradientPoints[i+1].green - gradientPoints[i].green));
-			var newBlue = Math.floor(gradientPoints[i].blue + fraction*(gradientPoints[i+1].blue - gradientPoints[i].blue));
-			
-			var colorRect = document.createElement("td");
-			colorRect.count = counter;
-			colorRect.style.backgroundColor = "rgb(" + newRed + "," + newGreen + "," + newBlue + ")";
-			var numberRect = document.createElement("td");
-			var textDiv = document.createElement("div");
-			var theText = document.createTextNode((Math.floor(j*100))/100);
-			textDiv.appendChild(theText);
-			numberRect.appendChild(textDiv);
-			textDiv.style.width="2px";
-			textDiv.style.overflow="hidden";
-			textDiv.style.visibility="hidden";
-			theRow1.appendChild(numberRect);
-			theRow2.appendChild(colorRect);
-			theRow3.appendChild(document.createElement("td"));
-			counter++;
-			
-			colorRect.onmouseover = function() {
-				this.parentNode.parentNode.childNodes[0].childNodes[this.count].childNodes[0].style.visibility="visible";
-				this.parentNode.parentNode.childNodes[0].childNodes[this.count].childNodes[0].style.overflow="visible";
-				this.style.border="solid 1.2px";
-			};
-			colorRect.onmouseout = function() {
-				this.parentNode.parentNode.childNodes[0].childNodes[this.count].childNodes[0].style.visibility="hidden";
-				this.parentNode.parentNode.childNodes[0].childNodes[this.count].childNodes[0].style.overflow="hidden";
-				this.style.border="none";	
-			};
-		};
-	};
-	
-	var high = gradientPoints.length - 1
-	var colorRect = document.createElement("td");
-	colorRect.style.backgroundColor = "rgb(" + gradientPoints[high].red + "," + gradientPoints[high].green + "," + gradientPoints[high].blue + ")";
-	var numberRect = document.createElement("td");
-	var textDiv = document.createElement("div");
-	var theText = document.createTextNode(globHighPoint);
-	textDiv.appendChild(theText);
-	numberRect.appendChild(textDiv);
-	theRow1.appendChild(document.createElement("td"));
-	theRow2.appendChild(colorRect);
-	theRow3.appendChild(numberRect);
-	counter++;
-	
-	colorRect.onmouseover = function() {
-		this.style.border="solid 1.2px";
-	};
-	colorRect.onmouseout = function() {
-		this.style.border="none";	
-	};
-	
-	this._div.appendChild(theTable);
+/**
+ * @private
+ * @param {Object} point
+ * @param {Number} point.red
+ * @param {Number} point.green
+ * @param {Number} point.blue
+ * @returns {String}
+ */
+Exhibit.LegendGradientWidget.prototype._makeRGB = function(point) {
+    return "rgb("
+        + point.red + ","
+        + point.green + ","
+        + point.blue + ")";
 };
 
-Exhibit.LegendGradientWidget.prototype.addEntry = function(color, label) {
-	var cell = document.createElement("td");
-	
-	cell.style.width="1.5em";
-	cell.style.height="2em";
-	this._theRow1.appendChild(cell);
-	this._theRow1.appendChild(document.createElement("td"));
-	this._theRow2.appendChild(document.createElement("td"));
-	this._theRow3.appendChild(document.createElement("td"));
-	
-	var colorCell = document.createElement("td");
-	
-	colorCell.style.backgroundColor = color;
-	this._theRow2.appendChild(colorCell);
-	
-	var labelCell = document.createElement("td");
-	var labelDiv = document.createElement("div");
-	
-	labelDiv.appendChild(document.createTextNode(label));
-	labelCell.appendChild(labelDiv);
-	this._theRow3.appendChild(labelCell);
-}	
+/**
+ * Elements in the array are objects with a red, green, blue, and value
+ * property.  This should really have a class or classes to deal with it
+ * instead of building it into one monolithic method.
+ *
+ * @param {Array} configuration
+ */
+Exhibit.LegendGradientWidget.prototype.addGradient = function(configuration) {
+    var row1, row2, row3, sortObj, stepSize, counter, i, j, fraction;
+    if (configuration.length < 2) {
+        return;
+    }
 
+    sortObj = function(a, b) {
+        return a.value - b.value;
+    };
+
+    row1 = this._row1;
+    row2 = this._row2;
+    row3 = this._row3;
+
+    configuration.sort(sortObj);
+    
+    stepSize = (configuration[configuration.length - 1].value - configuration[0].value) / 50;
+    counter = 0;
+    
+    for (i = 0; i < configuration.length; i++) {
+        Exhibit.jQuery("<td>").appendTo(row1);
+
+        Exhibit.jQuery("<td>")
+            .css("background-color", this._makeRGB(configuration[i]))
+            .bind("mouseover", function(evt) {
+                Exhibit.jQuery(this).css("border", "1.2px solid");
+            })
+            .bind("mouseout", function(evt) {
+                Exhibit.jQuery(this).css("border", "none");
+            })
+            .appendTo(row2);
+
+        Exhibit.jQuery("<td><div>" + configuration[i].value + "</div></td>")
+            .appendTo(row3);
+         
+        for (j = configuration[i].value + stepSize;
+             i < configuration.length - 1 && j < configuration[i+1].value;
+             j += stepSize) {
+            fraction = (j - configuration[i].value) / (configuration[i+1].value - configuration[i].value);
+
+            Exhibit.jQuery("<td>")
+                .data("count", counter)
+                .css("visibility", "hidden")
+                .css("overflow", "hidden")
+                .append(Exhibit.jQuery("<div>")
+                        .append(Math.floor(j * 100) / 100)
+                        .width(2))
+                .appendTo(row1);
+
+            Exhibit.jQuery("<td>")
+                .data("count", counter)
+                .css("background-color",
+                     this._makeRGB({
+                         "red": Math.floor(configuration[i].red + fraction * (configuration[i+1].red - configuration[i].red)),
+                         "green": Math.floor(configuration[i].green + fraction*(configuration[i+1].green - configuration[i].green)),
+                         "blue": Math.floor(configuration[i].blue + fraction*(configuration[i+1].blue - configuration[i].blue))
+                     }))
+                .bind("mouseover", function(evt) {
+                    var self = Exhibit.jQuery(this);
+                    Exhibit.jQuery(row1).find("td").filter(function(i, el) {
+                        return Exhibit.jQuery(el).data("count") === self.data("count");
+                    })
+                        .css("visibility", "visible")
+                        .css("overflow", "visible");
+                    Exhibit.jQuery(this).css("border", "1.2px solid");
+                })
+                .bind("mouseout", function(evt) {
+                    var self = Exhibit.jQuery(this);
+                    Exhibit.jQuery(row1).find("td").filter(function(i, el) {
+                        return Exhibit.jQuery(el).data("count") === self.data("count");
+                    })
+                        .css("visibility", "hidden")
+                        .css("overflow", "hidden");
+                    Exhibit.jQuery(this).css("border", "none");
+                })
+                .appendTo(row2);
+
+            Exhibit.jQuery("<td>").appendTo(row3);
+
+            counter++;
+        }
+    }
+};
+
+/**
+ * @param {String} color
+ * @param {String} label
+ */
+Exhibit.LegendGradientWidget.prototype.addEntry = function(color, label) {
+    Exhibit.jQuery("<td>")
+        .width("1.5em")
+        .height("2em")
+        .appendTo(this._row1);
+    
+    Exhibit.jQuery("<td>").appendTo(this._row1);
+    Exhibit.jQuery("<td>").appendTo(this._row2);
+    Exhibit.jQuery("<td>").appendTo(this._row3);
+
+    Exhibit.jQuery("<td>")
+        .css("background-color", color)
+        .appendTo(this._row2);
+
+    Exhibit.jQuery("<td>")
+        .append("<div>" + label + "</div>")
+        .appendTo(this._row3);
+};
+
+/**
+ * @param {String} label
+ * @param {String} type
+ */
+Exhibit.LegendGradientWidget.prototype.addLegendLabel = function(label) {
+    var dom;
+	dom = Exhibit.jQuery.simileDOM("string",
+			"div",
+			'<div class="legend-label">' +
+				'<span class="label" class="exhibit-legendWidget-entry-title">' + 
+					label.replace(/\s+/g, "&nbsp;") + 
+				"</span>" +
+			"&nbsp;&nbsp; </div>",
+			{ }
+		);
+	Exhibit.jQuery(dom.elmt).attr("class","exhibit-legendWidget-label");
+	Exhibit.jQuery(this._div).prepend(dom.elmt);
+};
+
+/**
+ *
+ */
 Exhibit.LegendGradientWidget.prototype.dispose = function() {
-    this._div.innerHTML = "";
+    this.clear();
     
     this._div = null;
     this._uiContext = null;
 };
 
+/**
+ *
+ */
 Exhibit.LegendGradientWidget.prototype._initializeUI = function() {
-    this._div.className = "exhibit-legendGradientWidget";
-    this._div.innerHTML = "";
+    var table, tbody, row1, row2, row3;
+
+    this.clear();
+    Exhibit.jQuery(this._div).attr("class", "exhibit-legendGradientWidget");
+
+    table = Exhibit.jQuery("<table>")
+        .width("80%")
+        .css("margin-left", "auto")
+        .css("margin-right", "auto")
+        .css("empty-cells", "show")
+        .attr("cellspacing", 0);
+    
+    tbody = Exhibit.jQuery("<tbody>")
+        .appendTo(table);
+    
+    row1 = Exhibit.jQuery("<tr>")
+        .height("2em")
+        .appendTo(tbody);
+    
+    row2 = Exhibit.jQuery("<tr>")
+        .height("2em")
+        .appendTo(tbody);
+    
+    row3 = Exhibit.jQuery("<tr>")
+        .height("2em")
+        .appendTo(tbody);
+    
+    this._row1 = row1;
+    this._row2 = row2;
+    this._row3 = row3; 
+
+    Exhibit.jQuery(this._div).append(table);
 };
 
+/**
+ *
+ */
 Exhibit.LegendGradientWidget.prototype.clear = function() {
-    this._div.innerHTML = "";
+    Exhibit.jQuery(this._div).empty();
+    this._row1 = null;
+    this._row2 = null;
+    this._row3 = null;
+};
+
+/**
+ *
+ */
+Exhibit.LegendGradientWidget.prototype.reconstruct = function() {
+    Exhibit.jQuery(this._div).empty();
+    this._initializeUI();
 };

@@ -1,40 +1,63 @@
-/*======================================================================
- *  Exhibit UI Utilities
- *======================================================================
+/**
+ * @fileOverview
+ * @author David Huynh
+ * @author <a href="mailto:ryanlee@zepheira.com">Ryan Lee</a>
  */
-Exhibit.UI = new Object();
 
-/*----------------------------------------------------------------------
- *  Component instantiation functions
- *----------------------------------------------------------------------
+/**
+ * @namespace
  */
- 
-Exhibit.UI.componentMap = {};
+Exhibit.UI = {
+    /**
+     * Map of components used for instantiating new UI objects.
+     */
+    componentMap: {},
 
+    /**
+     * Link to JSON validating service.
+     */
+    validator: (typeof Exhibit.babelPrefix !== "undefined") ?
+        Exhibit.babelPrefix + "validator?url=" :
+        Exhibit.validateJSON
+};
+
+/**
+ * Augment with Exhibit.Registry?
+ * @param {String} name
+ * @param {String} comp
+ */
 Exhibit.UI.registerComponent = function(name, comp) {
-    var msg = "Cannot register component " + name + " -- ";
-    if (name in Exhibit.UI.componentMap) {
-        SimileAjax.Debug.warn(msg + 'another component has taken that name');
-    } else if (!comp) {
-        SimileAjax.Debug.warn(msg + 'no component object provided')
-    } else if (!comp.create) {
-        SimileAjax.Debug.warn(msg + "component has no create function");
-    } else if (!comp.createFromDOM) {
-        SimileAjax.Debug.warn(msg + "component has no createFromDOM function");
+    var msg = Exhibit._("%general.error.cannotRegister", name);
+    if (typeof Exhibit.UI.componentMap[name] !== "undefined") {
+        Exhibit.Debug.warn(Exhibit._("%general.error.componentNameTaken", msg));
+    } else if (typeof comp === "undefined" || comp === null) {
+        Exhibit.Debug.warn(Exhibit._("%general.error.noComponentObject", msg));
+    } else if (typeof comp.create === "undefined") {
+        Exhibit.Debug.warn(Exhibit._("%general.error.missingCreateFunction", msg));
+    } else if (typeof comp.createFromDOM === "undefined") {
+        Exhibit.Debug.warn(Exhibit._("%general.error.missingDOMCreateFunction", msg));
     } else {
         Exhibit.UI.componentMap[name] = comp;
     }
 };
 
+/**
+ * @param {Object} configuration
+ * @param {Element} elmt
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Object}
+ */
 Exhibit.UI.create = function(configuration, elmt, uiContext) {
-    if ("role" in configuration) {
-        var role = configuration.role;
-        if (role != null && role.startsWith("exhibit-")) {
+    var role, createFunc;
+
+    if (typeof configuration["role"] !== "undefined") {
+        role = configuration.role;
+        if (typeof role !== "undefined" && role !== null && role.startsWith("exhibit-")) {
             role = role.substr("exhibit-".length);
         }
         
-        if (role in Exhibit.UI.componentMap) {
-            var createFunc = Exhibit.UI.componentMap[role].create;
+        if (typeof Exhibit.UI.componentMap[role] !== "undefined") {
+            createFunc = Exhibit.UI.componentMap[role].create;
             return createFunc(configuration, elmt, uiContext);
         }
         
@@ -55,19 +78,28 @@ Exhibit.UI.create = function(configuration, elmt, uiContext) {
             return Exhibit.ViewPanel.create(configuration, elmt, uiContext);
         case "logo":
             return Exhibit.Logo.create(configuration, elmt, uiContext);
+        case "controlPanel":
+            return Exhibit.ControlPanel.create(configuration, elmt, uiContext);
         case "hiddenContent":
-            elmt.style.display = "none";
+            Exhibit.jQuery(elmt).hide();
             return null;
         }
     }
     return null;
 };
 
+/**
+ * @param {Element} elmt
+ * @param {Exhibit.UIContext} uiContext
+ * returns {Object}
+ */
 Exhibit.UI.createFromDOM = function(elmt, uiContext) {
-    var role = Exhibit.getRoleAttribute(elmt);
+    var role, createFromDOMFunc;
+
+    role = Exhibit.getRoleAttribute(elmt);
     
-    if (role in Exhibit.UI.componentMap) {
-        var createFromDOMFunc = Exhibit.UI.componentMap[role].createFromDOM;
+    if (typeof Exhibit.UI.componentMap[role] !== "undefined") {
+        createFromDOMFunc = Exhibit.UI.componentMap[role].createFromDOM;
         return createFromDOMFunc(elmt, uiContext);
     }
     
@@ -86,20 +118,26 @@ Exhibit.UI.createFromDOM = function(elmt, uiContext) {
         return Exhibit.UI.createCoderFromDOM(elmt, uiContext);
     case "viewPanel":
         return Exhibit.ViewPanel.createFromDOM(elmt, uiContext);
+    case "controlPanel":
+        return Exhibit.ControlPanel.createFromDOM(elmt, null, uiContext);
     case "logo":
         return Exhibit.Logo.createFromDOM(elmt, uiContext);
     case "hiddenContent":
-        elmt.style.display = "none";
+        Exhibit.jQuery(elmt).hide();
         return null;
     }
     return null;
 };
 
-
+/**
+ * @param {Object} constructor
+ * @returns {Object}
+ */
 Exhibit.UI.generateCreationMethods = function(constructor) {
     constructor.create = function(configuration, elmt, uiContext) {
-        var newContext = Exhibit.UIContext.create(configuration, uiContext);
-        var settings = {};
+        var newContext, settings;
+        newContext = Exhibit.UIContext.create(configuration, uiContext);
+        settings = {};
         
         Exhibit.SettingsUtilities.collectSettings(
             configuration, 
@@ -109,8 +147,9 @@ Exhibit.UI.generateCreationMethods = function(constructor) {
         return new constructor(elmt, newContext, settings);
     };
     constructor.createFromDOM = function(elmt, uiContext) {
-        var newContext = Exhibit.UIContext.createFromDOM(elmt, uiContext);
-        var settings = {};
+        var newContext, settings;
+        newContext = Exhibit.UIContext.createFromDOM(elmt, uiContext);
+        settings = {};
         
         Exhibit.SettingsUtilities.collectSettingsFromDOM(
             elmt, 
@@ -121,101 +160,168 @@ Exhibit.UI.generateCreationMethods = function(constructor) {
     };
 };
 
+/**
+ * @param {Object} configuration
+ * @param {Element} elmt
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Object}
+ */
 Exhibit.UI.createView = function(configuration, elmt, uiContext) {
-    var viewClass = "viewClass" in configuration ? configuration.viewClass : Exhibit.TileView;
-    if (typeof viewClass == "string") {
+    var viewClass = typeof configuration["viewClass"] !== "undefined" ?
+        configuration.viewClass :
+        Exhibit.TileView;
+    if (typeof viewClass === "string") {
         viewClass = Exhibit.UI.viewClassNameToViewClass(viewClass);
     }
     return viewClass.create(configuration, elmt, uiContext);
 };
 
+/**
+ * @param {Element} elmt
+ * @param {Element} container
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Object}
+ */
 Exhibit.UI.createViewFromDOM = function(elmt, container, uiContext) {
     var viewClass = Exhibit.UI.viewClassNameToViewClass(Exhibit.getAttribute(elmt, "viewClass"));
     return viewClass.createFromDOM(elmt, container, uiContext);
 };
 
+/**
+ * @param {String} name
+ * @returns {Object}
+ */
 Exhibit.UI.viewClassNameToViewClass = function(name) {
-    if (name != null && name.length > 0) {
+    if (typeof name !== "undefined" && name !== null && name.length > 0) {
         try {
             return Exhibit.UI._stringToObject(name, "View");
         } catch (e) {
-            SimileAjax.Debug.warn("Unknown viewClass " + name);
+            Exhibit.Debug.warn(Exhibit._("%general.error.unknownViewClass", name));
         }
     }
     return Exhibit.TileView;
 };
 
+/**
+ * @param {Object} configuration
+ * @param {Element} elmt
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Object}
+ */
 Exhibit.UI.createFacet = function(configuration, elmt, uiContext) {
-    var facetClass = "facetClass" in configuration ? configuration.facetClass : Exhibit.ListFacet;
-    if (typeof facetClass == "string") {
+    var facetClass = typeof configuration["facetClass"] !== "undefined" ?
+        configuration.facetClass :
+        Exhibit.ListFacet;
+    if (typeof facetClass === "string") {
         facetClass = Exhibit.UI.facetClassNameToFacetClass(facetClass);
     }
     return facetClass.create(configuration, elmt, uiContext);
 };
 
+/**
+ * @param {Element} elmt
+ * @param {Element} container
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Object}
+ */
 Exhibit.UI.createFacetFromDOM = function(elmt, container, uiContext) {
     var facetClass = Exhibit.UI.facetClassNameToFacetClass(Exhibit.getAttribute(elmt, "facetClass"));
     return facetClass.createFromDOM(elmt, container, uiContext);
 };
 
+/**
+ * @param {String} name
+ * @returns {Object}
+ */
 Exhibit.UI.facetClassNameToFacetClass = function(name) {
-    if (name != null && name.length > 0) {
+    if (typeof name !== "undefined" && name !== null && name.length > 0) {
         try {
             return Exhibit.UI._stringToObject(name, "Facet");
         } catch (e) {
-            SimileAjax.Debug.warn("Unknown facetClass " + name);
+            Exhibit.Debug.warn(Exhibit._("%general.error.unknownFacetClass", name));
         }
     }
     return Exhibit.ListFacet;
 };
 
-
+/**
+ * @param {Object} configuration
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Object}
+ */
 Exhibit.UI.createCoder = function(configuration, uiContext) {
-    var coderClass = "coderClass" in configuration ? configuration.coderClass : Exhibit.ColorCoder;
-    if (typeof coderClass == "string") {
+    var coderClass = typeof configuration["coderClass"] !== "undefined" ?
+        configuration.coderClass :
+        Exhibit.ColorCoder;
+    if (typeof coderClass === "string") {
         coderClass = Exhibit.UI.coderClassNameToCoderClass(coderClass);
     }
     return coderClass.create(configuration, uiContext);
 };
 
+/**
+ * @param {Element} elmt
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Object}
+ */
 Exhibit.UI.createCoderFromDOM = function(elmt, uiContext) {
     var coderClass = Exhibit.UI.coderClassNameToCoderClass(Exhibit.getAttribute(elmt, "coderClass"));
     return coderClass.createFromDOM(elmt, uiContext);
 };
 
+/**
+ * @param {String} name
+ * @returns {Object}
+ */
 Exhibit.UI.coderClassNameToCoderClass = function(name) {
-    if (name != null && name.length > 0) {
+    if (typeof name !== "undefined" && name !== null && name.length > 0) {
         try {
             return Exhibit.UI._stringToObject(name, "Coder");
         } catch (e) {
-            SimileAjax.Debug.warn("Unknown coderClass " + name);
+            Exhibit.Debug.warn(Exhibit._("%general.error.unknownCoderClass", name));
         }
     }
     return Exhibit.ColorCoder;
 };
 
-
+/**
+ * @param {Object} configuration
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Exhibit.Coordinator}
+ */
 Exhibit.UI.createCoordinator = function(configuration, uiContext) {
     return Exhibit.Coordinator.create(configuration, uiContext);
 };
 
+/**
+ * @param {Element} elmt
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Exhibit.Coordinator}
+ */
 Exhibit.UI.createCoordinatorFromDOM = function(elmt, uiContext) {
     return Exhibit.Coordinator.createFromDOM(elmt, uiContext);
 };
 
+/**
+ * @private
+ * @param {String} name
+ * @param {String} suffix
+ * @returns {Object}
+ * @throws {Error}
+ */
 Exhibit.UI._stringToObject = function(name, suffix) {
     if (!name.startsWith("Exhibit.")) {
         if (!name.endsWith(suffix)) {
             try {
                 return eval("Exhibit." + name + suffix);
-            } catch (e) {
+            } catch (ex1) {
                 // ignore
             }
         }
         
         try {
             return eval("Exhibit." + name);
-        } catch (e) {
+        } catch (ex2) {
             // ignore
         }
     }
@@ -223,31 +329,35 @@ Exhibit.UI._stringToObject = function(name, suffix) {
     if (!name.endsWith(suffix)) {
         try {
             return eval(name + suffix);
-        } catch (e) {
+        } catch (ex3) {
             // ignore
         }
     }
     
     try {
         return eval(name);
-    } catch (e) {
+    } catch (ex4) {
         // ignore
     }
     
-    throw new Error("Unknown class " + name);
+    throw new Error(Exhibit._("%general.error.unknownClass", name));
 };
 
 /*----------------------------------------------------------------------
  *  Help and Debugging
  *----------------------------------------------------------------------
  */
-Exhibit.UI.docRoot = "http://simile.mit.edu/wiki/";
-Exhibit.UI.validator = "http://simile.mit.edu/babel/validator";
 
+/**
+ * @static
+ * @param {String} message
+ * @param {String} url
+ * @param {String} target
+ */
 Exhibit.UI.showHelp = function(message, url, target) {
     target = (target) ? target : "_blank";
-    if (url != null) {
-        if (window.confirm(message + "\n\n" + Exhibit.l10n.showDocumentationMessage)) {
+    if (typeof url !== "undefined" && url !== null) {
+        if (window.confirm(Exhibit._("%general.showDocumentationMessage", message))) {
             window.open(url, target);
         }
     } else {
@@ -255,22 +365,20 @@ Exhibit.UI.showHelp = function(message, url, target) {
     }
 };
 
-Exhibit.UI.showJavascriptExpressionValidation = function(message, expression) {
-    var target = "_blank";
-    if (window.confirm(message + "\n\n" + Exhibit.l10n.showJavascriptValidationMessage)) {
-        window.open(Exhibit.UI.validator + "?expresson=" + encodeURIComponent(expression), target);
-    }
-};
-
+/**
+ * @static
+ * @param {String} message
+ * @param {String} url
+ */
 Exhibit.UI.showJsonFileValidation = function(message, url) {
     var target = "_blank";
-    if (url.indexOf("file:") == 0) {
-        if (window.confirm(message + "\n\n" + Exhibit.l10n.showJsonValidationFormMessage)) {
+    if (typeof Exhibit.babelPrefix !== "undefined" && url.indexOf("file:") === 0) {
+        if (window.confirm(Exhibit._("%general.showJsonValidationFormMessage", message))) {
             window.open(Exhibit.UI.validator, target);
         }
     } else {
-        if (window.confirm(message + "\n\n" + Exhibit.l10n.showJsonValidationMessage)) {
-            window.open(Exhibit.UI.validator + "?url=" + url, target);
+        if (window.confirm(Exhibit._("%general.showJsonValidationMessage", message))) {
+            window.open(Exhibit.UI.validator + url, target);
         }
     }
 };
@@ -282,31 +390,50 @@ Exhibit.UI.showJsonFileValidation = function(message, url) {
 Exhibit.UI._busyIndicator = null;
 Exhibit.UI._busyIndicatorCount = 0;
 
-Exhibit.UI.showBusyIndicator = function() {
+/**
+ * @static
+ */
+Exhibit.UI.showBusyIndicator = function(msg) {
+    var scrollTop, height, top;
+
     Exhibit.UI._busyIndicatorCount++;
     if (Exhibit.UI._busyIndicatorCount > 1) {
         return;
     }
     
-    if (Exhibit.UI._busyIndicator == null) {
+    if (Exhibit.UI._busyIndicator === null) {
         Exhibit.UI._busyIndicator = Exhibit.UI.createBusyIndicator();
     }
     
-    var scrollTop = ("scrollTop" in document.body) ?
+    // @@@ jQuery simplification?
+    scrollTop = typeof document.body["scrollTop"] !== "undefined" ?
         document.body.scrollTop :
         document.body.parentNode.scrollTop;
-    var height = ("innerHeight" in window) ?
+    height = typeof window["innerHeight"] !== "undefined" ?
         window.innerHeight :
-        ("clientHeight" in document.body ?
+        (typeof document.body["clientHeight"] !== "undefined" ?
             document.body.clientHeight :
             document.body.parentNode.clientHeight);
         
-    var top = Math.floor(scrollTop + height / 3);
+    top = Math.floor(scrollTop + height / 3);
     
-    Exhibit.UI._busyIndicator.style.top = top + "px";
-    document.body.appendChild(Exhibit.UI._busyIndicator);
+    Exhibit.jQuery(Exhibit.UI._busyIndicator).css("top", top + "px");
+    Exhibit.jQuery(document.body).append(Exhibit.UI._busyIndicator);
+    if (msg) {
+        Exhibit.UI._busyIndicator.find('.message').text(msg);
+    }
 };
 
+Exhibit.UI.busyMessage = function(msg) {
+    msg = msg || "";
+    if (Exhibit.UI._busyIndicator) {
+        Exhibit.UI._busyIndicator.find('.message').text(msg);
+    }
+}
+
+/**
+ * @static
+ */
 Exhibit.UI.hideBusyIndicator = function() {
     Exhibit.UI._busyIndicatorCount--;
     if (Exhibit.UI._busyIndicatorCount > 0) {
@@ -314,7 +441,8 @@ Exhibit.UI.hideBusyIndicator = function() {
     }
     
     try {
-        document.body.removeChild(Exhibit.UI._busyIndicator);
+        Exhibit.UI._busyIndicator.remove();
+        Exhibit.UI._busyIndicator.find('.message').empty();
     } catch(e) {
         // silent
     }
@@ -324,106 +452,165 @@ Exhibit.UI.hideBusyIndicator = function() {
  *  Common UI Generation
  *----------------------------------------------------------------------
  */
+
+/**
+ * @static
+ * @param {Element|jQuery} elmt
+ */
 Exhibit.UI.protectUI = function(elmt) {
-    SimileAjax.DOM.appendClassName(elmt, "exhibit-ui-protection");
+    Exhibit.jQuery(elmt).addClass("exhibit-ui-protection");
 };
 
-Exhibit.UI.makeActionLink = function(text, handler, layer) {
-    var a = document.createElement("a");
-    a.href = "javascript:";
-    a.className = "exhibit-action";
-    a.innerHTML = text;
+/**
+ * @static
+ * @param {String} text
+ * @param {Function} handler
+ * @returns {jQuery}
+ */
+Exhibit.UI.makeActionLink = function(text, handler) {
+    var a, handler2;
+
+    a = Exhibit.jQuery("<a>" + text + "</a>").
+        attr("href", "#").
+        addClass("exhibit-action");
     
-    var handler2 = function(elmt, evt, target) {
-        if ("true" != elmt.getAttribute("disabled")) {
-            handler(elmt, evt, target);
+    handler2 = function(evt) {
+        if (typeof Exhibit.jQuery(this).attr("disabled") === "undefined") {
+            evt.preventDefault();
+            handler(evt);
         }
-    }
-    SimileAjax.WindowManager.registerEvent(a, "click", handler2, layer);
+    };
+
+    Exhibit.jQuery(a).bind("click", handler2);
     
     return a;
 };
 
+/**
+ * @static
+ * @param {Element} a
+ * @param {Boolean} enabled
+ */
 Exhibit.UI.enableActionLink = function(a, enabled) {
-    a.setAttribute("disabled", enabled ? "false" : "true");
-    a.className = enabled ? "exhibit-action" : "exhibit-action-disabled";
+    if (enabled) {
+        Exhibit.jQuery(a).removeAttr("disabled");
+        Exhibit.jQuery(a).addClass("exhibit-action").removeClass("exhibit-action-disabled");
+    } else {
+        Exhibit.jQuery(a).attr("disabled", true);
+        Exhibit.jQuery(a).removeClass("exhibit-action").addClass("exhibit-action-disabled");
+    }
 };
 
-Exhibit.UI.makeItemSpan = function(itemID, label, uiContext, layer) {
-    if (label == null) {
+/**
+ * @static
+ * @param {String} itemID
+ * @param {String} label
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {jQuery}
+ */
+Exhibit.UI.makeItemSpan = function(itemID, label, uiContext) {
+    var database, a, handler;
+
+    database = uiContext.getDatabase();
+
+    if (typeof label === "undefined" || label === null) {
         label = database.getObject(itemID, "label");
-        if (label == null) {
+        if (typeof label === "undefined" || label === null) {
             label = itemID;
         }
     }
     
-    var a = SimileAjax.DOM.createElementFromString(
-        "<a href=\"" + Exhibit.Persistence.getItemLink(itemID) + "\" class='exhibit-item'>" + label + "</a>");
+    a = Exhibit.jQuery("<a>" + label + "</a>").
+        attr("href", Exhibit.Persistence.getItemLink(itemID)).
+        addClass("exhibit-item");
         
-    var handler = function(elmt, evt, target) {
-        Exhibit.UI.showItemInPopup(itemID, elmt, uiContext);
-    }
-    SimileAjax.WindowManager.registerEvent(a, "click", handler, layer);
-    
-    return a;
+    handler = function(evt) {
+        Exhibit.UI.showItemInPopup(itemID, this, uiContext);
+        evt.preventDefault();
+        evt.stopPropagation();
+    };
+
+    a.bind("click", handler);
+
+    return a.get(0);
 };
 
-Exhibit.UI.makeValueSpan = function(label, valueType, layer) {
-    var span = document.createElement("span");
-    span.className = "exhibit-value";
-    if (valueType == "url") {
-        var url = label;
+/**
+ * @static
+ * @param {String} label
+ * @param {String} valueType
+ * @returns {jQuery}
+ */
+Exhibit.UI.makeValueSpan = function(label, valueType) {
+    var span, url;
+
+    span = Exhibit.jQuery("<span>").addClass("exhibit-value")
+;
+    if (valueType === "url") {
+        url = label;
         if (Exhibit.params.safe && url.trim().startsWith("javascript:")) {
-            span.appendChild(document.createTextNode(url));
+            span.text(url);
         } else {
-            span.innerHTML = 
-                "<a href=\"" + url + "\" target='_blank'>" +
-                    (label.length > 50 ? 
-                        label.substr(0, 20) + " ... " + label.substr(label.length - 20) :
-                        label) +
-                "</a>";
+            span.html("<a href=\"" + url + "\" target=\"_blank\">" +
+                      (label.length > 50 ? 
+                       label.substr(0, 20) + " ... " + label.substr(label.length - 20) :
+                       label) +
+                      "</a>");
         }
     } else {
         if (Exhibit.params.safe) {
             label = Exhibit.Formatter.encodeAngleBrackets(label);
         }
-        span.innerHTML = label;
+        span.html(label);
     }
-    return span;
+    return span.get(0);
 };
 
+/**
+ * @static
+ * @param {Element} elmt
+ */
 Exhibit.UI.calculatePopupPosition = function(elmt) {
-    var coords = SimileAjax.DOM.getPageCoordinates(elmt);
+    var coords = Exhibit.jQuery(elmt).offset();
     return {
-        x: coords.left + Math.round(elmt.offsetWidth / 2),
-        y: coords.top + Math.round(elmt.offsetHeight / 2)
+        x: coords.left + Math.round(Exhibit.jQuery(elmt).outerWidth() / 2),
+        y: coords.top + Math.round(Exhibit.jQuery(elmt).outerHeight() / 2)
     };
-}
+};
 
+/**
+ * @static
+ * @param {String} itemID
+ * @param {Element} elmt
+ * @param {Exhibit.UIContext} uiContext
+ * @param {Object} opts
+ */
 Exhibit.UI.showItemInPopup = function(itemID, elmt, uiContext, opts) {
-    SimileAjax.WindowManager.popAllLayers();
-    
+    var itemLensDiv, lensOpts;
+
+    Exhibit.jQuery(document).trigger("closeAllModeless.exhibit");
+
     opts = opts || {};
     opts.coords = opts.coords || Exhibit.UI.calculatePopupPosition(elmt);
     
-    var itemLensDiv = document.createElement("div");
+    itemLensDiv = Exhibit.jQuery("<div>");
 
-    var lensOpts = {
+    lensOpts = {
         inPopup: true,
         coords: opts.coords
     };
 
-    if (opts.lensType == 'normal') {
+    if (opts.lensType === "normal") {
         lensOpts.lensTemplate = uiContext.getLensRegistry().getNormalLens(itemID, uiContext);
-    } else if (opts.lensType == 'edit') {
+    } else if (opts.lensType === "edit") {
         lensOpts.lensTemplate = uiContext.getLensRegistry().getEditLens(itemID, uiContext);
     } else if (opts.lensType) {
-        SimileAjax.Debug.warn('Unknown Exhibit.UI.showItemInPopup opts.lensType: ' + opts.lensType);
+        Exhibit.Debug.warn(Exhibit._("%general.error.unknownLensType", opts.lensType));
     }
 
     uiContext.getLensRegistry().createLens(itemID, itemLensDiv, uiContext, lensOpts);
     
-    SimileAjax.Graphics.createBubbleForContentAndPoint(
+    Exhibit.jQuery.simileBubble("createBubbleForContentAndPoint",
         itemLensDiv, 
         opts.coords.x,
         opts.coords.y, 
@@ -431,130 +618,176 @@ Exhibit.UI.showItemInPopup = function(itemID, elmt, uiContext, opts) {
     );
 };
 
+/**
+ * @static
+ * @param {String} name
+ * @param {Function} handler
+ * @param {String} className
+ * @returns {Element}
+ */
 Exhibit.UI.createButton = function(name, handler, className) {
-    var button = document.createElement("button");
-    button.className = (className || "exhibit-button") + " screen";
-    button.innerHTML = name;
-    if (handler) {
-        SimileAjax.WindowManager.registerEvent(button, "click", handler);
-    }
+    var button = Exhibit.jQuery("<button>").
+        html(name).
+        addClass((className || "exhibit-button")).
+        addClass("screen");
+    button.bind("click", handler);
     return button;
 };
 
+/**
+ * @static
+ * @param {Element} element
+ * @returns {Object}
+ */
 Exhibit.UI.createPopupMenuDom = function(element) {
-    var div = document.createElement("div");
-    div.className = "exhibit-menu-popup exhibit-ui-protection";
+    var div, dom;
+
+    div = Exhibit.jQuery("<div>").
+        addClass("exhibit-menu-popup").
+        addClass("exhibit-ui-protection");
     
-    var dom = {
+    /**
+     * @ignore
+     */
+    dom = {
         elmt: div,
-        close: function() {
-            document.body.removeChild(this.elmt);
-        },
-        open: function() {
-            var self = this;
-            this.layer = SimileAjax.WindowManager.pushLayer(function() { self.close(); }, true, div);
+        open: function(evt) {
+            var self, docWidth, docHeight, coords;
+            self = this;
+            // @@@ exhibit-dialog needs to be set
+            if (typeof evt !== "undefined") {
+                if (Exhibit.jQuery(evt.target).parent(".exhibit-dialog").length > 0) {
+                    dom._dialogParent = Exhibit.jQuery(evt.target).parent(".exhibit-dialog:eq(0)").get(0);
+                }
+                evt.preventDefault();
+            }
                 
-            var docWidth = document.body.offsetWidth;
-            var docHeight = document.body.offsetHeight;
+            docWidth = Exhibit.jQuery(document.body).width();
+            docHeight = Exhibit.jQuery(document.body).height();
         
-            var coords = SimileAjax.DOM.getPageCoordinates(element);
-            div.style.top = (coords.top + element.scrollHeight) + "px";
-            div.style.right = (docWidth - (coords.left + element.scrollWidth)) + "px";
-        
-            document.body.appendChild(this.elmt);
+            coords = Exhibit.jQuery(element).offset();
+            this.elmt.css("top", (coords.top + element.scrollHeight) + "px");
+            this.elmt.css("right", (docWidth - (coords.left + element.scrollWidth)) + "px");
+
+            Exhibit.jQuery(document.body).append(this.elmt);
+            this.elmt.trigger("modelessOpened.exhibit");
+            evt.stopPropagation();
         },
         appendMenuItem: function(label, icon, onClick) {
-            var self = this;
-            var a = document.createElement("a");
-            a.className = "exhibit-menu-item";
-            a.href = "javascript:";
-            SimileAjax.WindowManager.registerEvent(a, "click", function(elmt, evt, target) {
-                onClick(elmt, evt, target);
-                SimileAjax.WindowManager.popLayer(self.layer);
-                SimileAjax.DOM.cancelEvent(evt);
-                return false;
-            });
-            
-            var div = document.createElement("div");
-            a.appendChild(div);
+            var self, a, container;
+            self = this;
+            a = Exhibit.jQuery("<a>").
+                attr("href", "#").
+                addClass("exhibit-menu-item").
+                bind("click", function(evt) {
+                    onClick(evt); // elmt, evt, target:being passed a jqevent
+                    dom.close();
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                });
+
+            container = Exhibit.jQuery("<div>");
+            a.append(container);
     
-            div.appendChild(SimileAjax.Graphics.createTranslucentImage(
-                icon != null ? icon : (Exhibit.urlPrefix + "images/blank-16x16.png")));
+            container.append(Exhibit.jQuery.simileBubble("createTranslucentImage",
+                (typeof icon !== "undefined" && icon !== null) ?
+                    icon :
+                    (Exhibit.urlPrefix + "images/blank-16x16.png")));
                 
-            div.appendChild(document.createTextNode(label));
+            container.append(document.createTextNode(label));
             
-            this.elmt.appendChild(a);
+            this.elmt.append(a);
         },
         appendSeparator: function() {
-            var hr = document.createElement("hr");
-            this.elmt.appendChild(hr);
+            this.elmt.append("<hr/>");
         }
     };
+    Exhibit.UI.setupDialog(dom, false);
     return dom;
 };
 
+/**
+ * @static
+ * @returns {Element}
+ */
 Exhibit.UI.createBusyIndicator = function() {
-    var urlPrefix = Exhibit.urlPrefix + "images/";
-    var containerDiv = document.createElement("div");
-    if (SimileAjax.Graphics.pngIsTranslucent) {
+    var urlPrefix, containerDiv, topDiv, topRightDiv, middleDiv, middleRightDiv, contentDiv, bottomDiv, bottomRightDiv, img;
+    urlPrefix = Exhibit.urlPrefix + "images/";
+    containerDiv = Exhibit.jQuery("<div>");
+    if (Exhibit.jQuery.simileBubble("pngIsTranslucent")) {
+        topDiv = Exhibit.jQuery("<div>").css({
+            "height": "33px",
+            "padding-left": "44px",
+            "background": "url(" + urlPrefix + "message-bubble/message-top-left.png) top left no-repeat"
+        });
+        containerDiv.append(topDiv);
         
-        var topDiv = document.createElement("div");
-        topDiv.style.height = "33px";
-        topDiv.style.background = "url(" + urlPrefix + "message-bubble/message-top-left.png) top left no-repeat";
-        topDiv.style.paddingLeft = "44px";
-        containerDiv.appendChild(topDiv);
+        topRightDiv = Exhibit.jQuery("<div>").css({
+            "height": "33px",
+            "background": "url(" + urlPrefix + "message-bubble/message-top-right.png) top right no-repeat"
+        });
+        topDiv.append(topRightDiv);
         
-        var topRightDiv = document.createElement("div");
-        topRightDiv.style.height = "33px";
-        topRightDiv.style.background = "url(" + urlPrefix + "message-bubble/message-top-right.png) top right no-repeat";
-        topDiv.appendChild(topRightDiv);
+        middleDiv = Exhibit.jQuery("<div>").css({
+            "padding-left": "44px",
+            "background": "url(" + urlPrefix + "message-bubble/message-left.png) top left repeat-y"
+        });
+        containerDiv.append(middleDiv);
         
-        var middleDiv = document.createElement("div");
-        middleDiv.style.background = "url(" + urlPrefix + "message-bubble/message-left.png) top left repeat-y";
-        middleDiv.style.paddingLeft = "44px";
-        containerDiv.appendChild(middleDiv);
+        middleRightDiv = Exhibit.jQuery("<div>").css({
+            "padding-right": "44px",
+            "background": "url(" + urlPrefix + "message-bubble/message-right.png) top right repeat-y"
+        });
+        middleDiv.append(middleRightDiv);
         
-        var middleRightDiv = document.createElement("div");
-        middleRightDiv.style.background = "url(" + urlPrefix + "message-bubble/message-right.png) top right repeat-y";
-        middleRightDiv.style.paddingRight = "44px";
-        middleDiv.appendChild(middleRightDiv);
+        contentDiv = Exhibit.jQuery("<div>");
+        middleRightDiv.append(contentDiv);
         
-        var contentDiv = document.createElement("div");
-        middleRightDiv.appendChild(contentDiv);
+        bottomDiv = Exhibit.jQuery("<div>").css({
+            "height": "55px",
+            "padding-left": "44px",
+            "background": "url(" + urlPrefix + "message-bubble/message-bottom-left.png) bottom left no-repeat"
+        });
+        containerDiv.append(bottomDiv);
         
-        var bottomDiv = document.createElement("div");
-        bottomDiv.style.height = "55px";
-        bottomDiv.style.background = "url(" + urlPrefix + "message-bubble/message-bottom-left.png) bottom left no-repeat";
-        bottomDiv.style.paddingLeft = "44px";
-        containerDiv.appendChild(bottomDiv);
-        
-        var bottomRightDiv = document.createElement("div");
-        bottomRightDiv.style.height = "55px";
-        bottomRightDiv.style.background = "url(" + urlPrefix + "message-bubble/message-bottom-right.png) bottom right no-repeat";
-        bottomDiv.appendChild(bottomRightDiv);
+        bottomRightDiv = Exhibit.jQuery("<div>").css({
+            "height": "55px",
+            "background": "url(" + urlPrefix + "message-bubble/message-bottom-right.png) bottom right no-repeat"
+        });
+        bottomDiv.append(bottomRightDiv);
     } else {
-        containerDiv.style.border = "2px solid #7777AA";
-        containerDiv.style.padding = "20px";
-        containerDiv.style.background = "white";
-        SimileAjax.Graphics.setOpacity(containerDiv, 90);
+        containerDiv.css({
+            "border": "2px solid #7777AA",
+            "padding": "20px",
+            "background": "white",
+            "opacity": 0.9
+        });
         
-        var contentDiv = document.createElement("div");
-        containerDiv.appendChild(contentDiv);
+        contentDiv = Exhibit.jQuery("<div>");
+        containerDiv.append(contentDiv);
     }
+
+    containerDiv.addClass("exhibit-busyIndicator");
+    contentDiv.addClass("exhibit-busyIndicator-content");
     
-    containerDiv.className = "exhibit-busyIndicator";
-    contentDiv.className = "exhibit-busyIndicator-content";
-    
-    var img = document.createElement("img");
-    img.src = urlPrefix + "progress-running.gif";
-    contentDiv.appendChild(img);
-    contentDiv.appendChild(document.createTextNode(" " + Exhibit.l10n.busyIndicatorMessage));
+    img = Exhibit.jQuery("<img />").attr("src", urlPrefix + "progress-running.gif");
+    contentDiv.append(img);
+    contentDiv.append(document.createTextNode(Exhibit._("%general.busyIndicatorMessage")));
+    contentDiv.append('<div class="message" style="font-size: x-small"/>');
     
     return containerDiv;
 };
 
+/**
+ * @static
+ * @param {String} itemID
+ * @param {Exhibit} exhibit
+ * @param {Object} configuration
+ * @returns {Object}
+ */
 Exhibit.UI.createFocusDialogBox = function(itemID, exhibit, configuration) {
-    var template = {
+    var template, dom;
+    template = {
         tag:        "div",
         className:  "exhibit-focusDialog exhibit-ui-protection",
         children: [
@@ -567,57 +800,189 @@ Exhibit.UI.createFocusDialogBox = function(itemID, exhibit, configuration) {
                 children: [
                     {   tag:        "button",
                         field:      "closeButton",
-                        children:    [ Exhibit.l10n.focusDialogBoxCloseButtonLabel ]
+                        children:   [ Exhibit._("%general.focusDialogBoxCloseButtonLabel") ]
                     }
                 ]
             }
         ]
     };
-    var dom = SimileAjax.DOM.createDOMFromTemplate(template);
-    dom.close = function() {
-        document.body.removeChild(dom.elmt);
-    };
+
+    /**
+     * @ignore
+     */
+    dom = Exhibit.jQuery.simileDOM("template", template);
+
+    Exhibit.UI.setupDialog(dom, true);
+
+    /**
+     * @ignore Can't get JSDocTK to ignore this one method for some reason.
+     */
     dom.open = function() {
-        dom.layer = SimileAjax.WindowManager.pushLayer(function() { dom.close(); }, false);
-        var lens = new Exhibit.Lens(itemID, dom.viewContainer, exhibit, configuration);
+        var lens;
+        Exhibit.jQuery(document).trigger("modalSuperseded.exhibit");
+        lens = new Exhibit.Lens(itemID, dom.viewContainer, exhibit, configuration);
         
-        dom.elmt.style.top = (document.body.scrollTop + 100) + "px";
-        document.body.appendChild(dom.elmt);
+        Exhibit.jQuery(dom.elmt).css("top", (document.body.scrollTop + 100) + "px");
+        Exhibit.jQuery(document.body).append(dom.elmt);
         
-        SimileAjax.WindowManager.registerEvent(
-            dom.closeButton, 
-            "click", 
-            function(elmt, evt, target) {
-                SimileAjax.WindowManager.popLayer(dom.layer);
-                SimileAjax.DOM.cancelEvent(evt);
-                return false;
-            }, 
-            dom.layer
-        );
+        Exhibit.jQuery(dom.closeButton).bind("click", function(evt) {
+            dom.close();
+            evt.preventDefault();
+            evt.stopPropagation();
+        });
+        Exhibit.jQuery(dom.elmt).trigger("modalOpened.exhibit");
     };
     
     return dom;
 };
 
+/**
+ * @static
+ * @param {String} relativeUrl
+ * @param {String} verticalAlign
+ * @returns {Element}
+ */
 Exhibit.UI.createTranslucentImage = function(relativeUrl, verticalAlign) {
-    return SimileAjax.Graphics.createTranslucentImage(Exhibit.urlPrefix + relativeUrl, verticalAlign);
-};
-Exhibit.UI.createTranslucentImageHTML = function(relativeUrl, verticalAlign) {
-    return SimileAjax.Graphics.createTranslucentImageHTML(Exhibit.urlPrefix + relativeUrl, verticalAlign);
+    return Exhibit.jQuery.simileBubble("createTranslucentImage", Exhibit.urlPrefix + relativeUrl, verticalAlign);
 };
 
-// jQuery can't search for attributes with colons in them
-Exhibit.UI.findAttribute = function(attr, value, parent) {
-    var parent = SimileAjax.jQuery(parent || document.body);
-    var f = function( ) {
-        var v = this.getAttribute(attr);
-        if (value === undefined) {
-            return !!v;
-        } else if (value instanceof Array) {
-            return value.indexOf(v) != -1;
-        } else {
-            return value.toString() == v;
-        }
+/**
+ * @static
+ * @param {String} relativeUrl
+ * @param {String} verticalAlign
+ * @returns {Element}
+ */
+Exhibit.UI.createTranslucentImageHTML = function(relativeUrl, verticalAlign) {
+    return Exhibit.jQuery.simileBubble("createTranslucentImageHTML", Exhibit.urlPrefix + relativeUrl, verticalAlign);
+};
+
+/**
+ * @param {Number} x
+ * @param {Number} y
+ * @param {Element} elmt
+ * @returns {Boolean}
+ */
+Exhibit.UI._clickInElement = function(x, y, elmt) {
+    var offset = Exhibit.jQuery(elmt).offset();
+    var dims = { "w": Exhibit.jQuery(elmt).outerWidth(),
+                 "h": Exhibit.jQuery(elmt).outerHeight() };
+    return (x < offset.left &&
+            x > offset.left + dims.w &&
+            y < offset.top &&
+            y > offset.top + dims.h);
+};
+
+/**
+ * Add the close property to dom, a function taking a jQuery event that
+ * simulates the UI for closing a dialog.  THe dialog can either be modal
+ * (takes over the window focus) or modeless (will be closed if something
+ * other than it is focused).
+ *
+ * This scheme assumes a modeless dialog will never produce a modal dialog
+ * without also closing down.
+ * 
+ * @param {Object} dom An object with pointers into the DOM.
+ * @param {Boolean} modal Whether the dialog is modal or not.
+ * @param {Element} [dialogParent] The element containing the parent dialog.
+ */
+Exhibit.UI.setupDialog = function(dom, modal, dialogParent) {
+    var clickHandler, cancelHandler, cancelAllHandler, createdHandler, i, trap;
+
+    if (typeof parentDialog !== "undefined" && parentDialog !== null) {
+        dom._dialogParent = dialogParent;
     }
-    return parent.find('*').add(parent).filter(f);
-}
+
+    if (!modal) {
+        dom._dialogDescendants = [];
+        
+        clickHandler = function(evt) {
+            if (!Exhibit.UI._clickInElement(evt.pageX, evt.pageY, dom.elmt)) {
+                trap = false;
+                for (i = 0; i < dom._dialogDescendants; i++) {
+                    trap = trap || Exhibit.UI._clickInElement(evt.pageX, evt.pageY, dom._dialogDescendants[i]);
+                    if (trap) {
+                        break;
+                    }
+                }
+                if (!trap) {
+                    dom.close(evt);
+                }
+            }
+        };
+
+        cancelAllHandler = function(evt) {
+            dom.close(evt);
+        };
+
+        cancelHandler = function(evt) {
+            dom.close(evt);
+        };
+
+        createdHandler = function(evt) {
+            var descendant = evt.target;
+            dom._dialogDescendants.push(descendant);
+            Exhibit.jQuery(descendant).bind("cancelModeless.exhibit", function(evt) {
+                dom._dialogDescendants.splice(dom._dialogDescendants.indexOf(descendant), 1);
+                Exhibit.jQuery(descendant).unbind(evt);
+            });
+        };
+
+        dom.close = function(evt) {
+            if (typeof evt !== "undefined") {
+                if (evt.type !== "cancelAllModeless") {
+                    Exhibit.jQuery(dom.elmt).trigger("cancelModeless.exhibit");
+                }
+            } else {
+                Exhibit.jQuery(dom.elmt).trigger("cancelModeless.exhibit");
+            }
+            Exhibit.jQuery(document.body).unbind("click", clickHandler);
+            Exhibit.jQuery(dom._dialogParent).unbind("cancelModeless.exhibit", cancelHandler);
+            Exhibit.jQuery(document).unbind("cancelAllModeless.exhibit", cancelAllHandler);
+            Exhibit.jQuery(dom.elmt).trigger("closed.exhibit");
+            Exhibit.jQuery(dom.elmt).remove();
+        };
+
+        Exhibit.jQuery(dom.elmt).bind("modelessOpened.exhibit", createdHandler);
+        Exhibit.jQuery(dom.elmt).one("modelessOpened.exhibit", function(evt) {
+            Exhibit.jQuery(document.body).bind("click", clickHandler);
+            Exhibit.jQuery(dom._dialogParent).bind("cancelModeless.exhibit", cancelHandler);
+            Exhibit.jQuery(document).bind("cancellAllModeless.exhibit", cancelAllHandler);
+        });
+    } else {
+        dom._superseded = 0;
+
+        clickHandler = function(evt) {
+            if (dom._superseded === 0 &&
+                !Exhibit.UI._clickInElement(evt.pageX, evt.pageY, dom.elmt)) {
+                evt.preventDefault();
+                evt.stopImmediatePropagation();
+            }
+        };
+
+        closedHandler = function(evt) {
+            dom._superseded--;
+        };
+        
+        supersededHandler = function(evt) {
+            dom._superseded++;
+            // Will be unbound when element issuing this signal removes
+            // itself.
+            Exhibit.jQuery(evt.target).bind("cancelModal.exhibit", closedHandler);
+        };
+
+        // Some UI element or keystroke should bind dom.close now that
+        // it's been setup.
+        dom.close = function(evt) {
+            Exhibit.jQuery(dom.elmt).trigger("cancelModal.exhibit");
+            Exhibit.jQuery(document).trigger("cancelAllModeless.exhibit");
+            Exhibit.jQuery(dom.elmt).remove();
+            Exhibit.jQuery(document.body).unbind("click", clickHandler);
+            Exhibit.jQuery(document).unbind("modalSuperseded.exhibit", supersededHandler);
+        };
+
+        Exhibit.jQuery(dom.elmt).one("modalOpened.exhibit", function() {
+            Exhibit.jQuery(document.body).bind("click", clickHandler);
+            Exhibit.jQuery(document).bind("modalSuperseded.exhibit", supersededHandler);
+        });
+    }
+};
