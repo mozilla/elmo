@@ -2,73 +2,73 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var apibase = 'https://api-dev.bugzilla.mozilla.org/1.3/';
-$(document).ready(function() {
-  var core_counts, flag_bugs;
-  function processBugs() {
-    if (!core_counts || !flag_bugs) return;
-    var count = 0, flag_vals, flag, loc, bugs_per_flag = {};
-    for (var i = 0, ii = flag_bugs.bugs.length; i < ii; ++i) {
-      flag_vals = flag_bugs.bugs[i].cf_locale;
-      for (var j = 0, jj = flag_vals.length; j < jj; ++j) {
-        flag = flag_vals[j];
-        loc = flag.split(' ')[0];
-        if (bugs_per_flag.hasOwnProperty(loc)) {
-          bugs_per_flag[loc].push(flag);
-        }
-        else {
-          bugs_per_flag[loc] = [flag];
-        }
-      }
+var BugImporters = {
+  _counts: null,
+  _comp: null
+};
+var bug_count = null;
+
+function parse_counts(url, data, callback, link) {
+  var json = JSON.parse(data);
+  var items = [], count = 0;
+  for (var i=0, ii=json.data.length; i < ii; ++i) {
+    items.push({
+      label: json.x_labels[i],
+      comp: json.data[i]
+    });
+    count += json.data[i];
+  }
+  if (bug_count === null) {
+    bug_count = count;
+  }
+  else {
+    bug_count += count;
+    show_bug_count();
+  }
+  $('#noc').text(json.data.length);
+  callback({items: items});
+}
+function parse_flags(url, data, callback, link) {
+  var json = JSON.parse(data);
+  var items = [], hash = {}, flag;
+  for (var i=0, ii=json.bugs.length; i < ii; ++i) {
+    var bug = json.bugs[i];
+    for (var j in bug.cf_locale) {
+      flag = bug.cf_locale[j];
+      hash[flag] = (hash[flag] || 0) + 1;
     }
-    var comps = core_counts.data.length;
-    var o = {properties: {count: {valueType: 'number'}}};
-    var items = [];
-    for (var i = 0; i < comps; ++i) {
-      var _comp = core_counts.x_labels[i];
-      loc = _comp.split(' ')[0];
-      var _count = Number(core_counts.data[i]);
-      if (bugs_per_flag.hasOwnProperty(loc)) {
-        _count += bugs_per_flag[loc].length;
-        delete bugs_per_flag[loc];
-      }
-      items.push({id: loc, locale: loc, label: _comp, count: _count});
-      count += _count;
-    }
-    for (loc in bugs_per_flag) {
-      if (bugs_per_flag.hasOwnProperty(loc)) {
-        _count = bugs_per_flag[loc].length;
-        items.push({id: loc, locale: loc, label: bugs_per_flag[loc][0], count: _count});
-        count += _count;
-      }
-    }
-    $('#nob').text(count);
-    $('#noc').text(comps);
-    o.items = items;
-    window.database.loadData(o);
-  };
-  var cparams = {
-    product: 'Mozilla Localizations',
-    'field0-0-0': 'component',
-    'type0-0-0': 'regexp',
-    'value0-0-0': '^[a-z]{2,3}[ \-]',
-    resolution: '---',
-    x_axis_field: 'component'
-  };
-  $.getJSON(apibase + 'count', cparams,
-            function(data) {
-              core_counts = data;
-              processBugs();
-            });
-  var fparams = {
-    'field0-0-0': 'cf_locale',
-    'type0-0-0': 'isnotempty',
-    resolution: '---',
-    include_fields: 'cf_locale' + ',id,summary' // the latter only for debugging
-  };
-  $.getJSON(apibase + 'bug', fparams,
-            function(data) {
-              flag_bugs = data;
-              processBugs();
-            });
-});
+  }
+  for (flag in hash) {
+    items.push({
+      label: flag,
+      flagged: hash[flag]
+    });
+  }
+  if (bug_count === null) {
+    bug_count = json.bugs.length;
+  }
+  else {
+    bug_count += json.bugs.length;
+    show_bug_count();
+  }
+  callback({items: items});
+}
+function show_bug_count() {
+  $('#nob').text(bug_count);
+}
+
+function registerBugImporters() {
+  BugImporters._counts = new Exhibit.Importer(
+    "x-bugzilla/counts",
+    "get",
+    parse_counts
+  );
+  BugImporters._comp = new Exhibit.Importer(
+    "x-bugzilla/flags",
+    "get",
+    parse_flags
+  );
+}
+
+jQuery(document).one("registerImporters.exhibit",
+                     registerBugImporters);

@@ -4,20 +4,16 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
-{% load simile %}
 {% load compress %}
 {% load staticfiles %}
 {% load url from future %}
 {% block title_matter %}L10n Bug helper{% endblock %}
 {% block head_matter %}
-<link rel="exhibit/data" type="x-bugzilla-components"
+<link rel="exhibit-data" type="x-bugzilla-components"
       href="https://bugzilla.mozilla.org/rest/product/Mozilla%20Localizations?include_fields=components.name">
 {% compress css %}
 <link rel="stylesheet" href="{% static "bugsy/css/file-bugs.css" %}" type="text/css">
 {% endcompress %}
-
-{# must be loaded in the head :( #}
-{% exhibit %}
 
 {% endblock %}
 
@@ -26,11 +22,12 @@
 var BUG_LINKS_URL = '{% url "bugsy.views.get_bug_links" %}';
 </script>
 {% compress js %}
+<script src="{% static "simile/exhibit/exhibit-api.js" %}?persist=false"></script>
 <script src="{% static "bugsy/js/file_bug.js" %}"></script>
 {% endcompress %}
 {% endblock %}
 {% block content %}
-<div id="blds" ex:role="exhibit-collection" ex:itemTypes="Component"></div>
+<div id="blds" data-ex-role="exhibit-collection" data-ex-item-types="Component"></div>
   <table class="standard standard-borderless">
       <tr>
          <td>
@@ -96,11 +93,11 @@ var BUG_LINKS_URL = '{% url "bugsy.views.get_bug_links" %}';
            <p id="linkpane"></p>
           </td>
           <td>
-        <div ex:role="facet" ex:expression=".label"
-          ex:facetLabel="Components"></div>
-        <div ex:role="facet" ex:facetClass="TextSearch"
-          ex:expressions=".label"
-          ex:facetLabel="Search"></div>
+        <div data-ex-role="facet" data-ex-expression=".label"
+          data-ex-facet-label="Components"></div>
+        <div data-ex-role="facet" data-ex-facet-class="TextSearch"
+          data-ex-expressions=".label"
+          data-ex-facet-label="Search"></div>
          </td>
        </tr>
   </table>

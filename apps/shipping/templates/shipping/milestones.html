@@ -4,7 +4,6 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
-{% load simile %}
 {% load compress %}
 {% load staticfiles %}
 {% load url from future %}
@@ -12,15 +11,15 @@
 {% block title_matter %}Milestones{% endblock %}
 
 {% block head_matter %}
-<link href="{% url 'shipping.views.stones_data' %}" type="application/json" rel="exhibit/data">
+<link href="{% url 'shipping.views.stones_data' %}" type="application/json" rel="exhibit-data">
 {% compress css %}
 <link rel="stylesheet" href="{% static "shipping/css/milestones.css" %}" type="text/css">
 {% endcompress %}
-{% exhibit autoCreate=false %}
 {% endblock %}
 
 {% block javascript_matter %}
 {% compress js %}
+<script src="{% static "simile/exhibit/exhibit-api.js" %}?persist=false"></script>
 <script src="{% static "shipping/js/milestones.js" %}"></script>
 {% endcompress %}
 {% endblock %}
@@ -28,38 +27,40 @@
 {% block content %}
 <h1>Milestones</h1>
 
+<div data-ex-role="controlPanel" data-ex-show-bookmark="false"></div>
  <table class="standard">
    <tr>
-     <td ex:role="viewPanel">
-<div ex:role="view" ex:showAll="true" ex:ViewClass="Tabular"
-  ex:columnLabels="Milestone"
-  ex:columns=".label">
-  <table>
+     <td data-ex-role="viewPanel">
+<div data-ex-role="view" data-ex-showAll="true" data-ex-view-class="Tabular"
+  data-ex-columnLabels="Milestone"
+  data-ex-show-toolbox="false"
+  data-ex-columns=".label">
+  <table style="display:none;">
     <tr>
       <td>
-        <a ex:content=".label"
-	   ex:class-subcontent="building-{&#123;.building}}"
-        ex:href-subcontent="{% url 'shipping.views.milestone.about'  "{&#123;.code}}" %}"></a>
+        <a data-ex-content=".label"
+	   data-ex-class-subcontent="building-{&#123;.building}}"
+        data-ex-href-subcontent="{% url 'shipping.views.milestone.about'  "{&#123;.code}}" %}"></a>
       </td>
       <td>
-        <span ex:if=".status = {{ Milestone.SHIPPED }}">
+        <span data-ex-if=".status = {{ Milestone.SHIPPED }}">
           <input type="button" {% if not perms.shipping.can_ship %}
           disabled="disabled"{% endif %}
           value="tweak" />
           <span>
-            <span ex:if=".status = {{ Milestone.UPCOMING }}">
+            <span data-ex-if=".status = {{ Milestone.UPCOMING }}">
               <input type="button" {% if not perms.shipping.can_open %}
               disabled="disabled"{% endif %}
-              ex:onclick-subcontent="doForm('open','{&#123;.code}}')"
+              data-ex-onclick-subcontent="doForm('open','{&#123;.code}}')"
                 value="open" />
 	<span>
               <input type="button" {% if not perms.shipping.can_ship %}
               disabled="disabled"{% endif %}
-              ex:onclick-subcontent="doForm('ship','{&#123;.code}}')"
+              data-ex-onclick-subcontent="doForm('ship','{&#123;.code}}')"
               value="ship" />
               <input type="button" {% if not perms.shipping.can_ship %}
               disabled="disabled"{% endif %}
-              ex:onclick-subcontent="doForm('drill','{&#123;.code}}')"
+              data-ex-onclick-subcontent="doForm('drill','{&#123;.code}}')"
               value="chem-spill" />
 	</span>
             </span>
@@ -71,13 +72,13 @@
 </div>
      </td>
      <td width="25%">
-       <div ex:role="facet" ex:expression=".age"
-         ex:facetLabel="Latest"
-         ex:selection="0"
+       <div data-ex-role="facet" data-ex-expression=".age"
+         data-ex-facet-label="Latest"
+         data-ex-selection="0"
          id="age-facet"></div>
-       <div ex:role="facet" ex:expression=".building"
-         ex:facetLabel="Building"
-         ex:selection="true"
+       <div data-ex-role="facet" data-ex-expression=".building"
+         data-ex-facet-label="Building"
+         data-ex-selection="true"
          id="building-facet"></div>
     </td>
    </tr>

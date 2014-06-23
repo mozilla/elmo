@@ -4,43 +4,45 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
-{% load simile %}
 {% load compress %}
 {% load staticfiles %}
 {% load url from future %}
 {% block title_matter %}Localization bugs{% endblock %}
 {% block head_matter %}
-{% exhibit %}
+<link href="https://bugzilla.mozilla.org/bzapi/count?product=Mozilla+Localizations&field0-0-0=component&type0-0-0=regexp&value0-0-0=^[a-z]{2%2C3}[+-]&resolution=---&x_axis_field=component" type="x-bugzilla/counts" rel="exhibit-data"/>
+<link href="https://bugzilla.mozilla.org/rest/bug?field0-0-0=cf_locale&type0-0-0=substring&value0-0-0=%2F&resolution=---&include_fields=cf_locale%2Cid%2Csummary" type="x-bugzilla/flags" rel="exhibit-data"/>
 {% endblock %}
 
 {% block javascript_matter %}
 {% compress js %}
+<script src="{% static "simile/exhibit/exhibit-api.js" %}?persist=false"></script>
 <script src="{% static "bugsy/js/index.js" %}"></script>
 {% endcompress %}
 {% endblock %}
 {% block content %}
 <h1>Localization bugs</h1>
-<p id="nob_div">There are currently <a href="https://bugzilla.mozilla.org/buglist.cgi?field0-0-0=component;resolution=---;type0-0-0=regexp;value0-0-0=^[a-z]{2%2C3}[%20\-];field0-0-1=product;type0-0-1=equals;value0-0-1=Mozilla%20Localizations"><span
+<p id="nob_div">There are currently <a href="https://bugzilla.mozilla.org/buglist.cgi?o0=regexp&f0=component&v0=^[a-z]{2%2C3}[%20\-]&product=Mozilla%20Localizations"><span
 id="nob">?</span></a> open Mozilla Localization bugs in <span
 id="noc">?</span> components.</p>
 <div style="width:10em;">
   <em>Search:</em>
-  <div ex:role="facet"
-   ex:facetClass="TextSearch"
-   ex:expressions=".label">
+  <div data-ex-role="facet"
+   data-ex-facet-class="TextSearch"
+   data-ex-expressions=".label">
   </div>
 </div>
-<div ex:role="view" ex:viewClass="Tabular" style="margin-right:11em;"
-  ex:showToolbox="false" ex:showSummary="false"
-  ex:paginate="true" ex:pagingControlLocations="bottom" ex:pageSize="10"
-  ex:cellSpacing="0" sortColumn="1" sortAscending="false"
-  ex:columns=".label, .count" ex:columnLabels="Component, Bugs">
+<div data-ex-role="controlPanel" data-ex-show-bookmark="false"></div>
+<div data-ex-role="view" data-ex-view-class="Tabular" style="margin-right:11em;"
+  data-ex-show-toolbox="false" data-ex-show-summary="false"
+  data-ex-paginate="true" data-ex-paging-control-locations="bottom" data-ex-page-size="10"
+  data-ex-cellSpacing="0" sortColumn="1" sortAscending="false"
+  data-ex-columns=".label, add( .flagged , .comp)" data-ex-column-labels="Component, Bugs">
   <table class="standard">
     <tr>
       <td><a target="_blank"
-        ex:href-subcontent="https://bugzilla.mozilla.org/buglist.cgi?field0-0-0=component;type0-0-0=regexp;value0-0-0=^{&#123.locale}}%20/;field0-;field0-0-1=cf_locale;type0-0-1=regexp;value0-0-1=^{&#123.locale}}%20/&resolution=---&columnlist=assigned_to%2Cshort_desc%2Cchangeddate"
-        ex:content=".label"></a></td>
-        <td ex:content=".count"></td>
+        data-ex-href-subcontent="https://bugzilla.mozilla.org/buglist.cgi?field0-0-0=component;type0-0-0=regexp;value0-0-0=^{&#123.locale}}%20/;field0-;field0-0-1=cf_locale;type0-0-1=regexp;value0-0-1=^{&#123.locale}}%20/&resolution=---&columnlist=assigned_to%2Cshort_desc%2Cchangeddate"
+        data-ex-content=".label"></a></td>
+        <td data-ex-content="add( .flagged , .comp)"></td>
     </tr>
   </table>
 </div>

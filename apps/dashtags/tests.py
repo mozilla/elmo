@@ -36,16 +36,3 @@ class Recurse(TestCase):
         out = t.render(c)
         self.assertEqual(out,
           u'\nroot\n\n leaf1\n\n  leafleaf1\n\n\n leaf2\n\n\n')
-
-
-class Simile(unittest.TestCase):
-    """Test the simile tags to include script tags for exhibit."""
-
-    def test_exhibit(self):
-        t = template.Template("{% load simile %} {% exhibit %}")
-        c = template.Context({})
-        out = t.render(c)
-        self.assertTrue("exhibit-api.js" in out,
-                        "exhibit-api.js is not in " + out)
-        self.assertTrue("simile-ajax-api.js" in out,
-                        "simile-ajax-api.js is not in " + out)
