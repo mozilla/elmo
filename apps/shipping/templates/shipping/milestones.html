@@ -18,8 +18,8 @@
 {% endblock %}
 
 {% block javascript_matter %}
-{% compress js %}
 <script src="{% static "simile/exhibit/exhibit-api.js" %}?persist=false"></script>
+{% compress js %}
 <script src="{% static "shipping/js/milestones.js" %}"></script>
 {% endcompress %}
 {% endblock %}

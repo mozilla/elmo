@@ -14,8 +14,8 @@
 {% endblock %}
 
 {% block javascript_matter %}
-{% compress js %}
 <script src="{% static "simile/exhibit/exhibit-api.js" %}?persist=false"></script>
+{% compress js %}
 <script src="{% static "bugsy/js/index.js" %}"></script>
 {% endcompress %}
 {% endblock %}

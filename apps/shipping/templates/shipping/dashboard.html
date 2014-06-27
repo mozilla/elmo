@@ -4,6 +4,7 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
+{% load compress %}
 {% load staticfiles %}
 {% load url from future %}
 
@@ -21,7 +22,9 @@
 
 {% block javascript_matter %}
 <script src="{% static "simile/exhibit/exhibit-api.js" %}?persist=false"></script>
+{% compress js %}
 <script src="{% static "shipping/js/dashboard.js" %}"></script>
+{% endcompress %}
 {% endblock %}
 
 {% block title_matter %}Sign-offs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}

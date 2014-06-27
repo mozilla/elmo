@@ -21,8 +21,8 @@
 <script>
 var BUG_LINKS_URL = '{% url "bugsy.views.get_bug_links" %}';
 </script>
-{% compress js %}
 <script src="{% static "simile/exhibit/exhibit-api.js" %}?persist=false"></script>
+{% compress js %}
 <script src="{% static "bugsy/js/file_bug.js" %}"></script>
 {% endcompress %}
 {% endblock %}
