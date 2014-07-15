@@ -5,6 +5,8 @@
 
 .trees {
     margin-bottom: 2em;
+    width: 100%;
+    border-collapse: separate;
 }
 
 .trees th {
@@ -12,6 +14,16 @@
     font-weight: normal;
     font-style: italic;
     padding: 0.5em 0;
+    /* copied from sandstone */
+    background-color: #F9F9F9;
+    border-top: 1px solid #d3d3d3;
+    border-bottom: 1px solid #d3d3d3;
+}
+
+.trees > tbody > td {
+    border-top: 1px solid #d3d3d3;
+    border-bottom: 1px solid #d3d3d3;
+    border: 1px solid #d3d3d3;
 }
 
 table.trees tr.treesummary td.productname {
@@ -22,39 +34,51 @@ table.trees tr.treesummary td.productname {
     padding-right: 1em;
 }
 
-.trees .treesummary {
-    background: #ffffff;
+tr.separator td {
+    padding: 3px;
+    border: none;
 }
 
-.trees .treesummary:first-child > td {
-    border-top: 1px solid #d3d3d3;
-}
-
-.trees .treesummary:nth-child(odd) {
+.trees .odd-td {
     background: #eeeeee;
+}
+
+.trees .even-td {
+    background: #ffffff;
 }
 
 .trees td {
     border-left: 1px solid #d3d3d3;
     border-bottom: 1px solid #d3d3d3;
-    padding: 0.75em;
+    padding: 10px 7px;
+    vertical-align: top;
+}
+
+.trees .appname {
+    border-radius: 10px 0 0 10px;
+    background-color: #ffffff;
+}
+
+.trees .topline > td {
+    border-top: 1px solid #d3d3d3;
+}
+
+.trees .toprow .appname {
+    border-top-left-radius: 0;
 }
 
 .trees .treename {
     font-weight: bold;
     vertical-align: middle;
-    min-width: 145px;
 }
 
 .trees .treestatus {
     font-size: 90%;
-    min-width: 9em;
 }
 
 .trees .treestatus a {
     display: block;
     font-weight: bold;
-    margin: 0.25em 0;
 }
 
 .trees .treestatus .translated {
@@ -84,57 +108,70 @@ table.trees tr.treesummary td.productname {
     border-right: 1px solid #d3d3d3;
 }
 
-.trees .signoffstatus a {
-    background: white no-repeat scroll 6px center;
-    border: 1px solid #9b9b9b;
-    border-radius: 4px;
-    color: #484848;
-    display: inline-block;
-    padding: 0.55em 0.75em 0.55em 32px;
-    text-decoration: none;
+.trees .signoffs.actions .button {
+    /* override sandstone button min-width */
+    min-width: 0;
 }
 
-.trees .signoffstatus .no-sign-offs {
+.signoffs.actions .oi {
+    padding-right: 5px;
+}
+
+.actions .pending .oi {
+    color: #0096DD;
+}
+
+.actions .rejected .oi {
+    color: red;
+}
+
+.signoffs.actions .suggest-error {
+    color: red;
+}
+.signoffs.actions .suggest-warning {
+    color: #ff6c00;
+}
+.signoffs.actions .suggest-success {
+    color: green;
+}
+
+
+.trees .signoffs.actions .closed-sign-offs {
+    background: none;
+    color: black;
+    font-size: smaller;
+    font-style: italic;
+}
+
+.trees .signoffs.actions .no-sign-offs {
     padding-left:0.55em;
 }
 
-.trees .signoffstatus .current {
-    background-image: url("../img/accepted.png")
+.trees .signoffs.status.ok {
+    text-align: center;
+}
+.trees .signoffs.status .status-ok {
+    color: green;
 }
 
-.trees .signoffstatus .fallback {
-    background-image: url("../img/details.png")
+.trees .signoffs .status-fallback {
+    color: #ff6c00;
 }
 
-.trees .signoffstatus .pending {
-    background-image: url("../img/pending.png");
-    background-position: 5px center;
-}
-
-.trees .signoffstatus .suggested {
-    background-image: url("../img/suggested.png");
-    background-position: 4px center;
-}
-
-.trees .signoffstatus .rejected {
-    background-image: url("../img/rejected.png");
-    background-position: 4px center;
-}
-
-.trees .signoffstatus a:hover {
+.trees .signoffs.actions a:hover {
     color: #000000;
     border-color: #484848;
 }
 
-.trees .signoffstatus .noshow {
-    position: relative;
-    visibility: hidden;
-}
 
 /* Progress bar */
 
 .stats {
     border-spacing: 0;
+}
+
+.stats tr {
+    border-top: 1px solid #d3d3d3;
 }
 
 .changed {

@@ -6,31 +6,38 @@
 {% load url from future %}
 <div id="applications">
   <h2>Applications &amp; Sign-offs <a href="#applications" class="permalink">#</a></h2>
-  <p><em>See detailed numbers
-  <a href="{% url 'shipping.views.dashboard' %}?locale={{locale.code}}{% for loc in other_team_locales %}&amp;locale={{ loc.code }}{% endfor %}"
-  >on the dashboard &rarr;</a></em></p>
 
-  {% for application, runs in applications %}
-  <h2 id="{{ application.code }}">{{ application.name }} <a href="#{{ application.code }}" class="permalink">#</a></h2>
-  <table class="standard trees">
+  <table class="trees jquery-thead">
       <thead>
           <tr>
+              <th>Project</th>
               <th>Tree</th>
               <th>Translation Status</th>
               <th>Progress</th>
-              <th>Sign-off Status</th>
+              <th>Sign-offs <sup><a href="https://developer.mozilla.org/docs/Mozilla/Localization/Sign-off_reviews" title="Help">?</a></sup></th>
+              <th>Actions <sup><a href="https://developer.mozilla.org/docs/Mozilla/Localization/Sign-off_reviews" title="Help">?</a></sup></th>
           </tr>
       </thead>
       <tbody>
+      {% for application, runs in applications %}
+      {% with firstapp=forloop.first %}
+      {% if not forloop.first %}
+      <tr class="separator"><td colspan="6"></td></tr>
+      {% endif %}
       {% for run in runs %}
-      <tr class="treesummary {#{% if run.allmissing %}hasmissing{% endif %} {% cycle 'odd' 'even' %}#}">
-          <td class="treename">
+      <tr class="treesummary{% if forloop.first %} topline{% if firstapp %} toprow{% endif %}{% endif %}">
+      {% if forloop.first %}
+          <td class="appname " rowspan="{{ runs|length }}">
+            <h2 id="{{ application.code }}">{{ application.name }} <a href="#{{ application.code }}" class="permalink">#</a></h2>
+          </td>
+      {% endif %}
+          <td class="treename {% cycle 'odd-td' 'even-td' as runcycle %}">
               {{ run.tree.code }}
               {% ifnotequal run.locale_id locale.id %}
                 <small class="locale-team">({{ run.locale.code }})</small>
               {% endifnotequal %}
           </td>
-          <td class="treestatus">
+          <td class="treestatus {{ runcycle }}">
               {% if run.errors %}
                   <a href="{% url 'l10nstats.views.compare' %}?run={{ run.id }}" class="error">
                       {{ run.errors }} errors
@@ -51,59 +58,66 @@
                   <td style="width:{{ run.changed_ratio }}px" class="status changed"></td>
               </tr></tbody></table>
           </td>
-          <td class="treeprogress">
+          <td class="treeprogress {{ runcycle }}">
             {% if run.prog_pos %}
             <a href="{% url 'l10nstats.views.history_plot' %}?tree={{run.tree.code}}&amp;locale={{run.locale.code}}&amp;starttime={{ progress_start|date:"Y-m-d" }}">
               <div class="treeprogress-graph" style="background-position:{{run.prog_pos.x}}px {{run.prog_pos.y}}px;"></div>
             </a>
             {% endif %}
           </td>
-          <td class="signoffstatus">
-
-  	    <!-- No status -->
-  	    {% if not run.rejected and not run.suggested_shortrev and not run.pending and not run.accepted and run.appversion %}
-                <a class="no-sign-offs" href="{% url 'shipping.views.signoff.signoff' run.locale.code run.appversion.code %}">No Sign-offs</a>
-  	    {% else %}
-                  <a class="no-sign-offs noshow" href="#">No Sign-offs</a>
-  	    {% endif %}
-
-              <!-- Rejected -->
-              {% if run.rejected %}
-                  <a class="rejected" href="{% url 'shipping.views.signoff.signoff' run.locale.code run.appversion.code %}#{{ run.rejected_rev }}">Rejected</a>
-              {% else %}
-                  <a class="rejected noshow" href="#">Rejected</a>
-              {% endif %}
-
-              <!-- Suggested -->
-              {% if run.suggested_shortrev %}
-                  <a class="suggested" href="{% url 'shipping.views.signoff.signoff' run.locale.code run.appversion.code %}#{{ run.suggested_shortrev }}">Suggested</a>
-              {% else %}
-                  <a class="suggested noshow" href="#">Suggested</a>
-              {% endif %}
-
-              <!-- Pending -->
-              {% if run.pending %}
-                  <a class="pending" href="{% url 'shipping.views.signoff.signoff' run.locale.code run.appversion.code %}#{{ run.pending_rev }}">Pending</a>
-              {% else %}
-                  <a class="pending noshow">Pending</a>
-              {% endif %}
-
+          <td class="signoffs status{% if not run.fallback %} ok{% endif %} {{ runcycle }}">
               <!-- Accepted -->
               {% if run.accepted %}
-                  <a class="{% if run.fallback %}fallback{%else%}current{%endif%}" href="{% url 'shipping.views.signoff.signoff' run.locale.code run.appversion.code %}#{{ run.accepted_rev }}">
-                      {% if run.fallback %}
-                          {{ run.fallback }}
-                      {% else %}Current{% endif %}
-                  </a>
-              {% else %}
-                  <a class="current noshow" href="#">Current</a>
+                     {% if run.fallback %}
+                     <span class="oi status-fallback" data-glyph="warning"></span> {{ run.fallback }}
+                     {% elif run.suggested_shortrev or run.under_review %}<span class="oi status-ok" data-glyph="graph"></span>
+                     {% else %}<span class="oi status-ok" data-glyph="check"></span>{% endif %}
               {% endif %}
-
+          </td>
+          <td class="signoffs actions {{ runcycle }}">
+        <!-- closed -->
+        {% if not run.appversion.accepts_signoffs %}
+            <a href="{% url 'shipping.views.signoff.signoff' run.locale.code run.appversion.code %}"
+               class="closed-sign-offs">Not open</a>
+        <!-- old -->
+        {% elif not run.is_active %}
+            <a href="{% url 'shipping.views.signoff.signoff' run.locale.code run.appversion.code %}"
+               class="button button-white no-sign-offs">
+                   <span class="oi status-fallback" data-glyph="warning"></span>Needs update
+            </a>
+        <!-- No status -->
+        {% elif not run.actions and not run.suggested_shortrev %}
+            <a href="{% url 'shipping.views.signoff.signoff' run.locale.code run.appversion.code %}"
+               class="button button-white no-sign-offs">
+                   {% if run.suggested_shortrev %}Sign off{% else %}Up to date{% endif %}
+            </a>
+        {% else %}
+            {% for action in run.actions %}
+              <a class="button button-white {{ action.flag_name }}" href="{% url 'shipping.views.signoff.signoff' run.locale.code run.appversion.code %}#{{ action.rev }}">
+                  {% if action.flag_name == "pending" %}
+                  <span class="oi" data-glyph="magnifying-glass"></span>In Review
+                  {% else %} {# rejected #}
+                  <span class="oi" data-glyph="x"></span>Rejected
+                  {% endif %}
+              </a>
+            {% endfor %}
+            <!-- Suggested -->
+            {% if run.suggested_shortrev %}
+                <a class="button button-white" href="{% url 'shipping.views.signoff.signoff' run.locale.code run.appversion.code %}#{{ run.suggested_shortrev }}">
+                    <span class="oi suggest-{{ run.suggest_class }}" data-glyph="{{ run.suggest_glyph }}"></span>
+                    Sign off?
+                </a>
+            {% endif %}
+        {% endif %}
           </td>
       </tr>
       {% endfor %}
+      {% endwith %}
+      {% endfor %}
       </tbody>
     </table>
-    {% endfor %}
+  <p><em>See detailed numbers
+  <a href="{% url 'shipping.views.dashboard' %}?locale={{locale.code}}{% for loc in other_team_locales %}&amp;locale={{ loc.code }}{% endfor %}"
+  >on the dashboard &rarr;</a></em></p>
 
   </div>
