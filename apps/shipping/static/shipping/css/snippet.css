@@ -26,7 +26,7 @@ table.trees tr.treesummary td.productname {
     background: #ffffff;
 }
 
-.trees .treesummary:first-child td {
+.trees .treesummary:first-child > td {
     border-top: 1px solid #d3d3d3;
 }
 
@@ -126,7 +126,7 @@ table.trees tr.treesummary td.productname {
     border-color: #484848;
 }
 
-.trees .signoffstatus .hidden {
+.trees .signoffstatus .noshow {
     position: relative;
     visibility: hidden;
 }
@@ -146,7 +146,7 @@ table.trees tr.treesummary td.productname {
 }
 
 .trees .stats .status {
-    border 0 none;
+    border: none;
     height: 1ex;
     margin: 0;
     padding: 0;

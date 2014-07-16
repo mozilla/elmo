@@ -35,7 +35,7 @@ var compare_link = "{% url 'l10nstats.views.compare' %}";
 <h2>Statistics for {{ locale }}, {{ tree }}, {{starttime.date}}-{{endtime.date}}</h2>
 <div id="my-timeplot" style="height: 400px;"></div>
 
-<div id="txtData" class="hidden">{% for run in runs %}
+<div id="txtData" style="display:none;">{% for run in runs %}
 {{ run.srctime.isoformat }}Z,{{ run.run }},{{ run.missing }},{{ run.obsolete }},{{ run.unchanged }}{% endfor %}
 </div>
 <p class="divider"></p>
