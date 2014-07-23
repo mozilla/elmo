@@ -4,17 +4,13 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
-{% load simile %}
+{% load compress %}
 {% load staticfiles %}
 {% load url from future %}
 
 {% block head_matter %}
 <link rel="stylesheet" href="{% static "shipping/css/dashboard.css" %}" type="text/css">
-<link href="{% url 'shipping.views.status.status_json' %}?{{ query }}" type="application/json" rel="exhibit/data"/>
-{% exhibit autoCreate=false %}
-<script>
-var EX_OPTIONS = ["result", "shipping", "signoff"];
-</script>
+<link href="{% url 'shipping.views.status.status_json' %}?{{ query }}" type="application/json" rel="exhibit-data"/>
 <style>
 .progress {
     width: {{ PROGRESS_IMG_SIZE.x }}px;
@@ -25,7 +21,10 @@ var EX_OPTIONS = ["result", "shipping", "signoff"];
 {% endblock %}
 
 {% block javascript_matter %}
+<script src="{% static "simile/exhibit/exhibit-api.js" %}?persist=false"></script>
+{% compress js %}
 <script src="{% static "shipping/js/dashboard.js" %}"></script>
+{% endcompress %}
 {% endblock %}
 
 {% block title_matter %}Sign-offs {% if subtitles %}({{ subtitles|join:", " }}){% endif %}{% endblock %}
@@ -39,59 +38,61 @@ var EX_OPTIONS = ["result", "shipping", "signoff"];
 {% block body_content_class %}page-wider{% endblock %}
 
 {% block content %}
- <div ex:role="collection" ex:itemTypes="Build"></div>
+ <div data-ex-role="collection" data-ex-item-types="Build"></div>
+ <div data-ex-role="controlPanel" data-ex-show-bookmark="false"></div>
  <table width="100%" class="standard">
    <tr valign="top">
-     <td ex:role="viewPanel" ex:showAll="true">
-       <span ex:role="lens" class="comparison" ex:itemTypes="Comparison" style="display:none">
-         <span  ex:content=".label"></span>
-         <span ex:if-exists=".bug" class="bug"> (<a ex:href-subcontent="https://bugzilla.mozilla.org/show_bug.cgi?id={&#123;.bug}}" target="_blank">buglink</a>)</span>
+     <td data-ex-role="viewPanel" data-ex-showAll="true">
+       <span data-ex-role="lens" class="comparison" data-ex-item-types="Comparison" style="display:none">
+         <span  data-ex-content=".label"></span>
+         <span data-ex-if-exists=".bug" class="bug"> (<a data-ex-href-subcontent="https://bugzilla.mozilla.org/show_bug.cgi?id={&#123;.bug}}" target="_blank">buglink</a>)</span>
 
-         <span ex:if-exists=".comment" class="comment"> (<em ex:content=".comment"></em>)</span>
+         <span data-ex-if-exists=".comment" class="comment"> (<em data-ex-content=".comment"></em>)</span>
        </span>
-    <div ex:role="view" ex:viewClass="Tabular"
-      ex:collectionID="buids"
-      ex:columnLabels="Locale, Tree, %, Errors, Missing, Warnings,
+    <div data-ex-role="view" data-ex-view-class="Tabular"
+      data-ex-show-toolbox="false"
+      data-ex-collectionID="buids"
+      data-ex-column-labels="Locale, Tree, %, Errors, Missing, Warnings,
        Reported, Obsolete, Unchanged, Status, History, Sign-off"
-      ex:columns=".locale, .tree, .completion, .errors, .missing,
+      data-ex-columns=".locale, .tree, .completion, .errors, .missing,
        .warnings, .report, .obsolete,  .unchanged, .changed,
        .completion, .signoff"
-      ex:cellSpacing="0">
-      <table>
+      data-ex-cellSpacing="0">
+      <table style="display:none;">
     <tr>
-      <td class="locale_cell"><a ex:href-subcontent="{% url 'homepage.views.locale_team' '&#123;&#123;.locale&#125;&#125;' %}" ex:content=".locale"></a></td>
-      <td ex:content=".tree" class-subcontent="tree_cell"></td>
+      <td class="locale_cell"><a data-ex-href-subcontent="{% url 'homepage.views.locale_team' '&#123;&#123;.locale&#125;&#125;' %}" data-ex-content=".locale"></a></td>
+      <td data-ex-content=".tree" class-subcontent="tree_cell"></td>
 
-      <td class="completion_cell" ex:content=".completion"></td>
-      <td class="coverage_cell" ex:content=".errors"></td>
-      <td class="coverage_cell" ex:content=".missing"></td>
-      <td class="coverage_cell" ex:content=".warnings"></td>
-      <td class="coverage_cell" ex:content=".report"></td>
-      <td class="coverage_cell" ex:content=".obsolete"></td>
-      <td class="coverage_cell" ex:content=".unchanged"></td>
+      <td class="completion_cell" data-ex-content=".completion"></td>
+      <td class="coverage_cell" data-ex-content=".errors"></td>
+      <td class="coverage_cell" data-ex-content=".missing"></td>
+      <td class="coverage_cell" data-ex-content=".warnings"></td>
+      <td class="coverage_cell" data-ex-content=".report"></td>
+      <td class="coverage_cell" data-ex-content=".obsolete"></td>
+      <td class="coverage_cell" data-ex-content=".unchanged"></td>
       <td>
-        <a ex:href-subcontent="{% url 'compare_locales' %}?run={&#123;.runid}}" target="_blank">
+        <a data-ex-href-subcontent="{% url 'compare_locales' %}?run={&#123;.runid}}" target="_blank">
           <table class="stats">
                <tr>
-                 <td title="changed" class="status changed" ex:width-subcontent="{&#123;.completion }}px"></td>
-                 <td title="missing" class="status missing" ex:width-subcontent="{&#123;100 * .missing / .total}}px"></td>
-                 <td title="unchanged" class="status unchanged" ex:width-subcontent="{&#123;100 * .unchanged / .total}}px"></td>
+                 <td title="changed" class="status changed" data-ex-width-subcontent="{&#123;.completion }}px"></td>
+                 <td title="missing" class="status missing" data-ex-width-subcontent="{&#123;100 * .missing / .total}}px"></td>
+                 <td title="unchanged" class="status unchanged" data-ex-width-subcontent="{&#123;100 * .unchanged / .total}}px"></td>
                </tr>
            </table>
          </a>
        </td>
        <td>
-         <a ex:href-subcontent="{% url 'l10nstats.views.history_plot' %}?tree={&#123;.tree}}&amp;locale={&#123;.locale}}&amp;starttime={{ progress_start|date:"Y-m-d" }}">
-           <div ex:if-exists=".background_offset_x" class="progress"
-             ex:style-subcontent="background-position:{&#123; .background_offset_x }}px {&#123; .background_offset_y }}px"></div>
+         <a data-ex-href-subcontent="{% url 'l10nstats.views.history_plot' %}?tree={&#123;.tree}}&amp;locale={&#123;.locale}}&amp;starttime={{ progress_start|date:"Y-m-d" }}">
+           <div data-ex-if-exists=".background_offset_x" class="progress"
+             data-ex-style-subcontent="background-position:{&#123; .background_offset_x }}px {&#123; .background_offset_y }}px"></div>
          </a>
        </td>
 <td>
-  <span ex:if="exists(.tree.appversion)">
+  <span data-ex-if="exists(.tree.appversion)">
   <span>
-  <a ex:href-subcontent="{% url 'shipping.views.signoff.signoff' "&#123;&#123;.locale&#125;&#125;" "&#123;&#123;.tree.appversion&#125;&#125;" %}">
-    <span ex:if="exists(.signoff )">
-      <span ex:content=".signoff"></span>
+  <a data-ex-href-subcontent="{% url 'shipping.views.signoff.signoff' "&#123;&#123;.locale&#125;&#125;" "&#123;&#123;.tree.appversion&#125;&#125;" %}">
+    <span data-ex-if="exists(.signoff )">
+      <span data-ex-content=".signoff"></span>
       <span>none</span>
     </span>
   </a>
@@ -103,32 +104,34 @@ var EX_OPTIONS = ["result", "shipping", "signoff"];
     </div>
      </td>
      <td width="18%">
-       <div ex:role="facet" ex:expression=".result" ex:facetLabel="Result"
+       <div data-ex-role="facet" data-ex-expression=".result" data-ex-facet-label="Result"
          id="result-facet"
-         ex:height="5em"
-         ex:fixedOrder="success;warnings;failure;exception"></div>
-       <div ex:role="facet" ex:facetLabel="Missing"
-         ex:expression=".missing"
-         ex:facetClass="Slider">
+         data-ex-height="5em"
+         data-ex-fixed-order="success;warnings;failure;exception"></div>
+       <div data-ex-role="facet" data-ex-facet-label="Missing"
+         data-ex-expression=".missing"
+         data-ex-facet-class="Slider">
        </div>
-       <div ex:role="facet" ex:facetLabel="Warnings"
-         ex:expression=".warnings"
-         ex:facetClass="Slider">
+       <div data-ex-role="facet" data-ex-facet-label="Warnings"
+         data-ex-expression=".warnings"
+         data-ex-facet-class="Slider">
        </div>
-       <div ex:role="facet" ex:facetLabel="Reported"
-         ex:expression=".report"
-         ex:facetClass="Slider">
+       <div data-ex-role="facet" data-ex-facet-label="Reported"
+         data-ex-expression=".report"
+         data-ex-facet-class="Slider">
        </div>
-       <div ex:role="facet" ex:expression=".tree" ex:facetLabel="Tree"
-         ex:height="5em"
+       <div data-ex-role="facet" data-ex-expression=".tree" data-ex-facet-label="Tree"
+         data-ex-height="5em" data-ex-scroll="false"
          id="tree-facet"></div>
-       <div ex:role="facet" ex:expression=".locale" ex:facetLabel="Locale"
-         ex:height="5em"
+       <div data-ex-role="facet" data-ex-expression=".locale" data-ex-facet-label="Locale"
+         data-ex-height="5em"
          id="locale-facet"></div>
-       <div ex:role="facet" ex:expression=".apploc.shipped"
-         ex:height="5em" ex:facetLabel="Shipped in ..." id="shipping-facet"></div>
-       <div ex:role="facet" ex:expression=".signoff"
-         ex:height="5em" ex:facetLabel="Sign-off" id="signoff-facet"></div>
+       <div data-ex-role="facet" data-ex-expression=".apploc.shipped"
+         data-ex-missing-label="not shipped"
+         data-ex-height="5em" data-ex-facet-label="Shipped in ..." id="shipping-facet"></div>
+       <div data-ex-role="facet" data-ex-expression=".signoff"
+         data-ex-missing-label="none"
+         data-ex-height="5em" data-ex-facet-label="Sign-off" id="signoff-facet"></div>
        <div><a href="{% url 'shipping.views.index' %}?{{ request.GET.urlencode }}">Edit</a> this dashboard.</div>
      </td>
    </tr>

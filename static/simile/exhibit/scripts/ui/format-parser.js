@@ -1,34 +1,17 @@
-/*==================================================
- *  Exhibit.FormatParser
- *  http://simile.mit.edu/wiki/Exhibit/API/FormatParser
- *==================================================
+/**
+ * @fileOverview Format parsing
+ * @author David Huynh
+ * @author <a href="mailto:ryanlee@zepheira.com">Ryan Lee</a>
  */
-Exhibit.FormatParser = new Object();
 
-Exhibit.FormatParser.parse = function(uiContext, s, startIndex, results) {
-    startIndex = startIndex || 0;
-    results = results || {};
-    
-    var scanner = new Exhibit.FormatScanner(s, startIndex);
-    try {
-        return Exhibit.FormatParser._internalParse(uiContext, scanner, results, false);
-    } finally {
-        results.index = scanner.token() != null ? scanner.token().start : scanner.index();
-    }
-};
+/**
+ * @namespace
+ */
+Exhibit.FormatParser = {};
 
-Exhibit.FormatParser.parseSeveral = function(uiContext, s, startIndex, results) {
-    startIndex = startIndex || 0;
-    results = results || {};
-    
-    var scanner = new Exhibit.FormatScanner(s, startIndex);
-    try {
-        return Exhibit.FormatParser._internalParse(uiContext, scanner, results, true);
-    } finally {
-        results.index = scanner.token() != null ? scanner.token().start : scanner.index();
-    }
-};
-
+/**
+ * @constant
+ */
 Exhibit.FormatParser._valueTypes = {
     "list" : true,
     "number" : true,
@@ -40,16 +23,69 @@ Exhibit.FormatParser._valueTypes = {
     "currency" : true
 };
 
+/**
+ * @static
+ * @param {Exhibit.UIContext} uiContext
+ * @param {String} s
+ * @param {Number} startIndex
+ * @param {Object} results
+ * @returns {Number}
+ */
+Exhibit.FormatParser.parse = function(uiContext, s, startIndex, results) {
+    startIndex = startIndex || 0;
+    results = results || {};
+    
+    var scanner = new Exhibit.FormatScanner(s, startIndex);
+    try {
+        return Exhibit.FormatParser._internalParse(uiContext, scanner, results, false);
+    } finally {
+        results.index = scanner.token() !== null ? scanner.token().start : scanner.index();
+    }
+};
+
+/**
+ * @param {Exhibit.UIContext} uiContext
+ * @param {String} s
+ * @param {Number} startIndex
+ * @param {Object} results
+ * @returns {Number}
+ */ 
+Exhibit.FormatParser.parseSeveral = function(uiContext, s, startIndex, results) {
+    startIndex = startIndex || 0;
+    results = results || {};
+    
+    var scanner = new Exhibit.FormatScanner(s, startIndex);
+    try {
+        return Exhibit.FormatParser._internalParse(uiContext, scanner, results, true);
+    } finally {
+        results.index = scanner.token() !== null ? scanner.token().start : scanner.index();
+    }
+};
+
+/**
+ * @param {Exhibit.UIContext} uiContext
+ * @param {Exhibit.FormatScanner} scanner
+ * @param {Object} results
+ * @param {Boolean} several
+ * @returns {}
+ */
 Exhibit.FormatParser._internalParse = function(uiContext, scanner, results, several) {
-    var Scanner = Exhibit.FormatScanner;
-    var token = scanner.token();
-    var next = function() { scanner.next(); token = scanner.token(); };
-    var makePosition = function() { return token != null ? token.start : scanner.index(); };
-    var enterSetting = function(valueType, settingName, value) {
+    var Scanner, token, next, makePosition, enterSetting, checkKeywords, parseNumber, parseInteger, parseNonnegativeInteger, parseString, parseURL, parseExpression, parseExpressionOrString, parseChoices, parseFlags, parseSetting, parseSettingList, parseRule, parseRuleList;
+    Scanner = Exhibit.FormatScanner;
+    token = scanner.token();
+    next = function() { scanner.next(); token = scanner.token(); };
+    makePosition = function() {
+        return token !== null ?
+            token.start :
+            scanner.index();
+    };
+    enterSetting = function(valueType, settingName, value) {
         uiContext.putSetting("format/" + valueType + "/" + settingName, value);
     };
-    var checkKeywords = function(valueType, settingName, keywords) {
-        if (token != null && token.type != Scanner.IDENTIFIER && token.value in keywords) {
+    checkKeywords = function(valueType, settingName, keywords) {
+        if (token !== null &&
+            token.type !== Scanner.IDENTIFIER &&
+            typeof keywords[token.value] !== "undefined") {
             enterSetting(valueType, settingName, keywords[token.value]);
             next();
             return false;
@@ -57,109 +93,107 @@ Exhibit.FormatParser._internalParse = function(uiContext, scanner, results, seve
         return true;
     };
     
-    var parseNumber = function(valueType, settingName, keywords) {
+    parseNumber = function(valueType, settingName, keywords) {
         if (checkKeywords(valueType, settingName, keywords)) {
-            if (token == null || token.type != Scanner.NUMBER) {
-                throw new Error("Missing number at position " + makePosition());
+            if (typeof token === "undefined" || token === null || token.type !== Scanner.NUMBER) {
+                throw new Error(Exhibit._("%format.error.missingNumber", makePosition()));
             }
             enterSetting(valueType, settingName, token.value);
             next();
         }
     };
-    var parseInteger = function(valueType, settingName, keywords) {
+    parseInteger = function(valueType, settingName, keywords) {
         if (checkKeywords(valueType, settingName, keywords)) {
-            if (token == null || token.type != Scanner.NUMBER) {
-                throw new Error("Missing integer at position " + makePosition());
+            if (typeof token === "undefined" || token === null || token.type !== Scanner.NUMBER) {
+                throw new Error(Exhibit._("%format.error.missingInteger", makePosition()));
             }
             enterSetting(valueType, settingName, Math.round(token.value));
             next();
         }
     };
-    var parseNonnegativeInteger = function(valueType, settingName, keywords) {
+    parseNonnegativeInteger = function(valueType, settingName, keywords) {
         if (checkKeywords(valueType, settingName, keywords)) {
-            if (token == null || token.type != Scanner.NUMBER || token.value < 0) {
-                throw new Error("Missing non-negative integer at position " + makePosition());
+            if (typeof token === "undefined" || token === null || token.type !== Scanner.NUMBER || token.value < 0) {
+                throw new Error(Exhibit._("%format.error.missingNonNegativeInteger",  makePosition()));
             }
             enterSetting(valueType, settingName, Math.round(token.value));
             next();
         }
     };
-    var parseString = function(valueType, settingName, keywords) {
+    parseString = function(valueType, settingName, keywords) {
         if (checkKeywords(valueType, settingName, keywords)) {
-            if (token == null || token.type != Scanner.STRING) {
-                throw new Error("Missing string at position " + makePosition());
+            if (typeof token === "undefined" || token === null || token.type !== Scanner.STRING) {
+                throw new Error(Exhibit._("%format.error.missingString", makePosition()));
             }
             enterSetting(valueType, settingName, token.value);
             next();
         }
     };
-    var parseURL = function(valueType, settingName, keywords) {
+    parseURL = function(valueType, settingName, keywords) {
         if (checkKeywords(valueType, settingName, keywords)) {
-            if (token == null || token.type != Scanner.URL) {
-                throw new Error("Missing url at position " + makePosition());
+            if (typeof token === "undefined" || token === null || token.type !== Scanner.URL) {
+                throw new Error(Exhibit._("%format.error.missingURL", makePosition()));
             }
             enterSetting(valueType, settingName, token.value);
             next();
         }
     };
-    var parseExpression = function(valueType, settingName, keywords) {
+    parseExpression = function(valueType, settingName, keywords) {
         if (checkKeywords(valueType, settingName, keywords)) {
-            if (token == null || token.type != Scanner.EXPRESSION) {
-                throw new Error("Missing expression at position " + makePosition());
+            if (typeof token === "undefined" || token === null || token.type !== Scanner.EXPRESSION) {
+                throw new Error(Exhibit._("%format.error.missingExpression", makePosition()));
             }
             enterSetting(valueType, settingName, token.value);
             next();
         }
     };
-    var parseExpressionOrString = function(valueType, settingName, keywords) {
+    parseExpressionOrString = function(valueType, settingName, keywords) {
         if (checkKeywords(valueType, settingName, keywords)) {
-            if (token == null || (token.type != Scanner.EXPRESSION && token.type != Scanner.STRING)) {
-                throw new Error("Missing expression or string at position " + makePosition());
+            if (typeof token === "undefined" || token === null || (token.type !== Scanner.EXPRESSION && token.type !== Scanner.STRING)) {
+                throw new Error(Exhibit._("%format.error.missingExpressionOrString", makePosition()));
             }
             enterSetting(valueType, settingName, token.value);
             next();
         }
     };
-    var parseChoices = function(valueType, settingName, choices) {
-        if (token == null || token.type != Scanner.IDENTIFIER) {
-            throw new Error("Missing option at position " + makePosition());
+    parseChoices = function(valueType, settingName, choices) {
+        var i;
+        if (typeof token === "undefined" || token === null || token.type !== Scanner.IDENTIFIER) {
+            throw new Error(Exhibit._("%format.error.missingOption", makePosition()));
         }
-        for (var i = 0; i < choices.length; i++) {
-            if (token.value == choices[i]) {
+        for (i = 0; i < choices.length; i++) {
+            if (token.value === choices[i]) {
                 enterSetting(valueType, settingName, token.value);
                 next();
                 return;
             }
         }
-        throw new Error(
-            "Unsupported option " + token.value + 
-            " for setting " + settingName + 
-            " on value type " + valueType + 
-            " found at position " + makePosition());
+        throw new Error(Exhibit._("%format.error.unsupportedOption", token.value, settingName, valueType, makePosition()));
     };
-    var parseFlags = function(valueType, settingName, flags, counterFlags) {
-        outer: while (token != null && token.type == Scanner.IDENTIFIER) {
-            for (var i = 0; i < flags.length; i++) {
-                if (token.value == flags[i]) {
+    parseFlags = function(valueType, settingName, flags, counterFlags) {
+        var i, flagSet, counterFlagSet;
+        while (token !== null && token.type === Scanner.IDENTIFIER) {
+            flagSet = false;
+            counterFlagSet = false;
+            for (i = 0; i < flags.length && !flagSet; i++) {
+                if (token.value === flags[i]) {
                     enterSetting(valueType, settingName + "/" + token.value, true);
                     next();
-                    continue outer;
+                    flagSet = true;
                 }
             }
-            if (token.value in counterFlags) {
+            if (!flagSet && typeof counterFlags[token.value] !== "undefined") {
                 enterSetting(valueType, settingName + "/" + counterFlags[token.value], false);
                 next();
-                continue outer;
+                counterFlagSet = true;
             }
-            throw new Error(
-                "Unsupported flag " + token.value + 
-                " for setting " + settingName + 
-                " on value type " + valueType + 
-                " found at position " + makePosition());
+            if (!counterFlagSet) {
+                throw new Error(Exhibit._("%format.error.unsupportedFlag", token.value, settingName, valueType, makePosition()));
+            }
         }
     };
     
-    var parseSetting = function(valueType, settingName) {
+    parseSetting = function(valueType, settingName) {
         switch (valueType) {
         case "number":
             switch (settingName) {
@@ -187,8 +221,6 @@ Exhibit.FormatParser._internalParse = function(uiContext, scanner, results, seve
             }
             break;
         case "boolean":
-            switch (settingName) {
-            }
             break;
         case "text":
             switch (settingName) {
@@ -255,62 +287,61 @@ Exhibit.FormatParser._internalParse = function(uiContext, scanner, results, seve
             }
             break;
         }
-        throw new Error("Unsupported setting called " + settingName + 
-            " for value type " + valueType + " found at position " + makePosition());
+        throw new Error(Exhibit._("%format.error.unsupportedSetting", settingName, valueType, makePosition()));
     };
-    var parseSettingList = function(valueType) {
+    parseSettingList = function(valueType) {
 
-        while (token != null && token.type == Scanner.IDENTIFIER) {
+        while (token !== null && token.type === Scanner.IDENTIFIER) {
             var settingName = token.value;
 
             next();
             
 
-            if (token == null || token.type != Scanner.DELIMITER || token.value != ":") {
-                throw new Error("Missing : at position " + makePosition());
+            if (typeof token === "undefined" || token === null || token.type !== Scanner.DELIMITER || token.value !== ":") {
+                throw new Error(Exhibit._("%format.error.missingColon", makePosition()));
             }
             next();
             
             parseSetting(valueType, settingName);
             
 
-            if (token == null || token.type != Scanner.DELIMITER || token.value != ";") {
+            if (typeof token === "undefined" || token === null || token.type !== Scanner.DELIMITER || token.value !== ";") {
                 break;
             } else {
                 next();
             }
         }
 
-    }
-    var parseRule = function() {
-        if (token == null || token.type != Scanner.IDENTIFIER) {
-            throw new Error("Missing value type at position " + makePosition());
+    };
+    parseRule = function() {
+        if (typeof token === "undefined" || token === null || token.type !== Scanner.IDENTIFIER) {
+            throw new Error(Exhibit._("%format.error.missingValueType", makePosition()));
         }
         
         var valueType = token.value;
-        if (!(valueType in Exhibit.FormatParser._valueTypes)) {
-            throw new Error("Unsupported value type " + valueType + " at position " + makePosition());
+        if (typeof Exhibit.FormatParser._valueTypes[valueType] === "undefined") {
+            throw new Error(Exhibit._("%format.error.unsupportedValueType", valueType, makePosition()));
         }
         next();
         
-        if (token != null && token.type == Scanner.DELIMITER && token.value == "{") {
+        if (token !== null && token.type === Scanner.DELIMITER && token.value === "{") {
             next();
             parseSettingList(valueType);
             
-            if (token == null || token.type != Scanner.DELIMITER || token.value != "}") {
-                throw new Error("Missing } at position " + makePosition());
+            if (typeof token === "undefined" || token === null || token.type !== Scanner.DELIMITER || token.value !== "}") {
+                throw new Error(Exhibit._("%format.error.missingBrace", makePosition()));
             }
             next();
         }
         return valueType;
     };
-    var parseRuleList = function() {
+    parseRuleList = function() {
         var valueType = "text";
-        while (token != null && token.type == Scanner.IDENTIFIER) {
+        while (token !== null && token.type === Scanner.IDENTIFIER) {
             valueType = parseRule();
         }
         return valueType;
-    }
+    };
     
     if (several) {
         return parseRuleList();
@@ -319,9 +350,11 @@ Exhibit.FormatParser._internalParse = function(uiContext, scanner, results, seve
     }
 };
 
-/*==================================================
- *  Exhibit.FormatScanner
- *==================================================
+/**
+ * @class
+ * @constructor
+ * @param {String} text
+ * @param {Number} startIndex
  */
 Exhibit.FormatScanner = function(text, startIndex) {
     this._text = text + " "; // make it easier to parse
@@ -330,27 +363,59 @@ Exhibit.FormatScanner = function(text, startIndex) {
     this.next();
 };
 
+/**
+ * @constant
+ */
 Exhibit.FormatScanner.DELIMITER     = 0;
+/**
+ * @constant
+ */
 Exhibit.FormatScanner.NUMBER        = 1;
+/**
+ * @constant
+ */
 Exhibit.FormatScanner.STRING        = 2;
+/**
+ * @constant
+ */
 Exhibit.FormatScanner.IDENTIFIER    = 3;
+/**
+ * @constant
+ */
 Exhibit.FormatScanner.URL           = 4;
+/**
+ * @constant
+ */
 Exhibit.FormatScanner.EXPRESSION    = 5;
+/**
+ * @constant
+ */
 Exhibit.FormatScanner.COLOR         = 6;
 
+/**
+ * @returns {Object}
+ */
 Exhibit.FormatScanner.prototype.token = function() {
     return this._token;
 };
 
+/**
+ * @returns {Number}
+ */
 Exhibit.FormatScanner.prototype.index = function() {
     return this._index;
 };
 
+/**
+ *
+ */
 Exhibit.FormatScanner.prototype.next = function() {
     this._token = null;
+
+    var self, skipSpaces, i, c1, c2, identifier, openParen, closeParen, j, o, expression;
     
-    var self = this;
-    var skipSpaces = function(x) {
+    self = this;
+    skipSpaces = function(x) {
         while (x < self._maxIndex &&
             " \t\r\n".indexOf(self._text.charAt(x)) >= 0) {
             
@@ -361,8 +426,8 @@ Exhibit.FormatScanner.prototype.next = function() {
     this._index = skipSpaces(this._index);
     
     if (this._index < this._maxIndex) {
-        var c1 = this._text.charAt(this._index);
-        var c2 = this._text.charAt(this._index + 1);
+        c1 = this._text.charAt(this._index);
+        c2 = this._text.charAt(this._index + 1);
         
         if ("{}(),:;".indexOf(c1) >= 0) {
             this._token = {
@@ -373,9 +438,9 @@ Exhibit.FormatScanner.prototype.next = function() {
             };
             this._index++;
         } else if ("\"'".indexOf(c1) >= 0) { // quoted strings
-            var i = this._index + 1;
+            i = this._index + 1;
             while (i < this._maxIndex) {
-                if (this._text.charAt(i) == c1 && this._text.charAt(i - 1) != "\\") {
+                if (this._text.charAt(i) === c1 && this._text.charAt(i - 1) !== "\\") {
                     break;
                 }
                 i++;
@@ -390,10 +455,10 @@ Exhibit.FormatScanner.prototype.next = function() {
                 };
                 this._index = i + 1;
             } else {
-                throw new Error("Unterminated string starting at " + this._index);
+                throw new Error(Exhibit._("%format.error.unterminatedString", this._index));
             }
-        } else if (c1 == "#") { // color
-            var i = this._index + 1;
+        } else if (c1 === "#") { // color
+            i = this._index + 1;
             while (i < this._maxIndex && this._isHexDigit(this._text.charAt(i))) {
                 i++;
             }
@@ -406,12 +471,12 @@ Exhibit.FormatScanner.prototype.next = function() {
             };
             this._index = i;
         } else if (this._isDigit(c1)) { // number
-            var i = this._index;
+            i = this._index;
             while (i < this._maxIndex && this._isDigit(this._text.charAt(i))) {
                 i++;
             }
             
-            if (i < this._maxIndex && this._text.charAt(i) == ".") {
+            if (i < this._maxIndex && this._text.charAt(i) === ".") {
                 i++;
                 while (i < this._maxIndex && this._isDigit(this._text.charAt(i))) {
                     i++;
@@ -426,9 +491,9 @@ Exhibit.FormatScanner.prototype.next = function() {
             };
             this._index = i;
         } else { // identifier
-            var i = this._index;
+            i = this._index;
             while (i < this._maxIndex) {
-                var j = this._text.substr(i).search(/\W/);
+                j = this._text.substr(i).search(/\W/);
                 if (j > 0) {
                     i += j;
                 } else if ("-".indexOf(this._text.charAt(i)) >= 0) {
@@ -438,47 +503,43 @@ Exhibit.FormatScanner.prototype.next = function() {
                 }
             }
             
-            var identifier = this._text.substring(this._index, i);
-            while (true) {
-                if (identifier == "url") {
-                    var openParen = skipSpaces(i);
-                    if (this._text.charAt(openParen) == "(") {
-                        var closeParen = this._text.indexOf(")", openParen);
-                        if (closeParen > 0) {
-                            this._token = {
-                                type:   Exhibit.FormatScanner.URL,
-                                value:  this._text.substring(openParen + 1, closeParen),
-                                start:  this._index,
-                                end:    closeParen + 1
-                            };
-                            this._index = closeParen + 1;
-                            break;
-                        } else {
-                            throw new Error("Missing ) to close url at " + this._index);
-                        }
-                    }
-                } else if (identifier == "expression") {
-                    var openParen = skipSpaces(i);
-                    if (this._text.charAt(openParen) == "(") {
-                        var o = {};
-                        var expression = Exhibit.ExpressionParser.parse(this._text, openParen + 1, o);
-                        
-                        var closeParen = skipSpaces(o.index);
-                        if (this._text.charAt(closeParen) == ")") {
-                            this._token = {
-                                type:   Exhibit.FormatScanner.EXPRESSION,
-                                value:  expression,
-                                start:  this._index,
-                                end:    closeParen + 1
-                            };
-                            this._index = closeParen + 1;
-                            break;
-                        } else {
-                            throw new Error("Missing ) to close expression at " + o.index);
-                        }
+            identifier = this._text.substring(this._index, i);
+            if (identifier === "url") {
+                openParen = skipSpaces(i);
+                if (this._text.charAt(openParen) === "(") {
+                    closeParen = this._text.indexOf(")", openParen);
+                    if (closeParen > 0) {
+                        this._token = {
+                            type:   Exhibit.FormatScanner.URL,
+                            value:  this._text.substring(openParen + 1, closeParen),
+                            start:  this._index,
+                            end:    closeParen + 1
+                        };
+                        this._index = closeParen + 1;
+                    } else {
+                        throw new Error(Exhibit._("%format.error.missingCloseURL", this._index));
                     }
                 }
-                
+            } else if (identifier === "expression") {
+                openParen = skipSpaces(i);
+                if (this._text.charAt(openParen) === "(") {
+                    o = {};
+                    expression = Exhibit.ExpressionParser.parse(this._text, openParen + 1, o);
+                    
+                    closeParen = skipSpaces(o.index);
+                    if (this._text.charAt(closeParen) === ")") {
+                        this._token = {
+                            type:   Exhibit.FormatScanner.EXPRESSION,
+                            value:  expression,
+                            start:  this._index,
+                            end:    closeParen + 1
+                        };
+                        this._index = closeParen + 1;
+                    } else {
+                        throw new Error("Missing ) to close expression at " + o.index);
+                    }
+                }
+            } else {
                 this._token = {
                     type:   Exhibit.FormatScanner.IDENTIFIER,
                     value:  identifier,
@@ -486,15 +547,23 @@ Exhibit.FormatScanner.prototype.next = function() {
                     end:    i
                 };
                 this._index = i;
-                break;
             }
         }
     }
 };
 
+/**
+ * @param {String} c
+ * @returns {Boolean}
+ */
 Exhibit.FormatScanner.prototype._isDigit = function(c) {
     return "0123456789".indexOf(c) >= 0;
 };
+
+/**
+ * @param {String} c
+ * @returns {Boolean}
+ */
 Exhibit.FormatScanner.prototype._isHexDigit = function(c) {
     return "0123456789abcdefABCDEF".indexOf(c) >= 0;
 };

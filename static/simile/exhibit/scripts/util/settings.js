@@ -1,15 +1,19 @@
-/*==================================================
- *  Exhibit.SettingsUtilities
- *
- *  Utilities for various parts of Exhibit to 
- *  collect their settings.
- *==================================================
+/**
+ * @fileOverview Utilities for various parts of Exhibit to collect
+ *    their settings.
+ * @author David Huynh
+ * @author <a href="mailto:ryanlee@zepheira.com">Ryan Lee</a>
  */
-Exhibit.SettingsUtilities = new Object();
 
-/*--------------------------------------------------
- *  Static settings
- *--------------------------------------------------
+/**
+ * @namespace
+ */
+Exhibit.SettingsUtilities = {};
+
+/**
+ * @param {Object} config
+ * @param {Object} specs
+ * @param {Object} settings
  */
 Exhibit.SettingsUtilities.collectSettings = function(config, specs, settings) {
     Exhibit.SettingsUtilities._internalCollectSettings(
@@ -19,6 +23,11 @@ Exhibit.SettingsUtilities.collectSettings = function(config, specs, settings) {
     );
 };
 
+/**
+ * @param {Element} configElmt
+ * @param {Object} specs
+ * @param {Object} settings
+ */
 Exhibit.SettingsUtilities.collectSettingsFromDOM = function(configElmt, specs, settings) {
     Exhibit.SettingsUtilities._internalCollectSettings(
         function(field) { return Exhibit.getAttribute(configElmt, field); },
@@ -27,131 +36,146 @@ Exhibit.SettingsUtilities.collectSettingsFromDOM = function(configElmt, specs, s
     );
 };
 
+/**
+ * @param {Function} f
+ * @param {Object} specs
+ * @param {Object} settings
+ */
 Exhibit.SettingsUtilities._internalCollectSettings = function(f, specs, settings) {
-    for (var field in specs) {
-        var spec = specs[field];
-        var name = field;
-        if ("name" in spec) {
-            name = spec.name;
-        }
-        if (!(name in settings) && "defaultValue" in spec) {
-            settings[name] = spec.defaultValue;
-        }
-        
-        var value = f(field);
-        if (value == null) {
-            continue;
-        }
-        
-        if (typeof value == "string") {
-            value = value.trim();
-            if (value.length == 0) {
-                continue;
+    var field, spec, name, value, type, dimensions, separator, a, i;
+
+    for (field in specs) {
+        if (specs.hasOwnProperty(field)) {
+            spec = specs[field];
+            name = field;
+            if (typeof spec.name !== "undefined") {
+                name = spec.name;
             }
-        }
+            if (typeof settings[name] === "undefined" &&
+                typeof spec.defaultValue !== "undefined") {
+                settings[name] = spec.defaultValue;
+            }
         
-        var type = "text";
-        if ("type" in spec) {
-            type = spec.type;
-        }
-        
-        var dimensions = 1;
-        if ("dimensions" in spec) {
-            dimensions = spec.dimensions;
-        }
-        
-        try {
-            if (dimensions > 1) {
-                var separator = ",";
-                if ("separator" in spec) {
-                    separator = spec.separator;
+            value = f(field);
+            if (typeof value !== "undefined" && value !== null) {
+                if (typeof value === "string") {
+                    value = value.trim();
+                }
+            }
+
+            if (typeof value !== "undefined" && value !== null && ((typeof value === "string" && value.length > 0) || typeof value !== "string")) {
+                type = "text";
+                if (typeof spec.type !== "undefined") {
+                    type = spec.type;
                 }
                 
-                var a = value.split(separator);
-                if (a.length != dimensions) {
-                    throw new Error("Expected a tuple of " + dimensions + " dimensions separated with " + separator + " but got " + value);
-                } else {
-                    for (var i = 0; i < a.length; i++) {
-                        a[i] = Exhibit.SettingsUtilities._parseSetting(a[i].trim(), type, spec);
-                    }
-                    
-                    settings[name] = a;
+                dimensions = 1;
+                if (typeof spec.dimensions !== "undefined") {
+                    dimensions = spec.dimensions;
                 }
-            } else {
-                settings[name] = Exhibit.SettingsUtilities._parseSetting(value, type, spec);
+                
+                try {
+                    if (dimensions > 1) {
+                        separator = ",";
+                        if (typeof spec.separator !== "undefined") {
+                            separator = spec.separator;
+                        }
+
+                        a = value.split(separator);
+                        if (a.length !== dimensions) {
+                            throw new Error(Exhibit._("%settings.error.inconsistentDimensions", dimensions, separator, value));
+                        } else {
+                            for (i = 0; i < a.length; i++) {
+                                a[i] = Exhibit.SettingsUtilities._parseSetting(a[i].trim(), type, spec);
+                            }
+                            settings[name] = a;
+                        }
+                    } else {
+                        settings[name] = Exhibit.SettingsUtilities._parseSetting(value, type, spec);
+                    }
+                } catch (e) {
+                    Exhibit.Debug.exception(e);
+                }
             }
-        } catch (e) {
-            SimileAjax.Debug.exception(e);
         }
     }
 };
 
+/**
+ * @param {String|Number|Boolean|Function} s
+ * @param {String} type
+ * @param {Object} spec
+ * @param {Array} spec.choices
+ * @throws Error
+ */
 Exhibit.SettingsUtilities._parseSetting = function(s, type, spec) {
-    var sType = typeof s;
-    if (type == "text") {
+    var sType, f, n, choices, i;
+    sType = typeof s;
+    if (type === "text") {
         return s;
-    } else if (type == "float") {
-        if (sType == "number") {
+    } else if (type === "float") {
+        if (sType === "number") {
             return s;
-        } else if (sType == "string") {
-            var f = parseFloat(s);
+        } else if (sType === "string") {
+            f = parseFloat(s);
             if (!isNaN(f)) {
                 return f;
             }
         }
-        throw new Error("Expected a floating point number but got " + s);
-    } else if (type == "int") {
-        if (sType == "number") {
+        throw new Error(Exhibit._("%settings.error.notFloatingPoint", s));
+    } else if (type === "int") {
+        if (sType === "number") {
             return Math.round(s);
-        } else if (sType == "string") {
-            var n = parseInt(s);
+        } else if (sType === "string") {
+            n = parseInt(s, 10);
             if (!isNaN(n)) {
                 return n;
             }
         }
-        throw new Error("Expected an integer but got " + s);
-    } else if (type == "boolean") {
-        if (sType == "boolean") {
+        throw new Error(Exhibit._("%settings.error.notInteger", s));
+    } else if (type === "boolean") {
+        if (sType === "boolean") {
             return s;
-        } else if (sType == "string") {
+        } else if (sType === "string") {
             s = s.toLowerCase();
-            if (s == "true") {
+            if (s === "true") {
                 return true;
-            } else if (s == "false") {
+            } else if (s === "false") {
                 return false;
             }
         }
-        throw new Error("Expected either 'true' or 'false' but got " + s);
-    } else if (type == "function") {
-        if (sType == "function") {
+        throw new Error(Exhibit._("%settings.error.notBoolean", s));
+    } else if (type === "function") {
+        if (sType === "function") {
             return s;
-        } else if (sType == "string") {
+        } else if (sType === "string") {
             try {
-                var f = eval(s);
-                if (typeof f == "function") {
+                f = eval(s);
+                if (typeof f === "function") {
                     return f;
                 }
             } catch (e) {
                 // silent
             }
         }
-        throw new Error("Expected a function or the name of a function but got " + s);
-    } else if (type == "enum") {
-        var choices = spec.choices;
-        for (var i = 0; i < choices.length; i++) {
-            if (choices[i] == s) {
+        throw new Error(Exhibit._("%settings.error.notFunction", s));
+    } else if (type === "enum") {
+        choices = spec.choices;
+        for (i = 0; i < choices.length; i++) {
+            if (choices[i] === s) {
                 return s;
             }
         }
-        throw new Error("Expected one of " + choices.join(", ") + " but got " + s);
+        throw new Error(Exhibit._("%settings.error.notEnumerated", choices.join(", "), s));
     } else {
-        throw new Error("Unknown setting type " + type);
+        throw new Error(Exhibit._("%settings.error.unknownSetting", type));
     }
 };
 
-/*--------------------------------------------------
- *  Accessors
- *--------------------------------------------------
+/**
+ * @param {Object} config
+ * @param {Object} specs
+ * @param {Object} accessors
  */
 Exhibit.SettingsUtilities.createAccessors = function(config, specs, accessors) {
     Exhibit.SettingsUtilities._internalCreateAccessors(
@@ -161,6 +185,11 @@ Exhibit.SettingsUtilities.createAccessors = function(config, specs, accessors) {
     );
 };
 
+/**
+ * @param {Element} configElmt
+ * @param {Object} specs
+ * @param {Object} accessors
+ */
 Exhibit.SettingsUtilities.createAccessorsFromDOM = function(configElmt, specs, accessors) {
     Exhibit.SettingsUtilities._internalCreateAccessors(
         function(field) { return Exhibit.getAttribute(configElmt, field); },
@@ -169,61 +198,78 @@ Exhibit.SettingsUtilities.createAccessorsFromDOM = function(configElmt, specs, a
     );
 };
 
+/**
+ * @param {Function} f
+ * @param {Object} specs
+ * @param {Object} accessors
+ */ 
 Exhibit.SettingsUtilities._internalCreateAccessors = function(f, specs, accessors) {
-    for (var field in specs) {
-        var spec = specs[field];
-        var accessorName = spec.accessorName;
-        var accessor = null;
-        var isTuple = false;
-        
-        var createOneAccessor = function(spec2) {
-            isTuple = false;
-            if ("bindings" in spec2) {
-                return Exhibit.SettingsUtilities._createBindingsAccessor(f, spec2.bindings);
-            } else if ("bindingNames" in spec2) {
-                isTuple = true;
-                return Exhibit.SettingsUtilities._createTupleAccessor(f, spec2);
-            } else {
-                return Exhibit.SettingsUtilities._createElementalAccessor(f, spec2);
-            }
-        };
-        
-        if ("alternatives" in spec) {
-            var alternatives = spec.alternatives;
-            for (var i = 0; i < alternatives.length; i++) {
-                accessor = createOneAccessor(alternatives[i]);
-                if (accessor != null) {
-                    break;
-                }
-            }
+    var field, spec, accessorName, accessor, isTuple, createOneAccessor, alternatives, i, noop;
+
+    noop = function(value, database, visitor) {};
+
+    createOneAccessor = function(spec2) {
+        isTuple = false;
+        if (typeof spec2["bindings"] !== "undefined") {
+            return Exhibit.SettingsUtilities._createBindingsAccessor(f, spec2.bindings);
+        } else if (typeof spec2["bindingNames"] !== "undefined") {
+            isTuple = true;
+            return Exhibit.SettingsUtilities._createTupleAccessor(f, spec2);
         } else {
-            accessor = createOneAccessor(spec);
+            return Exhibit.SettingsUtilities._createElementalAccessor(f, spec2);
         }
+    };
+
+    for (field in specs) {
+        if (specs.hasOwnProperty(field)) {
+            spec = specs[field];
+            accessorName = spec.accessorName;
+            accessor = null;
+            isTuple = false;
+
+            if (typeof spec["alternatives"] !== "undefined") {
+                alternatives = spec.alternatives;
+                for (i = 0; i < alternatives.length; i++) {
+                    accessor = createOneAccessor(alternatives[i]);
+                    if (accessor !== null) {
+                        break;
+                    }
+                }
+            } else {
+                accessor = createOneAccessor(spec);
+            }
         
-        if (accessor != null) {
-            accessors[accessorName] = accessor;
-        } else if (!(accessorName in accessors)) {
-            accessors[accessorName] = function(value, database, visitor) {};
+            if (accessor !== null) {
+                accessors[accessorName] = accessor;
+            } else if (typeof accessors[accessorName] === "undefined") {
+                accessors[accessorName] = noop;
+            }
         }
     }
 };
 
+/**
+ * @param {Function} f
+ * @param {Array} bindingSpecs
+ * @returns {Function}
+ */
 Exhibit.SettingsUtilities._createBindingsAccessor = function(f, bindingSpecs) {
-    var bindings = [];
-    for (var i = 0; i < bindingSpecs.length; i++) {
-        var bindingSpec = bindingSpecs[i];
-        var accessor = null;
-        var isTuple = false;
+    var bindings, i, bindingSpec, accessor, isTuple;
+    bindings = [];
+    for (i = 0; i < bindingSpecs.length; i++) {
+        bindingSpec = bindingSpecs[i];
+        accessor = null;
+        isTuple = false;
         
-        if ("bindingNames" in bindingSpec) {
+        if (typeof bindingSpec["bindingNames"] !== "undefined") {
             isTuple = true;
             accessor = Exhibit.SettingsUtilities._createTupleAccessor(f, bindingSpec);
         } else {
             accessor = Exhibit.SettingsUtilities._createElementalAccessor(f, bindingSpec);
         }
         
-        if (accessor == null) {
-            if (!("optional" in bindingSpec) || !bindingSpec.optional) {
+        if (typeof accessor === "undefined" || accessor === null) {
+            if (typeof bindingSpec["optional"] === "undefined" || !bindingSpec.optional) {
                 return null;
             }
         } else {
@@ -240,53 +286,60 @@ Exhibit.SettingsUtilities._createBindingsAccessor = function(f, bindingSpecs) {
     };
 };
 
+/**
+ * @param {Function} f
+ * @param {Object} spec
+ * @returns {Function}
+ */
 Exhibit.SettingsUtilities._createTupleAccessor = function(f, spec) {
-    var value = f(spec.attributeName);
+    var value, expression, parsers, bindingTypes, bindingNames, separator, i;
+    value = f(spec.attributeName);
 
-    if (value == null) {
+    if (typeof value === "undefined" || value === null) {
         return null;
     }
     
-    if (typeof value == "string") {
+    if (typeof value === "string") {
         value = value.trim();
-        if (value.length == 0) {
+        if (value.length === 0) {
             return null;
         }
     }
     
     try {
-        var expression = Exhibit.ExpressionParser.parse(value);
+        expression = Exhibit.ExpressionParser.parse(value);
         
-        var parsers = [];
-        var bindingTypes = spec.types;
-        for (var i = 0; i < bindingTypes.length; i++) {
+        parsers = [];
+        bindingTypes = spec.types;
+        for (i = 0; i < bindingTypes.length; i++) {
             parsers.push(Exhibit.SettingsUtilities._typeToParser(bindingTypes[i]));
         }
         
-        var bindingNames = spec.bindingNames;
-        var separator = ",";
+        bindingNames = spec.bindingNames;
+        separator = ",";
 
-        if ("separator" in spec) {
-
+        if (typeof spec["separator"] !== "undefined") {
             separator = spec.separator;
-
         }
         
         return function(itemID, database, visitor, tuple) {
             expression.evaluateOnItem(itemID, database).values.visit(
                 function(v) {
-                    var a = v.split(separator);
-                    if (a.length == parsers.length) {
-                        var tuple2 = {};
+                    var a, tuple2, n, j;
+                    a = v.split(separator);
+                    if (a.length === parsers.length) {
+                        tuple2 = {};
                         if (tuple) {
-                            for (var n in tuple) {
-                                tuple2[n] = tuple[n];
+                            for (n in tuple) {
+                                if (tuple.hasOwnProperty(n)) {
+                                    tuple2[n] = tuple[n];
+                                }
                             }
                         }
-                        
-                        for (var i = 0; i < bindingNames.length; i++) {
-                            tuple2[bindingNames[i]] = null;
-                            parsers[i](a[i], function(v) { tuple2[bindingNames[i]] = v; });
+
+                        for (j = 0; j < bindingNames.length; j++) {
+                            tuple2[bindingNames[j]] = null;
+                            parsers[j](a[j], function(v) { tuple2[bindingNames[j]] = v; });
                         }
                         visitor(tuple2);
                     }
@@ -295,51 +348,58 @@ Exhibit.SettingsUtilities._createTupleAccessor = function(f, spec) {
         };
 
     } catch (e) {
-        SimileAjax.Debug.exception(e);
+        Exhibit.Debug.exception(e);
         return null;
     }
 };
 
+/**
+ * @param {Function} f
+ * @param {Object} spec
+ * @param {String} spec.attributeName
+ * @returns {Function}
+ */
 Exhibit.SettingsUtilities._createElementalAccessor = function(f, spec) {
-    var value = f(spec.attributeName);
+    var value, bindingType, expression, parser;
 
-    if (value == null) {
+    value = f(spec.attributeName);
+
+    if (typeof value === "undefined" || value === null) {
         return null;
     }
     
-    if (typeof value == "string") {
+    if (typeof value === "string") {
         value = value.trim();
-        if (value.length == 0) {
+        if (value.length === 0) {
             return null;
         }
     }
     
-    var bindingType = "text";
+    bindingType = "text";
 
-    if ("type" in spec) {
-
+    if (typeof spec["type"] !== "undefined") {
         bindingType = spec.type;
-
     }
-    
 
     try {
-        var expression = Exhibit.ExpressionParser.parse(value);
-        
-        var parser = Exhibit.SettingsUtilities._typeToParser(bindingType);
-        
+        expression = Exhibit.ExpressionParser.parse(value);
+        parser = Exhibit.SettingsUtilities._typeToParser(bindingType);
         return function(itemID, database, visitor) {
             expression.evaluateOnItem(itemID, database).values.visit(
                 function(v) { return parser(v, visitor); }
             );
         };
-
     } catch (e) {
-        SimileAjax.Debug.exception(e);
+        Exhibit.Debug.exception(e);
         return null;
     }
-}
+};
 
+/**
+ * @param {String} type
+ * @returns {Function}
+ * @throws Error
+ */
 Exhibit.SettingsUtilities._typeToParser = function(type) {
     switch (type) {
     case "text":    return Exhibit.SettingsUtilities._textParser;
@@ -349,15 +409,23 @@ Exhibit.SettingsUtilities._typeToParser = function(type) {
     case "date":    return Exhibit.SettingsUtilities._dateParser;
     case "boolean": return Exhibit.SettingsUtilities._booleanParser;
     default:
-        throw new Error("Unknown setting type " + type);
+        throw new Error(Exhibit._("%settings.error.unknownSetting", type));
 
     }
-}
+};
 
+/**
+ * @param {String} v
+ * @param {Function} f
+ */
 Exhibit.SettingsUtilities._textParser = function(v, f) {
     return f(v);
 };
 
+/**
+ * @param {String} v
+ * @param {Function} f
+ */
 Exhibit.SettingsUtilities._floatParser = function(v, f) {
     var n = parseFloat(v);
     if (!isNaN(n)) {
@@ -366,51 +434,77 @@ Exhibit.SettingsUtilities._floatParser = function(v, f) {
     return false;
 };
 
+/**
+ * @param {String} v
+ * @param {Function} f
+ */
 Exhibit.SettingsUtilities._intParser = function(v, f) {
-    var n = parseInt(v);
+    var n = parseInt(v, 10);
     if (!isNaN(n)) {
         return f(n);
     }
     return false;
 };
 
+/**
+ * @param {String} v
+ * @param {Function} f
+ */
 Exhibit.SettingsUtilities._dateParser = function(v, f) {
+    var d;
     if (v instanceof Date) {
         return f(v);
-    } else if (typeof v == "number") {
-        var d = new Date(0);
+    } else if (typeof v === "number") {
+        d = new Date(0);
         d.setUTCFullYear(v);
         return f(d);
     } else {
-        var d = SimileAjax.DateTime.parseIso8601DateTime(v.toString());
-        if (d != null) {
+        d = Exhibit.DateTime.parseIso8601DateTime(v.toString());
+        if (d !== null) {
             return f(d);
         }
     }
     return false;
 };
 
+/**
+ * @param {String} v
+ * @param {Function} f
+ */
 Exhibit.SettingsUtilities._booleanParser = function(v, f) {
     v = v.toString().toLowerCase();
-    if (v == "true") {
+    if (v === "true") {
         return f(true);
-    } else if (v == "false") {
+    } else if (v === "false") {
         return f(false);
     }
     return false;
 };
 
+/**
+ * @param {String} v
+ * @param {Function} f
+ */
 Exhibit.SettingsUtilities._urlParser = function(v, f) {
     return f(Exhibit.Persistence.resolveURL(v.toString()));
 };
 
+/**
+ * @param {String} value
+ * @param {Exhibit.Database}  database
+ * @param {Function} visitor
+ * @param {Array} bindings
+ */
 Exhibit.SettingsUtilities._evaluateBindings = function(value, database, visitor, bindings) {
-    var maxIndex = bindings.length - 1;
-    var f = function(tuple, index) {
-        var binding = bindings[index];
-        var visited = false;
-        
-        var recurse = index == maxIndex ? function() { visitor(tuple); } : function() { f(tuple, index + 1); };
+    var f, maxIndex;
+    maxIndex = bindings.length - 1;
+    f = function(tuple, index) {
+        var binding, visited, recurse, bindingName;
+        binding = bindings[index];
+        visited = false;
+        recurse = (index === maxIndex) ?
+            function() { visitor(tuple); } :
+            function() { f(tuple, index + 1); };
         if (binding.isTuple) {
             /*
                 The tuple accessor will copy existing fields out of "tuple" into a new
@@ -425,7 +519,7 @@ Exhibit.SettingsUtilities._evaluateBindings = function(value, database, visitor,
                 tuple
             );
         } else {
-            var bindingName = binding.bindingName;
+            bindingName = binding.bindingName;
             binding.accessor(
                 value, 
                 database, 

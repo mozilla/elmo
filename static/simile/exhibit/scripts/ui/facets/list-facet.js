@@ -1,215 +1,172 @@
-/*==================================================
- *  Exhibit.ListFacet
- *==================================================
+/**
+ * @fileOverview List facet functions and UI
+ * @author David Huynh
+ * @author <a href="mailto:ryanlee@zepheira.com">Ryan Lee</a>
  */
 
+/**
+ * @constructor
+ * @class
+ * @param {Element} containerElmt
+ * @param {Exhibit.UIContext} uiContext
+ */
 Exhibit.ListFacet = function(containerElmt, uiContext) {
-    this._div = containerElmt;
-    this._uiContext = uiContext;
+    Exhibit.jQuery.extend(this, new Exhibit.Facet("list", containerElmt, uiContext));
+    this.addSettingSpecs(Exhibit.ListFacet._settingSpecs);
+
     this._colorCoder = null;
-    
-    this._expression = null;
     this._valueSet = new Exhibit.Set();
     this._selectMissing = false;
-
-	this._delayedUpdateItems = null;
-    
-    this._settings = {};
+    this._delayedUpdateItems = null;
     this._dom = null;
+    this._orderMap = null;
 };
 
+Exhibit.ListFacet.prototype = new Exhibit.EnumeratedFacet();
+
+/**
+ * @constant
+ */
 Exhibit.ListFacet._settingSpecs = {
-    "facetLabel":       { type: "text" },
-    "fixedOrder":       { type: "text" },
-    "sortMode":         { type: "text", defaultValue: "value" },
-    "sortDirection":    { type: "text", defaultValue: "forward" },
-    "showMissing":      { type: "boolean", defaultValue: true },
-    "missingLabel":     { type: "text" },
-    "scroll":           { type: "boolean", defaultValue: true },
-    "height":           { type: "text" },
-    "colorCoder":       { type: "text", defaultValue: null },
-    "collapsible":      { type: "boolean", defaultValue: false },
-    "collapsed":        { type: "boolean", defaultValue: false },
-    "formatter":        { type: "text", defaultValue: null}
+    "fixedOrder":       { "type": "text" },
+    "sortMode":         { "type": "text", "defaultValue": "value" },
+    "sortDirection":    { "type": "text", "defaultValue": "forward" },
+    "showMissing":      { "type": "boolean", "defaultValue": true },
+    "missingLabel":     { "type": "text" },
+    "scroll":           { "type": "boolean", "defaultValue": true },
+    "height":           { "type": "text" },
+    "colorCoder":       { "type": "text", "defaultValue": null },
+    "collapsible":      { "type": "boolean", "defaultValue": false },
+    "collapsed":        { "type": "boolean", "defaultValue": false },
+    "formatter":        { "type": "text", "defaultValue": null}
 };
 
-Exhibit.ListFacet.create = function(configuration, containerElmt, uiContext) {
-    var uiContext = Exhibit.UIContext.create(configuration, uiContext);
-    var facet = new Exhibit.ListFacet(containerElmt, uiContext);
-    
-    Exhibit.ListFacet._configure(facet, configuration);
-    
-    facet._initializeUI();
-    uiContext.getCollection().addFacet(facet);
-    
-    return facet;
-};
+/**
+ * @static
+ * @param {Element} configElmt
+ * @param {Element} containerElmt
+ * @param {Exhibit.UIContext} uiContext
+ * @param {Object} settingsFromDOM
+ * @returns {Exhibit.ListFacet}
+ */
+Exhibit.ListFacet.create = function(configElmt, containerElmt, uiContext, settingsFromDOM) {
+ var thisUIContext, facet;
 
-Exhibit.ListFacet.createFromDOM = function(configElmt, containerElmt, uiContext) {
-    var configuration = Exhibit.getConfigurationFromDOM(configElmt);
-    var uiContext = Exhibit.UIContext.createFromDOM(configElmt, uiContext);
-    var facet = new Exhibit.ListFacet(
-        containerElmt != null ? containerElmt : configElmt, 
-        uiContext
+    thisUIContext = Exhibit.UIContext.createFromDOM(configElmt, uiContext);
+    facet = new Exhibit.ListFacet(
+        (typeof containerElmt !== "undefined" && containerElmt !== null) ?
+            containerElmt : configElmt, 
+        thisUIContext
     );
-    
-    Exhibit.SettingsUtilities.collectSettingsFromDOM(configElmt, Exhibit.ListFacet._settingSpecs, facet._settings);
-    
-    try {
-        var expressionString = Exhibit.getAttribute(configElmt, "expression");
-        if (expressionString != null && expressionString.length > 0) {
-            facet._expression = Exhibit.ExpressionParser.parse(expressionString);
-        }
-        
-        var selection = Exhibit.getAttribute(configElmt, "selection", ";");
-        if (selection != null && selection.length > 0) {
-            for (var i = 0, s; s = selection[i]; i++) {
-                facet._valueSet.add(s);
-            }
-        }
-        
-        var selectMissing = Exhibit.getAttribute(configElmt, "selectMissing");
-        if (selectMissing != null && selectMissing.length > 0) {
-            facet._selectMissing = (selectMissing == "true");
-        }
-    } catch (e) {
-        SimileAjax.Debug.exception(e, "ListFacet: Error processing configuration of list facet");
-    }
-    Exhibit.ListFacet._configure(facet, configuration);
-    
-    facet._initializeUI();
-    uiContext.getCollection().addFacet(facet);
-    
+
+    Exhibit.EnumeratedFacet.create(configElmt, facet, settingsFromDOM, thisUIContext);
     return facet;
 };
 
+/**
+ * @static
+ * @param {Element} configElmt
+ * @param {Element} containerElmt
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Exhibit.ListFacet}
+ */
+Exhibit.ListFacet.createFromDOM = function(configElmt, containerElmt, uiContext) {
+    var settingsFromDOM, facet;
+
+    settingsFromDOM = Exhibit.EnumeratedFacet.buildSettingsFromDOM(configElmt);
+    facet = Exhibit.ListFacet.create(configElmt, containerElmt, uiContext, settingsFromDOM);
+
+    return facet;
+};
+
+/**
+ * @static
+ * @private
+ * @param {Exhibit.ListFacet} facet
+ * @param {Object} configuration
+ */
 Exhibit.ListFacet._configure = function(facet, configuration) {
-    Exhibit.SettingsUtilities.collectSettings(configuration, Exhibit.ListFacet._settingSpecs, facet._settings);
+    var selection, i, segment, property, values, orderMap, formatter;
+    Exhibit.SettingsUtilities.collectSettings(configuration, facet.getSettingSpecs(), facet._settings);
     
-    if ("expression" in configuration) {
-        facet._expression = Exhibit.ExpressionParser.parse(configuration.expression);
+    if (typeof configuration.expression !== "undefined") {
+        facet.setExpressionString(configuration.expression);
+        facet.setExpression(Exhibit.ExpressionParser.parse(configuration.expression));
     }
-    if ("selection" in configuration) {
-        var selection = configuration.selection;
-        for (var i = 0; i < selection.length; i++) {
+    if (typeof configuration.selection !== "undefined") {
+        selection = configuration.selection;
+        for (i = 0; i < selection.length; i++) {
             facet._valueSet.add(selection[i]);
         }
     }
-    if ("selectMissing" in configuration) {
+    if (typeof configuration.selectMissing !== "undefined") {
         facet._selectMissing = configuration.selectMissing;
     }
     
-    if (!("facetLabel" in facet._settings)) {
-        facet._settings.facetLabel = "missing ex:facetLabel";
-        if (facet._expression != null && facet._expression.isPath()) {
-            var segment = facet._expression.getPath().getLastSegment();
-            var property = facet._uiContext.getDatabase().getProperty(segment.property);
-            if (property != null) {
+    if (typeof facet._settings.facetLabel === "undefined") {
+        if (facet.getExpression() !== null && facet.getExpression().isPath()) {
+            segment = facet.getExpression().getPath().getLastSegment();
+            property = facet.getUIContext().getDatabase().getProperty(segment.property);
+            if (typeof property !== "undefined" && property !== null) {
                 facet._settings.facetLabel = segment.forward ? property.getLabel() : property.getReverseLabel();
             }
         }
     }
-    if ("fixedOrder" in facet._settings) {
-        var values = facet._settings.fixedOrder.split(";");
-        var orderMap = {};
-        for (var i = 0; i < values.length; i++) {
+    if (typeof facet._settings.fixedOrder !== "undefined") {
+        values = facet._settings.fixedOrder.split(";");
+        orderMap = {};
+        for (i = 0; i < values.length; i++) {
             orderMap[values[i].trim()] = i;
         }
         
         facet._orderMap = orderMap;
     }
     
-    if ("colorCoder" in facet._settings) {
-        facet._colorCoder = facet._uiContext.getExhibit().getComponent(facet._settings.colorCoder);
+    if (facet._settings.colorCoder !== "undefined") {
+        facet._colorCoder = facet.getUIContext().getMain().getComponent(facet._settings.colorCoder);
     }
     
     if (facet._settings.collapsed) {
         facet._settings.collapsible = true;
     }
     
-    if ("formatter" in facet._settings) {
-        var formatter = facet._settings.formatter;
-        if (formatter != null && formatter.length > 0) {
+    if (typeof facet._settings.formatter !== "undefined") {
+        formatter = facet._settings.formatter;
+        if (formatter !== null && formatter.length > 0) {
             try {
                 facet._formatter = eval(formatter);
             } catch (e) {
-                SimileAjax.Debug.log(e);
+                Exhibit.Debug.log(e);
             }
         }
     }
     
     facet._cache = new Exhibit.FacetUtilities.Cache(
-        facet._uiContext.getDatabase(),
-        facet._uiContext.getCollection(),
-        facet._expression
+        facet.getUIContext().getDatabase(),
+        facet.getUIContext().getCollection(),
+        facet.getExpression()
     );
-}
+};
 
-Exhibit.ListFacet.prototype.dispose = function() {
+/**
+ *
+ */
+Exhibit.ListFacet.prototype._dispose = function() {
     this._cache.dispose();
     this._cache = null;
-    
-    this._uiContext.getCollection().removeFacet(this);
-    this._uiContext = null;
     this._colorCoder = null;
-    
-    this._div.innerHTML = "";
-    this._div = null;
     this._dom = null;
-    
-    this._expression = null;
     this._valueSet = null;
-    this._settings = null;
+    this._orderMap = null;
 };
 
-Exhibit.ListFacet.prototype.hasRestrictions = function() {
-    return this._valueSet.size() > 0 || this._selectMissing;
-};
 
-Exhibit.ListFacet.prototype.clearAllRestrictions = function() {
-    var restrictions = { selection: [], selectMissing: false };
-    if (this.hasRestrictions()) {
-        this._valueSet.visit(function(v) {
-            restrictions.selection.push(v);
-        });
-        this._valueSet = new Exhibit.Set();
-        
-        restrictions.selectMissing = this._selectMissing;
-        this._selectMissing = false;
-        
-        this._notifyCollection();
-    }
-    return restrictions;
-};
-
-Exhibit.ListFacet.prototype.applyRestrictions = function(restrictions) {
-    this._valueSet = new Exhibit.Set();
-    for (var i = 0; i < restrictions.selection.length; i++) {
-        this._valueSet.add(restrictions.selection[i]);
-    }
-    this._selectMissing = restrictions.selectMissing;
-    
-    this._notifyCollection();
-};
-
-Exhibit.ListFacet.prototype.setSelection = function(value, selected) {
-    if (selected) {
-        this._valueSet.add(value);
-    } else {
-        this._valueSet.remove(value);
-    }
-    this._notifyCollection();
-}
-
-Exhibit.ListFacet.prototype.setSelectMissing = function(selected) {
-    if (selected != this._selectMissing) {
-        this._selectMissing = selected;
-        this._notifyCollection();
-    }
-}
-
+/**
+ * @param {Exhibit.Set} items
+ * @returns {Exhibit.Set}
+ */
 Exhibit.ListFacet.prototype.restrict = function(items) {
-    if (this._valueSet.size() == 0 && !this._selectMissing) {
+    if (this._valueSet.size() === 0 && !this._selectMissing) {
         return items;
     }
     
@@ -221,40 +178,50 @@ Exhibit.ListFacet.prototype.restrict = function(items) {
     return set;
 };
 
+/**
+ *
+ */
 Exhibit.ListFacet.prototype.onUncollapse = function() {
-	if (this._delayedUpdateItems != null) {
-		this.update(this._delayedUpdateItems);
-		this._delayedUpdateItems = null;
-	}
-}
-
-Exhibit.ListFacet.prototype.update = function(items) {
-	if (Exhibit.FacetUtilities.isCollapsed(this)) {
-		this._delayedUpdateItems = items;
-		return;
-	}
-    this._dom.valuesContainer.style.display = "none";
-    this._dom.valuesContainer.innerHTML = "";
-    this._constructBody(this._computeFacet(items));
-    this._dom.valuesContainer.style.display = "block";
+    if (this._delayedUpdateItems !== null) {
+        this.update(this._delayedUpdateItems);
+        this._delayedUpdateItems = null;
+    }
 };
 
+/**
+ * @param {Exhibit.Set} items
+ */
+Exhibit.ListFacet.prototype.update = function(items) {
+    if (Exhibit.FacetUtilities.isCollapsed(this)) {
+        this._delayedUpdateItems = items;
+        return;
+    }
+    Exhibit.jQuery(this._dom.valuesContainer)
+        .hide()
+        .empty();
+    this._constructBody(this._computeFacet(items));
+    Exhibit.jQuery(this._dom.valuesContainer).show();
+};
 
-
+/**
+ * @param {Exhibit.Set} items
+ * @returns {Array}
+ */
 Exhibit.ListFacet.prototype._computeFacet = function(items) {
-    var database = this._uiContext.getDatabase();
-    var r = this._cache.getValueCountsFromItems(items);
-    var entries = r.entries;
-    var valueType = r.valueType;
+    var database, r, entries, valueType, selection, labeler, i, entry, count, span;
+    database = this.getUIContext().getDatabase();
+    r = this._cache.getValueCountsFromItems(items);
+    entries = r.entries;
+    valueType = r.valueType;
     
     if (entries.length > 0) {
-        var selection = this._valueSet;
-        var labeler = valueType == "item" ?
-            function(v) { var l = database.getObject(v, "label"); return l != null ? l : v; } :
-            function(v) { return v; }
+        selection = this._valueSet;
+        labeler = valueType === "item" ?
+            function(v) { var l = database.getObject(v, "label"); return l !== null ? l : v; } :
+            function(v) { return v; };
             
-        for (var i = 0; i < entries.length; i++) {
-            var entry = entries[i];
+        for (i = 0; i < entries.length; i++) {
+            entry = entries[i];
             entry.actionLabel = entry.selectionLabel = labeler(entry.value);
             entry.selected = selection.contains(entry.value);
         }
@@ -263,227 +230,95 @@ Exhibit.ListFacet.prototype._computeFacet = function(items) {
     }
     
     if (this._settings.showMissing || this._selectMissing) {
-        var count = this._cache.countItemsMissingValue(items);
+        count = this._cache.countItemsMissingValue(items);
         if (count > 0 || this._selectMissing) {
-            var span = document.createElement("span");
-            span.innerHTML = ("missingLabel" in this._settings) ? 
-                this._settings.missingLabel : Exhibit.FacetUtilities.l10n.missingThisField;
-            span.className = "exhibit-facet-value-missingThisField";
+            span = Exhibit.jQuery("<span>")
+                .attr("class", "exhibit-facet-value-missingThisField")
+                .html((typeof this._settings.missingLabel !== "undefined") ? 
+                      this._settings.missingLabel :
+                      Exhibit._("%facets.missingThisField"));
             
             entries.unshift({
                 value:          null, 
                 count:          count,
                 selected:       this._selectMissing,
-                selectionLabel: span,
-                actionLabel:    Exhibit.FacetUtilities.l10n.missingThisField
+                selectionLabel: Exhibit.jQuery(span).get(0),
+                actionLabel:    Exhibit._("%facets.missingThisField")
             });
         }
     }
     
     return entries;
-}
-
-Exhibit.ListFacet.prototype._notifyCollection = function() {
-    this._uiContext.getCollection().onFacetUpdated(this);
 };
 
+/**
+ *
+ */
 Exhibit.ListFacet.prototype._initializeUI = function() {
     var self = this;
+
     this._dom = Exhibit.FacetUtilities[this._settings.scroll ? "constructFacetFrame" : "constructFlowingFacetFrame"](
-		this,
-        this._div,
-        this._settings.facetLabel,
+        this,
+        this.getContainer(),
+        this.getLabel(),
         function(elmt, evt, target) { self._clearSelections(); },
-        this._uiContext,
+        this.getUIContext(),
         this._settings.collapsible,
         this._settings.collapsed
     );
-    
-    if ("height" in this._settings && this._settings.scroll) {
-        this._dom.valuesContainer.style.height = this._settings.height;
+
+    if (typeof this._settings.height !== "undefined" && this._settings.scroll) {
+        Exhibit.jQuery(this._dom.valuesContainer).css("height", this._settings.height);
     }
 };
 
+/**
+ * @param {Array} entries
+ */
 Exhibit.ListFacet.prototype._constructBody = function(entries) {
-    var self = this;
-    var containerDiv = this._dom.valuesContainer;
+    var self, containerDiv, constructFacetItemFunction, facetHasSelection, constructValue, j;
+    self = this;
+    containerDiv = this._dom.valuesContainer;
     
-    containerDiv.style.display = "none";
+    Exhibit.jQuery(containerDiv).hide();
     
-    var constructFacetItemFunction = Exhibit.FacetUtilities[this._settings.scroll ? "constructFacetItem" : "constructFlowingFacetItem"];
-    var facetHasSelection = this._valueSet.size() > 0 || this._selectMissing;
-    var constructValue = function(entry) {
-        var onSelect = function(elmt, evt, target) {
+    constructFacetItemFunction = Exhibit.FacetUtilities[this._settings.scroll ? "constructFacetItem" : "constructFlowingFacetItem"];
+    facetHasSelection = this._valueSet.size() > 0 || this._selectMissing;
+    constructValue = function(entry) {
+        var onSelect, onSelectOnly, elmt;
+        onSelect = function(evt) {
             self._filter(entry.value, entry.actionLabel, false);
-            SimileAjax.DOM.cancelEvent(evt);
-            return false;
+            evt.preventDefault();
+            evt.stopPropagation();
         };
-        var onSelectOnly = function(elmt, evt, target) {
+        onSelectOnly = function(evt) {
             self._filter(entry.value, entry.actionLabel, !(evt.ctrlKey || evt.metaKey));
-            SimileAjax.DOM.cancelEvent(evt);
-            return false;
+            evt.preventDefault();
+            evt.stopPropagation();
         };
-        var elmt = constructFacetItemFunction(
+        elmt = constructFacetItemFunction(
             entry.selectionLabel, 
             entry.count, 
-            (self._colorCoder != null) ? self._colorCoder.translate(entry.value) : null,
+            (typeof self._colorCoder !== "undefined" && self._colorCoder !== null) ? self._colorCoder.translate(entry.value) : null,
             entry.selected, 
             facetHasSelection,
             onSelect,
             onSelectOnly,
-            self._uiContext
+            self.getUIContext()
         );
         
-        if (self._formatter) self._formatter(elmt);
+        if (self._formatter) {
+            self._formatter(elmt);
+        }
         
-        containerDiv.appendChild(elmt);
+        Exhibit.jQuery(containerDiv).append(elmt);
     };
     
-    for (var j = 0; j < entries.length; j++) {
+    for (j = 0; j < entries.length; j++) {
         constructValue(entries[j]);
     }
-    containerDiv.style.display = "block";
+
+    Exhibit.jQuery(containerDiv).show();
     
     this._dom.setSelectionCount(this._valueSet.size() + (this._selectMissing ? 1 : 0));
 };
-
-Exhibit.ListFacet.prototype._filter = function(value, label, selectOnly) {
-    var self = this;
-    var selected, select, deselect;
-    
-    var oldValues = new Exhibit.Set(this._valueSet);
-    var oldSelectMissing = this._selectMissing;
-    
-    var newValues;
-    var newSelectMissing;
-    var actionLabel;
-    
-    var wasSelected;
-    var wasOnlyThingSelected;
-    
-    if (value == null) { // the (missing this field) case
-        wasSelected = oldSelectMissing;
-        wasOnlyThingSelected = wasSelected && (oldValues.size() == 0);
-        
-        if (selectOnly) {
-            if (oldValues.size() == 0) {
-                newSelectMissing = !oldSelectMissing;
-            } else {
-                newSelectMissing = true;
-            }
-            newValues = new Exhibit.Set();
-        } else {
-            newSelectMissing = !oldSelectMissing;
-            newValues = new Exhibit.Set(oldValues);
-        }
-    } else {
-        wasSelected = oldValues.contains(value);
-        wasOnlyThingSelected = wasSelected && (oldValues.size() == 1) && !oldSelectMissing;
-        
-        if (selectOnly) {
-            newSelectMissing = false;
-            newValues = new Exhibit.Set();
-            
-            if (!oldValues.contains(value)) {
-                newValues.add(value);
-            } else if (oldValues.size() > 1 || oldSelectMissing) {
-                newValues.add(value);
-            }
-        } else {
-            newSelectMissing = oldSelectMissing;
-            newValues = new Exhibit.Set(oldValues);
-            if (newValues.contains(value)) {
-                newValues.remove(value);
-            } else {
-                newValues.add(value);
-            }
-        }
-    }
-    
-    var newRestrictions = { selection: newValues.toArray(), selectMissing: newSelectMissing };
-    var oldRestrictions = { selection: oldValues.toArray(), selectMissing: oldSelectMissing };
-    
-    SimileAjax.History.addLengthyAction(
-        function() { self.applyRestrictions(newRestrictions); },
-        function() { self.applyRestrictions(oldRestrictions); },
-        (selectOnly && !wasOnlyThingSelected) ?
-            String.substitute(
-                Exhibit.FacetUtilities.l10n["facetSelectOnlyActionTitle"],
-                [ label, this._settings.facetLabel ]) :
-            String.substitute(
-                Exhibit.FacetUtilities.l10n[wasSelected ? "facetUnselectActionTitle" : "facetSelectActionTitle"],
-                [ label, this._settings.facetLabel ])
-    );
-};
-
-Exhibit.ListFacet.prototype._clearSelections = function() {
-    var state = {};
-    var self = this;
-    SimileAjax.History.addLengthyAction(
-        function() { state.restrictions = self.clearAllRestrictions(); },
-        function() { self.applyRestrictions(state.restrictions); },
-        String.substitute(
-            Exhibit.FacetUtilities.l10n["facetClearSelectionsActionTitle"],
-            [ this._settings.facetLabel ])
-    );
-};
-
-Exhibit.ListFacet.prototype._createSortFunction = function(valueType) {
-    var sortValueFunction = function(a, b) { return a.selectionLabel.localeCompare(b.selectionLabel); };
-    if ("_orderMap" in this) {
-        var orderMap = this._orderMap;
-        
-        sortValueFunction = function(a, b) {
-            if (a.selectionLabel in orderMap) {
-                if (b.selectionLabel in orderMap) {
-                    return orderMap[a.selectionLabel] - orderMap[b.selectionLabel];
-                } else {
-                    return -1;
-                }
-            } else if (b.selectionLabel in orderMap) {
-                return 1;
-            } else {
-                return a.selectionLabel.localeCompare(b.selectionLabel);
-            }
-        }
-    } else if (valueType == "number") {
-        sortValueFunction = function(a, b) {
-            a = parseFloat(a.value);
-            b = parseFloat(b.value);
-            return a < b ? -1 : a > b ? 1 : 0;
-        }
-    }
-    
-    var sortFunction = sortValueFunction;
-    if (this._settings.sortMode == "count") {
-        sortFunction = function(a, b) {
-            var c = b.count - a.count;
-            return c != 0 ? c : sortValueFunction(a, b);
-        }
-    }
-
-    var sortDirectionFunction = sortFunction;
-    if (this._settings.sortDirection == "reverse"){
-        sortDirectionFunction = function(a, b) {
-            return sortFunction(b, a);
-        }
-    }
-    
-    return sortDirectionFunction;
-}
-
-Exhibit.ListFacet.prototype.exportFacetSelection = function() { 
-  var s = []; 
-  this._valueSet.visit(function(v) { 
-    s.push(v); 
-  }); 
-  if (s.length > 0) {
-    return s.join(',');  
-  }
-}; 
- 
-Exhibit.ListFacet.prototype.importFacetSelection = function(settings) { 
-  var self = this; 
-   
-  self.applyRestrictions({ selection: settings.split(','), selectMissing: self._selectMissing }); 
-}

@@ -5,20 +5,19 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 {% load compress %}
-{% load simile %}
 {% load staticfiles %}
 {% load url from future %}
 
 {% block title_matter %}About {{ms}}{% endblock %}
 
 {% block head_matter %}
-{% exhibit %}
-<link href="{% url 'shipping.views.milestone.statuses' ms.code %}" type="application/json" rel="exhibit/data" />
+<link href="{% url 'shipping.views.milestone.statuses' ms.code %}" type="application/json" rel="exhibit-data" />
 {% compress css %}
 <link rel="stylesheet" href="{% static "shipping/css/about-milestone.css" %}" type="text/css">
 {% endcompress %}
 {% endblock %}
 {% block javascript_matter %}
+<script src="{% static "simile/exhibit/exhibit-api.js" %}?persist=false"></script>
 {% compress js %}
 <script src="{% static "shipping/js/about-milestone.js" %}"></script>
 {% endcompress %}
@@ -56,54 +55,56 @@
     </div>
   </div>
 
+ <div data-ex-role="controlPanel" data-ex-show-bookmark="false"></div>
  <table class="standard">
    <tr>
-     <td ex:role="viewPanel">
-       <div ex:role="view" ex:showAll="true" ex:ViewClass="Tabular"
-         ex:columnLabels="Locale, Revision, Latest, Snapshot {% ifnotequal ms.status Milestone.SHIPPED %}, Active{% endifnotequal %},Updated from"
-         ex:columns=".label,.revision, .latest_class,.snapshot_class {% ifnotequal ms.status Milestone.SHIPPED %}, .active_class{% endifnotequal %},.updatedFrom">
-         <table>
+     <td data-ex-role="viewPanel">
+       <div data-ex-role="view" data-ex-showAll="true" data-ex-view-class="Tabular"
+         data-ex-show-toolbox="false"
+         data-ex-column-labels="Locale, Revision, Latest, Snapshot {% ifnotequal ms.status Milestone.SHIPPED %}, Active{% endifnotequal %},Updated from"
+         data-ex-columns=".label,.revision, .latest_class,.snapshot_class {% ifnotequal ms.status Milestone.SHIPPED %}, .active_class{% endifnotequal %},.updatedFrom">
+         <table style="display:none;">
            <tr>
              <td>
-               <span ex:content=".label"></span>
+               <span data-ex-content=".label"></span>
             </td>
             <td>
-              <a target="_blank" ex:content=".revision" ex:href-subcontent="{{foresturl}}{&#123;.label}}/pushloghtml?changeset={&#123;.revision}}"></a>
+              <a target="_blank" data-ex-content=".revision" data-ex-href-subcontent="{{foresturl}}{&#123;.label}}/pushloghtml?changeset={&#123;.revision}}"></a>
             </td>
              <td>
-               <span ex:content=".latest"></span>
+               <span data-ex-content=".latest"></span>
             </td>
              <td>
-               <span ex:content=".snapshot"></span>
+               <span data-ex-content=".snapshot"></span>
             </td>
 {% ifnotequal ms.status Milestone.SHIPPED %}
             <td>
-              <span ex:content=".active" ex:class=".active_class"></span>
+              <span data-ex-content=".active" data-ex-class=".active_class"></span>
             </td>
 {% endifnotequal %}
-           <td><span ex:if-exists=".updatedFrom"><span>
-              <a target="_blank" ex:content=".updatedFrom" ex:href-subcontent="{{foresturl}}{&#123;.label}}/pushloghtml?changeset={&#123;.updatedFromRev}}"></a>,
-              <a target="_blank" ex:href-subcontent="{% url 'pushes.views.diff' %}?from={&#123;.updatedFromRev}}&to={&#123;.revision}}&repo={{forestname}}/{&#123;.label}}">diff</a></span><span></span></span>
-             <span ex:if-exists=".added"><span class="added">added</span></span>
+           <td><span data-ex-if-exists=".updatedFrom"><span>
+              <a target="_blank" data-ex-content=".updatedFrom" data-ex-href-subcontent="{{foresturl}}{&#123;.label}}/pushloghtml?changeset={&#123;.updatedFromRev}}"></a>,
+              <a target="_blank" data-ex-href-subcontent="{% url 'pushes.views.diff' %}?from={&#123;.updatedFromRev}}&to={&#123;.revision}}&repo={{forestname}}/{&#123;.label}}">diff</a></span><span></span></span>
+             <span data-ex-if-exists=".added"><span class="added">added</span></span>
             </td>
           </tr>
          </table>
        </div>
      </td>
      <td width="25%">
-       <div ex:role="facet" ex:expression=".latest_class" ex:facetLabel="Latest"
+       <div data-ex-role="facet" data-ex-expression=".latest_class" data-ex-facet-label="Latest"
          id="latest-facet"
-         ex:fixedOrder="success;warnings;failure;exception"></div>
-       <div ex:role="facet" ex:expression=".snapshot_class" ex:facetLabel="Snapshot"
+         data-ex-fixed-order="success;warnings;failure;exception"></div>
+       <div data-ex-role="facet" data-ex-expression=".snapshot_class" data-ex-facet-label="Snapshot"
          id="snapshot-facet"
-         ex:fixedOrder="success;warnings;failure;exception"></div>
+         data-ex-fixed-order="success;warnings;failure;exception"></div>
 {% ifnotequal ms.status Milestone.SHIPPED %}
-       <div ex:role="facet" ex:expression=".active_class" ex:facetLabel="Active"
+       <div data-ex-role="facet" data-ex-expression=".active_class" data-ex-facet-label="Active"
          id="active-facet"
-         ex:fixedOrder="success;warnings;failure;exception"></div>
+         data-ex-fixed-order="success;warnings;failure;exception"></div>
 {% endifnotequal %}
-      <div ex:role="facet" ex:expression=".updatedFrom"
-        ex:facetLabel="Updated"
+      <div data-ex-role="facet" data-ex-expression=".updatedFrom"
+        data-ex-facet-label="Updated"
         id="updated-facet"></div>
     </td>
    </tr>

@@ -1,17 +1,34 @@
-/*======================================================================
- *  Exhibit.Logo
- *======================================================================
+/**
+ * @fileOverview 
+ * @author David Huynh
+ * @author <a href="mailto:ryanlee@zepheira.com">Ryan Lee</a>
  */
+
+/**
+ * @constructor
+ * @class
+ * @param {Element} elmt
+ * @param {Exhibit._Impl} exhibit
+ */ 
 Exhibit.Logo = function(elmt, exhibit) {
     this._exhibit = exhibit;
     this._elmt = elmt;
     this._color = "Silver";
-}
+};
 
+/**
+ * @static
+ * @param {Object} configuration
+ * @param {Element} elmt
+ * @param {Exhibit._Impl} exhibit
+ * @returns {Exhibit.Logo}
+ */
 Exhibit.Logo.create = function(configuration, elmt, exhibit) {
-    var logo = new Exhibit.Logo(elmt, exhibit);
+    var logo;
+
+    logo = new Exhibit.Logo(elmt, exhibit);
     
-    if ("color" in configuration) {
+    if (typeof configuration.color !== "undefined") {
         logo._color = configuration.color;
     }
     
@@ -19,11 +36,18 @@ Exhibit.Logo.create = function(configuration, elmt, exhibit) {
     return logo;
 };
 
+/**
+ * @static
+ * @param {Element} elmt
+ * @param {Exhibit._Impl} exhibit
+ * @returns {Exhibit.Logo}
+ */
 Exhibit.Logo.createFromDOM = function(elmt, exhibit) {
-    var logo = new Exhibit.Logo(elmt, exhibit);
+    var logo, color;
+    logo = new Exhibit.Logo(elmt, exhibit);
     
-    var color = Exhibit.getAttribute(elmt, "color");
-    if (color != null && color.length > 0) {
+    color = Exhibit.getAttribute(elmt, "color");
+    if (color !== null && color.length > 0) {
         logo._color = color;
     }
     
@@ -31,23 +55,31 @@ Exhibit.Logo.createFromDOM = function(elmt, exhibit) {
     return logo;
 };
 
+/**
+ *
+ */
 Exhibit.Logo.prototype.dispose = function() {
     this._elmt = null;
     this._exhibit = null;
 };
 
+/**
+ * @private
+ */
 Exhibit.Logo.prototype._initializeUI = function() {
-    var logoURL = "http://static.simile.mit.edu/graphics/logos/exhibit/exhibit-small-" + this._color + ".png";
-    var img = SimileAjax.Graphics.createTranslucentImage(logoURL);
-    var id = "exhibit-logo-image";
-    if (!document.getElementById(id)) {
-        img.id = id;
+    var logoURL, img, id, a;
+
+    logoURL = Exhibit.urlPrefix + "images/logos/exhibit-small-" + this._color + ".png";
+    img = Exhibit.jQuery.simileBubble("createTranslucentImage", logoURL);
+    id = "exhibit-logo-image";
+    if (Exhibit.jQuery('#' + id).length === 0) {
+        Exhibit.jQuery(img).attr("id", id);
     }
-    var a = document.createElement("a");
-    a.href = "http://simile.mit.edu/exhibit/";
-    a.title = "http://simile.mit.edu/exhibit/";
-    a.target = "_blank";
-    a.appendChild(img);
+    a = Exhibit.jQuery("<a>")
+        .attr("href", Exhibit.exhibitLink)
+        .attr("title", Exhibit.exhibitLink)
+        .attr("targe", "_blank")
+        .append(img);
     
-    this._elmt.appendChild(a);
+    Exhibit.jQuery(this._elmt).append(a);
 };

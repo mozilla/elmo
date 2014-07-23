@@ -1,51 +1,41 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* global Exhibit */
 
 // hack around params default in jquery
 $.ajaxSettings.traditional = true;
-BugComponentImporter = {};
-Exhibit.importers['x-bugzilla-components'] = BugComponentImporter;
-BugComponentImporter.load = function(link, database, cont) {
-  var url = typeof link == 'string' ? link : link.href;
-  url = Exhibit.Persistence.resolveURL(url);
-  var callback = function(json, statusText) {
-    Exhibit.UI.hideBusyIndicator();
-    if (statusText != 'success') {
-      Exhibit.UI.showHelp(Exhibit.l10n.failedToLoadDataFileMessage(url));
-      if (cont) cont();
-      return;
-    }
-    try {
-      var items = [], o = {items: items};
-      function getComponent(_, comp) {
-        if (!/ \/ /.test(comp.name)) {return;}
-        var loc = comp.name.split(' / ')[0];
-        var item = {'id': loc,
-          'label': comp.name,
-          'product': 'Mozilla Localizations',
-          'component': comp.name,
-          'type': 'Component'};
-        items.push(item);
-      }
-      $.each(json.products[0].components, getComponent);
-      if (o != null) {
-        database.loadData(o, Exhibit.Persistence.getBaseURL(url));
-      }
-    } catch (e) {
-      SimileAjax.Debug.exception(
-         e, 'Error loading Bugzilla JSON data from ' + url);
-    } finally {
-      if (cont) {
-        cont();
-      }
-    }
-  };
-
-  Exhibit.UI.showBusyIndicator();
-  $.getJSON(url, callback);
-
+var BugComponentImporter = {
+  _importer: null
 };
+BugComponentImporter.parse = function(url, data, callback, link) {
+  var items = [], o = {items: items};
+  var json = JSON.parse(data);
+  function getComponent(_, comp) {
+    if (!/ \/ /.test(comp.name)) {return;}
+    var loc = comp.name.split(' / ')[0];
+    var item = {'id': loc,
+      'label': comp.name,
+      'product': 'Mozilla Localizations',
+      'component': comp.name,
+      'type': 'Component'};
+    items.push(item);
+  }
+  $.each(json.products[0].components, getComponent);
+  callback(o);
+};
+
+BugComponentImporter._register = function() {
+    BugComponentImporter._importer = new Exhibit.Importer(
+      "x-bugzilla-components",
+      "get",
+      BugComponentImporter.parse
+    );
+};
+
+jQuery(document).one("registerImporters.exhibit",
+                     BugComponentImporter._register);
+
 
 $(document).ready(function() {
   document.forms.bugdata.short_desc.focus();

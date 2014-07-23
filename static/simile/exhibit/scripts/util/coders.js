@@ -1,10 +1,25 @@
-/*==================================================
- *  Exhibit.Coders
- *==================================================
+/**
+ * @fileOverview Default colors for color coders.
+ * @author David Huynh
+ * @author <a href="mailto:ryanlee@zepheira.com">Ryan Lee</a>
  */
 
-Exhibit.Coders = new Object();
+/**
+ * @namespace
+ */
+Exhibit.Coders = {
+    /**
+     * @constant
+     */
+    "mixedCaseColor":  "#fff",
 
-Exhibit.Coders.mixedCaseColor=  "#fff";
-Exhibit.Coders.othersCaseColor = "#aaa";
-Exhibit.Coders.missingCaseColor = "#888";
+    /**
+     * @constant
+     */
+    "othersCaseColor": "#aaa",
+
+    /**
+     * @constant
+     */
+    "missingCaseColor": "#888"
+};

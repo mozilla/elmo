@@ -1,64 +1,96 @@
-/*==================================================
- *  Exhibit.ViewUtilities
- *
- *  Utilities for views' code.
- *==================================================
+/**
+ * @fileOverview View helper functions and utilities.
+ * @author David Huynh
+ * @author <a href="mailto:ryanlee@zepheira.com">Ryan Lee</a>
  */
-Exhibit.ViewUtilities = new Object();
 
+/**
+ * @namespace
+ */
+Exhibit.ViewUtilities = {};
+
+/**
+ * @static
+ * @param {Element} anchorElmt
+ * @param {Array} arrayOfItemIDs
+ * @param {Exhibit.UIContext} uiContext
+ */
 Exhibit.ViewUtilities.openBubbleForItems = function(anchorElmt, arrayOfItemIDs, uiContext) {
-    var coords = SimileAjax.DOM.getPageCoordinates(anchorElmt);
-    var bubble = SimileAjax.Graphics.createBubbleForPoint(
+    var coords, bubble;
+    coords = Exhibit.jQuery(anchorElmt).offset();
+    bubble = Exhibit.jQuery.simileBubble("createBubbleForPoint",
         coords.left + Math.round(anchorElmt.offsetWidth / 2), 
         coords.top + Math.round(anchorElmt.offsetHeight / 2), 
         uiContext.getSetting("bubbleWidth"), // px
         uiContext.getSetting("bubbleHeight") // px
     );
-    Exhibit.ViewUtilities.fillBubbleWithItems(bubble.content, arrayOfItemIDs, uiContext);
+    Exhibit.ViewUtilities.fillBubbleWithItems(bubble.content, arrayOfItemIDs, null, uiContext);
 };
 
-Exhibit.ViewUtilities.fillBubbleWithItems = function(bubbleElmt, arrayOfItemIDs, uiContext) {
-    if (bubbleElmt == null) {
-        bubbleElmt = document.createElement("div");
+/**
+ * @@@ possibly take and return jQuery instead of elements
+ * @static
+ * @param {Element} bubbleElmt
+ * @param {Array} arrayOfItemIDs
+ * @param {Exhibit.Expression._Impl} labelExpression
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Element}
+ */
+Exhibit.ViewUtilities.fillBubbleWithItems = function(bubbleElmt, arrayOfItemIDs, labelExpression, uiContext) {
+    var ul, i, makeItem, itemLensDiv, itemLens;
+    if (typeof bubbleElmt === "undefined" || bubbleElmt === null) {
+        bubbleElmt = Exhibit.jQuery("<div>");
     }
     
     if (arrayOfItemIDs.length > 1) {
-        bubbleElmt.className = [ bubbleElmt.className, "exhibit-views-bubbleWithItems" ].join(" ");
+        Exhibit.jQuery(bubbleElmt).addClass("exhibit-views-bubbleWithItems");
         
-        var ul = document.createElement("ul");
-        for (var i = 0; i < arrayOfItemIDs.length; i++) {
-            uiContext.format(arrayOfItemIDs[i], "item", function(elmt) {
-                var li = document.createElement("li");
-                li.appendChild(elmt);
-                ul.appendChild(li);
-            });
+        ul = Exhibit.jQuery("<ul>");
+        makeItem = function(elmt) {
+            Exhibit.jQuery("<li>")
+                .append(elmt)
+                .appendTo(ul);
+        };
+        if (typeof labelExpression !== "undefined" && labelExpression !== null) {
+            uiContext.putSetting("format/item/title", labelExpression);
         }
-        bubbleElmt.appendChild(ul);
+        for (i = 0; i < arrayOfItemIDs.length; i++) {
+            uiContext.format(arrayOfItemIDs[i], "item", makeItem);
+        }
+        Exhibit.jQuery(bubbleElmt).append(ul);
     } else {
-        var itemLensDiv = document.createElement("div");
-        var itemLens = uiContext.getLensRegistry().createLens(arrayOfItemIDs[0], itemLensDiv, uiContext);
-        bubbleElmt.appendChild(itemLensDiv);
+        itemLensDiv = Exhibit.jQuery("<div>").get(0);
+        itemLens = uiContext.getLensRegistry().createLens(arrayOfItemIDs[0], itemLensDiv, uiContext);
+        Exhibit.jQuery(bubbleElmt).append(itemLensDiv);
     }
     
-    return bubbleElmt;
+    return Exhibit.jQuery(bubbleElmt).get(0);
 };
 
+/**
+ * @static
+ * @param {Element} div
+ * @param {Exhibit.UIContext} uiContext
+ * @param {Boolean} showSummary
+ * @param {Object} resizableDivWidgetSettings
+ * @param {Object} legendWidgetSettings
+ * @returns {Object}
+ */
 Exhibit.ViewUtilities.constructPlottingViewDom = function(
-    div, 
+    div,
     uiContext, 
     showSummary,
     resizableDivWidgetSettings, 
     legendWidgetSettings
-)
-{ 
-    var dom = SimileAjax.DOM.createDOMFromString(
+) { 
+    var dom = Exhibit.jQuery.simileDOM("string",
         div,
-        "<div class='exhibit-views-header'>" +
-            (showSummary ? "<div id='collectionSummaryDiv'></div>" : "") +
-            "<div id='unplottableMessageDiv' class='exhibit-views-unplottableMessage'></div>" +
+        '<div class="exhibit-views-header">' +
+            (showSummary ? '<div id="collectionSummaryDiv"></div>' : "") +
+            '<div id="unplottableMessageDiv" class="exhibit-views-unplottableMessage"></div>' +
         "</div>" +
-        "<div id='resizableDiv'></div>" +
-        "<div id='legendDiv'></div>",
+        '<div id="resizableDiv"></div>' +
+        '<div id="legendDiv"></div>',
         {}
     );
     
@@ -77,15 +109,15 @@ Exhibit.ViewUtilities.constructPlottingViewDom = function(
     );
     dom.plotContainer = dom.resizableDivWidget.getContentDiv();
     
-    if (legendWidgetSettings.colorGradient == true) {
+    dom.legendWidget = Exhibit.LegendWidget.create(
+        legendWidgetSettings,
+        dom.legendDiv, 
+        uiContext
+    );
+
+    if (legendWidgetSettings.colorGradient === true) {
         dom.legendGradientWidget = Exhibit.LegendGradientWidget.create(
             dom.legendDiv,
-            uiContext
-        );
-    } else {
-        dom.legendWidget = Exhibit.LegendWidget.create(
-            legendWidgetSettings,
-            dom.legendDiv, 
             uiContext
         );
     }
@@ -104,21 +136,78 @@ Exhibit.ViewUtilities.constructPlottingViewDom = function(
     return dom;
 };
 
+/**
+ * @static
+ * @param {Object} dom
+ * @param {Number} totalCount
+ * @param {Array} unplottableItems
+ * @param {Exhibit.UIContext} uiContext
+ */
 Exhibit.ViewUtilities._setUnplottableMessage = function(dom, totalCount, unplottableItems, uiContext) {
-    var div = dom.unplottableMessageDiv;
-    if (unplottableItems.length == 0) {
-        div.style.display = "none";
+    var div;
+    div = dom.unplottableMessageDiv;
+    if (unplottableItems.length === 0) {
+        Exhibit.jQuery(div).hide();
     } else {
-        div.innerHTML = "";
+        Exhibit.jQuery(div).empty();
     
-        var dom = SimileAjax.DOM.createDOMFromString(
+        dom = Exhibit.jQuery.simileDOM("string",
             div,
-            Exhibit.ViewUtilities.l10n.unplottableMessageFormatter(totalCount, unplottableItems, uiContext),
+            Exhibit.ViewUtilities.unplottableMessageFormatter(totalCount, unplottableItems),
             {}
         );
-        SimileAjax.WindowManager.registerEvent(dom.unplottableCountLink, "click", function(elmt, evt, target) {
-            Exhibit.ViewUtilities.openBubbleForItems(elmt, unplottableItems, uiContext);
+        Exhibit.jQuery(dom.unplottableCountLink).bind("click", function(evt) {
+            Exhibit.ViewUtilities.openBubbleForItems(evt.target, unplottableItems, uiContext);
         });
-        div.style.display = "block";
+        Exhibit.jQuery(div).show();
     }
+};
+
+/**
+ * @param {Number} totalCount
+ * @param {Array} unplottableItems
+ */
+Exhibit.ViewUtilities.unplottableMessageFormatter = function(totalCount, unplottableItems) {
+    var count = unplottableItems.length;
+    return Exhibit._("%views.unplottableTemplate", count, Exhibit._(count === 1 ? "%views.resultLabel" : "%views.resultsLabel"), totalCount);
+};
+
+/**
+ * Return labels for sort ordering based on value type; "text" is the base
+ * case that is assumed to always exist in the localization utiltiies.
+ * @param {String} valueType
+ * @returns {Object} An object of the form { "ascending": label,
+ *      "descending": label}
+ */
+Exhibit.ViewUtilities.getSortLabels = function(valueType) {
+    var asc, desc, labels, makeKey;
+    makeKey = function(v, dir) {
+        return "%database.sortLabels." + v + "." + dir;
+    };
+    asc = Exhibit._(makeKey(valueType, "ascending"));
+    if (typeof asc !== "undefined" && asc !== null) {
+        labels = {
+            "ascending": asc,
+            "descending": Exhibit._(makeKey(valueType, "descending"))
+        };
+    } else {
+        labels = Exhibit.ViewUtilities.getSortLabels("text");
+    }
+    return labels;
+};
+
+/**
+ * @param {Number} index
+ * @returns {String}
+ */
+Exhibit.ViewUtilities.makePagingActionTitle = function(index) {
+    return Exhibit._("%orderedViewFrame.pagingActionTitle", index + 1);
+};
+
+/**
+ * @param {Number} index
+ * @returns {String}
+ */
+Exhibit.ViewUtilities.makePagingLinkTooltip = function(index) {
+    return Exhibit._("%orderedViewFrame.pagingLinkTooltip", index + 1);
 };

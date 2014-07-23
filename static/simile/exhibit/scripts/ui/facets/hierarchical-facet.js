@@ -1,225 +1,289 @@
-/*==================================================
- *  Exhibit.HierarchicalFacet
- *==================================================
+/**
+ * @fileOverview
+ * @author David Huynh
+ * @author <a href="mailto:ryanlee@zepheira.com">Ryan Lee</a>
+ * @author Brice Sommercal
  */
 
+/**
+ * @class
+ * @constructor
+ * @param {Element} containerElmt
+ * @param {Exhibit.UIContext} uiContext
+ */
 Exhibit.HierarchicalFacet = function(containerElmt, uiContext) {
-    this._div = containerElmt;
-    this._uiContext = uiContext;
+    var self = this;
+    Exhibit.jQuery.extend(this, new Exhibit.Facet("hierarchical", containerElmt, uiContext));
+    this.addSettingSpecs(Exhibit.HierarchicalFacet._settingSpecs);
+
     this._colorCoder = null;
-    
-    this._expression = null;
     this._uniformGroupingExpression = null;
     this._selections = [];
     this._expanded = {};
-    
-    this._settings = {};
     this._dom = null;
     
-    var self = this;
-    this._listener = { 
-        onRootItemsChanged: function() {
-            if ("_cache" in self) {
-                delete self._cache;
-            }
+    this._onRootItemsChanged = function() {
+        if (typeof self._cache !== "undefined") {
+            delete self._cache;
         }
     };
-    uiContext.getCollection().addListener(this._listener);
+    Exhibit.jQuery(uiContext.getCollection().getElement()).bind(
+        "onRootItemsChanged.exhibit",
+        this._onRootItemsChanged
+    );
 };
 
+/**
+ * @private
+ * @constant
+ */
 Exhibit.HierarchicalFacet._settingSpecs = {
-    "facetLabel":       { type: "text" },
-    "fixedOrder":       { type: "text" },
-    "sortMode":         { type: "text", defaultValue: "value" },
-    "sortDirection":    { type: "text", defaultValue: "forward" },
-    "othersLabel":      { type: "text" },
-    "scroll":           { type: "boolean", defaultValue: true },
-    "height":           { type: "text" },
-    "colorCoder":       { type: "text", defaultValue: null },
-    "collapsible":      { type: "boolean", defaultValue: false },
-    "collapsed":        { type: "boolean", defaultValue: false }
+    "fixedOrder":       { "type": "text" },
+    "sortMode":         { "type": "text", "defaultValue": "value" },
+    "sortDirection":    { "type": "text", "defaultValue": "forward" },
+    "othersLabel":      { "type": "text" },
+    "scroll":           { "type": "boolean", "defaultValue": true },
+    "height":           { "type": "text" },
+    "colorCoder":       { "type": "text", "defaultValue": null },
+    "collapsible":      { "type": "boolean", "defaultValue": false },
+    "collapsed":        { "type": "boolean", "defaultValue": false }
 };
 
+/**
+ * @static
+ * @param {Object} configuration
+ * @param {Element} containerElmt
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Exhibit.HierarchicalFacet}
+ */
 Exhibit.HierarchicalFacet.create = function(configuration, containerElmt, uiContext) {
-    var uiContext = Exhibit.UIContext.create(configuration, uiContext);
-    var facet = new Exhibit.HierarchicalFacet(containerElmt, uiContext);
+    var uiContext, facet;
+    uiContext = Exhibit.UIContext.create(configuration, uiContext);
+    facet = new Exhibit.HierarchicalFacet(containerElmt, uiContext);
     
     Exhibit.HierarchicalFacet._configure(facet, configuration);
     
     facet._initializeUI();
     uiContext.getCollection().addFacet(facet);
+    facet.register();
     
     return facet;
 };
 
+/**
+ * @static
+ * @param {Element} configElmt
+ * @param {Element} containerElmt
+ * @param {Exhibit.UIContext} uiContext
+ * @returns {Exhibit.HierarchicalFacet}
+ */
 Exhibit.HierarchicalFacet.createFromDOM = function(configElmt, containerElmt, uiContext) {
-    var configuration = Exhibit.getConfigurationFromDOM(configElmt);
-    var uiContext = Exhibit.UIContext.createFromDOM(configElmt, uiContext);
-    var facet = new Exhibit.HierarchicalFacet(
-        containerElmt != null ? containerElmt : configElmt, 
+    var configuration, uiContext, facet, expressionString, uniformGroupingString, selection, i, s;
+    configuration = Exhibit.getConfigurationFromDOM(configElmt);
+    uiContext = Exhibit.UIContext.createFromDOM(configElmt, uiContext);
+    facet = new Exhibit.HierarchicalFacet(
+        (typeof containerElmt !== "undefined" && containerElmt !== null) ? containerElmt : configElmt,
         uiContext
     );
     
-    Exhibit.SettingsUtilities.collectSettingsFromDOM(configElmt, Exhibit.HierarchicalFacet._settingSpecs, facet._settings);
+    Exhibit.SettingsUtilities.collectSettingsFromDOM(configElmt, facet.getSettingSpecs(), facet._settings);
     
     try {
-        var expressionString = Exhibit.getAttribute(configElmt, "expression");
-        if (expressionString != null && expressionString.length > 0) {
-            facet._expression = Exhibit.ExpressionParser.parse(expressionString);
+        expressionString = Exhibit.getAttribute(configElmt, "expression");
+        if (expressionString !== null && expressionString.length > 0) {
+            facet.setExpressionString(expressionString);
+            facet.setExpression(Exhibit.ExpressionParser.parse(expressionString));
         }
         
-        var uniformGroupingString = Exhibit.getAttribute(configElmt, "uniformGrouping");
-        if (uniformGroupingString != null && uniformGroupingString.length > 0) {
+        uniformGroupingString = Exhibit.getAttribute(configElmt, "uniformGrouping");
+        if (uniformGroupingString !== null && uniformGroupingString.length > 0) {
             facet._uniformGroupingExpression = Exhibit.ExpressionParser.parse(uniformGroupingString);
         }
         
-        var selection = Exhibit.getAttribute(configElmt, "selection", ";");
-        if (selection != null && selection.length > 0) {
-            for (var i = 0, s; s = selection[i]; i++) {
-                facet._selections = 
-                    facet._internalAddSelection({ value: s, selectOthers: false });
+        selection = Exhibit.getAttribute(configElmt, "selection", ";");
+        if (selection !== null && selection.length > 0) {
+            for (i = 0; i < selection.length; i++) {
+                s = selection[i];
+                facet._selections = facet._internalAddSelection({ "value": s, "selectOthers": false });
             }
         }
     } catch (e) {
-        SimileAjax.Debug.exception(e, "HierarchicalFacet: Error processing configuration of hierarchical facet");
+        Exhibit.Debug.exception(e, Exhibit._("%facets.error.configuration", "HierarchicalFacet"));
     }
     Exhibit.HierarchicalFacet._configure(facet, configuration);
     
     facet._initializeUI();
     uiContext.getCollection().addFacet(facet);
+    facet.register();
     
     return facet;
 };
 
+/**
+ * @static
+ * @private
+ * @param {Exhibit.HierarchicalFacet} facet
+ * @param {Object} configuration
+ */
 Exhibit.HierarchicalFacet._configure = function(facet, configuration) {
-    Exhibit.SettingsUtilities.collectSettings(configuration, Exhibit.HierarchicalFacet._settingSpecs, facet._settings);
+    var selection, i, segment, property, values, orderMap;
+
+    Exhibit.SettingsUtilities.collectSettings(configuration, facet.getSettingSpecs(), facet._settings);
     
-    if ("expression" in configuration) {
-        facet._expression = Exhibit.ExpressionParser.parse(configuration.expression);
+    if (typeof configuration.expression !== "undefined") {
+        facet.setExpressionString(configuration.expression);
+        facet.setExpression(Exhibit.ExpressionParser.parse(configuration.expression));
     }
-    if ("uniformGrouping" in configuration) {
+
+    if (typeof configuration.uniformGrouping !== "undefined") {
         facet._uniformGroupingExpression = Exhibit.ExpressionParser.parse(configuration.uniformGrouping);
     }
-    if ("selection" in configuration) {
-        var selection = configuration.selection;
-        for (var i = 0; i < selection.length; i++) {
-            facet._selections.push({ value: selection[i], selectOthers: false });
+
+    if (typeof configuration.selection !== "undefined") {
+        selection = configuration.selection;
+        for (i = 0; i < selection.length; i++) {
+            facet._selections.push({ "value": selection[i], "selectOthers": false });
         }
     }
     
-    if (!("facetLabel" in facet._settings)) {
-        facet._settings.facetLabel = "missing ex:facetLabel";
-        if (facet._expression != null && facet._expression.isPath()) {
-            var segment = facet._expression.getPath().getLastSegment();
-            var property = facet._uiContext.getDatabase().getProperty(segment.property);
-            if (property != null) {
+    if (typeof facet._settings.facetLabel === "undefined") {
+        if (facet.getExpression() !== null && facet.getExpression().isPath()) {
+            segment = facet.getExpression().getPath().getLastSegment();
+            property = facet.getUIContext().getDatabase().getProperty(segment.property);
+            if (property !== null) {
                 facet._settings.facetLabel = segment.forward ? property.getLabel() : property.getReverseLabel();
             }
         }
     }
-    if ("fixedOrder" in facet._settings) {
-        var values = facet._settings.fixedOrder.split(";");
-        var orderMap = {};
-        for (var i = 0; i < values.length; i++) {
+
+    if (typeof facet._settings.fixedOrder !== "undefined") {
+        values = facet._settings.fixedOrder.split(";");
+        orderMap = {};
+        for (i = 0; i < values.length; i++) {
             orderMap[values[i].trim()] = i;
         }
         
         facet._orderMap = orderMap;
     }
     
-    if ("colorCoder" in facet._settings) {
-        facet._colorCoder = facet._uiContext.getExhibit().getComponent(facet._settings.colorCoder);
+    if (typeof facet._settings.colorCoder !== "undefined") {
+        facet._colorCoder = facet.getUIContext().getMain().getComponent(facet._settings.colorCoder);
     }
     
     if (facet._settings.collapsed) {
         facet._settings.collapsible = true;
     }
-}
-
-Exhibit.HierarchicalFacet.prototype.dispose = function() {
-    this._uiContext.getCollection().removeFacet(this);
-    
-    this._uiContext.getCollection().removeListener(this._listener);
-    this._uiContext = null;
-    this._colorCoder = null;
-    
-    this._div.innerHTML = "";
-    this._div = null;
-    this._dom = null;
-    
-    this._expression = null;
-    this._uniformGroupingExpression = null;
-    this._selections = null;
-    this._settings = null;
-    
-    this._cache = null;
 };
 
+/**
+ *
+ */
+Exhibit.HierarchicalFacet.prototype._dispose = function() {
+    Exhibit.jQuery(this.getUIContext().getCollection().getElement()).unbind(
+        "onRootItemsChanged.exhibit",
+        this._onRootItemsChanged
+    );
+
+    this._dom = null;
+    this._orderMap = null;
+    this._colorCoder = null;
+    this._uniformGroupingExpression = null;
+    this._selections = null;
+    this._cache = null;
+    this._expanded = null;
+};
+
+/**
+ * @returns {Boolean}
+ */
 Exhibit.HierarchicalFacet.prototype.hasRestrictions = function() {
     return this._selections.length > 0;
 };
 
+/**
+ *
+ */
 Exhibit.HierarchicalFacet.prototype.clearAllRestrictions = function() {
-    var selections = this._selections;
-    this._selections = [];
-    
-    if (selections.length > 0) {
+    Exhibit.jQuery(this.getContainer()).trigger("onBeforeFacetReset.exhibit");
+    if (this._selections.length > 0) {
+        this._selections = [];
         this._notifyCollection();
     }
-    return selections;
 };
 
+/**
+ * @param {Array} restrictions
+ */
 Exhibit.HierarchicalFacet.prototype.applyRestrictions = function(restrictions) {
     this._selections = [].concat(restrictions);
     this._notifyCollection();
 };
 
+/**
+ * @param {String} value
+ * @param {Boolean} selected
+ * @returns
+ */
 Exhibit.HierarchicalFacet.prototype.setSelection = function(value, selected) {
-    var selection = { value: value, selectOthers: false };
+    var selection, selections;
+    selection = { "value": value, "selectOthers": false };
     if (selected) {
-        this._selections = this._internalAddSelection(selection);
+        selections = this._internalAddSelection(selection);
     } else {
-        this._selections = this._internalRemoveSelection(selection);
+        selections = this._internalRemoveSelection(selection);
     }
-    this._notifyCollection();
-}
+    return selections;
+};
 
-Exhibit.HierarchicalFacet.prototype.setselectOthers = function(value, selected) {
-    var selection = { value: value, selectOthers: true };
+/**
+ * @param {String} value
+ * @param {Boolean} selected
+ * @returns {Array}
+ */
+Exhibit.HierarchicalFacet.prototype.setSelectOthers = function(value, selected) {
+    var selection, selections;
+    selection = { "value": value, "selectOthers": true };
     if (selected) {
-        this._selections = this._internalAddSelection(selection);
+        selections = this._internalAddSelection(selection);
     } else {
-        this._selections = this._internalRemoveSelection(selection);
+        selections = this._internalRemoveSelection(selection);
     }
-    this._notifyCollection();
-}
+    return selections;
+};
 
+/**
+ * @param {Exhibit.Set} items
+ * @returns {Exhibit.Set}
+ */
 Exhibit.HierarchicalFacet.prototype.restrict = function(items) {
     if (this._selections.length == 0) {
         return items;
     }
+
+    var set, includeNode, includeChildNodes, i, selection, node;
     
     this._buildCache();
     
-    var set = new Exhibit.Set();
-    var includeNode = function(node) {
-        if ("children" in node) {
+    set = new Exhibit.Set();
+    includeNode = function(node) {
+        if (typeof node.children !== "undefined") {
             includeChildNodes(node.children);
             Exhibit.Set.createIntersection(node.others, items, set);
         } else {
             Exhibit.Set.createIntersection(node.items, items, set);
         }
-    }
-    var includeChildNodes = function(childNodes) {
-        for (var i = 0; i < childNodes.length; i++) {
+    };
+    includeChildNodes = function(childNodes) {
+        var i;
+        for (i = 0; i < childNodes.length; i++) {
             includeNode(childNodes[i]);
         }
     };
     
-    for (var i = 0; i < this._selections.length; i++) {
-        var selection = this._selections[i];
-        var node = this._getTreeNode(selection.value);
-        if (node) {
+    for (i = 0; i < this._selections.length; i++) {
+        selection = this._selections[i];
+        node = this._getTreeNode(selection.value);
+        if (typeof node !== "undefined" && node !== null) {
             if (selection.selectOthers) {
                 Exhibit.Set.createIntersection(node.others, items, set);
             } else {
@@ -231,26 +295,36 @@ Exhibit.HierarchicalFacet.prototype.restrict = function(items) {
     return set;
 };
 
+/**
+ * @param {Object} selection
+ * @param {String} selection.value
+ * @param {Boolean} selection.selectOthers
+ * @returns {Array}
+ */
 Exhibit.HierarchicalFacet.prototype._internalAddSelection = function(selection) {
-    var parentToClear = {};
-    var childrenToClear = {};
+    var parentToClear, childrenToClear, cache, markClearAncestors, markClearDescendants, oldSelections, newSelections, i, s;
+    parentToClear = {};
+    childrenToClear = {};
     
-    var cache = this._cache;
-    var markClearAncestors = function(value) {
-        if (value in cache.valueToParent) {
-            var parents = cache.valueToParent[value];
-            for (var i = 0; i < parents.length; i++) {
-                var parent = parents[i];
+    this._buildCache();
+    cache = this._cache;
+    markClearAncestors = function(value) {
+        var parents, i, parent;
+        if (typeof cache.valueToParent[value] !== "undefined") {
+            parents = cache.valueToParent[value];
+            for (i = 0; i < parents.length; i++) {
+                parent = parents[i];
                 parentToClear[parent] = true;
                 markClearAncestors(parent);
             }
         }
     };
-    var markClearDescendants = function(value) {
-        if (value in cache.valueToChildren) {
-            var children = cache.valueToChildren[value];
-            for (var i = 0; i < children.length; i++) {
-                var child = children[i];
+    markClearDescendants = function(value) {
+        var children, i, child;
+        if (typeof cache.valueToChildren[value] !== "undefined") {
+            children = cache.valueToChildren[value];
+            for (i = 0; i < children.length; i++) {
+                child = children[i];
                 childrenToClear[child] = true;
                 markClearDescendants(child);
             }
@@ -261,7 +335,7 @@ Exhibit.HierarchicalFacet.prototype._internalAddSelection = function(selection) 
         ignore "(others)" at the root (its value is null) 
         because it has no parent nor children.
      */
-    if (selection.value != null) { 
+    if (selection.value !== null) { 
         markClearAncestors(selection.value);
         if (selection.selectOthers) {
             parentToClear[selection.value] = true;
@@ -271,13 +345,12 @@ Exhibit.HierarchicalFacet.prototype._internalAddSelection = function(selection) 
         }
     }
     
-    var oldSelections = this._selections;
-    var newSelections = [ selection ];
-    for (var i = 0; i < oldSelections.length; i++) {
-        var s = oldSelections[i];
+    oldSelections = this._selections;
+    newSelections = [ selection ];
+    for (i = 0; i < oldSelections.length; i++) {
+        s = oldSelections[i];
         if ((!(s.value in parentToClear) || s.selectOthers) && 
             (!(s.value in childrenToClear))) {
-            
             newSelections.push(s);
         }
     }
@@ -285,11 +358,18 @@ Exhibit.HierarchicalFacet.prototype._internalAddSelection = function(selection) 
     return newSelections;
 };
 
+/**
+ * @param {Object} selection
+ * @param {String} selection.value
+ * @param {Boolean} selection.selectOthers
+ * @returns {Array}
+ */
 Exhibit.HierarchicalFacet.prototype._internalRemoveSelection = function(selection) {
-    var oldSelections = this._selections;
-    var newSelections = [];
-    for (var i = 0; i < oldSelections.length; i++) {
-        var s = oldSelections[i];
+    var oldSelections, newSelections, i, s;
+    oldSelections = this._selections;
+    newSelections = [];
+    for (i = 0; i < oldSelections.length; i++) {
+        s = oldSelections[i];
         if (s.value != selection.value || s.selectOthers != selection.selectOthers) {
             newSelections.push(s);
         }
@@ -298,59 +378,70 @@ Exhibit.HierarchicalFacet.prototype._internalRemoveSelection = function(selectio
     return newSelections;
 };
 
+/**
+ * @param {Exhibit.Set} items
+ */
 Exhibit.HierarchicalFacet.prototype.update = function(items) {
-    this._dom.valuesContainer.style.display = "none";
-    this._dom.valuesContainer.innerHTML = "";
-    
-    var tree = this._computeFacet(items);
-    if (tree) {
+    var tree;
+
+    Exhibit.jQuery(this._dom.valuesContainer).hide().empty();
+
+    tree = this._computeFacet(items);
+    if (typeof tree !== "undefined" && tree !== null) {
         this._constructBody(tree);
     }
-    this._dom.valuesContainer.style.display = "block";
+    Exhibit.jQuery(this._dom.valuesContainer).show();
 };
 
+/**
+ * @param {Exhibit.Set} items
+ * @returns {Object}
+ */
 Exhibit.HierarchicalFacet.prototype._computeFacet = function(items) {
+    var database, sorter, othersLabel, selectionMap, i, s, processNode, nodes;
+
     this._buildCache();
     
-    var database = this._uiContext.getDatabase();
-    var sorter = this._getValueSorter();
-    var othersLabel = "othersLabel" in this._settings ? this._settings.othersLabel : "(others)";
+    database = this.getUIContext().getDatabase();
+    sorter = this._getValueSorter();
+    othersLabel = typeof this._settings.othersLabel !== "undefined" ? this._settings.othersLabel : Exhibit._("%facets.hierarchical.othersLabel");
     
-    var selectionMap = {};
-    for (var i = 0; i < this._selections.length; i++) {
-        var s = this._selections[i];
+    selectionMap = {};
+    for (i = 0; i < this._selections.length; i++) {
+        s = this._selections[i];
         selectionMap[s.value] = s.selectOthers;
     }
     
-    var processNode = function(node, resultNodes, superset) {
-        var selected = (node.value in selectionMap && !selectionMap[node.value]);
-        if ("children" in node) {
-            var resultNode = {
-                value:      node.value,
-                label:      node.label,
-                children:   [],
-                selected:   selected,
-                areOthers:  false
+    processNode = function(node, resultNodes, superset) {
+        var selected, resultNode, superset2, i, childNode, othersSelected, subset;
+        selected = (node.value in selectionMap && !selectionMap[node.value]);
+        if (typeof node.children !== "undefined") {
+            resultNode = {
+                "value":      node.value,
+                "label":      node.label,
+                "children":   [],
+                "selected":   selected,
+                "areOthers":  false
             };
             
-            var superset2 = new Exhibit.Set();
+            superset2 = new Exhibit.Set();
             
-            for (var i = 0; i < node.children.length; i++) {
-                var childNode = node.children[i];
+            for (i = 0; i < node.children.length; i++) {
+                childNode = node.children[i];
                 processNode(childNode, resultNode.children, superset2);
             }
             resultNode.children.sort(sorter);
             
             if (node.others.size() > 0) {
-                var othersSelected = (node.value in selectionMap && selectionMap[node.value]);
-                var subset = Exhibit.Set.createIntersection(items, node.others);
+                othersSelected = (node.value in selectionMap && selectionMap[node.value]);
+                subset = Exhibit.Set.createIntersection(items, node.others);
                 if (subset.size() > 0 || othersSelected) {
                     resultNode.children.push({
-                        value:      node.value,
-                        label:      othersLabel,
-                        count:      subset.size(),
-                        selected:   othersSelected,
-                        areOthers:  true
+                        "value":      node.value,
+                        "label":      othersLabel,
+                        "count":      subset.size(),
+                        "selected":   othersSelected,
+                        "areOthers":  true
                     });
                     superset2.addSet(subset);
                 }
@@ -365,14 +456,14 @@ Exhibit.HierarchicalFacet.prototype._computeFacet = function(items) {
                 }
             }
         } else {
-            var subset = Exhibit.Set.createIntersection(items, node.items);
+            subset = Exhibit.Set.createIntersection(items, node.items);
             if (subset.size() > 0 || selected) {
                 resultNodes.push({
-                    value:      node.value,
-                    label:      node.label,
-                    count:      subset.size(),
-                    selected:   selected,
-                    areOthers:  false
+                    "value":      node.value,
+                    "label":      node.label,
+                    "count":      subset.size(),
+                    "selected":   selected,
+                    "areOthers":  false
                 });
                 
                 if (superset != null && subset.size() > 0) {
@@ -382,102 +473,119 @@ Exhibit.HierarchicalFacet.prototype._computeFacet = function(items) {
         }
     };
     
-    var nodes = [];
+    nodes = [];
     processNode(this._cache.tree, nodes, null);
     
     return nodes[0];
 };
 
+/**
+ * @returns {Function}
+ */
 Exhibit.HierarchicalFacet.prototype._getValueSorter = function() {
-    var sortValueFunction = function(a, b) { return a.label.localeCompare(b.label); };
+    var sortValueFunction, orderMap, sortFunction, sortDirectionFunction;
+    sortValueFunction = function(a, b) {
+        return a.label.localeCompare(b.label);
+    };
     
-    if ("_orderMap" in this) {
-        var orderMap = this._orderMap;
+    if (typeof this._orderMap !== "undefined") {
+        orderMap = this._orderMap;
         
         sortValueFunction = function(a, b) {
-            if (a.label in orderMap) {
-                if (b.label in orderMap) {
+            if (typeof orderMap[a.label] !== "undefined") {
+                if (typeof orderMap[b.label] !== "undefined") {
                     return orderMap[a.label] - orderMap[b.label];
                 } else {
                     return -1;
                 }
-            } else if (b.label in orderMap) {
+            } else if (typeof orderMap[b.label] !== "undefined") {
                 return 1;
             } else {
                 return a.label.localeCompare(b.label);
             }
-        }
-    } else if (this._cache.valueType == "number") {
+        };
+    } else if (this._cache.valueType === "number") {
         sortValueFunction = function(a, b) {
             a = parseFloat(a.value);
             b = parseFloat(b.value);
             return a < b ? -1 : a > b ? 1 : 0;
-        }
+        };
     }
     
-    var sortFunction = sortValueFunction;
-    if (this._settings.sortMode == "count") {
+    sortFunction = sortValueFunction;
+    if (this._settings.sortMode === "count") {
         sortFunction = function(a, b) {
             var c = b.count - a.count;
             return c != 0 ? c : sortValueFunction(a, b);
-        }
+        };
     }
 
-    var sortDirectionFunction = sortFunction;
-    if (this._settings.sortDirection == "reverse"){
+    sortDirectionFunction = sortFunction;
+    if (this._settings.sortDirection === "reverse"){
         sortDirectionFunction = function(a, b) {
             return sortFunction(b, a);
-        }
+        };
     }
 
     return sortDirectionFunction;
 };
 
+/**
+ *
+ */
 Exhibit.HierarchicalFacet.prototype._notifyCollection = function() {
-    this._uiContext.getCollection().onFacetUpdated(this);
+    this.getUIContext().getCollection().onFacetUpdated(this);
 };
 
+/**
+ *
+ */
 Exhibit.HierarchicalFacet.prototype._initializeUI = function() {
     var self = this;
     this._dom = Exhibit.FacetUtilities[this._settings.scroll ? "constructFacetFrame" : "constructFlowingFacetFrame"](
 		this,
-        this._div,
-        this._settings.facetLabel,
+        this.getContainer(),
+        this.getLabel(),
         function(elmt, evt, target) { self._clearSelections(); },
-        this._uiContext,
+        this.getUIContext(),
         this._settings.collapsible,
         this._settings.collapsed
     );
     
-    if ("height" in this._settings && this._settings.scroll) {
-        this._dom.valuesContainer.style.height = this._settings.height;
+    if (typeof this._settings.height !== "undefined" && this._settings.height !== null && this._settings.scroll) {
+        Exhibit.jQuery(this._dom.valuesContainer).css("height", this._settings.height);
     }
 };
 
+/**
+ * @param {Object} tree
+ */
 Exhibit.HierarchicalFacet.prototype._constructBody = function(tree) {
-    var self = this;
-    var containerDiv = this._dom.valuesContainer;
+    var self, containerDiv, constructFacetItemFunction, facetHasSelection, processNode, processChildNodes;
+    self = this;
+    containerDiv = this._dom.valuesContainer;
     
-    containerDiv.style.display = "none";
+    Exhibit.jQuery(containerDiv).hide();
     
-    var constructFacetItemFunction = Exhibit.FacetUtilities[this._settings.scroll ? "constructHierarchicalFacetItem" : "constructFlowingHierarchicalFacetItem"];
-    var facetHasSelection = this._selections.length > 0;
+    constructFacetItemFunction = Exhibit.FacetUtilities[this._settings.scroll ? "constructHierarchicalFacetItem" : "constructFlowingHierarchicalFacetItem"];
+    facetHasSelection = this._selections.length > 0;
     
-    var processNode = function(node, div) {
-        var hasChildren = ("children" in node);
-        var onSelect = function(elmt, evt, target) {
+    processNode = function(node, div) {
+        var hasChildren, onSelect, onSelectOnly, onToggleChildren, dom;
+        hasChildren = typeof node.children !== "undefined";
+        onSelect = function(evt) {
             self._filter(node.value, node.areOthers, node.label, node.selected, false);
-            SimileAjax.DOM.cancelEvent(evt);
-            return false;
+            evt.preventDefault();
+            evt.stopPropagation();
         };
-        var onSelectOnly = function(elmt, evt, target) {
+        onSelectOnly = function(evt) {
             self._filter(node.value, node.areOthers, node.label, node.selected, !(evt.ctrlKey || evt.metaKey));
-            SimileAjax.DOM.cancelEvent(evt);
-            return false;
+            evt.preventDefault();
+            evt.stopPropagation();
         };
-        var onToggleChildren = function(elmt, evt, target) {
+        onToggleChildren = function(evt) {
             var show;
-            if (node.value in self._expanded) {
+            if (typeof self._expanded[node.value] !== "undefined") {
                 delete self._expanded[node.value];
                 show = false;
             } else {
@@ -485,52 +593,59 @@ Exhibit.HierarchicalFacet.prototype._constructBody = function(tree) {
                 show = true;
             }
             dom.showChildren(show);
-            SimileAjax.DOM.cancelEvent(evt);
-            return false;
+            evt.preventDefault();
+            evt.stopPropagation();
         };
-        var dom = constructFacetItemFunction(
-            node.label, 
-            node.count, 
+        dom = constructFacetItemFunction(
+            node.label,
+            node.count,
             (self._colorCoder != null) ? self._colorCoder.translate(node.value) : null,
-            node.selected, 
+            node.selected,
             hasChildren,
-            (node.value in self._expanded),
+            typeof self._expanded[node.value] !== "undefined",
             facetHasSelection,
             onSelect,
             onSelectOnly,
             onToggleChildren,
-            self._uiContext
+            self.getUIContext()
         );
-        div.appendChild(dom.elmt);
-                
+        Exhibit.jQuery(div).append(dom.elmt);
+        
         if (hasChildren) {
             processChildNodes(node.children, dom.childrenContainer);
         }
     };
-    var processChildNodes = function(childNodes, div) {
-        for (var i = 0; i < childNodes.length; i++) {
+    processChildNodes = function(childNodes, div) {
+        var i;
+        for (i = 0; i < childNodes.length; i++) {
             processNode(childNodes[i], div);
         }
     };
     
     processChildNodes(tree.children, containerDiv);
     
-    containerDiv.style.display = "block";
+    Exhibit.jQuery(containerDiv).show();
     
     this._dom.setSelectionCount(this._selections.length);
 };
 
+/**
+ * @param {String} value
+ * @param {Boolean} areOthers
+ * @param {String} label
+ * @param {Boolean} wasSelected
+ * @param {Boolean} selectOnly
+ */
 Exhibit.HierarchicalFacet.prototype._filter = function(value, areOthers, label, wasSelected, selectOnly) {
-    var self = this;
-    var wasSelectedAlone = wasSelected && this._selections.length == 1;
+    var self, wasSelectedAlone, selection, newRestrictions;
+    self = this;
+    wasSelectedAlone = wasSelected && this._selections.length == 1;
     
-    var selection = {
-        value:          value,
-        selectOthers:  areOthers
+    selection = {
+        "value":         value,
+        "selectOthers":  areOthers
     };
     
-    var oldRestrictions = this._selections;
-    var newRestrictions;
     if (wasSelected) {
         if (selectOnly) {
             if (wasSelectedAlone) {
@@ -551,61 +666,64 @@ Exhibit.HierarchicalFacet.prototype._filter = function(value, areOthers, label, 
             newRestrictions = this._internalAddSelection(selection);
         }
     }
-    
-    SimileAjax.History.addLengthyAction(
-        function() { self.applyRestrictions(newRestrictions); },
-        function() { self.applyRestrictions(oldRestrictions); },
+    Exhibit.History.pushComponentState(
+        this,
+        Exhibit.Facet.getRegistryKey(),
+        { "selections": newRestrictions },
         (selectOnly && !wasSelectedAlone) ?
-            String.substitute(
-                Exhibit.FacetUtilities.l10n["facetSelectOnlyActionTitle"],
-                [ label, this._settings.facetLabel ]) :
-            String.substitute(
-                Exhibit.FacetUtilities.l10n[wasSelected ? "facetUnselectActionTitle" : "facetSelectActionTitle"],
-                [ label, this._settings.facetLabel ])
+            Exhibit._("%facets.facetSelectOnlyActionTitle", label, this.getLabel()) :
+            Exhibit._(wasSelected ? "%facets.facetUnselectActionTitle" : "%facets.facetSelectActionTitle", label, this.getLabel()),
+        true
     );
 };
 
+/**
+ * @private
+ */
 Exhibit.HierarchicalFacet.prototype._clearSelections = function() {
-    var state = {};
-    var self = this;
-    SimileAjax.History.addLengthyAction(
-        function() { state.restrictions = self.clearAllRestrictions(); },
-        function() { self.applyRestrictions(state.restrictions); },
-        String.substitute(
-            Exhibit.FacetUtilities.l10n["facetClearSelectionsActionTitle"],
-            [ this._settings.facetLabel ])
+    Exhibit.History.pushComponentState(
+        this,
+        Exhibit.Facet.getRegistryKey(),
+        this.exportEmptyState(),
+        Exhibit._("%facets.facetClearSelectionsActionTitle", this.getLabel()),
+        true
     );
 };
 
+/**
+ * @private
+ */
 Exhibit.HierarchicalFacet.prototype._buildCache = function() {
-    if (!("_cache" in this)) {
-        var valueToItem = {};
-        var valueType = "text";
+    var valueToItem, valueType, valueToChildren, valueToParent, valueToPath, values, insert, database, tree, expression, groupingExpression, rootValues, getParentChildRelationships, processValue, index;
+    if (typeof this._cache === "undefined") {
+        valueToItem = {};
+        valueType = "text";
         
-        var valueToChildren = {};
-        var valueToParent = {};
-        var valueToPath = {};
-        var values = new Exhibit.Set();
+        valueToChildren = {};
+        valueToParent = {};
+        valueToPath = {};
+        values = new Exhibit.Set();
         
-        var insert = function(x, y, map) {
-            if (x in map) {
+        insert = function(x, y, map) {
+            if (typeof map[x] !== "undefined") {
                 map[x].push(y);
             } else {
                 map[x] = [ y ];
             }
         };
         
-        var database = this._uiContext.getDatabase();
-        var tree = {
-            value:      null,
-            label:      "(root)",
-            others:     new Exhibit.Set(),
-            children:   []
+        database = this.getUIContext().getDatabase();
+        tree = {
+            "value":      null,
+            "label":      Exhibit._("%facets.hierarchical.rootLabel"),
+            "others":     new Exhibit.Set(),
+            "children":   []
         };
         
-        var expression = this._expression;
-        this._uiContext.getCollection().getAllItems().visit(function(item) {
-            var results = expression.evaluateOnItem(item, database);
+        expression = this.getExpression();
+        this.getUIContext().getCollection().getAllItems().visit(function(item) {
+            var results;
+            results = expression.evaluateOnItem(item, database);
             if (results.values.size() > 0) {
                 valueType = results.valueType;
                 results.values.visit(function(value) {
@@ -617,12 +735,14 @@ Exhibit.HierarchicalFacet.prototype._buildCache = function() {
             }
         });
         
-        var groupingExpression = this._uniformGroupingExpression;
-        var rootValues = new Exhibit.Set();
-        var getParentChildRelationships = function(valueSet) {
-            var newValueSet = new Exhibit.Set();
+        groupingExpression = this._uniformGroupingExpression;
+        rootValues = new Exhibit.Set();
+        getParentChildRelationships = function(valueSet) {
+            var newValueSet;
+            newValueSet = new Exhibit.Set();
             valueSet.visit(function(value) {
-                var results = groupingExpression.evaluateOnItem(value, database);
+                var results;
+                results = groupingExpression.evaluateOnItem(value, database);
                 if (results.values.size() > 0) {
                     results.values.visit(function(parentValue) {
                         insert(value, parentValue, valueToParent);
@@ -643,29 +763,30 @@ Exhibit.HierarchicalFacet.prototype._buildCache = function() {
         };
         getParentChildRelationships(values);
         
-        var processValue = function(value, nodes, valueSet, path) {
-            var label = database.getObject(value, "label");
-            var node = {
-                value:  value,
-                label:  label != null ? label : value
+        processValue = function(value, nodes, valueSet, path) {
+            var label, node, valueSet2, childrenValue, i, items, item;
+            label = database.getObject(value, "label");
+            node = {
+                "value":  value,
+                "label":  label != null ? label : value
             };
             nodes.push(node);
             valueToPath[value] = path;
             
-            if (value in valueToChildren) {
+            if (typeof valueToChildren[value] !== "undefined") {
                 node.children = [];
                 
-                var valueSet2 = new Exhibit.Set();
-                var childrenValue = valueToChildren[value];
-                for (var i = 0; i < childrenValue.length; i++) {
+                valueSet2 = new Exhibit.Set();
+                childrenValue = valueToChildren[value];
+                for (i = 0; i < childrenValue.length; i++) {
                     processValue(childrenValue[i], node.children, valueSet2, path.concat(i));
                 };
                 
                 node.others = new Exhibit.Set();
-                if (value in valueToItem) {
-                    var items = valueToItem[value];
-                    for (var i = 0; i < items.length; i++) {
-                        var item = items[i];
+                if (typeof valueToItem[value] !== "undefined") {
+                    items = valueToItem[value];
+                    for (i = 0; i < items.length; i++) {
+                        item = items[i];
                         if (!valueSet2.contains(item)) {
                             node.others.add(item);
                             valueSet.add(item);
@@ -677,37 +798,45 @@ Exhibit.HierarchicalFacet.prototype._buildCache = function() {
             } else {
                 node.items = new Exhibit.Set();
                 if (value in valueToItem) {
-                    var items = valueToItem[value];
-                    for (var i = 0; i < items.length; i++) {
-                        var item = items[i];
+                    items = valueToItem[value];
+                    for (i = 0; i < items.length; i++) {
+                        item = items[i];
                         node.items.add(item);
                         valueSet.add(item);
                     }
                 }
             }
-        }
+        };
         
-        var index = 0;
-        rootValues.visit(function (value) { processValue(value, tree.children, new Exhibit.Set(), [index++]); });
+        index = 0;
+        rootValues.visit(function (value) {
+            processValue(value, tree.children, new Exhibit.Set(), [index++]);
+        });
         
         this._cache = {
-            tree:               tree,
-            valueToChildren:    valueToChildren,
-            valueToParent:      valueToParent,
-            valueToPath:        valueToPath,
-            valueType:          valueType
+            "tree":               tree,
+            "valueToChildren":    valueToChildren,
+            "valueToParent":      valueToParent,
+            "valueToPath":        valueToPath,
+            "valueType":          valueType
         };
     }
 };
 
+/**
+ * @param {String} value
+ * @returns {Object}
+ */
 Exhibit.HierarchicalFacet.prototype._getTreeNode = function(value) {
-    if (value == null) {
+    var path, trace;
+    if (value === null) {
         return this._cache.tree;
     }
     
-    var path = this._cache.valueToPath[value];
-    var trace = function(node, path, index) {
-        var node2 = node.children[path[index]];
+    path = this._cache.valueToPath[value];
+    trace = function(node, path, index) {
+        var node2;
+        node2 = node.children[path[index]];
         if (++index < path.length) {
             return trace(node2, path, index);
         } else {
@@ -717,3 +846,69 @@ Exhibit.HierarchicalFacet.prototype._getTreeNode = function(value) {
     return (path) ? trace(this._cache.tree, path, 0) : null;
 };
 
+/**
+ *
+ */
+Exhibit.HierarchicalFacet.prototype.exportEmptyState = function() {
+    return this._exportState(true);
+};
+
+/**
+ *
+ */
+Exhibit.HierarchicalFacet.prototype.exportState = function() {
+    return this._exportState(false);
+};
+
+/**
+ * @param {Boolean} empty
+ * @returns {Object}
+ */
+Exhibit.HierarchicalFacet.prototype._exportState = function(empty) {
+    var s = [];
+
+    if (!empty) {
+        s = this._selections;
+    }
+
+    return {
+        "selections": s
+    };
+};
+
+/**
+ * @param {Object} state
+ * @param {Array} state.selections
+ */
+Exhibit.HierarchicalFacet.prototype.importState = function(state) {
+    if (this.stateDiffers(state)) {
+        if (state.selections.length === 0) {
+            this.clearAllRestrictions();
+        } else {
+            this.applyRestrictions(state.selections);
+        }
+    }
+};
+
+/**
+ * @param {Object} state
+ * @param {Array} state.selections
+ */
+Exhibit.HierarchicalFacet.prototype.stateDiffers = function(state) {
+    var selectionStartCount, stateStartCount, stateSet;
+
+    stateStartCount = state.selections.length;
+    selectionStartCount = this._selections.length;
+
+    if (stateStartCount !== selectionStartCount) {
+        return true;
+    } else {
+        stateSet = new Exhibit.Set(state.selections);
+        stateSet.addSet(this._selections);
+        if (stateSet.size() !== stateStartCount) {
+            return true;
+        }
+    }
+
+    return false;
+};
