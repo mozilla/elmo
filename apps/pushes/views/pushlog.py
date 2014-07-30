@@ -11,12 +11,19 @@ import operator
 from time import mktime
 
 from django.shortcuts import render
-from django.db.models import Q
+from django.db.models import Q, Count
 
-from life.models import Push
+from life.models import Push, File
 
 
 def pushlog(request, repo_name):
+    '''View to show pushes and their changesets for:
+    - all repositories starting with repo_name
+    - or which names contain any of the `repo` query args
+    - that don't contain any of the `exclude` query args in their name
+    If file `path` parts are passed in, only show the changesets that
+    affect the requested files.
+    '''
     try:
         limit = int(request.GET['length'])
     except (ValueError, KeyError):
@@ -54,21 +61,56 @@ def pushlog(request, repo_name):
         search['repo'] = repo_parts
     if excludes:
         q = q.exclude(repository__name__in=excludes)
-    for p in paths:
-        q = q.filter(changesets__files__path__contains=p)
+    files = None
+    if paths:
+        pathquery = File.objects
+        for p in paths:
+            pathquery = pathquery.filter(path__contains=p)
+        files = list(pathquery.values_list('id', flat=True))
+        q = q.filter(changesets__files__in=files)
     if paths:
         search['path'] = paths
     pushes = q.distinct().order_by('-push_date')[start:]
     if limit is not None:
         pushes = pushes[:(start + limit)]
-    pushrows = [{'push': p,
-                 'tip': p.changesets.order_by('-pk')[0],
-                 'changesets': p.changesets.order_by('-pk')[1:],
-                 'class': 'parity%d' % odd,
-                 'span': p.changesets.count(),
-                 }
-                for p, odd in zip(pushes, cycle([1, 0]))]
+    # get all push IDs
+    # the get the changesets for them
+    push_ids = list(pushes.values_list('id', flat=True))
+    push_changesets = (Push.changesets.through.objects
+                       .filter(push__in=push_ids)
+                       .order_by('-push__id', '-changeset__id'))
+    pushcounts = {}
+    if files:
+        # we're only interested in the changesets that actually contain
+        # our paths, reduce our query, and store how many changesets
+        # there are per push without the filter
+        push_changesets = push_changesets.filter(changeset__files__in=files)
+        pushcounts.update(Push.objects
+                          .filter(id__in=push_ids)
+                          .annotate(changecount=Count('changesets'))
+                          .values_list('id', 'changecount'))
+    # get all pushes, with their changesets, possibly filtered
+    pushrows = []
+    push = None
+    odd = 0
+    for pc in push_changesets.select_related('push__repository', 'changeset'):
+        if pc.push != push:
+            if pushrows:
+                pushrows[-1]['span'] = len(pushrows[-1]['changesets']) + 1
+            push = pc.push
+            odd = 1 - odd
+            pushrows.append({
+                'push': push,
+                'tip': pc.changeset,
+                'changesets': [],
+                'class': 'parity%d' % odd,
+                'change_count': pushcounts.get(push.id)
+                })
+        else:
+            pushrows[-1]['changesets'].append(pc.changeset)
     if pushrows:
+        # we have the last iteration to add still
+        pushrows[-1]['span'] = len(pushrows[-1]['changesets']) + 1
         timespan = (int(mktime(pushrows[-1]['push'].push_date.timetuple())),
                     int(mktime(pushrows[0]['push'].push_date.timetuple())))
     else:

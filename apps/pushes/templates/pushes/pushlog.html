@@ -16,6 +16,9 @@
 
 <style type="text/css">
 table.ui-widget {padding: 0px;}
+.date {
+	white-space: pre;
+}
 </style>
 <style type="text/css" title="diffstuff">
 .diff_active {
@@ -95,7 +98,13 @@ var DIFF_APP_URL = '{% url 'pushes.views.diff' %}';
 	<tbody>
 	  {% for push in pushes %}
 	  <tr class="{{push.class}}" repo="{{push.push.repository.name}}">
-	    <td rowspan="{{push.span}}"><cite>{{push.push.user}}<br /><span class="date">{{push.push.push_date}}</span></cite></td>
+	    <td rowspan="{{push.span}}">
+	      <cite>{{push.push.user}}<br /><span class="date">{{push.push.push_date}}</span></cite>
+	      {% if push.change_count and push.change_count != push.span %}<br />
+	      {{ push.span }} out of
+	      <a href="{{push.push.repository.url}}pushloghtml?changeset={{push.tip.shortrev}}">{{ push.change_count }} changes</a>
+	      {% endif %}
+	    </td>
 	    <td rowspan="{{push.span}}"><a href="{% url 'pushes.views.pushlog' %}{{push.push.repository.name}}">{{push.push.repository.name}}</a></td>
 	    <td class="age">
 	      <a href="{{push.push.repository.url}}rev/{{push.tip.revision|slice:":12"}}"
