@@ -55,6 +55,8 @@ var data, state, data0, X;
 var loc_data = LOCALE_DATA;
 var locales = [];
 
+var dashboardHistoryUrl = window.DASHBOARD_HISTORY_URL + "&starttime=" + formatRoundedDate(startdate) + "&endtime=" + formatRoundedDate(enddate) + "&locale="
+
 function renderPlot() {
   var _p = {};
   if (!params.showBad) _p.hideBad = true;
@@ -65,6 +67,11 @@ function renderPlot() {
                     _p);
   var svg = tp.svg;
   X = tp.x;
+
+  var tooltipElt = $('#locales-tooltip');
+  var goodLocalesElt = $('.good', tooltipElt);
+  var shadyLocalesElt = $('.shady', tooltipElt);
+  var badLocalesElt = $('.bad', tooltipElt);
 
   var i = 0, loc;
   state = new Data(null, ['good', 'shady', 'bad']);
@@ -86,20 +93,13 @@ function renderPlot() {
   data.push(state.data(loc_data[i].time));
   var changeEvents = [];
   for (i = 1; i < loc_data.length; ++i) {
-    var loclist = [];
     for (loc in loc_data[i].locales) {
       _data[loc] = loc_data[i].locales[loc];
       isGood = _getState(loc_data[i].locales[loc]);
       if (isGood != latest[loc]) {
         state.update(latest[loc], isGood);
-        loclist.push(loc);
         latest[loc] = isGood;
       }
-    }
-    if (loclist.length) {
-      loclist.sort();
-      // UX needed, bug 773612
-      // incorporate the list of locales changing now into the graph
     }
     data.push(state.data(loc_data[i].time));
   }
@@ -134,6 +134,160 @@ function renderPlot() {
         return ['#339900', 'grey', '#990000'][i];
       })
      .attr("d", area);
+
+  // --> Changing locales logic <-- //
+
+  // Utility function to add a list of locales to a DOM element.
+  function showLocalesInElement(locales, element) {
+    var ln = locales.length;
+
+    // Maximum number of elements that will be shown in the reduced tooltip.
+    var clipTreshold = 4;
+
+    if (ln === 0) {
+      element.text("-");
+      return;
+    }
+
+    element.empty();
+
+    var clippedElt = $("<span>", { "class": "clipped" });
+    var addTo = element;
+
+    for (var i = 0; i < ln; i++) {
+      var locale = locales[i];
+
+      var linkElt = $("<a>", { href: dashboardHistoryUrl + locale });
+      linkElt.text(locale);
+
+      if (i >= clipTreshold) {
+        addTo = clippedElt;
+      }
+
+      if (i > 0) {
+        addTo.append(', ');
+      }
+      addTo.append(linkElt);
+    }
+
+    element.append(clippedElt);
+
+    if (ln > clipTreshold) {
+      element.append($("<span>", { "class": "hellip" }).html("&hellip;"));
+    }
+  }
+
+  // Create the transparent white box that follows the mouse and shows the
+  // considered time range.
+  var whiteBoxWidth = 20; // pixels
+  var whiteBoxOffset = whiteBoxWidth / 2;
+  var whiteBox = svg.append("g").append("rect");
+  whiteBox.attr("x", -9999)
+    .attr("y", tp.y(0) - tp.height - 1)
+    .attr("width", whiteBoxWidth)
+    .attr("height", tp.height)
+    .style("fill", "white")
+    .style("stroke", "white")
+    .style("opacity", "0.2");
+
+  // Return the latest state of each locale that changed in a time window.
+  function findChanges(startTime, endTime) {
+    var loc;
+    var results = {};
+    var lastKnownState = {};
+    for (var i = 0, ln = loc_data.length; i < ln; i++) {
+      var ldata = loc_data[i];
+      if (ldata.time > endTime) {
+        break;
+      }
+
+      var locState = _getState(ldata.locales[loc]);
+
+      if (ldata.time >= startTime) {
+        for (loc in ldata.locales) {
+          if (lastKnownState[loc] != locState) {
+            results[loc] = locState;
+          }
+          lastKnownState[loc] = locState;
+        }
+      }
+      else {
+        for (loc in ldata.locales) {
+          lastKnownState[loc] = locState;
+        }
+      }
+    }
+
+    var triagedLocales = {
+      good: [],
+      bad: [],
+      shady: []
+    };
+    for (var l in results) {
+      triagedLocales[results[l]].push(l);
+    }
+
+    return triagedLocales;
+  }
+
+  function showTooltip() {
+    whiteBox.style("opacity", 0.2);
+    tooltipElt.show();
+  }
+
+  function hideTooltip() {
+    whiteBox.style("opacity", 0);
+    tooltipElt.hide();
+  }
+
+  function showLocalesTooltip() {
+    // First update the position of the white box.
+    var mouseX = d3.mouse(this)[0];
+    whiteBox.attr("x", mouseX - whiteBoxOffset);
+
+    // Then compute the list of changing locales in this range.
+    var triagedLocales = findChanges(
+      tp.x.invert(mouseX - whiteBoxOffset),
+      tp.x.invert(mouseX + whiteBoxOffset)
+    );
+
+    // Finaly show those locales in the tooltip box.
+    if (triagedLocales) {
+      showLocalesInElement(triagedLocales.good, goodLocalesElt);
+      showLocalesInElement(triagedLocales.bad, badLocalesElt);
+      showLocalesInElement(triagedLocales.shady, shadyLocalesElt);
+    }
+
+    if (mouseX > tp.width / 2) {
+      tooltipElt.css("right", (tp.width - mouseX) + "px");
+      tooltipElt.css("left", "auto");
+    }
+    else {
+      tooltipElt.css("left", mouseX + "px");
+      tooltipElt.css("right", "auto");
+    }
+
+    showTooltip();
+  }
+
+  // Define a new element that is the size of the graph, and that is used to
+  // detect the mouse movements. As this element is on top in the DOM, this
+  // ensures all mouse events will be caught.
+  var graphZone = svg.append("g").append("rect");
+  graphZone.attr("x", 0)
+    .attr("y", tp.y(0) - tp.height - 1)
+    .attr("width", tp.width)
+    .attr("height", tp.height)
+    .style("opacity", 0);
+
+  // Hide and show the tooltip and the white box.
+  graphZone.on("mousemove", showLocalesTooltip)
+           .on("mouseout", hideTooltip);
+
+  tooltipElt.on("mouseover", showTooltip)
+            .on("mouseout", hideTooltip);
+
+  // <-- Changing locales logic --> //
 
   paintHistogram(_data);
   $('#my-timeplot').click(onClickPlot);
