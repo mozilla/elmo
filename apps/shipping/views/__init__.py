@@ -43,7 +43,7 @@ def index(request):
     apps = defaultdict(list)
     for avt in avts:
         apps[avt.appversion.app].append(avt)
-        trees.remove(avt.tree)
+        trees.discard(avt.tree)
     for avtlist in apps.itervalues():
         avtlist.sort(key=lambda avt: avt.appversion.version)
 
