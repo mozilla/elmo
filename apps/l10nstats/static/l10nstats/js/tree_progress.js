@@ -201,18 +201,16 @@ function renderPlot() {
         break;
       }
 
-      var locState = _getState(ldata.locales[loc]);
+      for (loc in ldata.locales) {
+        var locState = _getState(ldata.locales[loc]);
 
-      if (ldata.time >= startTime) {
-        for (loc in ldata.locales) {
+        if (ldata.time >= startTime) {
           if (lastKnownState[loc] != locState) {
             results[loc] = locState;
           }
           lastKnownState[loc] = locState;
         }
-      }
-      else {
-        for (loc in ldata.locales) {
+        else {
           lastKnownState[loc] = locState;
         }
       }
