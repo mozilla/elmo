@@ -19,12 +19,14 @@
 {% block timeplot_extra_js %}
 <script>
 var tree = "{{ tree }}";
-var SHOW_BAD = {{ showBad|yesno:"true,false" }}
+var SHOW_BAD = {{ showBad|yesno:"true,false" }};
 var BOUND = {{ bound }};
 
 var LOCALE_DATA = [{% for item in data %}
     {time: new Date({{item.srctime}} * 1000), locales: {{ item.locales|safe }}}{% if not forloop.last %},{% endif %}{% endfor %}
 ];
+
+var DASHBOARD_HISTORY_URL = "{% url l10nstats.views.history_plot %}?tree=" + tree;
 </script>
 {% endblock %}
 
@@ -44,6 +46,15 @@ var LOCALE_DATA = [{% for item in data %}
 {% endblock %}
 
 {% block content %}
+<div class="tooltip" id="locales-tooltip">
+  <h4>Changing locales</h4>
+  <div>
+    <p><span>Good</span><span class="good"></span></p>
+    <p><span>OK-ish</span><span class="shady"></span></p>
+    <p><span>Bad</span><span class="bad"></span></p>
+  </div>
+</div>
+
 <div id="my-timeplot"></div>
 <div class="legend" style="float:right">
   <input type="checkbox" onchange="update({showBad:event.target.checked});" id="showBadField">red area: locales with missing strings<br>

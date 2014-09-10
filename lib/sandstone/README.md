@@ -26,6 +26,14 @@ need to be joined in the following order:
 * video-resp.less
 * sandstone-resp.less
 
+There are some edits made, namely
+
+* replace /media/ with /static/ in all .less files
+* locale-specific hacks removed in buttons.less
+* locale-dependent fonts removed in lib.less
+* locale-specific hacks removed in sandstone-resp.less
+* add video-resp to sandstone-resp for easier processing
+
 
 Fonts
 -----
@@ -38,7 +46,7 @@ Some font references in CSS don't have corresponding font files. It's
 * OpenSans-Italic-webfont.*
 
 These fonts were downloaded from 
-[Mozilla CDN](https://mozorg.cdn.mozilla.net/media/fonts/).
+[Bedrock](https://github.com/mozilla/bedrock/).
 
 
 Images

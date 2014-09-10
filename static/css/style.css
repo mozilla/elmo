@@ -58,6 +58,10 @@ table {
     margin-bottom: 0;
 }
 
+#colophon .footer-logo {
+    width: 300px;
+}
+
 #colophon .footer-license {
     width: 450px;
 }

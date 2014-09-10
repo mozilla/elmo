@@ -47,3 +47,36 @@ td:nth-child(even) {
 #histogram table {
     width: auto;
 }
+
+.tooltip {
+    background-color: white;
+    background-image: none;
+    box-shadow: 0 0 2px black;
+    color: black;
+    display: none;
+    font-weight: normal;
+    position: absolute;
+    text-align: left;
+    text-shadow: none;
+}
+.tooltip:after {
+    content: none;
+}
+.tooltip div {
+    display: table;
+}
+.tooltip div > p {
+    display: table-row;
+}
+.tooltip div > p > span {
+    display: table-cell;
+    padding: 2px 10px;
+}
+.tooltip .clipped,
+.tooltip:hover .hellip {
+    display: none;
+}
+.tooltip:hover .clipped,
+.tooltip .hellip {
+    display: inline;
+}

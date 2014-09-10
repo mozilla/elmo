@@ -305,12 +305,21 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
           step=step,
         )
         url = reverse('tinder.views.showlog',
-                      args=[master.name, log.filename])
+                      args=[step.id, log.name])
         with file(os.path.join(self.temp_directory, log.filename), 'w') as f:
             f.write(SAMPLE_BUILD_LOG_PAYLOAD)
 
-        settings.LOG_MOUNTS[master.name] = self.temp_directory
+        try:
+            lm = settings.LOG_MOUNTS
+            del settings.LOG_MOUNTS
+        except AttributeError:
+            pass
+        settings.LOG_MOUNTS = {master.name: self.temp_directory}
         response = self.client.get(url)
+        try:
+            settings.LOG_MOUNTS = lm
+        except NameError:
+            pass
         content = response.content
         content = content.split('</header>')[1].split('</footer')[0]
 
@@ -320,8 +329,6 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         ok_('json' not in content)
 
     def test_showlog_invalid_master(self):
-        master = Master.objects.all()[0]
-
         build = Build.objects.all()[0]
         step = build.steps.all()[0]
         log = Log.objects.create(
@@ -330,12 +337,33 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
           step=step,
         )
         url = reverse('tinder.views.showlog',
-                      args=[master.name, log.filename])
+                      args=[step.id, log.name])
         self.assertRaises(
             LogMountKeyError,
             self.client.get,
             url
         )
+
+    def test_showhtmllog(self):
+        """Test that showlog shows html content if that's in the db,
+        unescaped.
+        """
+        build = Build.objects.all()[0]
+        step = build.steps.all()[0]
+        htmlcontent = '<span class="foo">&amp;</span>'
+        log = Log.objects.create(
+          name='foo',
+          html=htmlcontent,
+          isFinished=True,
+          step=step,
+        )
+        url = reverse('tinder.views.showlog',
+                      args=[step.id, log.name])
+        response = self.client.get(url)
+        content = response.content
+        content = content.split('</header>')[1].split('</footer')[0]
+
+        ok_(htmlcontent in content)
 
     def test_render_tbpl(self):
         url = reverse('tinder.views.tbpl')

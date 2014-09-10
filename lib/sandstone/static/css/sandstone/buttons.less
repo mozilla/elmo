@@ -39,6 +39,7 @@
     &:focus,
     &.focus {
         outline-color: @textColorSecondary;
+        .box-shadow(@buttonShadowFocus);
     }
 
     &:active,
@@ -66,9 +67,12 @@
     background-color: @buttonGreen;
     #gradient > .vertical(@buttonGreen, @buttonGreenDark);
 
-    &:hover,
-    &:focus {
+    &:hover {
         .button-hover-box-shadow(@buttonGreen);
+    }
+
+    &:focus {
+        .button-focus-box-shadow(@buttonGreen);
     }
 }
 
@@ -79,9 +83,12 @@
     background-color: #a91300;
     #gradient > .vertical(#da5132, #a91300);
 
-    &:hover,
-    &:focus {
+    &:hover {
         .button-hover-box-shadow(#da5132);
+    }
+
+    &:focus {
+        .button-focus-box-shadow(#da5132);
     }
 }
 
@@ -161,7 +168,11 @@
     margin-left: 0;
     margin-right: 0;
     padding: 0;
+    // Font size set to 0 on UL and reset to body size on the LI tags
+    // This avoids putting a horizontal space between inline-block links
+    font-size: 0;
     li {
+        font-size: @baseFontSize;
         margin: 0;
         padding: 0;
         list-style-style: none;
@@ -281,7 +292,7 @@
         color: #b8e779;
         margin-left: -54px;
         _margin-left:0;
-        background: url(/static/img/sandstone/buttons/firefox-large.png?build=2) 0 0 no-repeat;
+        background: url(/static/img/sandstone/buttons/firefox-large.png?2013-06) 0 0 no-repeat;
         _background-color: @buttonGreenDark;
         min-height: 82px;
         margin-bottom: -12px;
@@ -330,7 +341,7 @@
         _margin-left:0;
         margin-top: -2px;
         margin-bottom: -7px;
-        background-image: url(/static/img/sandstone/buttons/firefox-small.png?build=2);
+        background-image: url(/static/img/sandstone/buttons/firefox-small.png?2013-06);
         min-height: 45px;
         padding: 10px 20px 10px 73px;
         overflow: visible;
@@ -383,19 +394,19 @@
 }
 
 .download-button-large.beta .download-link .download-content {
-  background-image: url(/static/img/sandstone/buttons/beta-large.png);
+  background-image: url(/static/img/sandstone/buttons/beta-large.png?2013-06);
 }
 
 .download-button-small.beta .download-link .download-content {
-  background-image: url(/static/img/sandstone/buttons/beta-small.png);
+  background-image: url(/static/img/sandstone/buttons/beta-small.png?2013-06);
 }
 
 .download-button-large.aurora .download-link .download-content {
-  background-image: url(/static/img/sandstone/buttons/aurora-large.png);
+  background-image: url(/static/img/sandstone/buttons/aurora-large.png?2013-06);
 }
 
 .download-button-small.aurora .download-link .download-content {
-  background-image: url(/static/img/sandstone/buttons/aurora-small.png);
+  background-image: url(/static/img/sandstone/buttons/aurora-small.png?2013-06);
 }
 
 .download-button.download-button-noicon {
@@ -441,6 +452,8 @@
 // OS detection
 
 .download-button .os_linux,
+.download-button .os_linux64,
+.linux.x86.x64 .download-list .os_linux,
 .download-button .os_windows,
 .download-button .os_osx,
 .download-button .os_android,
@@ -450,6 +463,7 @@
 }
 
 .linux .download-button .os_linux,
+.linux.x86.x64 .download-button .os_linux64,
 .windows .download-button .os_windows,
 .osx .download-button .os_osx,
 .android .download-button .os_android,
@@ -462,6 +476,12 @@
     display: block !important;
 }
 
+.ios .download-button .unsupported-download,
+.oldwin .download-button .unsupported-download,
+.oldmac .download-button .unsupported-download {
+    display: block;
+    max-width: 250px;
+}
 
 // Small print
 
@@ -471,7 +491,7 @@
     .open-sans;
     display: block;
     font-size: 11px;
-    text-align: right;
+    text-align: center;
     margin-top: 6px;
     color: @textColorLight;
 
@@ -494,12 +514,7 @@
     }
 }
 
-.oldmac .download-button .unsupported-download {
-    display: block;
-}
-
-.download-button noscript,
-.download-button .unrecognized-download {
+.download-button .download-dumb {
     text-align: left;
     h4 {
         text-shadow: none;

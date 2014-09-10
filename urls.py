@@ -36,7 +36,6 @@ urlpatterns = patterns('',
                        (r'^dashboard/', include('l10nstats.urls')),
                        (r'^shipping', include('shipping.urls')),
                        (r'^bugs/', include('bugsy.urls')),
-                       (r'^webby/', include('webby.urls')),
                        (r'^accounts/', include('accounts.urls')),
                        (r'^', include('homepage.urls')),
 
