@@ -122,7 +122,6 @@ INSTALLED_APPS = (
     'tinder',
     'shipping',
     'bugsy',
-    'webby',
     'elmo_commons',
 
     # django-nose has to be last
