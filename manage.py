@@ -6,14 +6,17 @@
 import os
 import sys
 
+
 try:
     # For local development in a virtualenv:
     from funfactory import manage
 except ImportError:
     # Production:
     # Add a temporary path so that we can import the funfactory
-    tmp_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            'vendor', 'src', 'funfactory')
+    tmp_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        'vendor'
+    )
     sys.path.append(tmp_path)
 
     from funfactory import manage

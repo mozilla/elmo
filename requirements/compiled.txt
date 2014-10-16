@@ -1,12 +1,20 @@
+# Compiled requirements
 # from funfactory/funfactory/requirements/compiled.txt
 
-MySQL-python==1.2.3c1
+# sha256: IvlnXkLcZAxEadT30hC67LXmlYI6-VTIE9UckwI1Z10
 Jinja2==2.5.5
 
-# for bcrypt passwords
+# sha256: _3QXVPYWDiQni6dK-94q_U1ctatTK2lzRinM5ou-Fu8
+mercurial==2.8
+
+# sha256: H6pJd-mFBzHot_ih1YuGJzk6N0RUN4jsQ3-0XgbP5AE
+MySQL-python==1.2.3c1
+
+# sha256: KGXGizpWOEZrGDe_SmfER-DP33RjMJoGiq0OkKoD9Yo
+Pillow==2.4.0
+
+# sha256: rxL5lFTolenkMMdXI8O5QZwLzNDqd4A2YtaprFb2Qls
 py-bcrypt==0.3
 
-mercurial==2.8
+# sha256: QXrj9uL2gEYWEdxgyVrJ_LPFurLgDgb54FcrhZA-zJs
 python-ldap==2.3.13
-
-Pillow==2.4.0
