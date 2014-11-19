@@ -28,7 +28,7 @@
       <tr class="treesummary{% if forloop.first %} topline{% if firstapp %} toprow{% endif %}{% endif %}">
       {% if forloop.first %}
           <td class="appname " rowspan="{{ runs|length }}">
-            <h2 id="{{ application.code }}">{{ application.name }} <a href="#{{ application.code }}" class="permalink">#</a></h2>
+            <h3 id="{{ application.code }}">{{ application.name }} <a href="#{{ application.code }}" class="permalink">#</a></h3>
           </td>
       {% endif %}
           <td class="treename {% cycle 'odd-td' 'even-td' as runcycle %}">
