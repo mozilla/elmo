@@ -7,7 +7,7 @@ var BugPuller = (function(code) {
   var parent = $('#bugzilla');
 
   function getURL(suffix) {
-    return 'https://api-dev.bugzilla.mozilla.org/1.3/' + suffix;
+    return 'https://bugzilla.mozilla.org/rest/' + suffix;
   }
 
   function getData() {
@@ -96,7 +96,7 @@ var BugPuller = (function(code) {
         };
 
         $.ajax({
-           url: getURL('bug'),
+          url: getURL('bug'),
           data: details,
           dataType: 'json',
           success: BugPuller.render,
@@ -112,7 +112,7 @@ var BugPuller = (function(code) {
     },
     pull: function() {
       $.ajax({
-         url: getURL('bug'),
+        url: getURL('bug'),
         data: getData(),
         dataType: 'json',
         success: BugPuller.pre_render,

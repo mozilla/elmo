@@ -15,6 +15,8 @@ var LOCALE_CODE = '{{ locale.code }}';
 {% compress js %}
 <script src="{% static "bugsy/js/bugcount.js" %}"></script>
 <script src="{% static "homepage/js/webdashboard.js" %}"></script>
+<script src="{% static "js/libs/jquery.thead-1.1.min.js" %}"></script>
+<script src="{% static "shipping/js/team-page.js" %}"></script>
 {% endcompress %}
 {% endblock %}
 
@@ -23,6 +25,7 @@ var LOCALE_CODE = '{{ locale.code }}';
 <link rel="stylesheet" href="{% static "homepage/css/locale-team.css" %}" type="text/css">
 <link rel="stylesheet" href="{% static "shipping/css/dashboard.css" %}" type="text/css">
 <link rel="stylesheet" href="{% static "shipping/css/snippet.css" %}" type="text/css">
+<link rel="stylesheet" href="{% static "css/open-iconic.css" %}" type="text/css">
 {% endcompress %}
 <style>
 .treeprogress-graph {
@@ -86,7 +89,7 @@ you can check the current status on the <a href="https://www-dev.allizom.org/{{ 
   </div>
 
 
-<table class="standard trees" style="display:none">
+<table class="standard cycling" style="display:none">
 </table>
 </div>
 

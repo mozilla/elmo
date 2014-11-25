@@ -48,3 +48,41 @@
 .subnav li a.external-link {
     padding-right: 15px;
 }
+
+/* cycling backgrounds in snippet tables */
+
+.cycling th {
+    color: #9d9d9d;
+    font-weight: normal;
+    font-style: italic;
+    padding: 0.5em 0;
+    /* copied from sandstone */
+    background-color: #F9F9F9;
+    border-bottom: 1px solid #d3d3d3;
+}
+
+.cycling {
+    margin-bottom: 2em;
+}
+
+.cycling tr:first-child > td {
+    border-top: 1px solid #d3d3d3;
+}
+
+.cycling td {
+    border-left: 1px solid #d3d3d3;
+    border-bottom: 1px solid #d3d3d3;
+    padding: 0.75em;
+}
+
+.cycling tr {
+    background: #ffffff;
+}
+
+.cycling tr:nth-child(odd) {
+    background: #eeeeee;
+}
+
+.cycling tbody td:last-child {
+    border-right: 1px solid #d3d3d3;
+}

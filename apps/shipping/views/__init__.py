@@ -103,10 +103,25 @@ def teamsnippet(loc, team_locales):
     # the big loop on runs we don't need to make excessive queries for
     # appversions and applications
     _trees_to_appversions = {}
+    appversion_has_pushes = {}
     for avt in (AppVersion.trees.through.objects
                 .current()
-                .select_related('appversion__app', 'tree')):
+                .select_related('appversion__app', 'tree__l10n')):
         _trees_to_appversions[avt.tree] = avt.appversion
+        # find out if the appversion has activity (if open for sign-offs)
+        if not avt.appversion.accepts_signoffs:
+            continue
+        pushes = Push.objects.filter(repository__forest=avt.tree.l10n)
+        pushes = pushes.filter(repository__locale__in=locs)
+        if avt.start:
+            pushes = pushes.filter(push_date__gt=avt.start)
+        if avt.end:
+            pushes = pushes.filter(push_date__lt=avt.end)
+        locales_with_runs = (Run.revisions.through.objects
+            .filter(run__tree=avt.tree, changeset__pushes__in=pushes)
+            .values_list('run__locale', flat=True))
+        for locale_id in locales_with_runs:
+            appversion_has_pushes[(avt.appversion, locale_id)] = True
 
     def tree_to_appversion(tree):
         return _trees_to_appversions.get(tree)
@@ -115,12 +130,9 @@ def teamsnippet(loc, team_locales):
         av = tree_to_appversion(tree)
         return av and av.app or None
 
-    # find good revisions to sign-off, latest run needs to be green.
-    # keep in sync with api.annotated_pushes
-    suggested_runs = filter(
-        lambda r: r.allmissing == 0 and r.errors == 0,
-        runs
-    )
+    # offer all revisions to sign-off.
+    # in api.annotated_pushes, we only highlight the latest run if it's green
+    suggested_runs = runs
 
     suggested_rev = dict(Run_Revisions.objects
                          .filter(run__in=suggested_runs,
@@ -130,7 +142,7 @@ def teamsnippet(loc, team_locales):
     progresses = dict(
         ((pp.tree.code, pp.locale.code), pp) for pp in (
             ProgressPosition.objects
-            .filter(tree__run__in=runs)
+            .filter(locale__in=locs)
             .select_related('tree', 'locale')
             )
         )
@@ -162,11 +174,16 @@ def teamsnippet(loc, team_locales):
         appversion = tree_to_appversion(run.tree)
         # because Django templates (stupidly) swallows lookup errors we
         # have to apply the missing defaults too
-        run.pending = run.rejected = run.accepted = \
-                      run.suggested_shortrev = \
-                      run.fallback = run.appversion = None
+        defaults = (
+            "pending", "actions", "accepted", "suggested_shortrev",
+            "is_active", "under_review", "suggest_glyph", "suggest_class",
+            "fallback")
+        for attr in defaults:
+            setattr(run, attr, None)
+        run.appversion = appversion
         if appversion and appversion.accepts_signoffs:
-            run.appversion = appversion
+            run.is_active = \
+                appversion_has_pushes.get((appversion, run.locale_id))
             real_av, flags = (
                 flags4appversions(
                     locales={'id': run_.locale.id},
@@ -179,22 +196,49 @@ def teamsnippet(loc, team_locales):
             # get current status of signoffs
             # we really only need the shortrevs, we'll get those below
             if flags:
-                actions = Action.objects.filter(id__in=flags.values()) \
-                                        .select_related('signoff__push')
-                action4id = dict((a.id, a)
-                    for a in actions)
-                for flag in (Action.PENDING, Action.ACCEPTED, Action.REJECTED):
-                    if flag in flags:
-                        a = action4id[flags[flag]]
-                        setattr(run, a.get_flag_display(), a.signoff.push)
+                interesting_flags = (Action.PENDING, Action.ACCEPTED,
+                                     Action.REJECTED)
+                actions = list(Action.objects
+                    .filter(id__in=flags.values(),
+                            flag__in=interesting_flags)
+                    .select_related('signoff__push')
+                    .order_by('when'))
+                # only keep a rejected sign-off it's the last
+                if (Action.REJECTED in flags and
+                    actions[-1].flag != Action.REJECTED):
+                    actions = filter(lambda a: a.flag != Action.REJECTED,
+                                     actions)
+                pushes.update(a.signoff.push for a in actions)
+                objects = [RunElement(
+                    dict((k, getattr(a, k))
+                          for k in a.__dict__
+                          if not k.startswith('_')))
+                    for a in actions]
+                for a, obj in zip(actions, objects):
+                    obj.signoff = a.signoff
+                    obj.push = a.signoff.push
+                    obj.flag_name = a.get_flag_display()
+                run.actions = objects
+                if Action.ACCEPTED in flags:
+                    run.accepted = [obj for obj in objects
+                        if obj.flag == Action.ACCEPTED][0]
+                    objects.remove(run.accepted)
             if appversion.code != real_av:
                 run.fallback = real_av
-            pushes.update((run.pending, run.rejected, run.accepted))
 
             # get the suggested signoff. If there are existing actions
             # we'll unset it when we get the shortrevs for those below
             if run_.id in suggested_rev:
                 run.suggested_shortrev = suggested_rev[run_.id][:12]
+                if run.errors:
+                    run.suggest_glyph = 'bolt'
+                    run.suggest_class = 'error'
+                elif run.allmissing:
+                    run.suggest_glyph = 'graph'
+                    run.suggest_class = 'warning'
+                else:
+                    run.suggest_glyph = 'badge'
+                    run.suggest_class = 'success'
 
         applications[application].append(run)
     # get the tip shortrevs for all our pushes
@@ -208,12 +252,18 @@ def teamsnippet(loc, team_locales):
                   .values_list('id', 'revision'))
     for runs in applications.itervalues():
         for run in runs:
-            for k in ('pending', 'rejected', 'accepted'):
-                if run[k] is not None:
-                    run[k + '_rev'] = rev4id[tip4push[run[k].id]][:12]
-                    # unset the suggestion if there's existing signoff action
-                    if run[k + '_rev'] == run.suggested_shortrev:
-                        run.suggested_shortrev = None
+            actions = [run.accepted] if run.accepted else []
+            if run.actions:
+                actions += run.actions
+            for action in actions:
+                action.rev = rev4id[tip4push[action.push.id]][:12]
+                # unset the suggestion if there's existing signoff action
+                if action.rev == run.suggested_shortrev:
+                    run.suggested_shortrev = None
+                    # if we have a pending sign-off as the last thing,
+                    # let's say so
+                    if action.flag == Action.PENDING:
+                        run.under_review = True
     applications = sorted(
         ((k, v) for (k, v) in applications.items()),
         key=lambda t: t[0] and t[0].name or None
