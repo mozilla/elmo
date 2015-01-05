@@ -201,23 +201,27 @@ WEBDASHBOARD_URL = 'https://l10n.mozilla-community.org/webdashboard/'
 ## Verbatim bridging
 # codes that map to `None` deliberately don't exist on Verbatim
 VERBATIM_CONVERSIONS = {
+    'am': None,
     'en-US': None,
     'es-ES': 'es',
     'fy-NL': 'fy',
     'ga-IE': 'ga',
-    'ja-JP-mac': 'ja',
+    'ha': None,
+    'ig': None,
     'nr': None,
     'pa-IN': 'pa',
     'pt-PT': 'pt',
     'rw': None,
+    'sat': None,
     'ss': None,
-    'sv-SE': 'sv',
+    'st': None,
+    'tl': None,
     'tn': None,
     'ts': None,
+    'uz': None,
     've': None,
     'x-testing': None,
-    'xh': None,
-    'zu': None,
+    'yo': None,
 }
 
 # settings for the compare-locales progress preview images
