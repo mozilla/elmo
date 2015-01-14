@@ -4,8 +4,8 @@
 # sha256: IvlnXkLcZAxEadT30hC67LXmlYI6-VTIE9UckwI1Z10
 Jinja2==2.5.5
 
-# sha256: _3QXVPYWDiQni6dK-94q_U1ctatTK2lzRinM5ou-Fu8
-mercurial==2.8
+# sha256: CNQWnQL9JIGaezIDuoXM9QN9xkbggusbIbPIftV29rw
+mercurial==3.2.4
 
 # doesn't compile on bm-l10n-dashboard01, disabled
 # sha256: H6pJd-mFBzHot_ih1YuGJzk6N0RUN4jsQ3-0XgbP5AE
