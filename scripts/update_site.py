@@ -72,9 +72,9 @@ def update_site(env, debug):
 
     commands += [
         (CHDIR, here),
+        (EXEC, PEEP_CLEANUP),
         (EXEC, PEEP_INSTALL_PROD),
         (EXEC, PEEP_REPLACE_VENDOR),
-        (EXEC, PEEP_CLEANUP),
     ]
 
     commands += [
