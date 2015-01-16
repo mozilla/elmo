@@ -28,10 +28,26 @@ ENV_BRANCH = {
     'stage': 'master',
     'prod': 'master',
 }
+VENDOR_DIR = './vendor'
+TMP_VENDOR_DIR = './vendor-tmp'
 
 GIT_PULL = "git pull -q origin %(branch)s"
 GIT_SUBMODULE = "git submodule update --init --recursive"
 GIT_REVISION = "git rev-parse HEAD > collected/static/revision"
+
+# TODO: Add caching once peep starts supporting it.
+# See bug 1121459.
+PEEP_INSTALL_PROD = (
+    "./vendor-local/lib/python/peep.py install "
+    "-r requirements/compiled.txt "
+    "-r requirements/prod.txt "
+    "--target=%s" % TMP_VENDOR_DIR
+)
+PEEP_REPLACE_VENDOR = "rm -rf %s && mv %s %s" % (
+    VENDOR_DIR, TMP_VENDOR_DIR, VENDOR_DIR
+)
+PEEP_CLEANUP = "rm -rf %s" % TMP_VENDOR_DIR
+
 SOUTH_EXEC = "./manage.py migrate"
 STATICFILES_COLLECT_EXEC = "./manage.py collectstatic --noinput"
 DJANGOCOMPRESSOR_COMPRESS_EXEC = "./manage.py compress"
@@ -52,6 +68,13 @@ def update_site(env, debug):
         (CHDIR, here),
         (EXEC,  GIT_PULL % project_branch),
         (EXEC,  GIT_SUBMODULE),
+    ]
+
+    commands += [
+        (CHDIR, here),
+        (EXEC, PEEP_CLEANUP),
+        (EXEC, PEEP_INSTALL_PROD),
+        (EXEC, PEEP_REPLACE_VENDOR),
     ]
 
     commands += [
@@ -106,7 +129,7 @@ def update_site(env, debug):
 
 
 def main():
-    """ Handels command line args. """
+    """ Handles command line args. """
     debug = False
     usage = dedent("""\
         %prog [options]

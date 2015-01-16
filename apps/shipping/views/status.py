@@ -306,19 +306,6 @@ class StatusJSON(SignoffDataView):
                     or real_av
                     for f in flags]
                 so_items[(av2tree[av.code], loc)] = flag_values
-        # get shipped-in data, latest milestone of all appversions for now
-        shipped_in = defaultdict(list)
-        for _av in appvers.select_related('app'):
-            for _ms in _av.milestone_set.filter(status=2).order_by('-pk')[:1]:
-                break
-            else:
-                continue
-            app = _av.app.code
-            _sos = _ms.signoffs
-            if self.locales:
-                _sos = _sos.filter(locale__code__in=self.locales)
-            for loc in _sos.values_list('locale__code', flat=True):
-                shipped_in[(app, loc)].append(_av.code)
 
         # make a list now
         items = [{"type": "SignOff",
@@ -329,10 +316,6 @@ class StatusJSON(SignoffDataView):
                   "signoff": sorted(values)}
                  for (tree, locale), values in sorted(so_items.iteritems(),
                                                       key=lambda t:t[0])]
-        items += [{"type": "Shippings",
-                   "label": "%s::%s" % (av, locale),
-                   "shipped": stones}
-                  for (av, locale), stones in shipped_in.iteritems()]
         items += [{"type": "AppVer4Tree",
                    "label": tree,
                    "appversion": av}

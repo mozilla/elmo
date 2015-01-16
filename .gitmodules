@@ -1,6 +1,3 @@
-[submodule "vendor"]
-	path = vendor
-	url = git://github.com/mozilla/playdoh-lib.git
 [submodule "vendor-local/src/compare-locales"]
 	path = vendor-local/src/compare-locales
 	url = git://github.com/Pike/compare-locales.git
