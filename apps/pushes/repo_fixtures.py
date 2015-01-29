@@ -8,48 +8,38 @@ from __future__ import absolute_import
 
 import os
 import shutil
-import sys
 
-from mercurial import commands as hgcommands
-from mercurial.hg import repository
-from mercurial.ui import ui as hg_ui
+import hglib
 
 
 class api:
     '''Abstration of mercurial commands used to create fixtures etc'''
-    class _ui(hg_ui):
-        def write(self, *msg, **opts):
-            pass
 
     @classmethod
     def init(cls, path):
         if os.path.isdir(path):
             shutil.rmtree(path)
         os.mkdir(path)
-        ui = cls._ui()
-        hgcommands.init(ui, path)
-        return repository(ui, path)
+        return hglib.init(path).open()
 
     @classmethod
     def file(cls, repo, path, contents):
-        p = repo.pathto(path)
-        open(p, 'w').write(contents)
-        if repo.dirstate[path] not in 'amn':
-            hgcommands.add(repo.ui, repo, 'path:' + path)
+        path = repo.pathto(path)
+        open(path, 'w').write(contents)
 
     @classmethod
     def commit(cls, repo, message, user='Jane Doe'):
-        hgcommands.commit(repo.ui, repo, user=user, message=message)
-        return repo['tip'].hex()
+        repo.commit(user=user, message=message, addremove=True)
+        return repo.log('.')[0].node
 
     @classmethod
     def update(cls, repo, rev):
-        hgcommands.update(repo.ui, repo, rev=rev, clean=True)
+        repo.update(rev=rev, clean=True)
 
     @classmethod
     def merge(cls, repo, rev1, rev2):
-        hgcommands.update(repo.ui, repo, rev=rev1, clean=True)
-        hgcommands.merge(repo.ui, repo, rev=rev2)
+        repo.update(rev=rev1, clean=True)
+        repo.merge(rev=rev2)
 
 
 def network(base):
@@ -74,8 +64,3 @@ def network(base):
         'heads': [head1, head2],
         'forks': [fork1, fork2]
     }
-
-
-if __name__ == '__main__':
-    b = sys.argv[1]
-    network(b)

@@ -36,7 +36,7 @@ class Command(RepositoryCommand):
         through = dbrepo.changesets.through
 
         self.verbose("%s\t%d missing" % (dbrepo.name, missing))
-        for revisions in self.chunk(self.nodes(hgrepo)):
+        for revisions in self.chunk(hgrepo):
             self.progress()
             cs = Changeset.objects.filter(revision__in=revisions)
             cs = cs.exclude(repositories=dbrepo)
@@ -53,18 +53,12 @@ class Command(RepositoryCommand):
 
     chunksize = 50
 
-    def chunk(self, _iter):
+    def chunk(self, hgrepo):
+        start = 0
         while True:
-            chunk = []
-            for o in _iter:
-                chunk.append(o)
-                if self.chunksize is not None and len(chunk) >= self.chunksize:
-                    break
-            if chunk:
-                yield chunk
-            else:
+            chunk = [rev.node for rev in hgrepo.log(
+                revrange='limit(rev(%d):,%d)' % (start, self.chunksize))]
+            if not chunk:
                 break
-
-    def nodes(self, hgrepo):
-        for i in hgrepo:
-            yield hgrepo[i].hex()
+            yield chunk
+            start += self.chunksize

@@ -14,6 +14,7 @@ from django.conf import settings
 from mercurial import commands as hgcommands
 from mercurial.copies import pathcopies
 from mercurial.hg import repository
+import hglib
 
 from life.models import Repository
 from .base import mock_ui, RepoTestBase
@@ -33,31 +34,27 @@ class DiffTestCase(RepoTestBase):
 
     def test_file_entity_addition(self):
         """Change one file by adding a new line to it"""
-        ui = mock_ui()
-
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              <!ENTITY key2 "Cruel">
              '''))
 
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
         (open(hgrepo.pathto('file.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              <!ENTITY key2 "Cruel">
              <!ENTITY key3 "World">
              '''))
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        hgrepo.close()
 
         Repository.objects.create(
           name=self.repo_name,
@@ -80,30 +77,26 @@ class DiffTestCase(RepoTestBase):
 
     def test_file_entity_modification(self):
         """Change one file by editing an existing line"""
-        ui = mock_ui()
-
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              <!ENTITY key2 "Cruel">
              '''))
 
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
         (open(hgrepo.pathto('file.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              <!ENTITY key2 "Cruelle">
              '''))
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        hgrepo.close()
 
         Repository.objects.create(
           name=self.repo_name,
@@ -125,29 +118,25 @@ class DiffTestCase(RepoTestBase):
 
     def test_file_entity_removal(self):
         """Change one file by removal of a line"""
-        ui = mock_ui()
-
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              <!ENTITY key2 "Cruel">
              '''))
 
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
         (open(hgrepo.pathto('file.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              '''))
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        hgrepo.close()
 
         Repository.objects.create(
           name=self.repo_name,
@@ -169,30 +158,26 @@ class DiffTestCase(RepoTestBase):
 
     def test_new_file(self):
         """Change by adding a new second file"""
-        ui = mock_ui()
-
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              <!ENTITY key2 "Cruel">
              '''))
 
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
         (open(hgrepo.pathto('file2.dtd'), 'w')
              .write('''
              <!ENTITY key9 "Monde">
              '''))
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        hgrepo.close()
 
         Repository.objects.create(
           name=self.repo_name,
@@ -215,26 +200,22 @@ class DiffTestCase(RepoTestBase):
 
     def test_remove_file(self):
         """Change by removing a file, with parser"""
-        ui = mock_ui()
-
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              <!ENTITY key2 "Cruel">
              '''))
 
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
-        hgcommands.remove(ui, hgrepo, 'path:file.dtd')
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
+        hgrepo.remove(['path:file.dtd'])
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        hgrepo.close()
 
         Repository.objects.create(
           name=self.repo_name,
@@ -259,23 +240,19 @@ class DiffTestCase(RepoTestBase):
 
     def test_remove_file_no_parser(self):
         """Change by removing a file, without parser"""
-        ui = mock_ui()
-
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.txt'), 'w')
              .write('line 1\nline 2\n'))
 
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
-        hgcommands.remove(ui, hgrepo, 'path:file.txt')
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
+        hgrepo.remove(['path:file.txt'])
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        hgrepo.close()
 
         repo_url = 'http://localhost:8001/%s/' % self.repo_name
         Repository.objects.create(
@@ -302,27 +279,23 @@ class DiffTestCase(RepoTestBase):
 
     def test_file_only_renamed(self):
         """Change by doing a rename without any content editing"""
-        ui = mock_ui()
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              <!ENTITY key2 "Cruel">
              '''))
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
 
-        hgcommands.rename(ui, hgrepo,
-                          hgrepo.pathto('file.dtd'),
-                          hgrepo.pathto('newnamefile.dtd'))
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
+        hgrepo.move(hgrepo.pathto('file.dtd'),
+                    hgrepo.pathto('newnamefile.dtd'))
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        hgrepo.close()
 
         Repository.objects.create(
           name=self.repo_name,
@@ -343,24 +316,20 @@ class DiffTestCase(RepoTestBase):
 
     def test_file_only_renamed_no_parser(self):
         """Change by doing a rename of a file without parser"""
-        ui = mock_ui()
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.txt'), 'w')
              .write('line 1\nline 2\n'))
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
 
-        hgcommands.rename(ui, hgrepo,
-                          hgrepo.pathto('file.txt'),
-                          hgrepo.pathto('newnamefile.txt'))
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
+        hgrepo.move(hgrepo.pathto('file.txt'),
+                    hgrepo.pathto('newnamefile.txt'))
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        hgrepo.close()
 
         Repository.objects.create(
           name=self.repo_name,
@@ -381,33 +350,29 @@ class DiffTestCase(RepoTestBase):
 
     def test_file_renamed_and_edited(self):
         """Change by doing a rename with content editing"""
-        ui = mock_ui()
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              <!ENTITY key2 "Cruel">
              '''))
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
 
-        hgcommands.rename(ui, hgrepo,
-                          hgrepo.pathto('file.dtd'),
-                          hgrepo.pathto('newnamefile.dtd'))
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
+        hgrepo.move(hgrepo.pathto('file.dtd'),
+                    hgrepo.pathto('newnamefile.dtd'))
         (open(hgrepo.pathto('newnamefile.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              <!ENTITY key2 "Cruel">
              <!ENTITY key3 "World">
              '''))
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        hgrepo.close()
 
         Repository.objects.create(
           name=self.repo_name,
@@ -430,33 +395,29 @@ class DiffTestCase(RepoTestBase):
 
     def test_file_renamed_and_edited_broken(self):
         """Change by doing a rename with bad content editing"""
-        ui = mock_ui()
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              <!ENTITY key2 "Cruel">
              '''))
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
 
-        hgcommands.rename(ui, hgrepo,
-                          hgrepo.pathto('file.dtd'),
-                          hgrepo.pathto('newnamefile.dtd'))
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
+        hgrepo.move(hgrepo.pathto('file.dtd'),
+                    hgrepo.pathto('newnamefile.dtd'))
         (codecs.open(hgrepo.pathto('newnamefile.dtd'), 'w', 'latin1')
              .write(u'''
              <!ENTITY key1 "Hell\xe2">
              <!ENTITY key2 "Cruel">
              <!ENTITY key3 "W\ex3rld">
              '''))
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        hgrepo.close()
 
         Repository.objects.create(
           name=self.repo_name,
@@ -479,33 +440,28 @@ class DiffTestCase(RepoTestBase):
 
     def test_file_renamed_and_edited_original_broken(self):
         """Change by doing a rename on a previously broken file"""
-        ui = mock_ui()
-        hgcommands.init(ui, self.repo)
-
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1')
              .write(u'''
              <!ENTITY key1 "Hell\xe3">
              <!ENTITY key2 "Cruel">
              '''))
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
 
-        hgcommands.rename(ui, hgrepo,
-                          hgrepo.pathto('file.dtd'),
-                          hgrepo.pathto('newnamefile.dtd'))
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
+        hgrepo.move(hgrepo.pathto('file.dtd'),
+                    hgrepo.pathto('newnamefile.dtd'))
         (open(hgrepo.pathto('newnamefile.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              <!ENTITY key2 "World">
              '''))
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        hgrepo.close()
 
         Repository.objects.create(
           name=self.repo_name,
@@ -530,33 +486,28 @@ class DiffTestCase(RepoTestBase):
 
     def test_file_copied_and_edited_original_broken(self):
         """Change by copying a broken file"""
-        ui = mock_ui()
-        hgcommands.init(ui, self.repo)
-
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1')
              .write(u'''
              <!ENTITY key1 "Hell\xe3">
              <!ENTITY key2 "Cruel">
              '''))
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
 
-        hgcommands.copy(ui, hgrepo,
-                        hgrepo.pathto('file.dtd'),
-                        hgrepo.pathto('newnamefile.dtd'))
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
+        hgrepo.copy(hgrepo.pathto('file.dtd'),
+                    hgrepo.pathto('newnamefile.dtd'))
         (open(hgrepo.pathto('newnamefile.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              <!ENTITY key2 "World">
              '''))
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        hgrepo.close()
 
         Repository.objects.create(
           name=self.repo_name,
@@ -581,8 +532,7 @@ class DiffTestCase(RepoTestBase):
     def test_error_handling(self):
         """Test various bad request parameters to the diff_app
         and assure that it responds with the right error codes."""
-        ui = mock_ui()
-        hgcommands.init(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {})
@@ -590,17 +540,17 @@ class DiffTestCase(RepoTestBase):
         response = self.client.get(url, {'repo': 'junk'})
         eq_(response.status_code, 404)
 
-        hgrepo = repository(ui, self.repo)
         (open(hgrepo.pathto('file.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              <!ENTITY key2 "Cruel">
              '''))
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
+
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
+        hgrepo.close()
 
         Repository.objects.create(
           name=self.repo_name,
@@ -620,27 +570,22 @@ class DiffTestCase(RepoTestBase):
 
     def test_file_only_copied(self):
         """Change by copying a file with no content editing"""
-        ui = mock_ui()
-        hgcommands.init(ui, self.repo)
-
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              <!ENTITY key2 "Cruel">
              '''))
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
-        hgcommands.copy(ui, hgrepo,
-                          hgrepo.pathto('file.dtd'),
-                          hgrepo.pathto('newnamefile.dtd'))
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
+        hgrepo.copy(hgrepo.pathto('file.dtd'),
+                    hgrepo.pathto('newnamefile.dtd'))
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        hgrepo.close()
 
         Repository.objects.create(
           name=self.repo_name,
@@ -662,24 +607,20 @@ class DiffTestCase(RepoTestBase):
 
     def test_file_only_copied_no_parser(self):
         """Change by copying a file without parser"""
-        ui = mock_ui()
-        hgcommands.init(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
 
-        hgrepo = repository(ui, self.repo)
         (open(hgrepo.pathto('file.txt'), 'w')
              .write('line 1\nline 2\n'))
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
-        hgcommands.copy(ui, hgrepo,
-                          hgrepo.pathto('file.txt'),
-                          hgrepo.pathto('newnamefile.txt'))
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
+        hgrepo.copy(hgrepo.pathto('file.txt'),
+                    hgrepo.pathto('newnamefile.txt'))
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        hgrepo.close()
 
         Repository.objects.create(
           name=self.repo_name,
@@ -701,32 +642,28 @@ class DiffTestCase(RepoTestBase):
 
     def test_file_copied_and_edited(self):
         """Change by copying a file and then content editing"""
-        ui = mock_ui()
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              <!ENTITY key2 "Cruel">
              '''))
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
-        hgcommands.copy(ui, hgrepo,
-                          hgrepo.pathto('file.dtd'),
-                          hgrepo.pathto('newnamefile.dtd'))
+
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
+        hgrepo.copy(hgrepo.pathto('file.dtd'),
+                    hgrepo.pathto('newnamefile.dtd'))
         (open(hgrepo.pathto('newnamefile.dtd'), 'w')
              .write('''
              <!ENTITY key1 "Hello">
              <!ENTITY key3 "World">
              '''))
-
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        hgrepo.close()
 
         Repository.objects.create(
           name=self.repo_name,
@@ -749,25 +686,22 @@ class DiffTestCase(RepoTestBase):
 
     def test_diff_base_against_clone(self):
         """Test a diff across a different divergant clone"""
-        ui = mock_ui()
         orig = os.path.join(settings.REPOSITORY_BASE, 'orig')
         clone = os.path.join(settings.REPOSITORY_BASE, 'clone')
-        hgcommands.init(ui, orig)
-        hgorig = repository(ui, orig)
+        hgorig = hglib.init(orig)
+        hgorig.open()
         (open(hgorig.pathto('file.dtd'), 'w')
          .write('''
           <!ENTITY old "content we will delete">
           <!ENTITY mod "this has stuff to keep and delete">
         '''))
-        hgcommands.addremove(ui, hgorig)
-        hgcommands.commit(ui, hgorig,
-                          user="Jane Doe <jdoe@foo.tld",
-                          message="initial commit")
-        assert len(hgorig) == 1  # 1 commit
+        hgorig.addremove()
+        hgorig.commit(user="Jane Doe <jdoe@foo.tld",
+                      message="initial commit")
+        assert hgorig[0]  # 1 commit
 
         # set up a second repo called 'clone'
-        hgcommands.clone(ui, orig, clone)
-        hgclone = repository(ui, clone)
+        hgclone = hglib.clone(source=orig, dest=clone).open()
 
         # new commit on base
         (open(hgorig.pathto('file.dtd'), 'w')
@@ -775,11 +709,10 @@ class DiffTestCase(RepoTestBase):
          <!ENTITY mod "this has stuff to keep and add">
          <!ENTITY new "this has stuff that is new">
          '''))
-        hgcommands.commit(ui, hgorig,
-                          user="Jane Doe <jdoe@foo.tld",
-                          message="second commit on base")
-        assert len(hgorig) == 2  # 2 commits
-        rev_from = hgorig[1].hex()
+        hgorig.commit(user="Jane Doe <jdoe@foo.tld",
+                      message="second commit on base")
+        assert hgorig[1]  # 2 commits
+        rev_from = hgorig[1].node()
 
         # different commit on clone
         (open(hgclone.pathto('file.dtd'), 'w')
@@ -787,10 +720,9 @@ class DiffTestCase(RepoTestBase):
          <!ENTITY mod "this has stuff to keep and change">
          <!ENTITY new_in_clone "this has stuff that is different from base">
          '''))
-        hgcommands.commit(ui, hgclone,
-                          user="John Doe <jodo@foo.tld",
-                          message="a different commit on clone")
-        rev_to = hgclone[1].hex()
+        hgclone.commit(user="John Doe <jodo@foo.tld",
+                       message="a different commit on clone")
+        rev_to = hgclone[1].node()
 
         self.dbrepo(name='orig', changesets_from=hgorig)
         self.dbrepo(name='clone', changesets_from=hgclone)
@@ -822,34 +754,30 @@ class DiffTestCase(RepoTestBase):
 
     def test_diff_unrelated_repos(self):
         """Test for failure to diff unrelated repos"""
-        ui = mock_ui()
         one = os.path.join(settings.REPOSITORY_BASE, 'one')
         other = os.path.join(settings.REPOSITORY_BASE, 'other')
-        hgcommands.init(ui, one)
-        hgone = repository(ui, one)
+        hgone = hglib.init(one)
+        hgone.open()
         (open(hgone.pathto('file.dtd'), 'w')
          .write('''
           <!ENTITY ent "val">
         '''))
-        hgcommands.addremove(ui, hgone)
-        hgcommands.commit(ui, hgone,
-                          user="Jane Doe <jdoe@foo.tld",
-                          message="initial commit")
-        assert len(hgone) == 1  # 1 commit
-        rev_from = hgone['tip'].hex()
+        hgone.addremove()
+        hgone.commit(user="Jane Doe <jdoe@foo.tld",
+                     message="initial commit")
+        assert hgone[0]  # 1 commit
+        rev_from = hgone['tip'].node()
 
         # different commit on other
-        hgcommands.init(ui, other)
-        hgother = repository(ui, other)
+        hgother = hglib.init(other).open()
         (open(hgother.pathto('file.dtd'), 'w')
          .write('''
          <!ENTITY aunt "otherval">
          '''))
-        hgcommands.addremove(ui, hgother)
-        hgcommands.commit(ui, hgother,
-                          user="John Doe <jodo@foo.tld",
-                          message="a different commit on other")
-        rev_to = hgother['tip'].hex()
+        hgother.addremove()
+        hgother.commit(user="John Doe <jodo@foo.tld",
+                       message="a different commit on other")
+        rev_to = hgother['tip'].node()
 
         self.dbrepo(name='one', changesets_from=hgone)
         self.dbrepo(name='other', changesets_from=hgother)
@@ -870,20 +798,17 @@ class DiffTestCase(RepoTestBase):
 
     def test_binary_file_edited(self):
         """Modify a binary file"""
-        ui = mock_ui()
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.png'), 'wb')
              .write(base64.b64decode(
                  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAAAACklE'
                  'QVR4nGNoAAAAggCBd81ytgAAAABJRU5ErkJggg=='
                  )))
 
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit",
+                      addremove=True)
+        rev0 = hgrepo[0].node()
         # a bit unfair of a change but works for the tests
         (open(hgrepo.pathto('file.png'), 'wb')
              .write(base64.b64decode(
@@ -891,10 +816,9 @@ class DiffTestCase(RepoTestBase):
                  'QVR4nGNgAAAAAgABSK+kcQAAAABJRU5ErkJggg=='
                  )))
 
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
 
         repo_url = 'http://localhost:8001/' + self.repo_name + '/'
         Repository.objects.create(
@@ -917,28 +841,24 @@ class DiffTestCase(RepoTestBase):
 
     def test_broken_encoding_file_add(self):
         """Change by editing an already broken file"""
-        ui = mock_ui()
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
 
         # do this to trigger an exception on Mozilla.Parser.readContents
         _content = u'<!ENTITY key1 "Hell\xe3">\n'
         (codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1')
           .write(_content))
 
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit",
+                      addremove=True)
+        rev0 = hgrepo[0].node()
 
         (open(hgrepo.pathto('file.dtd'), 'w')
              .write(u'<!ENTITY key1 "Hello">\n'))
 
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
 
         repo_url = 'http://localhost:8001/' + self.repo_name + '/'
         Repository.objects.create(
@@ -961,28 +881,24 @@ class DiffTestCase(RepoTestBase):
 
     def test_file_edited_broken_encoding(self):
         """Change by editing a good with a broken edit"""
-        ui = mock_ui()
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
 
         (open(hgrepo.pathto('file.dtd'), 'w')
              .write(u'<!ENTITY key1 "Hello">\n'))
 
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit",
+                      addremove=True)
+        rev0 = hgrepo[0].node()
 
         # do this to trigger an exception on Mozilla.Parser.readContents
         _content = u'<!ENTITY key1 "Hell\xe3">\n'
         (codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1')
           .write(_content))
 
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
 
         repo_url = 'http://localhost:8001/' + self.repo_name + '/'
         Repository.objects.create(
@@ -1009,28 +925,24 @@ class DiffTestCase(RepoTestBase):
         which says that passing unrecognized repo hashes
         should yield a 400 Bad Request error.
         """
-        ui = mock_ui()
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
 
         (open(hgrepo.pathto('file.dtd'), 'w')
              .write(u'<!ENTITY key1 "Hello">\n'))
 
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit",
+                      addremove=True)
+        rev0 = hgrepo[0].node()
 
         # do this to trigger an exception on Mozilla.Parser.readContents
         _content = u'<!ENTITY key1 "Hell\xe3">\n'
         (codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1')
           .write(_content))
 
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
 
         repo_url = 'http://localhost:8001/' + self.repo_name + '/'
         Repository.objects.create(

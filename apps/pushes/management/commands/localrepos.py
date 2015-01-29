@@ -26,13 +26,13 @@ class Command(BaseCommand):
         update = options.get('update', False)
         all = options.get('all', False)
         if rebase:
-            pull_args = ['--rebase']
+            pull_args = {'rebase': True}
         elif update:
-            pull_args = ['-u']
+            pull_args = {'update': True}
         else:
-            pull_args = []
+            pull_args = {}
         from life.models import Repository, Changeset
-        from mercurial import dispatch
+        import hglib
         import os.path
         from django.conf import settings
 
@@ -51,6 +51,7 @@ class Command(BaseCommand):
 
         for name, url in repos.values_list('name', 'url'):
             repopath = str(resolve(name))
+            self.stdout.write(name + '\n')
             if not os.path.isdir(os.path.join(repopath, '.hg')):
                 # new repo, need to clone
                 if os.path.isdir(repopath):
@@ -67,12 +68,9 @@ class Command(BaseCommand):
                              % str(e))
                         )
                         continue
-                dispatch.dispatch(
-                    dispatch.request(['clone', str(url), repopath])
-                    )
+                hglib.clone(str(url), repopath)
             else:
-                dispatch.dispatch(
-                    dispatch.request(['pull', '-R', repopath] + pull_args)
-                    )
+                with hglib.open(repopath) as client:
+                    client.pull(**pull_args)
 
         open(resolve('.latest_cs'), 'w').write('%i\n' % latest_cs)

@@ -8,10 +8,7 @@ from __future__ import absolute_import, division
 
 from datetime import datetime
 import os.path
-from mercurial.hg import repository
-from mercurial.ui import ui
-from mercurial.error import RepoError
-from mercurial.commands import pull, update, clone
+import hglib
 
 from life.models import Repository, Push, Changeset, Branch, File
 from django.conf import settings
@@ -35,24 +32,23 @@ class PushJS(object):
         return '<Push: %d>' % self.id
 
 
-def get_or_create_changeset(repo, hgrepo, revision):
+def get_or_create_changeset(repo, hgrepo, ctx):
     try:
-        cs = Changeset.objects.get(revision=revision)
+        cs = Changeset.objects.get(revision=ctx.node())
         repo.changesets.add(cs)
         return cs
     except Changeset.DoesNotExist:
         pass
     # create the changeset, but first, let's see if we need the parents
-    ctx = hgrepo.changectx(revision)
-    parents = map(lambda _cx: _cx.hex(), ctx.parents())
+    parent_revs = [parent.node() for parent in ctx.parents()]
     p_dict = dict(Changeset.objects
-                  .filter(revision__in=parents)
+                  .filter(revision__in=parent_revs)
                   .values_list('revision', 'id'))
-    for p in parents:
-        if p not in p_dict:
+    for p in ctx.parents():
+        if p.node() not in p_dict:
             p_cs = get_or_create_changeset(repo, hgrepo, p)
             p_dict[p_cs.revision] = p_cs.id
-    cs = Changeset(revision=revision)
+    cs = Changeset(revision=ctx.node())
     cs.user = ctx.user().decode('utf-8', 'replace')
     cs.description = ctx.description().decode('utf-8', 'replace')
     branch = ctx.branch()
@@ -117,7 +113,7 @@ def handlePushes(repo_id, submits, do_update=True):
         for data in submits:
             changesets = []
             for revision in data.changesets:
-                cs = get_or_create_changeset(repo, hgrepo, revision)
+                cs = get_or_create_changeset(repo, hgrepo, hgrepo[revision])
                 changesets.append(cs)
             p, __ = Push.objects.get_or_create(
               repository=repo,
@@ -131,41 +127,23 @@ def handlePushes(repo_id, submits, do_update=True):
 
 
 def _hg_repository_sync(name, url, submits, do_update=True):
-    ui_ = ui()
     repopath = os.path.join(settings.REPOSITORY_BASE, name)
     configpath = os.path.join(repopath, '.hg', 'hgrc')
     if not os.path.isfile(configpath):
         if not os.path.isdir(os.path.dirname(repopath)):
             os.makedirs(os.path.dirname(repopath))
-        clone(ui_, str(url), str(repopath),
-              pull=False, uncompressed=False, rev=[],
-              noupdate=False)
+        hgrepo = hglib.clone(source=str(url), dest=str(repopath))
         cfg = open(configpath, 'a')
         cfg.write('default-push = ssh%s\n' % str(url)[4:])
         cfg.close()
-        ui_.readconfig(configpath)
-        hgrepo = repository(ui_, repopath)
+        hgrepo.open()
     else:
-        ui_.readconfig(configpath)
-        hgrepo = repository(ui_, repopath)
+        hgrepo = hglib.open(repopath)
         cs = submits[-1].changesets[-1]
         try:
-            hgrepo.changectx(cs)
-        except RepoError:
-            pull(ui_, hgrepo, source=str(url),
-                 force=False, update=False,
-                 rev=[])
+            hgrepo[cs]
+        except KeyError:
+            hgrepo.pull(source=str(url))
             if do_update:
-                # Make sure that we're not triggering workers in post 2.6
-                # hg. That's not stable, at least as we do it.
-                # Monkey patch time
-                try:
-                    from mercurial import worker
-                    if hasattr(worker, '_startupcost'):
-                        # use same value as hg for non-posix
-                        worker._startupcost = 1e30
-                except ImportError:
-                    # no worker, no problem
-                    pass
-                update(ui_, hgrepo)
+                hgrepo.update()
     return hgrepo
