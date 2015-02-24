@@ -15,7 +15,7 @@ commonware==0.4.2
 # sha256: qP7eZXN4toYnRLGQEucHEnm5UuzSCP2DIncjhmBo8sA
 Django==1.4.13
 
-# sha256: _l3c1rcBcnr8Sz3uiWfRsgE34vTMsCXB0X5eDFlpbF8
+# sha256: vYDtkF00OzZ4WioB9VkuBKdX7xUY2Q25FQ6e2uiBIDo
 django-appconf==0.5
 
 # sha256: ke8X-6jMs-0chxtVc6OAWaOPB11LzrL--zzeiDPPHFw
