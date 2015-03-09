@@ -52,10 +52,6 @@ https://github.com/mozilla/django-session-csrf/archive/f00ad91.zip#egg=django-se
 # funfactory
 https://github.com/mozilla/funfactory/archive/d85bcca.zip#egg=funfactory
 
-# sha256: 1G-RX-61SO3QsUKyeN85xry_ZHAzGB6Bk_AJZTYLmzc
-# jingo
-https://github.com/jbalogh/jingo/archive/1dc0e0b.zip#egg=jingo
-
 # sha256: -fUE8yboUH-tNZdMGuX5HUpzX7M-VWtu2PXsEGBUpHM
 # nuggets
 https://github.com/mozilla/nuggets/archive/ce50688.zip#egg=nuggets
