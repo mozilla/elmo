@@ -3,9 +3,6 @@
 # ---------------------------------------------------
 # Loaded from PyPi
 
-# sha256: YizsMzSqhnWk7C2wQKq3vmBaHvMxDeGMv_77BAdos8c
-cef==0.3
-
 # sha256: OxNQQo3tQ4uqhTRD9zfPOTHrRggCTveBe2Dl3bp0nT8
 commonware==0.4.2
 
