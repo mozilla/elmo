@@ -16,6 +16,11 @@ admin.autodiscover()
 ## during Django's start-up.
 ## ...
 
+## Monkeypatch session_csrf
+import session_csrf
+session_csrf.monkeypatch()
+from funfactory import admin
+admin.monkeypatch()
 
 def simple_x_frame_view(request):
     response = HttpResponse()
