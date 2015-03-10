@@ -1,9 +1,6 @@
 # Compiled requirements
 # from funfactory/funfactory/requirements/compiled.txt
 
-# sha256: IvlnXkLcZAxEadT30hC67LXmlYI6-VTIE9UckwI1Z10
-Jinja2==2.5.5
-
 # sha256: CNQWnQL9JIGaezIDuoXM9QN9xkbggusbIbPIftV29rw
 mercurial==3.2.4
 
