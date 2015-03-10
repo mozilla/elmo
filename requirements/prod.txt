@@ -9,14 +9,12 @@ commonware==0.4.2
 # sha256: qP7eZXN4toYnRLGQEucHEnm5UuzSCP2DIncjhmBo8sA
 Django==1.4.13
 
+# django-appconf is required by django-compressor
 # sha256: vYDtkF00OzZ4WioB9VkuBKdX7xUY2Q25FQ6e2uiBIDo
 django-appconf==0.5
 
 # sha256: ke8X-6jMs-0chxtVc6OAWaOPB11LzrL--zzeiDPPHFw
 django-compressor==1.2
-
-# sha256: btC1l-3MJAQr1g15A_XoP5IRqt6BWsxMSv9u3fGYRaA
-django-multidb-router==0.5
 
 # sha256: sGqGRRqZ1sJr-mUIKZnb9ljgh-WW6SkszmiLU-q6qto
 django-sha2==0.4
