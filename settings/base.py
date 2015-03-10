@@ -4,7 +4,14 @@
 
 # Django settings file for a project based on the playdoh template.
 
-from funfactory.settings_base import *
+from funfactory.settings_base import (
+    path,
+    BASE_PASSWORD_HASHERS,
+    ROOT,
+    ROOT_URLCONF,
+    TEST_RUNNER
+)
+import os.path
 
 from django.utils.functional import lazy
 
@@ -50,7 +57,11 @@ TEMPLATE_LOADERS = (
 #     'django.template.loaders.eggs.Loader',
 )
 
-TEMPLATE_CONTEXT_PROCESSORS += (
+TEMPLATE_CONTEXT_PROCESSORS = (
+    'django.contrib.auth.context_processors.auth',
+    'django.core.context_processors.debug',
+    'django.core.context_processors.request',
+    'session_csrf.context_processor',
     'django.core.context_processors.static',
     'accounts.context_processors.accounts',
     'homepage.context_processors.analytics',
