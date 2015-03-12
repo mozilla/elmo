@@ -3,38 +3,44 @@
 # ---------------------------------------------------
 # Loaded from PyPi
 
-# sha256: OxNQQo3tQ4uqhTRD9zfPOTHrRggCTveBe2Dl3bp0nT8
-commonware==0.4.2
+# sha256: p7AqX3bYmnn4YZJvs04CnMQ0PBOAJSXIGFQqOf54jM4
+commonware==0.4.3
 
 # sha256: qP7eZXN4toYnRLGQEucHEnm5UuzSCP2DIncjhmBo8sA
 Django==1.4.13
 
-# django-appconf is required by django-compressor
-# sha256: vYDtkF00OzZ4WioB9VkuBKdX7xUY2Q25FQ6e2uiBIDo
-django-appconf==0.5
+# six is required by django-appconf
+# sha256: QYqTw5en7asj5ViNvAZ6x0pyPts9VBvUk295R252Rdo
+six==1.9.0
 
-# sha256: ke8X-6jMs-0chxtVc6OAWaOPB11LzrL--zzeiDPPHFw
-django-compressor==1.2
+# django-appconf is required by django-compressor
+# sha256: PZvJY9gAiuFR1sZk-f1VRCcF6puebXznfN1Av5LZHzo
+django-appconf==1.0.1
+
+# sha256: UE5EGWeseGBKs18DABj8mm-icOam6YRx0jEf139wZ0s
+django-compressor==1.4
 
 # sha256: sGqGRRqZ1sJr-mUIKZnb9ljgh-WW6SkszmiLU-q6qto
 django-sha2==0.4
 
-# sha256: pucH2csXyL8eVTcTrRSzEnSoHVwM4PziGwKTbQ79fbs
-html5lib==0.95
+# sha256: w4h_fih112ZhB_qL7nYf-VuTkazcx80bX9V6I7X7xJ4
+html5lib==0.999
 
-# sha256: TmPMMyXedc-Y_61AvnL6aXU96CRpUXMXj3TANP5PUmA
-nose==1.3.0
+# sha256: eLAxFrrdDbsu1N7clqSj1CE4uUu4n8Lrmffzvf0Zn1Y
+nose==1.3.4
+
+# sha256: NmfSakH-wwNkoO9yWAgyylMogC1VP21ucq9awhyzY2U
+django-nose==1.3
+
+# ordereddict is required by bleach
+# sha256: HDW0rCBs7y0kgWyJ-Jzyid09OM98RJuz-re_bUPwGx8
+ordereddict==1.1
+
+# sha256: FSrynUWAsRL8UpZoZEknkclR5jgrVgcOleEoxrYUgzs
+bleach==1.4.1
 
 # ---------------------------------------------------
 # Loaded from github
-
-# sha256: 94cV75Pd-tzeIAi4pteBhGQcv55jcgy99jfNzBO1gaE
-# bleach
-https://github.com/jsocol/bleach/archive/baf1eac.zip#egg=bleach
-
-# sha256: CGTLt2UIzgTQnBh1qu9y8Sb8zbHRejqlMHZqkc8WT7s
-# django-nose
-https://github.com/jbalogh/django-nose/archive/83c7867.zip#egg=django-nose
 
 # sha256: uDA8a2lQGB1uEg_sdygAueYurQsQAD6-utf81kFmE9g
 # django-session-csrf
@@ -44,6 +50,6 @@ https://github.com/mozilla/django-session-csrf/archive/f00ad91.zip#egg=django-se
 # funfactory
 https://github.com/mozilla/funfactory/archive/d85bcca.zip#egg=funfactory
 
-# sha256: rYKq51LgMZerm82Lw9ZxUDDv8247stbruRYqi0VEUW4
+# sha256: i8pS00-rg-P2l9AuFWJb12bqLJL7FVXGYFfsElkMwZ0
 # test-utils
-https://github.com/jbalogh/test-utils/archive/3c2214d.zip#egg=test-utils
+https://github.com/jbalogh/test-utils/archive/e42e031.zip#egg=test-utils

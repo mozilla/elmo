@@ -8,11 +8,11 @@ mercurial==3.2.4
 # sha256: H6pJd-mFBzHot_ih1YuGJzk6N0RUN4jsQ3-0XgbP5AE
 #MySQL-python==1.2.3c1
 
-# sha256: KGXGizpWOEZrGDe_SmfER-DP33RjMJoGiq0OkKoD9Yo
-Pillow==2.4.0
+# sha256: JukyDnP1ghgmtrJAijv_Cowp5FFZUwBpoRfv0572Gfg
+Pillow==2.7.0
 
-# sha256: rxL5lFTolenkMMdXI8O5QZwLzNDqd4A2YtaprFb2Qls
-py-bcrypt==0.3
+# sha256: X6E7zlUUaDUNZsSINpSFBXDz2ijWhmu2OLpE_l6r2ng
+py-bcrypt==0.4
 
 # doesn't compile on bm-l10n-dashboard01, disabled
 # sha256: QXrj9uL2gEYWEdxgyVrJ_LPFurLgDgb54FcrhZA-zJs
