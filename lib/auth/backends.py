@@ -6,7 +6,7 @@ from ldap.filter import filter_format
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
-from django.contrib.auth.backends import RemoteUserBackend
+from django.contrib.auth.backends import ModelBackend
 from django.core.validators import email_re
 from django.utils.hashcompat import md5_constructor
 from django.utils.encoding import force_unicode, smart_str
@@ -44,7 +44,7 @@ def flatten_group_names(values):
     return group_names
 
 
-class MozLdapBackend(RemoteUserBackend):
+class MozLdapBackend(ModelBackend):
     """Creates the connvection to the server, and binds anonymously"""
     host = ""
     dn = ""
