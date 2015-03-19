@@ -35,6 +35,13 @@ GIT_PULL = "git pull -q origin %(branch)s"
 GIT_SUBMODULE = "git submodule update --init --recursive"
 GIT_REVISION = "git rev-parse HEAD > collected/static/revision"
 
+MIGRATE_ELMO_SITE = (
+    "mv settings/*.py elmo/settings/;"
+    "rm settings/*.pyc;"
+    "rmdir settings";
+    "rm *.pyc"
+)
+
 # TODO: Add caching once peep starts supporting it.
 # See bug 1121459.
 PEEP_INSTALL_PROD = (
@@ -68,6 +75,11 @@ def update_site(env, debug):
         (CHDIR, here),
         (EXEC,  GIT_PULL % project_branch),
         (EXEC,  GIT_SUBMODULE),
+    ]
+
+    commands += [
+        (CHDIR, here),
+        (EXEC, MIGRATE_ELMO_SITE),
     ]
 
     commands += [

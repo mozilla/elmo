@@ -3,29 +3,33 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import os
+import os.path
+import site
 import sys
 
 
-try:
-    # For local development in a virtualenv:
-    from funfactory import manage
-except ImportError:
-    # Production:
-    # Add a temporary path so that we can import the funfactory
-    tmp_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        'vendor'
-    )
-    sys.path.append(tmp_path)
+# Hook up elmo specific python locations.
+# This used to be funfactory, but that's doing too much
+prev_sys_path = list(sys.path)  # to reorder our stuff in front
 
-    from funfactory import manage
+ROOT = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(ROOT)
+site.addsitedir(os.path.join(ROOT, 'vendor'))
+site.addsitedir(os.path.join(ROOT, 'vendor-local'))
+site.addsitedir(os.path.join(ROOT, 'vendor-local', 'lib', 'python'))
+site.addsitedir(os.path.join(ROOT, 'apps'))
+sys.path[:] = ([_path for _path in sys.path if _path not in prev_sys_path] +
+    prev_sys_path)
 
-    # Let the path magic happen in setup_environ() !
-    sys.path.remove(tmp_path)
-
-
-manage.setup_environ(__file__)
+# settings still uses a bunch of funfactory, but assumes a different ROOT.
+# help it fix that
+import funfactory.manage
+funfactory.manage.ROOT = ROOT
 
 if __name__ == "__main__":
-    manage.main()
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "elmo.settings")
+
+    from django.core.management import execute_from_command_line
+
+    execute_from_command_line(sys.argv)
+
