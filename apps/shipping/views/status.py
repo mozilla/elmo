@@ -91,8 +91,8 @@ class Changesets(SignoffDataView):
         tips = dict(sos.values_list('locale__code', 'tip'))
         revs = Changeset.objects.filter(id__in=tips.values())
         revmap = dict(revs.values_list('id', 'revision'))
-        return ('%s %s\n' % (l, revmap[tips[l]][:12])
-                for l in sorted(tips.keys()))
+        return ['%s %s\n' % (l, revmap[tips[l]][:12])
+                for l in sorted(tips.keys())]
 
 l10n_changesets = Changesets.as_view()
 
