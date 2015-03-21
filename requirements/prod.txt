@@ -53,16 +53,15 @@ ordereddict==1.1
 # sha256: FSrynUWAsRL8UpZoZEknkclR5jgrVgcOleEoxrYUgzs
 bleach==1.4.1
 
+# sha256: UvCV-GFHuwtfYjva-VJVLReOu8XqyI2RsvWR09IsO4A
+funfactory==2.3.0
+
 # ---------------------------------------------------
 # Loaded from github
 
 # sha256: uDA8a2lQGB1uEg_sdygAueYurQsQAD6-utf81kFmE9g
 # django-session-csrf
 https://github.com/mozilla/django-session-csrf/archive/f00ad91.zip#egg=django-session-csrf
-
-# sha256: wcFcJispTW5yhd6-m4xkIfc61fLjdS-PLBikL5F4qAY
-# funfactory
-https://github.com/mozilla/funfactory/archive/d85bcca.zip#egg=funfactory
 
 # sha256: i8pS00-rg-P2l9AuFWJb12bqLJL7FVXGYFfsElkMwZ0
 # test-utils
