@@ -38,7 +38,7 @@ GIT_REVISION = "git rev-parse HEAD > collected/static/revision"
 MIGRATE_ELMO_SITE = (
     "mv settings/*.py elmo/settings/;"
     "rm settings/*.pyc;"
-    "rmdir settings";
+    "rmdir settings;"
     "rm *.pyc"
 )
 
