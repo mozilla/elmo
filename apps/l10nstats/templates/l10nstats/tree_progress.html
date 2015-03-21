@@ -26,7 +26,7 @@ var LOCALE_DATA = [{% for item in data %}
     {time: new Date({{item.srctime}} * 1000), locales: {{ item.locales|safe }}}{% if not forloop.last %},{% endif %}{% endfor %}
 ];
 
-var DASHBOARD_HISTORY_URL = "{% url l10nstats.views.history_plot %}?tree=" + tree;
+var DASHBOARD_HISTORY_URL = '{% url "l10nstats.views.history_plot" %}?tree=' + tree;
 </script>
 {% endblock %}
 
