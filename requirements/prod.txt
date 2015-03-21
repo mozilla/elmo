@@ -6,8 +6,11 @@
 # sha256: p7AqX3bYmnn4YZJvs04CnMQ0PBOAJSXIGFQqOf54jM4
 commonware==0.4.3
 
-# sha256: k08ZdSGGgNUcTanWOjm8X7HdqsSEdv00uat5A_2YvPQ
-Django==1.4.21
+# py2.py3-none-any.whl:
+# sha256: NXQADN8iPA3YYOgH8RVvhY-ZMxhyDe6zx-pweXx4y_E
+# tar.gz:
+# sha256: w7LAVIW2wi9QVP5QmOW-VNNf9e3ae-I4j6sTG9R9Rdw
+Django==1.5.12
 
 # six is required by django-appconf
 # py2.py3-none-any.whl:
