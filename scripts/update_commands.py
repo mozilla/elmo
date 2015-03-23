@@ -29,7 +29,6 @@ class BasePhase(object):
         for cmd in self.commandlist:
             if self.verbose:
                 sys.stdout.write("%s\n" % ' '.join(cmd))
-            cmd = ['echo ' + cmd[0]]
             subprocess.check_call(cmd, shell=True, cwd=self.basedir)
 
 
