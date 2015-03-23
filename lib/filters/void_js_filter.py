@@ -12,7 +12,7 @@ filter and start using a real compressor package.
 To use this filter set this in your settings:
 
     COMPRESS_JS_FILTERS = (
-      'filters.void_js_filter.VoidJSFilter',
+      'lib.filters.void_js_filter.VoidJSFilter',
     )
 
 """
@@ -21,7 +21,7 @@ from compressor.filters import CallbackOutputFilter
 
 
 class VoidJSFilter(CallbackOutputFilter):
-    callback = "filters.void_js_filter.jsvoid"
+    callback = "lib.filters.void_js_filter.jsvoid"
 
 
 def jsvoid(content):
