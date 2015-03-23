@@ -20,117 +20,31 @@ import os
 import sys
 from textwrap import dedent
 from optparse import  OptionParser
-
-# Constants
-
-ENV_BRANCH = {
-    'dev': 'develop',
-    'stage': 'master',
-    'prod': 'master',
-}
-VENDOR_DIR = './vendor'
-TMP_VENDOR_DIR = './vendor-tmp'
-
-GIT_PULL = "git pull -q origin %(branch)s"
-GIT_SUBMODULE = "git submodule update --init --recursive"
-GIT_REVISION = "git rev-parse HEAD > collected/static/revision"
-
-# TODO: Add caching once peep starts supporting it.
-# See bug 1121459.
-PEEP_INSTALL_PROD = (
-    "./vendor-local/lib/python/peep.py install "
-    "-r requirements/compiled.txt "
-    "-r requirements/prod.txt "
-    "--target=%s" % TMP_VENDOR_DIR
-)
-PEEP_REPLACE_VENDOR = "rm -rf %s && mv %s %s" % (
-    VENDOR_DIR, TMP_VENDOR_DIR, VENDOR_DIR
-)
-PEEP_CLEANUP = "rm -rf %s" % TMP_VENDOR_DIR
-
-SOUTH_EXEC = "./manage.py migrate"
-STATICFILES_COLLECT_EXEC = "./manage.py collectstatic --noinput"
-DJANGOCOMPRESSOR_COMPRESS_EXEC = "./manage.py compress"
-REFRESH_FEEDS_EXEC = "./manage.py refresh_feeds"
-
-EXEC = 'exec'
-CHDIR = 'chdir'
-CONFIRM = 'confirm'
+import update_commands
 
 
-def update_site(env, debug):
+ENV_BRANCH = update_commands.SourcePhase.ENV_BRANCH
+
+
+def update_site(env, verbose):
     """Run through commands to update this site."""
-    error_updating = False
-    here = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    project_branch = {'branch': ENV_BRANCH[env]}
-
-    commands = [
-        (CHDIR, here),
-        (EXEC,  GIT_PULL % project_branch),
-        (EXEC,  GIT_SUBMODULE),
-    ]
-
-    commands += [
-        (CHDIR, here),
-        (EXEC, PEEP_CLEANUP),
-        (EXEC, PEEP_INSTALL_PROD),
-        (EXEC, PEEP_REPLACE_VENDOR),
-    ]
-
-    commands += [
-        (CHDIR, here),
-        (EXEC, SOUTH_EXEC),
-    ]
-
-    commands += [
-        (CHDIR, here),
-        (EXEC, STATICFILES_COLLECT_EXEC),
-        (EXEC,  GIT_REVISION),
-    ]
-
-    commands += [
-        (CHDIR, here),
-        (EXEC, DJANGOCOMPRESSOR_COMPRESS_EXEC),
-    ]
-
-    commands += [
-        (CHDIR, here),
-        (EXEC, REFRESH_FEEDS_EXEC),
-    ]
-
-    for cmd, cmd_args in commands:
-        if CHDIR == cmd:
-            if debug:
-                sys.stdout.write("cd %s\n" % cmd_args)
-            os.chdir(cmd_args)
-        elif EXEC == cmd:
-            if debug:
-                sys.stdout.write("%s\n" % cmd_args)
-            if not 0 == os.system(cmd_args):
-                error_updating = True
-                break
-        elif CONFIRM == cmd:
-            if debug:
-                sys.stdout.write("%s\n" % cmd_args)
-            if not 0 == os.system(cmd_args):
-                error_updating = True
-                break
-            confirm = raw_input("Does the above look right? [yn] > ")
-            if confirm not in ('y', 'yes'):
-                sys.stdout.write("You aborted the update.  The lastexecuted "
-                                 "command was:\n\t%s\n" % cmd_args)
-                break
-        else:
-            raise Exception("Unknown type of command %s" % cmd)
-
-    if error_updating:
-        sys.stderr.write("There was an error while updating. Please try again "
-                         "later. Aborting.\n")
+    # do source first
+    cmds = update_commands.SourcePhase(
+        environment=env,
+        verbose=verbose
+    )
+    cmds.execute()
+    # do install, update the commands module first
+    reload(update_commands)
+    cmds = update_commands.InstallPhase(
+        environment=env,
+        verbose=verbose
+    )
+    cmds.execute()
 
 
 def main():
     """ Handles command line args. """
-    debug = False
     usage = dedent("""\
         %prog [options]
         Updates a server's sources, vendor libraries, packages CSS/JS
@@ -146,10 +60,8 @@ def main():
                        action="store_true", dest="verbose")
     (opts, _) = options.parse_args()
 
-    if opts.verbose:
-        debug = True
     if opts.environment in ENV_BRANCH.keys():
-        update_site(opts.environment, debug)
+        update_site(opts.environment, opts.verbose)
     else:
         sys.stderr.write("Invalid environment!\n")
         options.print_help(sys.stderr)
