@@ -31,5 +31,5 @@ import manage
 
 
 import django.core.handlers.wsgi
-os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'elmo.settings'
 application = django.core.handlers.wsgi.WSGIHandler()
