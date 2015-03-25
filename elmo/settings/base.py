@@ -8,12 +8,13 @@ from funfactory.settings_base import (
     path,
     BASE_PASSWORD_HASHERS,
     ROOT,
-    ROOT_URLCONF,
     TEST_RUNNER
 )
 import os.path
 
 from django.utils.functional import lazy
+
+ROOT_URLCONF = 'elmo.urls'
 
 DEBUG = TEMPLATE_DEBUG = False
 
