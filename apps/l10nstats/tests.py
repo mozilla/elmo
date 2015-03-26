@@ -121,14 +121,15 @@ class ShowRunTestCase(TestCase):
         rv = showrun(r)
         ok_(isinstance(rv, SafeString))
         frag = parseFragment(rv)
-        eq_(len(frag.childNodes), 1)
-        a = frag.childNodes[0]
-        eq_(a.attributes, {'data-errors': '3',
-                           'data-total': '0',
-                           'data-missing': '0',
-                           'href': '/dashboard/compare?run=1',
-                           'data-warnings': '0'})
-        text = a.childNodes[0].value
+        childNodes = list(frag)
+        eq_(len(childNodes), 1)
+        a = childNodes[0]
+        eq_(a.attrib, {'data-errors': '3',
+                       'data-total': '0',
+                       'data-missing': '0',
+                       'href': '/dashboard/compare?run=1',
+                       'data-warnings': '0'})
+        text = a.text
         ok_('3' in text and 'error' in text)
 
     def test_missing(self):
@@ -137,14 +138,15 @@ class ShowRunTestCase(TestCase):
         rv = showrun(r)
         ok_(isinstance(rv, SafeString))
         frag = parseFragment(rv)
-        eq_(len(frag.childNodes), 1)
-        a = frag.childNodes[0]
-        eq_(a.attributes, {'data-errors': '0',
-                           'data-total': '0',
-                           'data-missing': '3',
-                           'href': '/dashboard/compare?run=1',
-                           'data-warnings': '0'})
-        text = a.childNodes[0].value
+        childNodes = list(frag)
+        eq_(len(childNodes), 1)
+        a = childNodes[0]
+        eq_(a.attrib, {'data-errors': '0',
+                       'data-total': '0',
+                       'data-missing': '3',
+                       'href': '/dashboard/compare?run=1',
+                       'data-warnings': '0'})
+        text = a.text
         ok_('3' in text and 'missing' in text)
 
     def test_missingInFiles(self):
@@ -153,14 +155,15 @@ class ShowRunTestCase(TestCase):
         rv = showrun(r)
         ok_(isinstance(rv, SafeString))
         frag = parseFragment(rv)
-        eq_(len(frag.childNodes), 1)
-        a = frag.childNodes[0]
-        eq_(a.attributes, {'data-errors': '0',
-                           'data-total': '0',
-                           'data-missing': '3',
-                           'href': '/dashboard/compare?run=1',
-                           'data-warnings': '0'})
-        text = a.childNodes[0].value
+        childNodes = list(frag)
+        eq_(len(childNodes), 1)
+        a = childNodes[0]
+        eq_(a.attrib, {'data-errors': '0',
+                       'data-total': '0',
+                       'data-missing': '3',
+                       'href': '/dashboard/compare?run=1',
+                       'data-warnings': '0'})
+        text = a.text
         ok_('3' in text and 'missing' in text)
 
     def test_warnings(self):
@@ -169,14 +172,15 @@ class ShowRunTestCase(TestCase):
         rv = showrun(r)
         ok_(isinstance(rv, SafeString))
         frag = parseFragment(rv)
-        eq_(len(frag.childNodes), 1)
-        a = frag.childNodes[0]
-        eq_(a.attributes, {'data-errors': '0',
-                           'data-total': '0',
-                           'data-missing': '0',
-                           'href': '/dashboard/compare?run=1',
-                           'data-warnings': '3'})
-        text = a.childNodes[0].value
+        childNodes = list(frag)
+        eq_(len(childNodes), 1)
+        a = childNodes[0]
+        eq_(a.attrib, {'data-errors': '0',
+                       'data-total': '0',
+                       'data-missing': '0',
+                       'href': '/dashboard/compare?run=1',
+                       'data-warnings': '3'})
+        text = a.text
         ok_('3' in text and 'warning' in text)
 
     def test_obsolete(self):
@@ -185,14 +189,15 @@ class ShowRunTestCase(TestCase):
         rv = showrun(r)
         ok_(isinstance(rv, SafeString))
         frag = parseFragment(rv)
-        eq_(len(frag.childNodes), 1)
-        a = frag.childNodes[0]
-        eq_(a.attributes, {'data-errors': '0',
-                           'data-total': '0',
-                           'data-missing': '0',
-                           'href': '/dashboard/compare?run=1',
-                           'data-warnings': '0'})
-        text = a.childNodes[0].value
+        childNodes = list(frag)
+        eq_(len(childNodes), 1)
+        a = childNodes[0]
+        eq_(a.attrib, {'data-errors': '0',
+                       'data-total': '0',
+                       'data-missing': '0',
+                       'href': '/dashboard/compare?run=1',
+                       'data-warnings': '0'})
+        text = a.text
         ok_('3' in text and 'obsolete' in text)
 
     def test_green(self):
@@ -201,12 +206,13 @@ class ShowRunTestCase(TestCase):
         rv = showrun(r)
         ok_(isinstance(rv, SafeString))
         frag = parseFragment(rv)
-        eq_(len(frag.childNodes), 1)
-        a = frag.childNodes[0]
-        eq_(a.attributes, {'data-errors': '0',
-                           'data-total': '0',
-                           'data-missing': '0',
-                           'href': '/dashboard/compare?run=1',
-                           'data-warnings': '0'})
-        text = a.childNodes[0].value
+        childNodes = list(frag)
+        eq_(len(childNodes), 1)
+        a = childNodes[0]
+        eq_(a.attrib, {'data-errors': '0',
+                       'data-total': '0',
+                       'data-missing': '0',
+                       'href': '/dashboard/compare?run=1',
+                       'data-warnings': '0'})
+        text = a.text
         ok_('green' in text)

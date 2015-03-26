@@ -13,6 +13,12 @@ CACHES = {
     }
 }
 
+# disable loading homepage feeds over the wire for tests
+L10N_FEED_URL = '''<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+</feed>
+'''
+
 # this way, you don't need to have static files collected
 COMPRESS_ENABLED = True
 COMPRESS_OFFLINE = False

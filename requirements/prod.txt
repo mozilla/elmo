@@ -3,67 +3,66 @@
 # ---------------------------------------------------
 # Loaded from PyPi
 
-# sha256: nwLQNXGE3h8JPBABK1LnRUoQCL5qXBhat6Mwes6x0S4
-Babel==1.3
+# sha256: p7AqX3bYmnn4YZJvs04CnMQ0PBOAJSXIGFQqOf54jM4
+commonware==0.4.3
 
-# sha256: YizsMzSqhnWk7C2wQKq3vmBaHvMxDeGMv_77BAdos8c
-cef==0.3
+# sha256: 111gXldDBeHChkw5LhRUlj6tRVJHfOFOZ-ZLnvn6oaY
+Django==1.4.19
 
-# sha256: OxNQQo3tQ4uqhTRD9zfPOTHrRggCTveBe2Dl3bp0nT8
-commonware==0.4.2
+# six is required by django-appconf
+# py2.py3-none-any.whl:
+# sha256: QYqTw5en7asj5ViNvAZ6x0pyPts9VBvUk295R252Rdo
+# tar.gz:
+# sha256: 4kBSQR_E-9H2cmNVN8P8IzDZSBsYwDF2lbRiWVEskdU
+six==1.9.0
 
-# sha256: qP7eZXN4toYnRLGQEucHEnm5UuzSCP2DIncjhmBo8sA
-Django==1.4.13
+# django-appconf is required by django-compressor
+# py2.py3-none-any.whl:
+# sha256: PZvJY9gAiuFR1sZk-f1VRCcF6puebXznfN1Av5LZHzo
+# tar.gz:
+# sha256: uhN1-xAk6OkVR1BNQ5IyF5XJif3lALluvHyTiE94bmA
+django-appconf==1.0.1
 
-# sha256: _l3c1rcBcnr8Sz3uiWfRsgE34vTMsCXB0X5eDFlpbF8
-django-appconf==0.5
-
-# sha256: ke8X-6jMs-0chxtVc6OAWaOPB11LzrL--zzeiDPPHFw
-django-compressor==1.2
-
-# sha256: btC1l-3MJAQr1g15A_XoP5IRqt6BWsxMSv9u3fGYRaA
-django-multidb-router==0.5
+# py2.py3-none-any.whl:
+# sha256: UE5EGWeseGBKs18DABj8mm-icOam6YRx0jEf139wZ0s
+# tar.gz:
+# sha256: smA0Iw78731g5SZ4kO2mVt_EnFZ_JxJdkH7uT-f5puw
+django-compressor==1.4
 
 # sha256: sGqGRRqZ1sJr-mUIKZnb9ljgh-WW6SkszmiLU-q6qto
 django-sha2==0.4
 
-# sha256: pucH2csXyL8eVTcTrRSzEnSoHVwM4PziGwKTbQ79fbs
-html5lib==0.95
+# sha256: w4h_fih112ZhB_qL7nYf-VuTkazcx80bX9V6I7X7xJ4
+html5lib==0.999
 
-# sha256: TmPMMyXedc-Y_61AvnL6aXU96CRpUXMXj3TANP5PUmA
-nose==1.3.0
+# py2-none-any.whl:
+# sha256: eLAxFrrdDbsu1N7clqSj1CE4uUu4n8Lrmffzvf0Zn1Y
+# py3-none-any.whl:
+# sha256: zIrr3sWl-5iZEvFX93s8IaXi8tpiOvkKe0drEGqDSr8
+# tar.gz:
+# sha256: drxjpOLV5aDfd8p9GPD1bixGz7YrcRA7qSqSx5-rHgM
+nose==1.3.4
+
+# sha256: NmfSakH-wwNkoO9yWAgyylMogC1VP21ucq9awhyzY2U
+django-nose==1.3
+
+# ordereddict is required by bleach
+# sha256: HDW0rCBs7y0kgWyJ-Jzyid09OM98RJuz-re_bUPwGx8
+ordereddict==1.1
+
+# sha256: FSrynUWAsRL8UpZoZEknkclR5jgrVgcOleEoxrYUgzs
+bleach==1.4.1
+
+# sha256: UvCV-GFHuwtfYjva-VJVLReOu8XqyI2RsvWR09IsO4A
+funfactory==2.3.0
 
 # ---------------------------------------------------
 # Loaded from github
-
-# sha256: 94cV75Pd-tzeIAi4pteBhGQcv55jcgy99jfNzBO1gaE
-# bleach
-https://github.com/jsocol/bleach/archive/baf1eac.zip#egg=bleach
-
-# sha256: CGTLt2UIzgTQnBh1qu9y8Sb8zbHRejqlMHZqkc8WT7s
-# django-nose
-https://github.com/jbalogh/django-nose/archive/83c7867.zip#egg=django-nose
 
 # sha256: uDA8a2lQGB1uEg_sdygAueYurQsQAD6-utf81kFmE9g
 # django-session-csrf
 https://github.com/mozilla/django-session-csrf/archive/f00ad91.zip#egg=django-session-csrf
 
-# sha256: wcFcJispTW5yhd6-m4xkIfc61fLjdS-PLBikL5F4qAY
-# funfactory
-https://github.com/mozilla/funfactory/archive/d85bcca.zip#egg=funfactory
-
-# sha256: 1G-RX-61SO3QsUKyeN85xry_ZHAzGB6Bk_AJZTYLmzc
-# jingo
-https://github.com/jbalogh/jingo/archive/1dc0e0b.zip#egg=jingo
-
-# sha256: -fUE8yboUH-tNZdMGuX5HUpzX7M-VWtu2PXsEGBUpHM
-# nuggets
-https://github.com/mozilla/nuggets/archive/ce50688.zip#egg=nuggets
-
-# sha256: rYKq51LgMZerm82Lw9ZxUDDv8247stbruRYqi0VEUW4
+# sha256: i8pS00-rg-P2l9AuFWJb12bqLJL7FVXGYFfsElkMwZ0
 # test-utils
-https://github.com/jbalogh/test-utils/archive/3c2214d.zip#egg=test-utils
-
-# sha256: rj3Wj0q94OgUC_cwWzT8m7VUdBgptf1nXJdafi4QYiQ
-# tower
-https://github.com/clouserw/tower/archive/6112ea0.zip#egg=tower
+https://github.com/jbalogh/test-utils/archive/e42e031.zip#egg=test-utils

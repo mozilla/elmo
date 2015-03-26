@@ -42,12 +42,12 @@ SECRET_KEY = 'anything'
 cp settings/ldap_settings.py-dist settings/ldap_settings.py
 
 ## install dependencies
-# prod.txt is covered by vendor-local
+# first, the commented pieces of compiled.txt
+pip install MySQL-python==1.2.3c1
+pip install python-ldap==2.3.13
 
-# compiled modules
-pip install -r requirements/compiled.txt
-
-# dependencies for running the tests
-pip install -r requirements/dev.txt
+## rebuild vendor with peep
+rm -rf vendor
+./vendor-local/lib/python/peep.py install -r requirements/compiled.txt -r requirements/dev.txt --target=vendor
 
 FORCE_DB=true python manage.py test --noinput

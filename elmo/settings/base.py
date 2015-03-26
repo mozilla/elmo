@@ -4,14 +4,19 @@
 
 # Django settings file for a project based on the playdoh template.
 
-from funfactory.settings_base import *
+from funfactory.settings_base import (
+    path,
+    BASE_PASSWORD_HASHERS,
+    ROOT,
+    TEST_RUNNER
+)
+import os.path
 
 from django.utils.functional import lazy
 
-DEBUG = TEMPLATE_DEBUG = False
+ROOT_URLCONF = 'elmo.urls'
 
-# because we're not using the pythonic structure as per funfactory
-ROOT_PACKAGE = os.path.basename(ROOT)
+DEBUG = TEMPLATE_DEBUG = False
 
 ADMINS = ()
 MANAGERS = ADMINS
@@ -50,7 +55,11 @@ TEMPLATE_LOADERS = (
 #     'django.template.loaders.eggs.Loader',
 )
 
-TEMPLATE_CONTEXT_PROCESSORS += (
+TEMPLATE_CONTEXT_PROCESSORS = (
+    'django.contrib.auth.context_processors.auth',
+    'django.core.context_processors.debug',
+    'django.core.context_processors.request',
+    'session_csrf.context_processor',
     'django.core.context_processors.static',
     'accounts.context_processors.accounts',
     'homepage.context_processors.analytics',
@@ -93,8 +102,7 @@ INSTALLED_APPS = (
     'commonware.response.cookies',
     'session_csrf',
 
-    # this elmo package itself
-    ROOT_PACKAGE,
+    'elmo',
 
     # Local apps
     'commons',
@@ -162,7 +170,7 @@ COMPRESS_CSS_FILTERS = (
   'compressor.filters.cssmin.CSSMinFilter',
 )
 COMPRESS_JS_FILTERS = (
-  'filters.void_js_filter.VoidJSFilter',
+  'lib.filters.void_js_filter.VoidJSFilter',
 )
 STATICFILES_FINDERS = (
   'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -192,8 +200,6 @@ else:
     from ldap_settings import *
     # ImportErrors are not acceptable if ldap_loaded is True
     import ldap
-    MIDDLEWARE_CLASSES = (MIDDLEWARE_CLASSES +
-      ('django.contrib.auth.middleware.RemoteUserMiddleware',))
     AUTHENTICATION_BACKENDS = ('lib.auth.backends.MozLdapBackend',)
 
 WEBDASHBOARD_URL = 'https://l10n.mozilla-community.org/webdashboard/'

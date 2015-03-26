@@ -50,6 +50,12 @@ class SourcePhase(BasePhase):
 class InstallPhase(BasePhase):
     VENDOR_DIR = './vendor'
     TMP_VENDOR_DIR = './vendor-tmp'
+    MIGRATE_ELMO_SITE = (
+        "mv settings/*.py elmo/settings/",
+        "rm settings/*.pyc",
+        "rmdir settings",
+        "rm *.pyc"
+    )
     # TODO: Add caching once peep starts supporting it.
     # See bug 1121459.
     PEEP_INSTALL_PROD = (
@@ -69,6 +75,10 @@ class InstallPhase(BasePhase):
     REFRESH_FEEDS_EXEC = "./manage.py refresh_feeds"
     def __init__(self, environment=None, **kwargs):
         super(InstallPhase, self).__init__(environment=environment, **kwargs)
+        if os.path.isdir(os.path.join(self.basedir, 'settings')):
+            self.commandlist += [
+                [cmd] for cmd in self.MIGRATE_ELMO_SITE
+            ]
         self.commandlist += [
             [self.PEEP_CLEANUP],
             [self.PEEP_INSTALL_PROD],

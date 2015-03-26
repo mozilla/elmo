@@ -1,6 +1,6 @@
-settings/local*.py
-settings/ldap_settings.py
-settings/mounts_local.py
+/elmo/settings/local*.py
+/elmo/settings/ldap_settings.py
+/elmo/settings/mounts_local.py
 /env/
 @elmo
 *.pyc
