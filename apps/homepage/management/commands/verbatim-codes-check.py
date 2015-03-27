@@ -5,11 +5,8 @@
 """Checks the list of languages on https://localize.mozilla.org and compares
 them against settings.VERBATIM_CONVERSIONS and suggests things that might
 need to change.
-
-Requires `pyquery` to be installed. See requirements/dev.txt
 """
 
-import re
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from life.models import Locale
@@ -21,65 +18,57 @@ class Command(BaseCommand):  # pragma: no cover
 
     def handle(self, **options):
         # delay this import till run-time
-        from pyquery import PyQuery as pq
+        from BeautifulSoup import BeautifulSoup
+        import urllib2
 
-        d = pq(url='https://localize.mozilla.org/')
+        soup = BeautifulSoup(urllib2.urlopen('https://localize.mozilla.org/').read())
         VERBATIM = {}
-        for each in d('td.language a'):
-            lang = each.text
-            code = each.attrib['href'].split('/')[1]
+        for td in soup.findAll('td', attrs={'class':'language'}):
+            a = td.find('a')
+            lang = a.text
+            code = a['href'].split('/')[1]
             assert lang and code
             VERBATIM[code] = lang
 
         ELMO = {}
-        for l in Locale.objects.all():
+        # exclude locales with teams
+        aliased = (Locale.teams_over_time.related.model.objects
+            .current()
+            .values_list('locale', flat=True)
+        )
+        for l in Locale.objects.exclude(id__in=aliased):
             ELMO[l.code] = l.name
 
-        ending = re.compile('-[A-Z]{2}')
-
-        not_matched = set()
-        conversions = {}
-        for code, name in ELMO.items():
-            if code in VERBATIM:
-                pass
-            elif code.replace('-', '_') in VERBATIM:
-                pass
-            elif ending.findall(code) and code.split('-')[0] in VERBATIM:
-                conversions[code] = code.split('-')[0]
+        linked_to = set()
+        no_verbatim = set()
+        orig_convert = settings.VERBATIM_CONVERSIONS
+        proposed = {}
+        for code in ELMO.iterkeys():
+            gliblocale = code.replace('-', '_')
+            # check for locales that are disabled, but exist
+            if code in orig_convert:
+                if orig_convert[code] is None and gliblocale in VERBATIM:
+                    self.stdout.write("%s doesn't need mapping" % code)
+                else:
+                    proposed[code] = orig_convert[code]
                 continue
-            else:
-                not_matched.add(code)
+            if gliblocale in VERBATIM:
+                linked_to.add(gliblocale)
+                continue
+            self.stdout.write("%s not found on verbatim" % code)
+            no_verbatim.add(code)
+            proposed[code] = None
 
-        combined = {}
-        for code in not_matched:
-            combined[code] = None
-        for key, value in conversions.items():
-            combined[key] = value
-
-        if combined == settings.VERBATIM_CONVERSIONS:
+        if proposed == settings.VERBATIM_CONVERSIONS:
             return
 
-        print "SUGGESTED NEW SETTING..."
-        print
-        print "VERBATIM_CONVERSIONS = {"
-        for key in sorted(combined):
+        self.stdout.write("SUGGESTED NEW SETTING...\n")
+        self.stdout.write("VERBATIM_CONVERSIONS = {")
+        for key in sorted(proposed):
             key = str(key)
-            value = combined[key]
+            value = proposed[key]
             if value:
                 value = str(value)
-            print " " * 4 + "%r: %r," % (key, value)
-        print "}"
-        print "\n"
-
-        print "POTENTIAL PROBLEMS..."
-        print
-        for each in combined:
-            if each not in settings.VERBATIM_CONVERSIONS:
-                print "\tMissing".ljust(20), each
-            elif combined[each] != settings.VERBATIM_CONVERSIONS[each]:
-                print "\tMismatch".ljust(20), each.ljust(10),
-                print repr(settings.VERBATIM_CONVERSIONS[each]), '-->',
-                print repr(combined[each])
-        for each in settings.VERBATIM_CONVERSIONS:
-            if each not in combined:
-                print "\tExcessive".ljust(20), each
+            self.stdout.write(" " * 4 + "%r: %r," % (key, value))
+        self.stdout.write("}")
+        self.stdout.write("\n")
