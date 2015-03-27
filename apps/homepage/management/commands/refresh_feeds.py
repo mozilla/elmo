@@ -25,5 +25,4 @@ class Command(BaseCommand):  # pragma: no cover
         note = 'Took %.4f to parse %s' % (t1 - t0, settings.L10N_FEED_URL)
         logging.info(note)
         if verbose:
-            print get_feed_items
-            print "\t", note
+            self.stdout.write(note)

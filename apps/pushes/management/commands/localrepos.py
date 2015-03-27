@@ -55,16 +55,18 @@ class Command(BaseCommand):
             if not os.path.isdir(os.path.join(repopath, '.hg')):
                 # new repo, need to clone
                 if os.path.isdir(repopath):
-                    print ("\n\nCannot clone %s, "
-                           "existing directory in the way\n\n") % name
+                    self.stdout.write(("\n\nCannot clone %s, "
+                           "existing directory in the way\n\n") % name)
                     continue
                 _parent = os.path.dirname(repopath)
                 if not os.path.isdir(_parent):
                     try:
                         os.makedirs(_parent)
                     except Exception, e:
-                        print ("\n\nFailed to prepare for clone, %s\n\n"
-                               % str(e))
+                        self.stdout.write(
+                            ("\n\nFailed to prepare for clone, %s\n\n"
+                             % str(e))
+                        )
                         continue
                 dispatch.dispatch(
                     dispatch.request(['clone', str(url), repopath])

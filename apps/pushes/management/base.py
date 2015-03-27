@@ -6,7 +6,6 @@
 '''
 
 import os.path
-import sys
 import logging
 
 from django.core.management.base import BaseCommand
@@ -40,12 +39,12 @@ class RepositoryCommand(BaseCommand):
                 # allow subclass to stop our loop over repositories
                 break
             except StandardError:
-                print
+                self.stdout.write('')
                 logging.error('%s\tError while processing' % dbrepo.name,
                               exc_info=True)
                 self._needsNewline = False
         if self._needsNewline:
-            print
+            self.stdout.write('')
 
     def handleOptions(self, **options):
         """Overload to take more options
@@ -94,13 +93,13 @@ class RepositoryCommand(BaseCommand):
         if verbosity > self.verbosity:
             return  # we're not that verbose
         if self._needsNewline and wantsnewline:
-            sys.stdout.write('\n')
-        sys.stdout.write(content)
+            self.stdout.write('\n', ending='')
+        self.stdout.write(content, ending='')
         self._needsNewline = True
         if wantsnewline:
-            sys.stdout.write('\n')
+            self.stdout.write('\n', ending='')
             self._needsNewline = False
-        sys.stdout.flush()
+        self.stdout.flush()
 
 
 def resolve(path):

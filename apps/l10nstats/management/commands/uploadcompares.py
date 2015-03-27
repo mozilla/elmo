@@ -13,6 +13,7 @@ from django.core.management.base import BaseCommand, CommandError
 import elasticsearch
 from elasticsearch.helpers import bulk
 import json
+import six
 
 from l10nstats.models import Run
 from mbdb.models import Master, Log, Step
@@ -100,9 +101,9 @@ class Command(LoggingCommand):
                 docs_per_sec = passed*1.0/ellapsed
                 self.stdout.write('%.2f docs per second\n' % docs_per_sec)
             else:
-                self.stdout.write('really quick\n');
+                self.stdout.write('really quick\n')
             if errors:
-                print errors
+                self.stdout.write(six.text_type(errors))
                 raise CommandError('failed %d docs' % len(errors))
 
     def generateDocs(self, runs):
