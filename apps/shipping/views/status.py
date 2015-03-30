@@ -14,7 +14,7 @@ from shipping.api import accepted_signoffs, flags4appversions
 from shipping.models import (Milestone, Action, Signoff,
                              Application, AppVersion)
 from django.views.decorators.cache import cache_control
-from django.utils import simplejson
+import json
 from django.db.models import Max
 
 from .utils import class_decorator
@@ -405,7 +405,7 @@ class StatusJSON(SignoffDataView):
     def content(self, request, items):
         data = self.EXHIBIT_SCHEMA.copy()
         data['items'] = items
-        return simplejson.dumps(data, indent=2)
+        return json.dumps(data, indent=2)
 
 
 status_json = StatusJSON.as_view()

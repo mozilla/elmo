@@ -8,7 +8,7 @@ from elmo.test import TestCase
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
-from django.utils import simplejson as json
+import json
 from django.core.cache import cache
 from nose.tools import eq_, ok_
 

@@ -11,7 +11,7 @@ from elmo.test import TestCase
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
-from django.utils import simplejson as json
+import json
 from l10nstats.models import Run
 from commons.tests.mixins import EmbedsTestCaseMixin
 from life.models import Tree, Forest, Locale

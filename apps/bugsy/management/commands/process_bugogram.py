@@ -11,7 +11,7 @@ from urllib2 import urlopen
 import re
 
 from django.core.management.base import BaseCommand
-from django.utils import simplejson as json
+import json
 import bugsy
 
 basebug = {

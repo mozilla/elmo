@@ -21,7 +21,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Max
 from django.views.decorators.cache import cache_control
-from django.utils import simplejson
+import json
 from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
 
@@ -396,7 +396,7 @@ def stones_data(request):
                       'code': stone.code,
                       'age': age})
 
-    return http.HttpResponse(simplejson.dumps({'items': items}, indent=2))
+    return http.HttpResponse(json.dumps({'items': items}, indent=2))
 
 
 def open_mstone(request):

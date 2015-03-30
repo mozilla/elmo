@@ -9,7 +9,7 @@ from django.conf import settings
 from django.db.models import Max
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
-from django.utils import simplejson
+import json
 from django.views.decorators.cache import cache_control
 
 from collections import defaultdict
@@ -155,7 +155,7 @@ def statuses(req, ms_code):
                 d['fallback'] = fallbacks[loc]
             yield d
 
-    return HttpResponse(simplejson.dumps({'items': list(items())}, indent=2),
+    return HttpResponse(json.dumps({'items': list(items())}, indent=2),
                         mimetype="text/plain")
 
 
