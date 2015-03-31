@@ -31,7 +31,7 @@ class Policy(models.Model, CTMixin):
     db entry each.
     """
     text = models.TextField(help_text='''use html markup''')
-    active = models.BooleanField()
+    active = models.BooleanField(default=False)
 
     class Meta:
         permissions = (('activate_policy', 'Can activate a policy'),)
