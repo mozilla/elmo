@@ -105,26 +105,28 @@ def get_or_create_changeset(repo, hgrepo, revision):
     return cs
 
 
-@transaction.commit_on_success
 def handlePushes(repo_id, submits, do_update=True):
     if not submits:
         return
     repo = Repository.objects.get(id=repo_id)
     hgrepo = _hg_repository_sync(repo.name, repo.url, submits,
                                  do_update=do_update)
-    for data in submits:
-        changesets = []
-        for revision in data.changesets:
-            cs = get_or_create_changeset(repo, hgrepo, revision)
-            changesets.append(cs)
-        p, __ = Push.objects.get_or_create(
-          repository=repo,
-          push_id=data.id, user=data.user,
-          push_date=datetime.utcfromtimestamp(data.date)
-        )
-        p.changesets = changesets
-        p.save()
-    repo.save()
+    # roll the complete push into one transaction, with all the jazz
+    # about changesets and files and etc.
+    with transaction.atomic():
+        for data in submits:
+            changesets = []
+            for revision in data.changesets:
+                cs = get_or_create_changeset(repo, hgrepo, revision)
+                changesets.append(cs)
+            p, __ = Push.objects.get_or_create(
+              repository=repo,
+              push_id=data.id, user=data.user,
+              push_date=datetime.utcfromtimestamp(data.date)
+            )
+            p.changesets = changesets
+            p.save()
+        repo.save()
     return len(submits)
 
 
