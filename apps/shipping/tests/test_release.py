@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from nose.tools import eq_, ok_
-from test_utils import TestCase
+from elmo.test import TestCase
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 from shipping.models import Milestone, Application, AppVersion

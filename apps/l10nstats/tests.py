@@ -4,7 +4,7 @@
 
 import datetime
 from urlparse import urlparse
-from test_utils import TestCase
+from elmo.test import TestCase
 from nose.tools import eq_, ok_
 from django.http import QueryDict
 from django.core.urlresolvers import reverse

@@ -7,7 +7,7 @@ import re
 from urlparse import urlparse
 from nose.tools import eq_, ok_
 #from django.test import TestCase
-from test_utils import TestCase
+from elmo.test import TestCase
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType

@@ -6,7 +6,7 @@
 '''Unit testing for this module.
 '''
 import datetime
-from test_utils import TestCase
+from elmo.test import TestCase
 from django.core.management.commands.dumpdata import Command
 from apps.mbdb.models import Property, Step, Build, Builder, Master, Slave
 import json

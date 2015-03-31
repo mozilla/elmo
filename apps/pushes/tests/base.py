@@ -7,7 +7,7 @@ import shutil
 import tempfile
 from django.conf import settings
 from mercurial.ui import ui as hg_ui
-from test_utils import TestCase
+from elmo.test import TestCase
 from life.models import Repository
 from ..utils import get_or_create_changeset
 

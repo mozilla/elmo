@@ -7,7 +7,7 @@ import datetime
 import time
 import json
 from nose.tools import eq_, ok_
-from test_utils import TestCase
+from elmo.test import TestCase
 from django import http
 from django.core.urlresolvers import reverse
 from mercurial import commands as hgcommands

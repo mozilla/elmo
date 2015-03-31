@@ -5,7 +5,7 @@
 from nose.tools import eq_, ok_
 from django.core.urlresolvers import reverse
 from django.utils import simplejson as json
-from test_utils import TestCase
+from elmo.test import TestCase
 from commons.tests.mixins import EmbedsTestCaseMixin
 from life.models import Locale
 from bugsy.views import homesnippet, teamsnippet

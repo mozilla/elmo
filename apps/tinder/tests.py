@@ -9,7 +9,7 @@ import os
 import datetime
 from tempfile import gettempdir
 from nose.tools import eq_, ok_
-from test_utils import TestCase
+from elmo.test import TestCase
 from commons.tests.mixins import EmbedsTestCaseMixin
 from django.conf import settings
 from django.core.urlresolvers import reverse
