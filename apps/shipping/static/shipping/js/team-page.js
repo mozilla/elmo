@@ -6,7 +6,7 @@ $(function() {
     // make the scroll tops of our application anchors show below the header
     // shift down by offsetTop and header height
     var off = $('.trees > thead').height() +
-              document.querySelector('.appname h2').offsetTop;
+              document.querySelector('.appname h3').offsetTop;
     off += 'px';
-    $('.appname h2').css({'padding-top': off, 'margin-top': '-' + off});
+    $('.appname h3').css({'padding-top': off, 'margin-top': '-' + off});
 });
