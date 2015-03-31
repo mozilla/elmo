@@ -7,8 +7,8 @@ from ldap.filter import filter_format
 from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.backends import ModelBackend
-from django.core.validators import email_re
-from django.utils.hashcompat import md5_constructor
+from django.core.validators import validate_email, ValidationError
+from hashlib import md5
 from django.utils.encoding import force_unicode, smart_str
 import os
 
@@ -76,9 +76,10 @@ class MozLdapBackend(ModelBackend):
     #  never be authenticated locally
     def authenticate(self, username=None, password=None):
         try:  # Let's see if we have such user
-            if email_re.match(username):
+            try:
+                validate_email(username)
                 local_user = User.objects.get(email=username)
-            else:
+            except ValidationError:
                 local_user = User.objects.get(username=username)
 
             if local_user.has_usable_password():
@@ -220,12 +221,15 @@ class MozLdapBackend(ModelBackend):
         # django.contrib.auth.models.User
         if not user:
             django_username = username
-            if email_re.match(django_username):
+            try:
+                validate_email(django_username)
                 if isinstance(username, unicode):
                     # md5 chokes on non-ascii characters
                     django_username = username.encode('ascii', 'ignore')
-                django_username = (md5_constructor(django_username)
+                django_username = (md5(django_username)
                                    .hexdigest()[:30])
+            except ValidationError:
+                pass
             user = User(username=django_username,
                         first_name=first_name,
                         last_name=last_name,
