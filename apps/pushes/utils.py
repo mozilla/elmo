@@ -14,7 +14,6 @@ from mercurial.commands import pull, update, clone
 
 from life.models import Repository, Push, Changeset, Branch, File
 from django.conf import settings
-from django.db import connection
 from django.db import transaction
 
 
@@ -84,10 +83,10 @@ def get_or_create_changeset(repo, hgrepo, revision):
             existingpaths = dict.fromkeys(existingpaths)
             missingpaths = filter(lambda p: p not in existingpaths,
                                   good_chunk)
-            cursor = connection.cursor()
-            cursor.executemany('INSERT INTO %s (path) VALUES (%%s)' %
-                               File._meta.db_table,
-                               map(lambda p: (p,), missingpaths))
+            File.objects.bulk_create([
+                File(path=p)
+                for p in missingpaths
+            ])
             good_ids = File.objects.filter(path__in=good_chunk)
             cs.files.add(*list(good_ids.values_list('pk', flat=True)))
     for path in spacefiles:
