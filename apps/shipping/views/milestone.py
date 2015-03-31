@@ -156,7 +156,7 @@ def statuses(req, ms_code):
             yield d
 
     return HttpResponse(json.dumps({'items': list(items())}, indent=2),
-                        mimetype="text/plain")
+                        content_type="text/plain")
 
 
 @class_decorator(cache_control(max_age=60))

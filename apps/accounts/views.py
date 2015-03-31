@@ -66,7 +66,7 @@ def user_json(request):
             result['user_name'] = request.user.username
     else:
         result['csrf_token'] = request.csrf_token
-    return HttpResponse(json.dumps(result), mimetype="application/json")
+    return HttpResponse(json.dumps(result), content_type="application/json")
 
 
 def logout(request, redirect_field_name=REDIRECT_FIELD_NAME):

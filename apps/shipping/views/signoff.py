@@ -422,7 +422,7 @@ class SignoffRowsView(SignoffView):
         }
         return HttpResponse(
             json.dumps(result),
-            mimetype="application/json; charset=UTF-8"
+            content_type="application/json; charset=UTF-8"
         )
 
     def get_context_data(self, lang, appver, next_push_date):
