@@ -7,10 +7,6 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf import settings
 from django.http import HttpResponse
 
-# Uncomment the next two lines to enable the admin:
-from django.contrib import admin
-admin.autodiscover()
-
 ## Monkeypatches:
 ## Here's the ideal place to put them if you need to monkeypatches anything
 ## during Django's start-up.
@@ -21,6 +17,10 @@ import session_csrf
 session_csrf.monkeypatch()
 from funfactory import admin
 admin.monkeypatch()
+
+# now that we patched admin, autodiscover the site
+from django.contrib import admin
+admin.autodiscover()
 
 def simple_x_frame_view(request):
     response = HttpResponse()
