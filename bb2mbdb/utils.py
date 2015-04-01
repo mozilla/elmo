@@ -9,6 +9,7 @@ from datetime import datetime
 import os.path
 
 from mbdb.models import Change, Tag, File, SourceStamp
+from django.db import transaction
 
 
 def timeHelper(t):
@@ -17,6 +18,7 @@ def timeHelper(t):
     return datetime.utcfromtimestamp(t)
 
 
+@transaction.atomic
 def modelForChange(master, change):
     try:
         dbchange = Change.objects.get(master=master, number=change.number)
@@ -39,10 +41,10 @@ def modelForChange(master, change):
         newfiles = set(change.files) - set(map(unicode, dbfiles))
         dbfiles += [File.objects.create(path=file) for file in newfiles]
         dbchange.files.add(*dbfiles)
-        dbchange.save()
         return dbchange
 
 
+@transaction.atomic
 def modelForSource(master, source, maxChanges=4):
     '''Get a db model for a buildbot SourceStamp.
 

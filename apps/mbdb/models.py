@@ -167,13 +167,12 @@ class Build(models.Model):
             else:
                 # otherwise, unbind the property, and fake a DoesNotExist
                 self.properties.remove(prop)
-            raise Property.DoesNotExist(name)
         except Property.DoesNotExist:
-            prop, created = Property.objects.get_or_create(name=name,
-                                                           source=source,
-                                                           value=value)
+            pass
+        prop, created = Property.objects.get_or_create(name=name,
+                                                       source=source,
+                                                       value=value)
         self.properties.add(prop)
-        self.save()
 
     def getProperty(self, name, default=None):
         if name == 'buildername':

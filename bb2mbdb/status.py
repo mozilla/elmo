@@ -58,20 +58,9 @@ def setupBridge(master, settings, config):
 
     from django.db import transaction
 
-    try:
-        # hack around the lack of @transaction.commit_manually
-        transaction.enter_transaction_management()
-        transaction.managed(True)
-        dbm, new_master = Master.objects.get_or_create(name=master)
-        transaction.commit()
-    except:
-        transaction.rollback()
-        raise
-    finally:
-        transaction.leave_transaction_management()
+    dbm, new_master = Master.objects.get_or_create(name=master)
 
     class Scheduler(BaseScheduler):
-        @transaction.commit_on_success
         def addChange(self, change):
             dbchange = modelForChange(dbm, change)
             log.msg('ADDED CHANGE to DB, %d' % dbchange.number)
@@ -93,24 +82,20 @@ def setupBridge(master, settings, config):
             self.step = dbstep
             self.basedir = basedir
 
-        @transaction.commit_on_success
         def stepTextChanged(self, build, step, text):
             self.step.text = text
             self.step.save()
 
-        @transaction.commit_on_success
         def stepText2Changed(self, build, step, text2):
             self.step.text2 = text2
             self.step.save()
 
-        @transaction.commit_on_success
         def logStarted(self, build, step, log):
             self.log = modelForLog(self.step, log, self.basedir)
 
         def logChunk(self, build, step, log, channel, text):
             pass
 
-        @transaction.commit_on_success
         def logFinished(self, build, step, log):
             self.log.isFinished = True
             self.log.save()
@@ -131,7 +116,6 @@ def setupBridge(master, settings, config):
             self.basedir = basedir
             self.latestStep = self.latestDbStep = None
 
-        @transaction.commit_manually
         def stepStarted(self, build, step):
             self.latestStep = step
             starttime = timeHelper(step.getTimes()[0])
@@ -139,25 +123,22 @@ def setupBridge(master, settings, config):
                                                         starttime=starttime,
                                                         text=step.getText(),
                                                         text2=step.text2)
-            transaction.commit()
             return StepReceiver(self.latestDbStep, self.basedir)
 
-        @transaction.commit_on_success
         def stepFinished(self, build, step, results):
             assert step == self.latestStep, "We lost a step somewhere"
+            self.latestStep = None
             try:
-                self.latestStep = None
                 self.latestDbStep.endtime = timeHelper(step.getTimes()[1])
                 # only the first is the result, the second is text2,
                 # ignore that.
                 self.latestDbStep.result = results[0]
                 self.latestDbStep.text = step.getText()
                 self.latestDbStep.text2 = step.text2
-                self.latestDbStep.save()
-                self.latestDbStep = None
             except Exception, e:
                 log.msg(str(e))
-            pass
+            self.latestDbStep.save()
+            self.latestDbStep = None
 
         def buildETAUpdate(self, build, ETA):
             '''TODO: ETA support.
@@ -178,7 +159,6 @@ def setupBridge(master, settings, config):
             status = self.parent.getStatus()
             status.subscribe(self)
 
-        @transaction.commit_on_success
         def builderAdded(self, builderName, builder):
             log.msg("adding %s to mbdb" % builderName)
             try:
@@ -193,7 +173,6 @@ def setupBridge(master, settings, config):
             log.msg("added %s to mbdb" % builderName)
             return self
 
-        @transaction.commit_manually
         def requestSubmitted(self, request):
             b, _ = dbm.builders.get_or_create(name=request.getBuilderName())
             ss = modelForSource(dbm, request.source)
@@ -201,22 +180,18 @@ def setupBridge(master, settings, config):
             req = BuildRequest.objects.create(builder=b,
                                               submitTime=submitTime,
                                               sourcestamp=ss)
-            transaction.commit()
 
             def addBuild(build):
                 dbbuild = b.builds.get(buildnumber=build.getNumber())
                 dbbuild.requests.add(req)
-                dbbuild.save()
             request.subscribe(addBuild)
 
-        @transaction.commit_on_success
         def builderChangedState(self, builderName, state):
             log.msg("%s changed state to %s" % (builderName, state))
             dbbuilder = Builder.objects.get(master=dbm, name=builderName)
             dbbuilder.bigState = state
             dbbuilder.save()
 
-        @transaction.commit_manually
         def buildStarted(self, builderName, build):
             log.msg("build started on  %s" % builderName)
             builder = Builder.objects.get(master=dbm, name=builderName)
@@ -236,14 +211,11 @@ def setupBridge(master, settings, config):
                 return
             for key, value, source in build.getProperties().asList():
                 dbbuild.setProperty(key, value, source)
-            dbbuild.save()
-            transaction.commit()
 
             basedir = os.path.join(build.getBuilder().basedir, '..')
 
             return BuildReceiver(dbbuild, basedir)
 
-        @transaction.commit_on_success
         def buildFinished(self, builderName, build, results):
             log.msg("finished build on %s with %s" %
                     (builderName, str(results)))
@@ -251,9 +223,9 @@ def setupBridge(master, settings, config):
                                         buildnumber=build.getNumber())
             dbbuild.endtime = timeHelper(build.getTimes()[1])
             dbbuild.result = results
+            dbbuild.save()
             for key, value, source in build.getProperties().asList():
                 dbbuild.setProperty(key, value, source)
-            dbbuild.save()
             pass
 
         def builderRemoved(self, builderName):
