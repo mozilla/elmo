@@ -5,7 +5,7 @@
 import datetime
 import re
 import os
-from test_utils import TestCase
+from elmo.test import TestCase
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.test.client import RequestFactory

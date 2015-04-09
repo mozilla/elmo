@@ -6,7 +6,7 @@
 
 from django.template import Template
 from django.template import Context
-from test_utils import TestCase
+from elmo.test import TestCase
 from nose.tools import eq_, ok_
 
 class TemplatetagsTestCase(TestCase):

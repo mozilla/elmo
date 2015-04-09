@@ -4,7 +4,7 @@
 
 from nose.tools import eq_, ok_
 from django.core.urlresolvers import reverse
-from test_utils import TestCase
+from elmo.test import TestCase
 from django.contrib.auth.models import User, Permission
 from django.contrib.admin.models import LogEntry, CHANGE
 from django.conf import settings

@@ -2,11 +2,11 @@ import re
 import os
 
 from django.conf import settings
-import test_utils
+import elmo.test
 
 
 
-class MigrationTests(test_utils.TestCase):
+class MigrationTests(elmo.test.TestCase):
     """Sanity checks for the SQL migration scripts."""
 
     @staticmethod

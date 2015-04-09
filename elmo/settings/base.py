@@ -8,13 +8,13 @@ from funfactory.settings_base import (
     path,
     BASE_PASSWORD_HASHERS,
     ROOT,
-    TEST_RUNNER
 )
 import os.path
 
 from django.utils.functional import lazy
 
 ROOT_URLCONF = 'elmo.urls'
+TEST_RUNNER = 'elmo.test.TestSuiteRunner'
 
 DEBUG = TEMPLATE_DEBUG = False
 
@@ -207,13 +207,12 @@ WEBDASHBOARD_URL = 'https://l10n.mozilla-community.org/webdashboard/'
 ## Verbatim bridging
 # codes that map to `None` deliberately don't exist on Verbatim
 VERBATIM_CONVERSIONS = {
+    'af-old': None,
     'am': None,
     'en-US': None,
     'es-ES': 'es',
     'fy-NL': 'fy',
     'ga-IE': 'ga',
-    'ha': None,
-    'ig': None,
     'nr': None,
     'pa-IN': 'pa',
     'pt-PT': 'pt',
@@ -227,7 +226,6 @@ VERBATIM_CONVERSIONS = {
     'uz': None,
     've': None,
     'x-testing': None,
-    'yo': None,
 }
 
 # settings for the compare-locales progress preview images
