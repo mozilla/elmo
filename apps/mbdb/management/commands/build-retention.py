@@ -92,7 +92,7 @@ class Command(BaseCommand):
                         str(buildnumber))
                     if os.path.exists(builderpath):
                         os.remove(builderpath)
-            if backup_dir:
+            if not dry_run and backup_dir:
                 tarball.close()
 
             buildquery = (
