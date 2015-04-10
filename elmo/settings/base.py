@@ -119,14 +119,14 @@ INSTALLED_APPS = (
     # L10n
 
     # elmo specific
-    'accounts',
-    'homepage',
-    'privacy',
     'life',
     'mbdb',
     'pushes',
-    'dashtags',
     'l10nstats',
+    'accounts',
+    'homepage',
+    'privacy',
+    'dashtags',
     'tinder',
     'shipping',
     'bugsy',

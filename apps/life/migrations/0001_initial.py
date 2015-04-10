@@ -8,6 +8,8 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
+        # initial data migrations, default branch, and zero changeset
+        default_branch = zero_changeset = None
         # Adding model 'Locale'
         db.create_table('life_locale', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
@@ -23,6 +25,11 @@ class Migration(SchemaMigration):
             ('name', self.gf('django.db.models.fields.TextField')()),
         ))
         db.send_create_signal('life', ['Branch'])
+        if not db.dry_run:
+            default_branch = orm.Branch.objects.create(
+                id=1,
+                name='default'
+            )
 
         # Adding model 'Changeset'
         db.create_table('life_changeset', (
@@ -33,6 +40,14 @@ class Migration(SchemaMigration):
             ('branch', self.gf('django.db.models.fields.related.ForeignKey')(default=1, related_name='changesets', to=orm['life.Branch'])),
         ))
         db.send_create_signal('life', ['Changeset'])
+        if not db.dry_run:
+            zero_changeset = orm.Changeset.objects.create(
+                id=1,
+                revision="0"*40,
+                user="",
+                description="",
+                branch=default_branch
+            )
 
         # Adding M2M table for field files on 'Changeset'
         m2m_table_name = db.shorten_name('life_changeset_files')
@@ -51,6 +66,12 @@ class Migration(SchemaMigration):
             ('to_changeset', models.ForeignKey(orm['life.changeset'], null=False))
         ))
         db.create_unique(m2m_table_name, ['from_changeset_id', 'to_changeset_id'])
+        # the zero_changeset has itself as parent
+        if not db.dry_run:
+            orm.Changeset.parents.through.objects.create(
+                from_changeset=zero_changeset,
+                to_changeset=zero_changeset
+            )
 
         # Adding model 'Forest'
         db.create_table('life_forest', (
