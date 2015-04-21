@@ -4,6 +4,7 @@
 
 '''Temporary command to convert the bugogram on wikimo to a local json.
 '''
+from __future__ import absolute_import
 
 from optparse import make_option
 import os.path

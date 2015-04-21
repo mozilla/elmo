@@ -7,6 +7,7 @@ them and stores its results in a cache).
 Ideally this management command should run in sync with the update job on
 planet, but at least every hour.
 """
+from __future__ import absolute_import
 
 import time
 import logging

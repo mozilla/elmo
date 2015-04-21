@@ -4,6 +4,7 @@
 
 '''Tool for doing local LDAP lookups
 '''
+from __future__ import absolute_import
 
 
 from optparse import make_option

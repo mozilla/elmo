@@ -4,6 +4,7 @@
 
 '''Views for managing sign-offs and shipping metrics.
 '''
+from __future__ import absolute_import, division
 
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -176,8 +177,8 @@ def teamsnippet(loc, team_locales):
         run.tree = run_.tree  # foreign key lookup
         application = tree_to_application(run_.tree)
         run.changed_ratio = run.completion
-        run.unchanged_ratio = 100 * run.unchanged / run.total
-        run.missing_ratio = 100 * run.allmissing / run.total
+        run.unchanged_ratio = 100 * run.unchanged // run.total
+        run.missing_ratio = 100 * run.allmissing // run.total
         # cheat a bit and make sure that the red stripe on the chart is at
         # least 1px wide
         if run.allmissing and run.missing_ratio == 0:

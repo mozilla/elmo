@@ -3,6 +3,7 @@
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
 'Base command to include ES logging'
+from __future__ import absolute_import
 
 import logging
 from django.core.management.base import BaseCommand

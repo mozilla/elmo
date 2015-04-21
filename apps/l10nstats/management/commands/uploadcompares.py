@@ -3,6 +3,7 @@
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
 'Save buildbot logs from disk into ElasticSearch'
+from __future__ import absolute_import, division
 
 from datetime import datetime
 from optparse import make_option
@@ -97,7 +98,7 @@ class Command(LoggingCommand):
                               passed)
             ellapsed = (datetime.now() - start).total_seconds()
             if ellapsed:
-                docs_per_sec = passed*1.0/ellapsed
+                docs_per_sec = passed/ellapsed
                 self.stdout.write('%.2f docs per second\n' % docs_per_sec)
             else:
                 self.stdout.write('really quick\n')

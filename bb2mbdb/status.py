@@ -4,6 +4,7 @@
 
 '''Status plugin to be used in buildbot masters serving the l10n dashboard.
 '''
+from __future__ import absolute_import
 
 import os
 import os.path

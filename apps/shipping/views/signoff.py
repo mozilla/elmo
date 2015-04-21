@@ -4,6 +4,7 @@
 
 """Views and helpers for sign-off views.
 """
+from __future__ import absolute_import, print_function
 
 import json
 from collections import defaultdict
@@ -561,7 +562,7 @@ def add_signoff(request, locale_code, app_code):
                                         author=request.user, locale=lang)
             so.action_set.create(flag=Action.PENDING, author=request.user)
         except Exception, e:
-            print e
+            print(e)
             return _redirect
     return _redirect
 
@@ -584,7 +585,7 @@ def review_signoff(request, locale_code, app_code):
             flag = action == "accept" and Action.ACCEPTED or Action.REJECTED
         except Exception, e:
             # logging.error("review_signoff called without action")
-            print e
+            print(e)
             return _redirect
 
         # verify integrity, make sure we have a sign-off for app/locale/id
@@ -592,7 +593,7 @@ def review_signoff(request, locale_code, app_code):
             so = appver.signoffs.get(locale=lang, id=signoff_id)
         except Signoff.DoesNotExist:
             # logging.error()
-            print 'no such signoff'
+            print('no such signoff')
             return _redirect
         comment = request.POST.get('comment', '')
         clean_old = (flag is Action.REJECTED and

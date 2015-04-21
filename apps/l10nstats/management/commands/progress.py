@@ -4,6 +4,7 @@
 
 '''Create background images for progress previews
 '''
+from __future__ import absolute_import, division
 
 from collections import defaultdict
 from datetime import timedelta

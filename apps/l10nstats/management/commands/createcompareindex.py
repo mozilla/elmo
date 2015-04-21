@@ -3,6 +3,7 @@
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
 'Save buildbot logs from disk into ElasticSearch'
+from __future__ import absolute_import
 
 from optparse import make_option
 

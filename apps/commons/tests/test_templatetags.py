@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 """tests for templatetags in commons"""
+from __future__ import absolute_import
 
 from django.template import Template
 from django.template import Context

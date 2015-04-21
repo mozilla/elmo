@@ -1,6 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+from __future__ import absolute_import
 
 from nose.tools import eq_, ok_
 from django.core.urlresolvers import reverse
@@ -8,7 +9,7 @@ from elmo.test import TestCase
 from django.contrib.auth.models import User, Permission
 from django.contrib.admin.models import LogEntry, CHANGE
 from django.conf import settings
-from models import Policy, Comment
+from .models import Policy, Comment
 from commons.tests.mixins import EmbedsTestCaseMixin
 
 

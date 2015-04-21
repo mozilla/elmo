@@ -5,6 +5,7 @@
 '''Command to update a tree of local repositories according to the status
 of an upstream database.
 '''
+from __future__ import absolute_import
 
 from optparse import make_option
 

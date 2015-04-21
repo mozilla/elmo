@@ -4,6 +4,7 @@
 
 '''View methods for the source/pushlog views.
 '''
+from __future__ import absolute_import
 
 from itertools import cycle
 from datetime import datetime

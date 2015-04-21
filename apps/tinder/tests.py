@@ -4,6 +4,7 @@
 
 '''Tests for the build progress displays.
 '''
+from __future__ import absolute_import
 
 import os
 import datetime
@@ -211,7 +212,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         shutil.rmtree(self.temp_directory)
 
     def test_pmap(self):
-        from views import pmap
+        from .views import pmap
 
         prop1 = Property.objects.create(
           name='gender',

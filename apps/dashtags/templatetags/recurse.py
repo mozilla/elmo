@@ -4,6 +4,7 @@
 
 '''Template tags to handle displaying of recursive datastructures.
 '''
+from __future__ import absolute_import
 
 from django import template
 

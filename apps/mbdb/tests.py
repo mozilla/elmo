@@ -5,6 +5,7 @@
 
 '''Unit testing for this module.
 '''
+from __future__ import absolute_import
 import datetime
 from elmo.test import TestCase
 from django.core import management

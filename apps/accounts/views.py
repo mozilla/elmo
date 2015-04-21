@@ -4,6 +4,7 @@
 
 '''Views for logging in and out of l10n_site.
 '''
+from __future__ import absolute_import
 
 
 from django.contrib.auth.views import REDIRECT_FIELD_NAME
@@ -13,7 +14,7 @@ from django.views.decorators import cache
 from django.core.context_processors import csrf
 import json
 from django.contrib.auth.views import login as django_login
-from forms import AuthenticationForm
+from .forms import AuthenticationForm
 try:
     from lib.auth.backends import AUTHENTICATION_SERVER_ERRORS
 except ImportError:

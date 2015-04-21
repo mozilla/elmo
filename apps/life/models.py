@@ -5,6 +5,7 @@
 '''Models that represent data present outside of the l10n_site applications,
 most notable locales and hg repositories.
 '''
+from __future__ import absolute_import
 
 from django.db import models
 from django.dispatch import receiver

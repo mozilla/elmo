@@ -5,6 +5,7 @@
 '''Views for compare-locales output and statistics, in particular dashboards
 and progress graphs.
 '''
+from __future__ import absolute_import, division
 
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -332,7 +333,7 @@ def compare(request):
     # create table widths for the progress bar
     widths = {}
     for k in ('changed', 'missing', 'missingInFiles', 'report', 'unchanged'):
-        widths[k] = getattr(run, k) * 300 / run.total
+        widths[k] = getattr(run, k) * 300 // run.total
 
     return render(request, 'l10nstats/compare.html', {
                     'run': run,

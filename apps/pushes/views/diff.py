@@ -7,6 +7,7 @@
 The revisions don't necessarily need to be in the same repository, as long
 as the repositories are related.
 """
+from __future__ import absolute_import
 
 from difflib import SequenceMatcher
 import logging

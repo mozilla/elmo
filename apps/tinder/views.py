@@ -4,6 +4,7 @@
 
 '''Views showing the build statuses.
 '''
+from __future__ import absolute_import, division, print_function
 
 from django.db.models import Q
 from django.db import connection
@@ -36,7 +37,7 @@ class LogMountKeyError(Exception):
 
 def debug_(*msg):
     if False:
-        print ' '.join(msg)
+        print(' '.join(msg))
 
 
 def pmap(props, bld_ids):
@@ -364,7 +365,7 @@ def _waterfall(request):
     try:
         end_t = max(Build.objects.order_by('-pk')[0].starttime,
                     Change.objects.order_by('-pk')[0].when)
-        start_t = end_t - timedelta(1) / 2
+        start_t = end_t - timedelta(1) // 2
     except IndexError:
         # wallpaper against an empty build database
         end_t = datetime.max
@@ -397,7 +398,7 @@ def _waterfall(request):
                 pass
         if 'hours' in request.GET:
             try:
-                td = timedelta(1) / 24 * int(request.GET['hours'])
+                td = timedelta(1) // 24 * int(request.GET['hours'])
                 if 'starttime' in request.GET and 'endtime' not in request.GET:
                     end_t = start_t + td
                     isEnd = False
@@ -421,7 +422,7 @@ def _waterfall(request):
 
     # get the real hours, for consecutive queries
     time_d = end_t - start_t
-    hours = int(round(time_d.seconds / 3600.0))
+    hours = int(round(time_d.seconds / 3600))
     if time_d.days:
         hours += time_d.days * 24
 

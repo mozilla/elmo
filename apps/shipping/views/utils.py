@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 """Utilities for helping the shipping views"""
+from __future__ import absolute_import
 
 from django.utils.decorators import method_decorator
 

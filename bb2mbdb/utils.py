@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 '''Utility and help code for buildbot-mbdb adapters.'''
+from __future__ import absolute_import
 
 
 from datetime import datetime

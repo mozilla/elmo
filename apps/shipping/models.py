@@ -5,6 +5,7 @@
 '''Models representing Applications, Versions, Milestones and information
 which locales shipped in what.
 '''
+from __future__ import absolute_import
 
 import datetime
 from django.db import models

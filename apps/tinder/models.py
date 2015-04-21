@@ -5,6 +5,7 @@
 '''Models to store the relation between buildbot masters and web heads,
 to enable multiple web servers hosting multiple masters.
 '''
+from __future__ import absolute_import
 
 from django.db import models
 from mbdb.models import Master

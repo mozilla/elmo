@@ -4,6 +4,7 @@
 
 '''Models for compare-locales statistics.
 '''
+from __future__ import absolute_import
 
 from django.db import models
 from life.models import Locale, Tree, Changeset

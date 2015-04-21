@@ -4,6 +4,7 @@
 
 '''Views for the main navigation pages.
 '''
+from __future__ import absolute_import
 
 import datetime
 import sys

@@ -4,6 +4,7 @@
 
 """Views centric around AppVersion data.
 """
+from __future__ import absolute_import
 
 from collections import defaultdict
 from django.shortcuts import render, get_object_or_404

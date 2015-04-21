@@ -4,6 +4,7 @@
 
 '''Utility methods used by the twistd daemon and other hooks.
 '''
+from __future__ import absolute_import, division
 
 from datetime import datetime
 import os.path
@@ -71,8 +72,8 @@ def get_or_create_changeset(repo, hgrepo, revision):
     if goodfiles:
         # chunk up the work on files,
         # mysql doesn't like them all at once
-        chunk_count = len(goodfiles) / 1000 + 1
-        chunk_size = len(goodfiles) / chunk_count
+        chunk_count = len(goodfiles) // 1000 + 1
+        chunk_size = len(goodfiles) // chunk_count
         if len(goodfiles) % chunk_size:
             chunk_size += 1
         for i in xrange(chunk_count):

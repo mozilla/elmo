@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 # -*- coding: utf-8 -*-
 from south.db import db
 from south.v2 import SchemaMigration

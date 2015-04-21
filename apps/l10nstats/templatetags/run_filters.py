@@ -4,6 +4,7 @@
 
 '''Django template filters to be used to display compare-locales runs.
 '''
+from __future__ import absolute_import
 
 from django import template
 from django.utils.safestring import mark_safe

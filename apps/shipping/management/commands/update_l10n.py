@@ -4,6 +4,7 @@
 
 '''Update all local clones to the revisions that are shipped with a milestone.
 '''
+from __future__ import absolute_import
 
 from optparse import make_option
 import os.path

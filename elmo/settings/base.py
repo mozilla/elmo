@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 # Django settings file for a project based on the playdoh template.
+from __future__ import absolute_import
 
 from funfactory.settings_base import (
     path,
@@ -187,7 +188,7 @@ INCLUDE_ANALYTICS = False
 
 
 try:
-    import ldap_settings
+    from . import ldap_settings
 except ImportError:
     import warnings
     warnings.warn("ldap_settings not importable. No LDAP authentication")
@@ -197,7 +198,7 @@ else:
         if not getattr(ldap_settings, each, None):
             raise ValueError('%s must be set' % each)
 
-    from ldap_settings import *
+    from .ldap_settings import *
     # ImportErrors are not acceptable if ldap_loaded is True
     import ldap
     AUTHENTICATION_BACKENDS = ('lib.auth.backends.MozLdapBackend',)

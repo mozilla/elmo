@@ -5,6 +5,7 @@
 '''Command to fix any of the repositories in the database
 that miss changeset mappings.
 '''
+from __future__ import absolute_import
 
 from optparse import make_option
 

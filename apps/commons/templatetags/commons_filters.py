@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 """Django template filters for use in any app in the project"""
+from __future__ import absolute_import
 
 from django import template
 from django.utils.safestring import mark_safe

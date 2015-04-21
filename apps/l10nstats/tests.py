@@ -1,6 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+from __future__ import absolute_import
 
 import datetime
 from urlparse import urlparse
@@ -12,8 +13,8 @@ from django.utils.safestring import SafeString
 from apps.shipping.tests.test_views import ShippingTestCaseBase
 from apps.life.models import Tree, Locale
 from apps.mbdb.models import Build
-from models import Run, Active
-from templatetags.run_filters import showrun
+from .models import Run, Active
+from .templatetags.run_filters import showrun
 from commons.tests.mixins import EmbedsTestCaseMixin
 from html5lib import parseFragment
 

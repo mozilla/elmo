@@ -4,9 +4,10 @@
 
 '''Models representing statuses of buildbot builds on multiple masters.
 '''
+from __future__ import absolute_import
 
 from django.db import models
-import fields
+from . import fields
 from django.conf import settings
 
 
