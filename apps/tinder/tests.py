@@ -307,7 +307,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         )
         url = reverse('tinder.views.showlog',
                       args=[step.id, log.name])
-        with file(os.path.join(self.temp_directory, log.filename), 'w') as f:
+        with open(os.path.join(self.temp_directory, log.filename), 'w') as f:
             f.write(SAMPLE_BUILD_LOG_PAYLOAD)
 
         try:

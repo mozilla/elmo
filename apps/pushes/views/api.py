@@ -168,10 +168,9 @@ class ForkHierarchy(object):
         self.forks = forks
 
     def create_json(self):
-        forks = sorted((t for t in self.forks.iteritems()),
-                       key=lambda (cs, repos): cs.id)
         node = rv = {}
-        for cs, repos in forks:
+        for cs in sorted(self.forks.keys()):
+            repos = self.forks[cs]
             children = [{
                 "repo": repo.name,
                 "revision": self.heads[repo.name].revision

@@ -39,7 +39,7 @@ class RepositoryCommand(BaseCommand):
             except StopIteration:
                 # allow subclass to stop our loop over repositories
                 break
-            except StandardError:
+            except Exception:
                 self.stdout.write('')
                 logging.error('%s\tError while processing' % dbrepo.name,
                               exc_info=True)

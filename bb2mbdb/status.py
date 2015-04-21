@@ -136,7 +136,7 @@ def setupBridge(master, settings, config):
                 self.latestDbStep.result = results[0]
                 self.latestDbStep.text = step.getText()
                 self.latestDbStep.text2 = step.text2
-            except Exception, e:
+            except Exception as e:
                 log.msg(str(e))
             self.latestDbStep.save()
             self.latestDbStep = None

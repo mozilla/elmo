@@ -539,7 +539,7 @@ def add_signoff(request, locale_code, app_code):
                                  app_code)
             try:
                 push_id = int(request.POST['push'])
-            except (KeyError, ValueError), msg:
+            except (KeyError, ValueError) as msg:
                 return HttpResponseBadRequest(str(msg))
             push = Push.objects.get(id=push_id)
             if push.signoff_set.filter(appversion=appver).count():
@@ -561,7 +561,7 @@ def add_signoff(request, locale_code, app_code):
             so = Signoff.objects.create(push=push, appversion=appver,
                                         author=request.user, locale=lang)
             so.action_set.create(flag=Action.PENDING, author=request.user)
-        except Exception, e:
+        except Exception as e:
             print(e)
             return _redirect
     return _redirect
@@ -583,7 +583,7 @@ def review_signoff(request, locale_code, app_code):
             action = request.POST['action']
             signoff_id = int(request.POST['signoff_id'])
             flag = action == "accept" and Action.ACCEPTED or Action.REJECTED
-        except Exception, e:
+        except Exception as e:
             # logging.error("review_signoff called without action")
             print(e)
             return _redirect

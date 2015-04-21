@@ -63,7 +63,7 @@ class Command(BaseCommand):
                 if not os.path.isdir(_parent):
                     try:
                         os.makedirs(_parent)
-                    except Exception, e:
+                    except Exception as e:
                         self.stdout.write(
                             ("\n\nFailed to prepare for clone, %s\n\n"
                              % str(e))

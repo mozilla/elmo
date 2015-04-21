@@ -56,7 +56,7 @@ class DiffView(View):
             paths = self.contextsAndPaths(request.GET['from'],
                                           request.GET['to'],
                                           reponame)
-        except BadRevision, e:
+        except BadRevision as e:
             return http.HttpResponseBadRequest(e.args[0])
         diffs = DataTree(dict)
         for path, action in paths:
@@ -156,7 +156,7 @@ class DiffView(View):
             # This prevents UnicodeWarning messages.
             ctx = repo.changectx(str(rev))
             return ctx, repo, self.repo
-        except RepoLookupError, e:
+        except RepoLookupError as e:
             # the favored repo doesn't have a changeset, look for an
             # active repo that does.
             try:

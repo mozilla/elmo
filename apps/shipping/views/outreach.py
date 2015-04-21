@@ -16,6 +16,7 @@ from life.models import Forest
 from shipping.models import Application, AppVersionTreeThrough
 from shipping.api import flags4appversions
 from l10nstats.models import Run
+from functools import reduce
 
 
 def select_apps(request):

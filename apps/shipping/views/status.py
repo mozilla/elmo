@@ -69,11 +69,11 @@ class SignoffDataView(View):
     def get(self, request, *args, **kwargs):
         try:
             self.process_request(request)
-        except BadRequestData, msg:
+        except BadRequestData as msg:
             return HttpResponseBadRequest(msg)
         try:
             data = self.get_data()
-        except RuntimeError, msg:
+        except RuntimeError as msg:
             return HttpResponseBadRequest(str(msg))
         content = self.content(request, *data)
         r = HttpResponse(content, content_type='text/plain; charset=utf-8')

@@ -72,7 +72,7 @@ class Command(BaseCommand):
                 pass
             g = iterOverBuilds(builder, dbbuilder, buildername, firstBuild)
             try:
-                localvars = g.next()
+                localvars = next(g)
             except StopIteration:
                 print("no more builds for %s" % buildername)
                 continue
@@ -84,7 +84,7 @@ class Command(BaseCommand):
                                            r[1]['build'].getTimes()[0]))
             localvars = builders[0][1]
             try:
-                builders[0][1] = builders[0][0].next()
+                builders[0][1] = next(builders[0][0])
             except StopIteration:
                 # builder is exhausted, drop it from the list.
                 # this is basically the end condition for the loop

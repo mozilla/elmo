@@ -26,6 +26,7 @@ from mbdb.models import (Build, Builder, BuildRequest,
                          Change, Change_Tags, Log, Master, NumberedChange,
                          SourceStamp, Step, Property)
 from life.models import Push, Repository
+from functools import reduce
 
 
 resultclasses = ['success', 'warning', 'failure', 'skip', 'except']
@@ -442,7 +443,7 @@ def _waterfall(request):
         c_iter = changes.order_by('-when', '-pk').iterator()
         builds = builds.select_related('builder', 'slave', 'sourcestamp')
         try:
-            c = c_iter.next()
+            c = next(c_iter)
         except StopIteration:
             c = None
         # yield an end change event if we have changes first
@@ -462,7 +463,7 @@ def _waterfall(request):
             builds = builds[:max_builds]
         b_iter = builds.iterator()
         try:
-            e = b_iter.next()
+            e = next(b_iter)
         except StopIteration:
             e = None
         b = None
@@ -479,7 +480,7 @@ def _waterfall(request):
                 starts.sort(lambda r, l: cmp(r.starttime, l.starttime))
                 b = starts.pop()
                 try:
-                    e = b_iter.next()
+                    e = next(b_iter)
                 except StopIteration:
                     e = None
                 continue
@@ -495,7 +496,7 @@ def _waterfall(request):
             assert c
             yield (c.when, 'start change', c)
             try:
-                c = c_iter.next()
+                c = next(c_iter)
             except StopIteration:
                 c = None
             if c:
@@ -776,7 +777,7 @@ def showlog(request, step_id, name):
         try:
             chunks = generateLog(master, log.filename,
                                  channels=(Log.STDOUT, Log.STDERR, Log.HEADER))
-        except NoLogFile, e:
+        except NoLogFile as e:
             raise Http404(*e.args)
         return render(request, 'tinder/log.html', {
             'build': step.build,

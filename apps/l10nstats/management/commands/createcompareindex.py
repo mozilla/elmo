@@ -67,6 +67,6 @@ class Command(LoggingCommand):
                               body=indexargs)
             self.stdout.write('Created index %s\n' %
                               settings.ES_COMPARE_INDEX)
-        except Exception, e:
+        except Exception as e:
             # this is fatal in some way, but we don't need the stack trace
             raise CommandError(e)
