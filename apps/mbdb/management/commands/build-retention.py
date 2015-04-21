@@ -100,13 +100,17 @@ class Command(BaseCommand):
                      .filter(id__in=[t[0] for t in chunk],
                              endtime__lt=buildtime)
             )
-            buildcount += buildquery.count()
-            minmax = buildquery.aggregate(min=Min('id'), max=Max('id'))
-            if not dry_run:
-                buildquery.delete()
-            self.stdout.write('Deleting builds from %d to %d\n' % (
-                minmax['min'], minmax['max']
-            ))
+            thiscount = buildquery.count()
+            if thiscount:
+                buildcount += thiscount
+                minmax = buildquery.aggregate(min=Min('id'), max=Max('id'))
+                if not dry_run:
+                    buildquery.delete()
+                self.stdout.write('Deleting builds from %d to %d\n' % (
+                    minmax['min'], minmax['max']
+                ))
+            else:
+                self.stdout.write('No builds to delete in this chunk\n')
         self.stdout.write('Removed %d logs with %d files\n' % (
             objects, files
         ))
