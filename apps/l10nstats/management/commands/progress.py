@@ -40,7 +40,7 @@ class Command(BaseCommand):
         runs = Run.objects.exclude(srctime__isnull=True)
         enddate = runs.aggregate(Max('srctime'))['srctime__max']
         startdate = enddate - timedelta(days=self.days)
-        scale = 1. * (self.width - 1) / total_seconds(enddate - startdate)
+        scale = 1. * (self.width - 1) / (enddate - startdate).total_seconds()
         runs = runs.filter(q, srctime__gte=startdate,
                            srctime__lte=enddate)
         runs = runs.order_by('srctime')
@@ -92,7 +92,7 @@ class Command(BaseCommand):
             _offy = offloc[loc]
             _offx = offtree[tree]
             for srctime, changed, total in vals:
-                x = _offx + int(total_seconds(srctime - startdate) * scale)
+                x = _offx + int((srctime - startdate).total_seconds() * scale)
                 y = _offy - rescale(changed) * (self.height - 1)
                 if oldx is not None:
                     if x > oldx + 1:
@@ -152,11 +152,3 @@ class Command(BaseCommand):
             .values_list('id', 'changed', 'total')
         )
         return dict((t, r2r[r]) for t, r in rv.items())
-
-# python 2.6 helper
-# XXX remove when we migrate to 2.7
-def total_seconds(td):
-    if hasattr(timedelta,'total_seconds'):
-        return td.total_seconds()
-    return ((td.microseconds + (td.seconds + td.days * 24 * 3600) * 10.0**6)
-            / 10**6)

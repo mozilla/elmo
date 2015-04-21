@@ -19,7 +19,6 @@ from l10nstats.models import Run
 from mbdb.models import Master, Log, Step
 from tinder.views import generateLog, NoLogFile
 from .. import LoggingCommand
-from .progress import total_seconds
 
 
 class Command(LoggingCommand):
@@ -96,7 +95,7 @@ class Command(LoggingCommand):
                                   chunk_size=self.chunksize)
             self.stdout.write('Successfully indexed %d logs, ' %
                               passed)
-            ellapsed = total_seconds(datetime.now() - start)
+            ellapsed = (datetime.now() - start).total_seconds()
             if ellapsed:
                 docs_per_sec = passed*1.0/ellapsed
                 self.stdout.write('%.2f docs per second\n' % docs_per_sec)
