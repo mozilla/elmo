@@ -96,10 +96,6 @@ INSTALLED_APPS = (
     # a manually maintained list of apps "from funfactory"
     'funfactory',
     'compressor',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.staticfiles',
     'commonware.response.cookies',
     'session_csrf',
 
@@ -108,14 +104,16 @@ INSTALLED_APPS = (
     # Local apps
     'commons',
     'south',
-    'compressor',
     'raven.contrib.django.raven_compat',
 
     # Third-party apps
 
     # Django contrib apps
-    'django.contrib.staticfiles',
     'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.staticfiles',
 
     # L10n
 

@@ -15,7 +15,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django import http
 from life.models import Locale, Tree, Push, Changeset
-from l10nstats.models import Run_Revisions, Run, ProgressPosition
+from l10nstats.models import Run, ProgressPosition
 from shipping.models import Milestone, AppVersion, Action, Application
 from shipping.api import flags4appversions, accepted_signoffs
 from django.conf import settings
@@ -147,7 +147,7 @@ def teamsnippet(loc, team_locales):
     # in api.annotated_pushes, we only highlight the latest run if it's green
     suggested_runs = runs_with_open_av
 
-    suggested_rev = dict(Run_Revisions.objects
+    suggested_rev = dict(Run.revisions.through.objects
                          .filter(run__in=suggested_runs,
                                  changeset__repositories__locale__in=locs)
                          .values_list('run_id', 'changeset__revision'))

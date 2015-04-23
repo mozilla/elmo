@@ -8,7 +8,7 @@ from __future__ import absolute_import
 
 from collections import defaultdict
 from django.shortcuts import render, get_object_or_404
-from shipping.models import (Milestone, AppVersion, Milestone_Signoffs,
+from shipping.models import (Milestone, AppVersion,
                              Action, Signoff)
 from shipping.api import flags4appversions
 
@@ -112,7 +112,7 @@ def changes(request, app_code):
     current = {}
     # we're only doing sign-offs for this appversion now, and for milestones
     # of this appversion
-    for _mid, loc, pid in (Milestone_Signoffs.objects
+    for _mid, loc, pid in (Milestone.signoffs.through.objects
                            .filter(milestone__appver=av)
                            .filter(signoff__appversion=av)
                            .order_by('milestone__id',

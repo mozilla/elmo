@@ -119,20 +119,6 @@ class Run(models.Model):
             yield (d, cls, compare)
 
 
-class Run_Revisions(models.Model):
-    """Helper model for queries on run.revisions.
-
-    The model doesn't alter the schema and is set up such that it
-    can be used to create rich queries on Run/Changeset mappings.
-    """
-    run = models.ForeignKey(Run)
-    changeset = models.ForeignKey(Changeset)
-
-    class Meta:
-        unique_together = (('run', 'changeset'),)
-        managed = False
-
-
 class UnchangedInFile(models.Model):
     """Abstraction for untranslated count per file.
     """

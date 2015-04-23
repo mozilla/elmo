@@ -23,7 +23,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 import calendar
 from mbdb.models import (Build, Builder, BuildRequest,
-                         Change, Change_Tags, Log, Master, NumberedChange,
+                         Change, Log, Master, NumberedChange,
                          SourceStamp, Step, Property)
 from life.models import Push, Repository
 from functools import reduce
@@ -152,7 +152,7 @@ def tbpl_inner(request):
         blds = blds.filter(properties__in=_p)
     nc = NumberedChange.objects.filter(sourcestamp__in=ss)
     changetags = defaultdict(list)
-    for ct in (Change_Tags.objects
+    for ct in (Change.tags.through.objects
                .filter(change__stamps__in=ss)
                .distinct()
                .select_related('tag')):

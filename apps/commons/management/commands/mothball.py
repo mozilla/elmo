@@ -18,7 +18,6 @@ from django.conf import settings
 
 from life.models import Tree, Forest
 from mbdb.models import (Build, Step, Log, Property)
-from l10nstats.models import (Run_Revisions)
 
 
 class Repl(cmd.Cmd):

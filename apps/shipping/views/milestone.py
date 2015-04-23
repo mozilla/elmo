@@ -18,8 +18,8 @@ import re
 import os.path
 
 from life.models import Push, Changeset
-from shipping.models import Milestone, Milestone_Signoffs, Snapshot
-from l10nstats.models import Run, Run_Revisions
+from shipping.models import Milestone, Snapshot
+from l10nstats.models import Run
 
 from shipping.views.status import SignoffDataView
 from shipping.api import accepted_signoffs
@@ -90,8 +90,9 @@ def statuses(req, ms_code):
     # if we have a previously shipped milestone, check the diffs
     previous = {}
     so_ids = dict((d[2], d[0]) for d in sos_vals)  # current signoff ids
-    pso = Milestone_Signoffs.objects.filter(milestone__id__lt=ms.id,
-                                            milestone__appver__milestone=ms.id)
+    pso = (Milestone.signoffs.through.objects
+        .filter(milestone__id__lt=ms.id,
+                milestone__appver__milestone=ms.id))
     pso = pso.order_by('milestone__id')
     for loc, sid, pid, mcode in pso.values_list('signoff__locale__code',
                                                 'signoff__id',
@@ -117,8 +118,8 @@ def statuses(req, ms_code):
     # get the most recent result for the signed off stamps
     cs = Changeset.objects.filter(pushes__id__in=sos.values())
     cs_ids = list(cs.values_list('id', flat=True))
-    runs = Run_Revisions.objects.filter(changeset__id__in=cs_ids,
-                                        run__tree=tree)
+    runs = Run.revisions.through.objects.filter(changeset__id__in=cs_ids,
+                                                run__tree=tree)
     latest = runs2dict(runs, 'run__')
 
     # get the snapshots from the sign-offs
