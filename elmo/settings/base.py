@@ -103,7 +103,6 @@ INSTALLED_APPS = (
 
     # Local apps
     'commons',
-    'south',
     'raven.contrib.django.raven_compat',
 
     # Third-party apps

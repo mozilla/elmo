@@ -12,7 +12,7 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
 
-class CTMixin:
+class CTMixin(object):
     """Mixin to create a cached query for the ContentType for this model.
     """
     _ct = None
