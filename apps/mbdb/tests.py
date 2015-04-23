@@ -9,7 +9,7 @@ from __future__ import absolute_import
 import datetime
 from elmo.test import TestCase
 from django.core import management
-from apps.mbdb.models import Property, Step, Build, Builder, Master, Slave
+from mbdb.models import Property, Step, Build, Builder, Master, Slave
 import json
 from cStringIO import StringIO
 

@@ -10,9 +10,9 @@ from nose.tools import eq_, ok_
 from django.http import QueryDict
 from django.core.urlresolvers import reverse
 from django.utils.safestring import SafeString
-from apps.shipping.tests.test_views import ShippingTestCaseBase
-from apps.life.models import Tree, Locale
-from apps.mbdb.models import Build
+from shipping.tests.test_views import ShippingTestCaseBase
+from life.models import Tree, Locale
+from mbdb.models import Build
 from .models import Run, Active
 from .templatetags.run_filters import showrun
 from commons.tests.mixins import EmbedsTestCaseMixin
