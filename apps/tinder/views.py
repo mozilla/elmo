@@ -363,14 +363,19 @@ def _waterfall(request):
     of waterfall for testing purposes.
 
     '''
-    try:
-        end_t = max(Build.objects.order_by('-pk')[0].starttime,
-                    Change.objects.order_by('-pk')[0].when)
+    start_t = end_t = None
+    times = sorted(
+        list(Build.objects
+                  .order_by('-pk')
+                  .values_list('starttime', flat=True)[:1]) +
+        list(Change.objects
+                   .order_by('-pk')
+                   .values_list('when', flat=True)[:1]),
+        reverse=True
+    )
+    if times:
+        end_t = times[0]
         start_t = end_t - timedelta(1) // 2
-    except IndexError:
-        # wallpaper against an empty build database
-        end_t = datetime.max
-        start_t = datetime.min
     buildf = {}
     props = []
     isEnd = True
@@ -422,21 +427,27 @@ def _waterfall(request):
                 props.append(Property.objects.filter(name=k).filter(value=v))
 
     # get the real hours, for consecutive queries
-    time_d = end_t - start_t
-    hours = int(round(time_d.seconds / 3600))
-    if time_d.days:
-        hours += time_d.days * 24
+    hours = 12
+    if end_t and start_t:
+        time_d = end_t - start_t
+        hours = int(round(time_d.seconds / 3600))
+        if time_d.days:
+            hours += time_d.days * 24
 
-    q_buildsdone = Build.objects.filter(Q(endtime__gt=start_t) |
-                                        Q(endtime__isnull=True),
-                                        Q(starttime__lte=end_t))
+    q_buildsdone = Build.objects.all()
+    q_changes = Change.objects.all()
+    if start_t:
+        q_buildsdone = q_buildsdone.filter(Q(endtime__gt=start_t) |
+                                           Q(endtime__isnull=True))
+        q_changes = q_changes.filter(when__gt=start_t)
+    if end_t:
+        q_buildsdone = q_buildsdone.filter(Q(starttime__lte=end_t))
+        q_changes = q_changes.filter(when__lte=end_t)
     if buildf:
         q_buildsdone = q_buildsdone.filter(**buildf)
     for p in  props:
         q_buildsdone = q_buildsdone.filter(properties__in=p)
     debug_("found %d builds" % q_buildsdone.count())
-    q_changes = Change.objects.filter(when__gt=start_t,
-                                      when__lte=end_t)
 
     def ievents(builds, changes, max_builds=None):
         starts = []
@@ -551,7 +562,8 @@ def _waterfall(request):
         filters = ''
 
     def timestamp(dto):
-        return "%d" % calendar.timegm(dto.utctimetuple())
+        return ("%d" % calendar.timegm(dto.utctimetuple())
+            if dto else "NaN")
 
     hourlist = [12, 24]
     if hours in hourlist:
