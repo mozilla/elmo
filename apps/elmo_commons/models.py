@@ -8,7 +8,7 @@ from django.db import models
 import datetime
 
 
-class DatedManager(models.Manager):
+class DatedQuerySet(models.QuerySet):
     def for_date(self, date):
         return (self.filter(models.Q(start__lte=date) |
                             models.Q(start__isnull=True))
@@ -24,7 +24,7 @@ class DurationThrough(models.Model):
                                  blank=True,
                                  null=True)
     end = models.DateTimeField(blank=True, null=True)
-    objects = DatedManager()
+    objects = DatedQuerySet.as_manager()
     unique = ('start', 'end')
 
     class Meta:
