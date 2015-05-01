@@ -54,7 +54,7 @@ def get_bug_links(request):
         item = dict((k, t.render(c)) for k, t in opts.iteritems())
         bugs[loc] = item
     return HttpResponse(json.dumps(bugs, indent=2),
-                        mimetype="application/json")
+                        content_type="application/json")
 
 
 def new_locale(request):
