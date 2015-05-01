@@ -54,7 +54,7 @@ class InstallPhase(BasePhase):
     )
     PIP_CLEANUP = "rm -rf %s" % TMP_VENDOR_DIR
     
-    SOUTH_EXEC = "./manage.py migrate"
+    MIGRATE_EXEC = "./manage.py migrate"
     STATICFILES_COLLECT_EXEC = "./manage.py collectstatic --noinput"
     GIT_REVISION = "git rev-parse HEAD > collected/static/revision"
     DJANGOCOMPRESSOR_COMPRESS_EXEC = "./manage.py compress -f"
@@ -74,7 +74,7 @@ class InstallPhase(BasePhase):
             ]
     
         self.commandlist += [
-            [self.SOUTH_EXEC],
+            [self.MIGRATE_EXEC],
         ]
     
         self.commandlist += [
