@@ -16,6 +16,7 @@ from django.utils.functional import lazy
 
 ROOT_URLCONF = 'elmo.urls'
 TEST_RUNNER = 'elmo.test.TestSuiteRunner'
+NOSE_PLUGINS = ['elmo.nose.NoseAppsPlugin']
 
 DEBUG = TEMPLATE_DEBUG = False
 
