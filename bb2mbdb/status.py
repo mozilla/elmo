@@ -49,6 +49,9 @@ def setupBridge(master, settings, config):
     if settings is not None:
         os.environ['DJANGO_SETTINGS_MODULE'] = settings
 
+    import django
+    django.setup()
+
     import bb2mbdb.utils
     reload(bb2mbdb.utils)
     import mbdb.models
