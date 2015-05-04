@@ -15,11 +15,6 @@ from commons.tests.mixins import EmbedsTestCaseMixin
 
 class PrivacyTestCase(TestCase, EmbedsTestCaseMixin):
 
-    def setUp(self):
-        super(PrivacyTestCase, self).setUp()
-        # ensure that no arecibo is set up
-        settings.ARECIBO_SERVER_URL = None
-
     def test_render_show_policy(self):
         url = reverse('privacy.views.show_policy')
         response = self.client.get(url)

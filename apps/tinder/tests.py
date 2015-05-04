@@ -12,8 +12,8 @@ from tempfile import gettempdir
 from nose.tools import eq_, ok_
 from elmo.test import TestCase
 from commons.tests.mixins import EmbedsTestCaseMixin
-from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.test import override_settings
 from django.test.client import Client
 from mbdb.models import (Build, Change, Master, Log, Property, SourceStamp,
                          Builder, Slave)
@@ -191,6 +191,8 @@ class timedelta(TestCase):
         self.assertEqual(build_extras.timedelta(start, end), "3 second(s)")
 
 
+# only pick up explicit LOG_MOUNTS in some of the tests
+@override_settings(LOG_MOUNTS={})
 class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
     fixtures = ['one_started_l10n_build.json']
 
@@ -199,15 +201,9 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         self.temp_directory = os.path.join(gettempdir(), 'test-builds')
         if not os.path.isdir(self.temp_directory):
             os.mkdir(self.temp_directory)
-        self.old_mounts = getattr(settings, 'LOG_MOUNTS', None)
-        setattr(settings, 'LOG_MOUNTS', {})
 
     def tearDown(self):
         super(ViewsTestCase, self).tearDown()
-        if self.old_mounts is None:
-            del settings.LOG_MOUNTS
-        else:
-            setattr(settings, 'LOG_MOUNTS', self.old_mounts)
         import shutil
         shutil.rmtree(self.temp_directory)
 
@@ -310,17 +306,8 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         with open(os.path.join(self.temp_directory, log.filename), 'w') as f:
             f.write(SAMPLE_BUILD_LOG_PAYLOAD)
 
-        try:
-            lm = settings.LOG_MOUNTS
-            del settings.LOG_MOUNTS
-        except AttributeError:
-            pass
-        settings.LOG_MOUNTS = {master.name: self.temp_directory}
-        response = self.client.get(url)
-        try:
-            settings.LOG_MOUNTS = lm
-        except NameError:
-            pass
+        with override_settings(LOG_MOUNTS={master.name: self.temp_directory}):
+            response = self.client.get(url)
         content = response.content
         content = content.split('</header>')[1].split('</footer')[0]
 

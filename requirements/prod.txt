@@ -66,6 +66,3 @@ funfactory==2.3.0
 # django-session-csrf
 https://github.com/mozilla/django-session-csrf/archive/f00ad91.zip#egg=django-session-csrf
 
-# sha256: ih29HHrehSBq53DJzl9DCBoJjJX5lK8RP2Q06QBVmmc
-# test-utils
-https://github.com/jbalogh/test-utils/archive/e42e031.zip#egg=test-utils
