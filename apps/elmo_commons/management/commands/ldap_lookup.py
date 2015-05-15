@@ -94,7 +94,7 @@ class Command(BaseCommand):
                     'memberUID': [uid, mail],
                     'member': ['mail=%s,o=com,dc=mozilla' % mail,
                                'mail=%s,o=org,dc=mozilla' % mail,
-                               'mail=%s,o=net,dc=mozillacom' % mail],
+                               'mail=%s,o=net,dc=mozilla' % mail],
                 }, any_parameter=True)
                 # combine the group part with the mail part
                 search_filter = '(&%s%s)' % (search_filter1, search_filter2)
