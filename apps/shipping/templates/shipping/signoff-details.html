@@ -30,8 +30,8 @@
         source check for this revision. This is not a good revision to sign
         off on.</p>
     {% endif %}
-    {% if run.missing %}
-      <p>There are {{ run.missing }}
+    {% if run.allmissing %}
+      <p>There are {{ run.allmissing }}
         missing strings. Depending on the amount, and the release, this may
         be a reason for this sign-off to get rejected.</p>
     {% endif %}
