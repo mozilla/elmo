@@ -1,8 +1,8 @@
 This custom download was created on
-http://jqueryui.com/download
+http://jqueryui.com/download of version 1.11.4
 from the following chosen components:
 
-By: peterbe@mozilla.com, 2011-11-11
+By: axel@mozilla.com, 2015-05-27
 
 Core:
 -----

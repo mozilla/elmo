@@ -11,7 +11,7 @@
 {% block head_matter %}
 
 {% compress css %}
-<link rel="stylesheet" href="{% static "css/jquery.ui/smoothness/jquery-ui-1.10.3.custom.css" %}" type="text/css">
+<link rel="stylesheet" href="{% static "css/jquery.ui/smoothness/jquery-ui.css" %}" type="text/css">
 {% endcompress %}
 
 <style type="text/css">
@@ -33,7 +33,7 @@ table.ui-widget {padding: 0px;}
 </style>
 {% endblock %}
 {% block javascript_matter %}
-<script src="{% static "js/jquery.ui/jquery-ui-1.10.3.custom.min.js" %}"></script>
+<script src="{% static "js/jquery.ui/jquery-ui.min.js" %}"></script>
 <script>
 var SEARCH = {
   FROM: {% if search.from %}'{{ search.from }}'{% else %}null{% endif %}
