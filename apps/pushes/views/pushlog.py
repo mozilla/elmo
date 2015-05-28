@@ -31,10 +31,13 @@ def pushlog(request, repo_name):
     startTime = endTime = None
     try:
         startTime = datetime.utcfromtimestamp(float(request.GET['from']))
-        endTime = datetime.utcfromtimestamp(float(request.GET['until']))
     except (ValueError, KeyError):
         if limit is None:
             limit = 50
+    try:
+        endTime = datetime.utcfromtimestamp(float(request.GET['until']))
+    except (ValueError, KeyError):
+        pass
     try:
         start = int(request.GET['start'])
     except (ValueError, KeyError):

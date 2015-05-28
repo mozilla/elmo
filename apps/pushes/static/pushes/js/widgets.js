@@ -151,14 +151,9 @@ $.widget(
             $.Widget.prototype.destroy.call(this);
             this.element.removeClass('ui-widget');
         },
-        _days: [31, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31],
+        _days: (30.5 * 24 * 60 * 60 * 1000),
         _monthBinder: function(elem, e, v) {
-            var slope = this._days[this._date.getUTCMonth() +
-                                   ((v < 0) ? 0 : 1)] * (24 * 60 * 60 * 1000)
-            var d = new Date(this._date);
-            d.setUTCHours(0, 0, 0, 0);
-            d.setUTCDate(1);
-            d.setUTCMilliseconds(v * slope);
+            var d = new Date(v * this._days);
             this.date(d);
         },
         _dayBinder: function(elem, e, v) {
@@ -173,13 +168,8 @@ $.widget(
             if (arguments.length) {
                 this._date = newDate;
                 this._dateField.text(this._date.toUTCString());
-                var monthStart = new Date(this._date);
-                monthStart.setUTCHours(0, 0, 0, 0);
-                monthStart.setUTCDate(1);
-                var monthOffset = this._date - monthStart;
-                monthOffset /= (24 * 60 * 60 * 1000);
-                monthOffset /= this._days[monthStart.getUTCMonth() + 1];
-                this._monthSpinner.spinner('value', monthOffset,
+                var month = Number(this._date) / this._days;
+                this._monthSpinner.spinner('value', month,
                                            true);
                 var date = Number(this._date) / (24 * 60 * 60 * 1000);
                 this._daySpinner.spinner('value', date,

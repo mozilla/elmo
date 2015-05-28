@@ -51,7 +51,7 @@ var AjaxLogin = (function() {
         * attempt fails it will return us the HTML of the failed form which
         * we'll use to replace the old one.
         */
-       $('form', container).live('submit', function() {
+       container.on('submit', 'form', function() {
          var p = {};
          $.each($(this).serializeArray(), function(i, o) {
            p[o.name] = o.value;
@@ -120,10 +120,10 @@ $(function() {
       closePopup();
     }
   });
-  $('body').live("click", function() {
+  $('body').on("click", function() {
     closePopup();
   });
-  $('#auth form').live("click", function(e) {
+  $('#auth').on("click", "form", function(e) {
     e.stopPropagation();
   });
 });

@@ -97,8 +97,12 @@ def statuses(req, ms_code):
                                                 'signoff__push__id',
                                                 'milestone__code'):
         previous[loc] = {'signoff': sid, 'push': pid, 'stone': mcode}
+    fallbacks = dict(ms.signoffs
+        .exclude(appversion=ms.appver)
+        .values_list('locale__code', 'appversion__code'))
     # whatever is in so_ids but not in previous is added
-    added = [loc for loc in so_ids.iterkeys() if loc not in previous]
+    added = [loc for loc in sorted(so_ids.iterkeys())
+        if loc not in previous and loc not in fallbacks]
     removed = []  # not yet used
     # drop those from previous that we're shipping in the same rev
     for loc, details in previous.items():
@@ -147,6 +151,8 @@ def statuses(req, ms_code):
                 d['updatedFrom'] = previous[loc]['stone']
             elif loc in added:
                 d['added'] = 'added'
+            elif loc in fallbacks:
+                d['fallback'] = fallbacks[loc]
             yield d
 
     return HttpResponse(simplejson.dumps({'items': list(items())}, indent=2),
