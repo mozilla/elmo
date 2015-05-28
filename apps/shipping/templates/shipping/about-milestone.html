@@ -61,8 +61,8 @@
      <td data-ex-role="viewPanel">
        <div data-ex-role="view" data-ex-showAll="true" data-ex-view-class="Tabular"
          data-ex-show-toolbox="false"
-         data-ex-column-labels="Locale, Revision, Latest, Snapshot {% ifnotequal ms.status Milestone.SHIPPED %}, Active{% endifnotequal %},Updated from"
-         data-ex-columns=".label,.revision, .latest_class,.snapshot_class {% ifnotequal ms.status Milestone.SHIPPED %}, .active_class{% endifnotequal %},.updatedFrom">
+         data-ex-column-labels="Locale, Revision, Latest, Snapshot {% ifnotequal ms.status Milestone.SHIPPED %}, Active{% endifnotequal %},Updated from,Old"
+         data-ex-columns=".label,.revision, .latest_class,.snapshot_class {% ifnotequal ms.status Milestone.SHIPPED %}, .active_class{% endifnotequal %},.updatedFrom,.fallback">
          <table style="display:none;">
            <tr>
              <td>
@@ -86,6 +86,9 @@
               <a target="_blank" data-ex-content=".updatedFrom" data-ex-href-subcontent="{{foresturl}}{&#123;.label}}/pushloghtml?changeset={&#123;.updatedFromRev}}"></a>,
               <a target="_blank" data-ex-href-subcontent="{% url 'pushes.views.diff' %}?from={&#123;.updatedFromRev}}&to={&#123;.revision}}&repo={{forestname}}/{&#123;.label}}">diff</a></span><span></span></span>
              <span data-ex-if-exists=".added"><span class="added">added</span></span>
+            </td>
+            <td>
+             <span data-ex-if-exists=".fallback"><span class="added" data-ex-content=".fallback"></span></span>
             </td>
           </tr>
          </table>

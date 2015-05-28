@@ -108,8 +108,12 @@ def changes(request, app_code):
     avrow = None  # keep track of the first row
     rowspan = 0
     locales_group.clear()
+    current = {}
+    # we're only doing sign-offs for this appversion now, and for milestones
+    # of this appversion
     for _mid, loc, pid in (Milestone_Signoffs.objects
                            .filter(milestone__appver=av)
+                           .filter(signoff__appversion=av)
                            .order_by('milestone__id',
                                      'signoff__locale__code')
                            .values_list('milestone__id',
