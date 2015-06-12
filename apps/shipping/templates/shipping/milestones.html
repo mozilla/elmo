@@ -43,12 +43,12 @@
         data-ex-href-subcontent="{% url 'shipping.views.milestone.about'  "{&#123;.code}}" %}"></a>
       </td>
       <td>
-        <span data-ex-if=".status = {{ Milestone.SHIPPED }}">
+        <span data-ex-if=".status = '{{ Milestone.SHIPPED }}'">
           <input type="button" {% if not perms.shipping.can_ship %}
           disabled="disabled"{% endif %}
           value="tweak" />
           <span>
-            <span data-ex-if=".status = {{ Milestone.UPCOMING }}">
+            <span data-ex-if=".status = '{{ Milestone.UPCOMING }}'">
               <input type="button" {% if not perms.shipping.can_open %}
               disabled="disabled"{% endif %}
               data-ex-onclick-subcontent="doForm('open','{&#123;.code}}')"
