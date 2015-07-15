@@ -61,17 +61,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "We need to add '{{ loc }}' to the Firefox Aurora l10n builds.\n\nPS: to be clear to the localization team, this bug is handled by Mozilla staff.", 
-    "product": "Release Engineering", 
-    "title": "releng", 
-    "cc": "l10n@mozilla.com", 
-    "rep_platform": "All", 
-    "short_desc": "Add '{{ loc }}' to the Firefox build", 
-    "component": "General Automation", 
-    "op_sys": "All", 
-    "blocked": "fx-l10n-{{ loc }}"
-  }, 
-  {
     "comment": "We need to add '{{ loc }}' to the Firefox Aurora l10n builds on our website. Please check the dependent bugs of bug fx-l10n-{{ loc }} on the native name of the language, and when we're having the actual builds on ftp.\n\nPS: to be clear to the localization team, this bug is handled by Mozilla staff.", 
     "product": "www.mozilla.org", 
     "title": "product-details", 

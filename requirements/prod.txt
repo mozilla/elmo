@@ -6,8 +6,8 @@
 # sha256: p7AqX3bYmnn4YZJvs04CnMQ0PBOAJSXIGFQqOf54jM4
 commonware==0.4.3
 
-# sha256: 111gXldDBeHChkw5LhRUlj6tRVJHfOFOZ-ZLnvn6oaY
-Django==1.4.19
+# sha256: k08ZdSGGgNUcTanWOjm8X7HdqsSEdv00uat5A_2YvPQ
+Django==1.4.21
 
 # six is required by django-appconf
 # py2.py3-none-any.whl:
