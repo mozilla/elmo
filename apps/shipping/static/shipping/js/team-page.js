@@ -3,6 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 $(function() {
+    // make header stick to the top
+    $('.trees').stickyTableHeaders();
     // make the scroll tops of our application anchors show below the header
     // shift down by offsetTop and header height
     var off = $('.trees > thead').height() +
