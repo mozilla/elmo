@@ -21,5 +21,5 @@ jQuery(document).one("scriptsLoaded.exhibit", function(evt) {
     }
 });
 jQuery(document).one("exhibitConfigured.exhibit", function(evt) {
-    $('table.exhibit-tabularView-body').stickyTableHeaders();
+    $('table.exhibit-tabularView-body').thead();
 });
