@@ -23,6 +23,8 @@
 {% block javascript_matter %}
 <script src="{% static "simile/exhibit/exhibit-api.js" %}?persist=false"></script>
 {% compress js %}
+<script src="{% static "js/libs/jquery-migrate-1.2.1.min.js" %}"></script>
+<script src="{% static "js/libs/jquery.thead-1.1.min.js" %}"></script>
 <script src="{% static "shipping/js/dashboard.js" %}"></script>
 {% endcompress %}
 {% endblock %}

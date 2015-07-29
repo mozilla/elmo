@@ -413,12 +413,13 @@ class ShippingTestCase(ShippingTestCaseBase):
         appver4trees = [x for x in struct['items']
                         if x['type'] == 'AppVer4Tree']
 
-        trees = [x['label'] for x in appver4trees]
+        trees = sorted(x['label'] for x in appver4trees)
         # note that trees without an appversion isn't returned
-        eq_(trees, [tree.code, tree2.code, tree3.code])
-        appversions = [x['appversion'] for x in appver4trees]
+        # nor are appversions that don't accept sign-offs
+        eq_(trees, [tree2.code, tree3.code])
+        appversions = sorted(x['appversion'] for x in appver4trees)
         # note that appversion without an appversion isn't returned
-        eq_(appversions, [appver.code, appver2.code, appver3.code])
+        eq_(appversions, [appver2.code, appver3.code])
 
         # query a specific set of trees
         data = {'tree': [tree2.code, tree3.code]}
@@ -426,8 +427,8 @@ class ShippingTestCase(ShippingTestCaseBase):
         struct = json.loads(response.content)
         appver4trees = [x for x in struct['items']
                         if x['type'] == 'AppVer4Tree']
-        trees = [x['label'] for x in appver4trees]
-        eq_(trees, [tree.code, tree2.code, tree3.code])
+        trees = sorted(x['label'] for x in appver4trees)
+        eq_(trees, [tree2.code, tree3.code])
 
         # query a specific set of trees, one which isn't implemented by any
         # appversion
@@ -436,10 +437,10 @@ class ShippingTestCase(ShippingTestCaseBase):
         struct = json.loads(response.content)
         appver4trees = [x for x in struct['items']
                         if x['type'] == 'AppVer4Tree']
-        trees = [x['label'] for x in appver4trees]
+        trees = sorted(x['label'] for x in appver4trees)
         # tree4 is skipped because there's no appversion for that one
         assert not Run.objects.all()
-        eq_(trees, [tree.code, tree2.code, tree3.code])
+        eq_(trees, [tree3.code])
 
         # Now, let's add some Runs
         run = Run.objects.create(

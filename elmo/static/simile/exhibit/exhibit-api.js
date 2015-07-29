@@ -12,7 +12,7 @@ var Exhibit = {
      * The version number for Exhibit.
      * @constant
      */
-    version: "3.0.0",
+    version: "3.1.2-rc1",
 
     /**
      * The XML namespace for Exhibit.
@@ -72,7 +72,8 @@ var Exhibit = {
         "babel": undefined,
         "backstage": undefined,
         "locale": undefined,
-        "persist": true
+        "persist": true,
+        "dev": false
     },
 
     /**
@@ -81,7 +82,7 @@ var Exhibit = {
     Extension: {},
 
     _dependencies: {
-        "lib/jquery-1.7.2.min.js": "jQuery",
+        "lib/jquery-1.11.3.min.js": "jQuery",
         "lib/json2.js": "JSON",
         "lib/base64.js": "Base64",
         "lib/sprintf.js": "sprintf",
@@ -175,10 +176,18 @@ var Exhibit = {
         "scripts/ui/facets/numeric-range-facet.js",
         "scripts/ui/facets/alpha-range-facet.js",
         "scripts/ui/facets/cloud-facet.js",
+        "scripts/ui/facets/image-facet.js",
         "scripts/ui/facets/slider-facet.js",
         "scripts/ui/facets/slider.js",
         "scripts/ui/facets/text-search-facet.js",
         "scripts/ui/facets/hierarchical-facet.js",
+        "scripts/ui/facets/timegrid-facet.js",
+        "scripts/ui/facets/week-facet.js",
+        "scripts/ui/facets/month-facet.js",
+        "scripts/ui/facets/dstructs.js",
+        "scripts/ui/facets/util/date.js",
+        "scripts/ui/facets/date-l10n.js",
+        "scripts/ui/facets/util/jquery.prettybox.js",
         "scripts/ui/views/view.js",
         "scripts/ui/views/view-panel.js",
         "scripts/ui/views/ordered-view-frame.js",
@@ -209,10 +218,13 @@ var Exhibit = {
 
     "styles": [
         "styles/graphics.css",
+        "styles/bubbles.css",
         "styles/exhibit.css",
         "styles/browse-panel.css",
         "styles/lens.css",
         "styles/control-panel.css",
+        "styles/timegrid.css",
+        "styles/theme-sandy-stone-beach-ocean-diver.css",
         "styles/util/facets.css",
         "styles/util/views.css",
         "styles/views/view-panel.css",
@@ -471,7 +483,8 @@ Exhibit.load = function() {
         "babel": String,
         "backstage": String,
         "locale": String,
-        "persist": Boolean
+        "persist": Boolean,
+        "dev": Boolean
     };
 
     if (typeof Exhibit_urlPrefix === "string") {
@@ -501,6 +514,7 @@ Exhibit.load = function() {
                 if ((arg.length === 2) &&
                     (arg[0]==="exhibit-dev") &&
                     (arg[1]==="true")) {
+                    Exhibit.params.dev = true;
                     Exhibit.params.bundle = false;
                     Exhibit.params.persist = false;
                 }

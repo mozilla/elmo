@@ -174,6 +174,13 @@ def changes(request, app_code):
             'name': '%s .next' % str(av),
             'changes': newso
         })
+        addcount = len([t for t in newso if t[1]=='added'])
+        if addcount:
+            rows[-1].update({
+                'rowspan': 1,
+                'rowspan_last': True,
+                'group_locales_count': '+%d' % addcount
+            })
 
     return render(request, 'shipping/app-changes.html', {
                     'appver': av,

@@ -87,22 +87,18 @@ en-US
         ok_('fx/da' in sos)
         so = sos['fx/da']
         eq_(so['signoff'], ['accepted', 'pending'])
-        eq_(so['apploc'], 'fx::da')
         eq_(so['tree'], 'fx')
         ok_('fx/de' in sos)
         so = sos['fx/de']
         eq_(so['signoff'], ['accepted'])
-        eq_(so['apploc'], 'fx::de')
         eq_(so['tree'], 'fx')
         ok_('fx/fr' in sos)
         so = sos['fx/fr']
         eq_(so['signoff'], ['rejected'])
-        eq_(so['apploc'], 'fx::fr')
         eq_(so['tree'], 'fx')
         ok_('fx/pl' in sos)
         so = sos['fx/pl']
         eq_(so['signoff'], ['pending'])
-        eq_(so['apploc'], 'fx::pl')
         eq_(so['tree'], 'fx')
 
     def test_ship_milestone(self):

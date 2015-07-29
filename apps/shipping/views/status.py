@@ -273,18 +273,7 @@ class StatusJSON(SignoffDataView):
         else:
             avq['id__in'] = currently_building
 
-        apps = list(AppVersion.objects
-                    .filter(**avq)
-                    .values_list('app', flat=True)
-                    .distinct())
-        if len(apps) == 1:
-            given_app = Application.objects.get(id=apps[0]).code
-        else:
-            given_app = None
-        if apps:
-            appvers = AppVersion.objects.filter(app__in=apps)
-        else:
-            appvers = AppVersion.objects.all()
+        appvers = AppVersion.objects.filter(**avq)
         lq = {}
         if self.locales:
             lq['code__in'] = self.locales
@@ -293,13 +282,10 @@ class StatusJSON(SignoffDataView):
         tree_avs = (AppVersion.trees.through.objects
                     .current()
                     .filter(appversion__in=appvers))
-        tree2av = dict(tree_avs.values_list("tree__code", "appversion__code"))
-        av2tree = dict((av, tree) for tree, av in tree2av.iteritems())
-        tree2app = dict(tree_avs.values_list("tree__code",
-                                             "appversion__app__code"))
+        av2tree = dict(tree_avs.values_list("appversion__code", "tree__code"))
         values = dict(Action._meta.get_field('flag').flatchoices)
         so_items = {}
-        for av in AppVersion.objects.filter(**avq):
+        for av in appvers:
             for loc, (real_av, flags) in locflags4av[av].iteritems():
                 flag_values = [
                     (real_av == av.code or f != Action.ACCEPTED) and values[f]
@@ -311,15 +297,13 @@ class StatusJSON(SignoffDataView):
         items = [{"type": "SignOff",
                   "label": "%s/%s" % (tree, locale),
                   "tree": tree,
-                  "apploc": ("%s::%s" % (given_app or tree2app[tree],
-                                         locale)),
                   "signoff": sorted(values)}
                  for (tree, locale), values in sorted(so_items.iteritems(),
                                                       key=lambda t:t[0])]
         items += [{"type": "AppVer4Tree",
                    "label": tree,
                    "appversion": av}
-                  for tree, av in tree2av.iteritems()]
+                  for av, tree in av2tree.iteritems()]
         return items
 
     def content(self, request, items):

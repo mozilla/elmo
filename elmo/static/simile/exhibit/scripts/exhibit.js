@@ -114,11 +114,28 @@ Exhibit.getAttribute = function(elmt, name, splitOn) {
     };
     
     try {
-        value = Exhibit.jQuery(elmt).attr(name);
+        if (name !== "role") {
+            //role is now an official html5 attribute
+            //so if exhibit accepts it, then
+            //exhibit will incorrectly hit non-exhibit items
+            value = Exhibit.jQuery(elmt).attr(name);
+            }
         if (typeof value === "undefined" || value.length === 0) {
             value = Exhibit.jQuery(elmt).attr("data-ex-"+hyphenate(name));
             if (typeof value === "undefined" || value.length === 0) {
-                return null;
+                if  ((name[name.length-2]==="I") &&
+                     (name[name.length-1]==="D")) {
+                    //Hack: some exhibit attributes end with "ID"
+                    //e.g. collectionID
+                    //this gets hyphenated as collection-i-d
+                    //but the "right" hyphenation is collection-id
+                    //permit either for compatibility
+                    name = hyphenate(name.slice(0,-1)+"d");
+                    value = Exhibit.jQuery(elmt).attr("data-ex-"+name);
+                    if (typeof value === "undefined" || value.length === 0) {
+                        return null;
+                    }
+                }
             }
         }
         if (typeof value.toString !== "undefined") {

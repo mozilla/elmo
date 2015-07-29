@@ -17,7 +17,6 @@
         <title>{% block title_matter %}{% endblock %}</title>
 
         {% block favicon %}<link rel="shortcut icon" href="{% static "img/favicon.ico" %}" />{% endblock %}
-        <link rel="stylesheet" type="text/css" href="//mozorg.cdn.mozilla.net/media/css/tabzilla-min.css" media="screen" />
 
         <!--[if lte IE 8]>
         <script src="{% static "js/libs/html5shiv.js" %}"></script>
@@ -25,6 +24,7 @@
 
         {% compress css %}
         <link rel="stylesheet" type="text/css" href="{% static "css/sandstone-resp.css" %}" media="screen" />
+        <link rel="stylesheet" type="text/css" href="{% static "css/tabzilla.css" %}" media="screen"/>
         <link rel="stylesheet" type="text/css" href="{% static "css/style.css" %}" />
         {% endcompress %}
         {% block site_css %}{% endblock %}
@@ -39,7 +39,9 @@
 
                 {% block site_header %}
                 <header id="masthead">
-                    <a href="http://www.mozilla.org/" id="tabzilla">{{ _('Mozilla') }}</a>
+                    <div id="tabzilla">
+                      <a href="http://www.mozilla.org/">{{ _('Mozilla') }}</a>
+                    </div>
                     <nav id="nav-main" role="menubar">
                         <span class="toggle" role="button" aria-controls="nav-main-menu" tabindex="0">{{ _('Menu') }}</span>
                         <ul role="menu" id="nav-main-menu">
@@ -94,7 +96,6 @@
 
         {% block js %}
           <script src="{% static "js/libs/jquery-1.11.3.js" %}"></script>
-          <script src="//mozorg.cdn.mozilla.net/en-US/tabzilla/tabzilla.js"></script>
           {% compress js %}
             <script src="{% static "js/site.js" %}"></script>
             <script src="{% static "js/base.js" %}"></script>
