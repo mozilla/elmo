@@ -102,29 +102,37 @@ def teamsnippet(loc, team_locales):
     # Create these two based on all appversions attached to a tree so that in
     # the big loop on runs we don't need to make excessive queries for
     # appversions and applications
-    _trees_to_appversions = {}
     appversion_has_pushes = {}
+    _treeid_to_avt = {}
     for avt in (AppVersion.trees.through.objects
                 .current()
+                .filter(tree__in=set(run.tree.id for run in runs))
                 .select_related('appversion__app', 'tree__l10n')):
-        _trees_to_appversions[avt.tree] = avt.appversion
-        # find out if the appversion has activity (if open for sign-offs)
-        if not avt.appversion.accepts_signoffs:
+        _treeid_to_avt[avt.tree.id] = avt
+
+    runs_with_open_av = [run for run in runs
+        if _treeid_to_avt[run.tree.id].appversion.accepts_signoffs]
+    changesets = dict((tuple(t[:2]), t[2])
+        for t in Run.revisions.through.objects
+        .filter(run__in=runs_with_open_av,
+                changeset__repositories__locale__in=locs)
+        .values_list('run__tree', 'run__locale', 'changeset'))
+    pushdates = dict((tuple(t[:2]), t[2])
+        for t in Push.changesets.through.objects
+        .filter(changeset__in=set(changesets.values()))
+        .values_list('changeset', 'push__repository__forest', 'push__push_date'))
+    for (treeid, locale_id), changeset in changesets.iteritems():
+        avt = _treeid_to_avt[treeid]
+        push_date = pushdates[(changeset, avt.tree.l10n.id)]
+        if avt.start and push_date < avt.start:
             continue
-        pushes = Push.objects.filter(repository__forest=avt.tree.l10n)
-        pushes = pushes.filter(repository__locale__in=locs)
-        if avt.start:
-            pushes = pushes.filter(push_date__gt=avt.start)
-        if avt.end:
-            pushes = pushes.filter(push_date__lt=avt.end)
-        locales_with_runs = (Run.revisions.through.objects
-            .filter(run__tree=avt.tree, changeset__pushes__in=pushes)
-            .values_list('run__locale', flat=True))
-        for locale_id in locales_with_runs:
-            appversion_has_pushes[(avt.appversion, locale_id)] = True
+        if avt.end and push_date > avt.end:
+            continue
+        appversion_has_pushes[(avt.appversion, locale_id)] = True
 
     def tree_to_appversion(tree):
-        return _trees_to_appversions.get(tree)
+        avt = _treeid_to_avt[tree.id]
+        return avt and avt.appversion or None
 
     def tree_to_application(tree):
         av = tree_to_appversion(tree)
@@ -132,7 +140,7 @@ def teamsnippet(loc, team_locales):
 
     # offer all revisions to sign-off.
     # in api.annotated_pushes, we only highlight the latest run if it's green
-    suggested_runs = runs
+    suggested_runs = runs_with_open_av
 
     suggested_rev = dict(Run_Revisions.objects
                          .filter(run__in=suggested_runs,
@@ -148,6 +156,11 @@ def teamsnippet(loc, team_locales):
         )
     applications = defaultdict(list)
     pushes = set()
+
+    flags4av = flags4appversions(
+        locales=list(set(run.locale for run in runs_with_open_av)),
+        appversions=[_treeid_to_avt[run.tree.id].appversion for run in runs_with_open_av]
+    )
     for run_ in runs:
         # copy the Run instance into a fancy dict but only copy those whose
         # key doesn't start with an underscore
@@ -181,15 +194,11 @@ def teamsnippet(loc, team_locales):
         for attr in defaults:
             setattr(run, attr, None)
         run.appversion = appversion
-        if appversion and appversion.accepts_signoffs:
-            run.is_active = \
-                appversion_has_pushes.get((appversion, run.locale_id))
-            real_av, flags = (
-                flags4appversions(
-                    locales={'id': run_.locale.id},
-                    appversions={'id': appversion.id}
-                )
-                .get(appversion, {})
+        run.is_active = \
+            appversion_has_pushes.get((appversion, run.locale_id))
+        applications[application].append(run)
+        if appversion and appversion in flags4av:
+            real_av, flags = (flags4av[appversion]
                 .get(run_.locale.code, [None, {}])
             )
 
@@ -240,7 +249,6 @@ def teamsnippet(loc, team_locales):
                     run.suggest_glyph = 'badge'
                     run.suggest_class = 'success'
 
-        applications[application].append(run)
     # get the tip shortrevs for all our pushes
     pushes = map(lambda p: p.id, filter(None, pushes))
     tip4push = dict(Push.objects
