@@ -82,7 +82,7 @@ def _actions4appversion(appversion, locales, chunk_size, up_until=None):
     return dict(rv), set(inc_locales.keys())
 
 
-def actions4appversions(locales=None, appversions=None, chunk_size=100,
+def actions4appversions(appversions, locales=None, chunk_size=100,
                         up_until=None):
     """Get actions for given appversions and locales.
     Returns a 4-level dictionary:
@@ -90,27 +90,17 @@ def actions4appversions(locales=None, appversions=None, chunk_size=100,
     """
     if locales is None:
         locales = {}
-    if appversions is None:
-        appversions = {}
 
-    if locales is not None:
-        if isinstance(locales, dict):
-            #it's a search!
-            locales = list(Locale.objects
-                           .filter(**locales)
-                           .values_list('id', flat=True)
-                           .distinct())
-        elif not isinstance(locales, (tuple, list)):
-            # locales is neither list nor search, bail out
-            raise NotImplementedError
-    if isinstance(appversions, dict):
-        # it's a search
-        appversions = list(AppVersion.objects
-                          .filter(**appversions)
-                          .order_by('id')
-                          .select_related('app', 'fallback'))
-    else:
-        appversions = list(appversions)
+    if isinstance(locales, dict):
+        #it's a search!
+        locales = list(Locale.objects
+                       .filter(**locales)
+                       .values_list('id', flat=True)
+                       .distinct())
+    elif not isinstance(locales, (tuple, list)):
+        # locales is neither list nor search, bail out
+        raise NotImplementedError
+    appversions = list(appversions)
 
     rv = {}  # return value
     fallbacks = {}  # locale sets that need fallback
@@ -148,7 +138,7 @@ def accepted_signoffs(appversion, up_until=None):
     The returned sign-offs don't necessarily need to be on the requested
     appversion, due to fallback.
     """
-    flags4loc = (flags4appversions(appversions={'id': appversion.id},
+    flags4loc = (flags4appversions([appversion],
                                    up_until=up_until)
                  .get(appversion, {}))
     actions = [flags[Action.ACCEPTED] for _, flags in flags4loc.itervalues()
@@ -186,15 +176,14 @@ def _flags4av(flaglocs4av, loc4id, rv, av=None):
     rv[av] = _rv
 
 
-def flags4appversions(locales=None, appversions=None, up_until=None):
+def flags4appversions(appversions, locales=None, up_until=None):
     """Get flags or fallback codes for given locales and appversions.
     Returns appversion -> locale__code -> (av__code, {flag -> action_id}).
     """
     # map to replace locale IDs with codes inside the helper
     loc4id = dict(Locale.objects.values_list('id', 'code'))
-    flaglocs4av = actions4appversions(
+    flaglocs4av = actions4appversions(appversions,
         locales=locales,
-        appversions=appversions,
         up_until=up_until
     )
     rv = {}

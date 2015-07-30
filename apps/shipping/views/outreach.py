@@ -71,7 +71,7 @@ def data(request):
                  .distinct()):
         loc4tree[t].append(l)
         locs.add(l)
-    locflags4av = flags4appversions(appversions={'id__in': tree4av.keys()})
+    locflags4av = flags4appversions([avt.appversion for avt in avts])
     loc4tree = defaultdict(list)
     for av, flags4loc in locflags4av.iteritems():
         if av.id not in tree4av:

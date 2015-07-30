@@ -158,8 +158,8 @@ def teamsnippet(loc, team_locales):
     pushes = set()
 
     flags4av = flags4appversions(
-        locales=list(set(run.locale for run in runs_with_open_av)),
-        appversions=[_treeid_to_avt[run.tree.id].appversion for run in runs_with_open_av]
+        [_treeid_to_avt[run.tree.id].appversion for run in runs_with_open_av],
+        locales=list(set(run.locale.id for run in runs_with_open_av)),
     )
     for run_ in runs:
         # copy the Run instance into a fancy dict but only copy those whose
@@ -426,7 +426,7 @@ def confirm_ship_mstone(request):
     mstone = get_object_or_404(Milestone, code=request.GET['ms'])
     if mstone.status != Milestone.OPEN:
         return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
-    flags4loc = (flags4appversions(appversions={'id': mstone.appver.id})
+    flags4loc = (flags4appversions([mstone.appver])
                  [mstone.appver])
 
     pending_locs = []

@@ -54,9 +54,8 @@ class SignoffView(TemplateView):
 
     def get_context_data(self, lang, appver):
         # which pushes to show
-        real_av, flags = (flags4appversions(
-            locales={'id': lang.id},
-            appversions={'id': appver.id})
+        real_av, flags = (flags4appversions([appver],
+            locales=[lang.id])
                           .get(appver, {})
                           .get(lang.code, [None, {}]))
         actions = list(Action.objects.filter(id__in=flags.values())
