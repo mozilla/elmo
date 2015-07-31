@@ -32,7 +32,7 @@ def changes(request, app_code):
     ms_name = None
     # get historic data that enters this appversion
     # get that in fallback order, we'll reverse afterwards
-    flags4av = flags4appversions(appversions={"id": av.id})
+    flags4av = flags4appversions([av])
     flags4loc = flags4av[av]
     locs4av = defaultdict(dict)  # av -> loc -> ACCEPTED
     notaccepted = {}  # av -> flags

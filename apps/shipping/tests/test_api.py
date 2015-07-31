@@ -5,6 +5,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from life.models import Tree, Forest, Locale
+from l10nstats.models import Run
 from shipping.models import (Signoff, Action, Application, AppVersion,
                              AppVersionTreeThrough)
 from shipping.api import (_actions4appversion, actions4appversions,
@@ -23,8 +24,8 @@ class ApiActionTest(TestCase):
 
     def test_getflags(self):
         """Test that the list returns the right flags."""
-        flags = flags4appversions(appversions={"code": "fx1.0"})
         av = AppVersion.objects.get(code="fx1.0")
+        flags = flags4appversions([av], locales=range(1, 5))
         eq_(flags, {av: {
             "pl": ["fx1.0", {Action.PENDING: 2}],
             "de": ["fx1.0", {Action.ACCEPTED: 3}],
@@ -102,17 +103,19 @@ class ApiMigrationTest(TestCase):
                 self.actions.append(a)
         _create(self, repo, self.old_av, self.pre_date, before)
         _create(self, repo, self.new_av, self.post_date, after)
+        Run.objects.create(locale=locale, tree=self.tree).activate()
         return repo
 
     def testEmpty(self):
         locale = Locale.objects.get(code='da')
         repo = self._setup(locale, None, None)
         eq_(repo.changesets.count(), 1)
-        eq_(_actions4appversion(self.old_av, set([locale.id]), 100),
+        eq_(_actions4appversion(self.old_av, set([locale.id]), None, 100),
             ({}, set([locale.id])))
-        eq_(_actions4appversion(self.new_av, set([locale.id]), 100),
+        eq_(_actions4appversion(self.new_av, set([locale.id]), None, 100),
             ({}, set([locale.id])))
-        flagdata = flags4appversions()
+        avs = AppVersion.objects.all()
+        flagdata = flags4appversions(avs)
         ok_(self.old_av in flagdata)
         ok_(self.new_av in flagdata)
         eq_(len(flagdata), 2)
@@ -128,15 +131,17 @@ class ApiMigrationTest(TestCase):
         eq_(repo.changesets.count(), 2)
         flaglocs4av, not_found = _actions4appversion(self.old_av,
                                                      set([locale.id]),
+                                                     None,
                                                      100)
         eq_(not_found, set())
         eq_(flaglocs4av.keys(), [locale.id])
         flag, action_id = flaglocs4av[locale.id].items()[0]
         eq_(flag, Action.ACCEPTED)
         eq_(Signoff.objects.get(action=action_id).locale_id, locale.id)
-        eq_(_actions4appversion(self.new_av, set([locale.id]), 100),
+        eq_(_actions4appversion(self.new_av, set([locale.id]), None, 100),
             ({}, set([locale.id])))
-        flagdata = flags4appversions()
+        avs = AppVersion.objects.all()
+        flagdata = flags4appversions(avs)
         ok_(self.old_av in flagdata)
         ok_(self.new_av in flagdata)
         eq_(len(flagdata), 2)
@@ -155,6 +160,7 @@ class ApiMigrationTest(TestCase):
         flaglocs4av, __ = _actions4appversion(
             self.old_av,
             set([locale.id]),
+            None,
             100,
         )
         actions = flaglocs4av[locale.id]
@@ -164,6 +170,7 @@ class ApiMigrationTest(TestCase):
         flaglocs4av, __ = _actions4appversion(
             self.old_av,
             set([locale.id]),
+            None,
             100,
             up_until=self.pre_date
         )
@@ -174,6 +181,7 @@ class ApiMigrationTest(TestCase):
         flaglocs4av, __ = _actions4appversion(
             self.old_av,
             set([locale.id]),
+            None,
             100,
             up_until=self.post_date
         )
@@ -188,16 +196,17 @@ class ApiMigrationTest(TestCase):
         locale = Locale.objects.get(code='da')
         repo = self._setup(locale, None, Action.ACCEPTED)
         eq_(repo.changesets.count(), 2)
-        eq_(_actions4appversion(self.old_av, set([locale.id]), 100),
+        eq_(_actions4appversion(self.old_av, set([locale.id]), None, 100),
             ({}, set([locale.id])))
         a4av, not_found = _actions4appversion(self.new_av,
-                                              set([locale.id]), 100)
+                                              set([locale.id]), None, 100)
         eq_(not_found, set())
         eq_(a4av.keys(), [locale.id])
         flag, action_id = a4av[locale.id].items()[0]
         eq_(flag, Action.ACCEPTED)
         eq_(Signoff.objects.get(action=action_id).locale_id, locale.id)
-        flagdata = flags4appversions()
+        avs = AppVersion.objects.all()
+        flagdata = flags4appversions(avs)
         ok_(self.old_av in flagdata)
         ok_(self.new_av in flagdata)
         eq_(len(flagdata), 2)
@@ -209,7 +218,8 @@ class ApiMigrationTest(TestCase):
         locale = Locale.objects.get(code='da')
         repo = self._setup(locale, Action.ACCEPTED, Action.ACCEPTED)
         eq_(repo.changesets.count(), 3)
-        flagdata = flags4appversions()
+        avs = AppVersion.objects.all()
+        flagdata = flags4appversions(avs)
         ok_(self.old_av in flagdata)
         ok_(self.new_av in flagdata)
         eq_(len(flagdata), 2)
@@ -228,19 +238,19 @@ class ApiMigrationTest(TestCase):
         repo = self._setup(de, None, Action.ACCEPTED)
         eq_(repo.changesets.count(), 2)
         a4av, not_found = _actions4appversion(self.old_av,
-                                              set([da.id, de.id]), 100)
+                                              set([da.id, de.id]), None, 100)
         eq_(not_found, set([de.id]))
         eq_(a4av.keys(), [da.id])
         flag, action_id = a4av[da.id].items()[0]
         eq_(flag, Action.ACCEPTED)
         a4av, not_found = _actions4appversion(self.new_av,
-                                              set([da.id, de.id]), 100)
+                                              set([da.id, de.id]), None, 100)
         eq_(not_found, set([da.id]))
         eq_(a4av.keys(), [de.id])
         flag, action_id = a4av[de.id].items()[0]
         eq_(flag, Action.ACCEPTED)
         a4av, not_found = _actions4appversion(self.old_av,
-                                              set([da.id, de.id]), 100)
+                                              set([da.id, de.id]), None, 100)
         eq_(not_found, set([de.id]))
         eq_(a4av.keys(), [da.id])
         flag, action_id = a4av[da.id].items()[0]
@@ -254,7 +264,8 @@ class ApiMigrationTest(TestCase):
         eq_(len(a4av), 1)
         a4av = a4avs[self.old_av]
         eq_(len(a4av), 1)
-        flagdata = flags4appversions()
+        avs = AppVersion.objects.all()
+        flagdata = flags4appversions(avs)
         ok_(self.old_av in flagdata)
         ok_(self.new_av in flagdata)
         eq_(len(flagdata), 2)
@@ -270,7 +281,8 @@ class ApiMigrationTest(TestCase):
         locale = Locale.objects.get(code='da')
         repo = self._setup(locale, Action.OBSOLETED, None)
         eq_(repo.changesets.count(), 2)
-        flagdata = flags4appversions()
+        avs = AppVersion.objects.all()
+        flagdata = flags4appversions(avs)
         ok_(self.old_av in flagdata)
         ok_(self.new_av in flagdata)
         eq_(len(flagdata), 2)
@@ -281,7 +293,8 @@ class ApiMigrationTest(TestCase):
         locale = Locale.objects.get(code='da')
         repo = self._setup(locale, Action.OBSOLETED, Action.ACCEPTED)
         eq_(repo.changesets.count(), 3)
-        flagdata = flags4appversions()
+        avs = AppVersion.objects.all()
+        flagdata = flags4appversions(avs)
         ok_(self.old_av in flagdata)
         ok_(self.new_av in flagdata)
         eq_(len(flagdata), 2)
@@ -294,7 +307,8 @@ class ApiMigrationTest(TestCase):
         locale = Locale.objects.get(code='da')
         repo = self._setup(locale, Action.ACCEPTED, Action.OBSOLETED)
         eq_(repo.changesets.count(), 3)
-        flagdata = flags4appversions()
+        avs = AppVersion.objects.all()
+        flagdata = flags4appversions(avs)
         ok_(self.old_av in flagdata)
         ok_(self.new_av in flagdata)
         eq_(len(flagdata), 2)

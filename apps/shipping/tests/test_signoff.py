@@ -365,9 +365,8 @@ en-US
         view = SignoffView()
         locale = Locale.objects.get(code='de')
 
-        real_av, flags = (api.flags4appversions(
-            locales={'id': locale.id},
-            appversions={'id': self.av.id})
+        real_av, flags = (api.flags4appversions([self.av],
+            locales=[locale.id])
                           .get(self.av, {})
                           .get(locale.code, [None, {}]))
         actions = list(Action.objects.filter(id__in=flags.values())
@@ -416,9 +415,6 @@ class SignOffAnnotatedPushesTest(TestCase):
             'axel', 'axel@mozilla.com', 'secret'
         )
 
-        self._locale_search = {'id': self.locale.id}
-        self._appver_search = {'id': self.av.id}
-
         repository, = Repository.objects.filter(locale=self.locale)
         first_date = datetime.datetime.utcnow() - datetime.timedelta(days=12)
         branch, = Branch.objects.all()
@@ -440,9 +436,8 @@ class SignOffAnnotatedPushesTest(TestCase):
             self.pushes.append(push)
 
     def _get_flags_and_actions(self):
-        __, flags = (api.flags4appversions(
-            locales=self._locale_search,
-            appversions=self._appver_search)
+        __, flags = (api.flags4appversions([self.av],
+            locales=[self.locale.id])
                           .get(self.av, {})
                           .get(self.locale.code, [None, {}]))
         actions = Action.objects.filter(id__in=flags.values())

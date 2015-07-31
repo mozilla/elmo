@@ -8,7 +8,7 @@ from collections import defaultdict
 
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.generic import View
-from life.models import Changeset
+from life.models import Changeset, Locale
 from l10nstats.models import Run, ProgressPosition
 from shipping.api import accepted_signoffs, flags4appversions
 from shipping.models import (Milestone, Action,
@@ -274,11 +274,13 @@ class StatusJSON(SignoffDataView):
             avq['id__in'] = currently_building
 
         appvers = AppVersion.objects.filter(**avq)
-        lq = {}
+        locales = None
         if self.locales:
-            lq['code__in'] = self.locales
+            locales = list(Locale.objects
+                .filter(code__in=self.locales)
+                .values_list('id', flat=True))
 
-        locflags4av = flags4appversions(locales=lq, appversions=avq)
+        locflags4av = flags4appversions(appvers, locales=locales)
         tree_avs = (AppVersion.trees.through.objects
                     .current()
                     .filter(appversion__in=appvers))
