@@ -72,6 +72,53 @@ table.stats td.status {
 }
 
 
+.actions .pending.oi {
+    color: #0096DD;
+}
+
+.actions .rejected.oi {
+    color: red;
+}
+.actions .no_update.oi {
+    color: black;
+}
+
+.signoffs.actions .suggest-error {
+    color: red;
+}
+.signoffs.actions .suggest-failure {
+    color: #ff6c00;
+}
+.signoffs.actions .suggest-warnings {
+    color: green;
+}
+.signoffs.actions .suggest-success {
+    color: green;
+}
+
+.signoffs.status, .signoffs.actions {
+    text-align: center;
+    white-space: nowrap;
+}
+.signoffs.status .status-ok {
+    color: green;
+}
+
+.signoffs .status-fallback {
+    color: #ff6c00;
+}
+
+.signoffs a {
+    color: #000000;
+}
+
+.signoffs a:hover {
+    color: #000000;
+    border-color: #484848;
+}
+
+
+
 /* override of exhibit CSS effect
   (done here rather than editing exhibit-bundle.css)
 */

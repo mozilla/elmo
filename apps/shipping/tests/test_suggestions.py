@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from collections import defaultdict
 import datetime
 import itertools
 from nose.tools import eq_, ok_
@@ -31,6 +32,7 @@ from life.models import (
 from l10nstats.models import Run, Active
 from shipping.views.signoff import SignoffView
 from shipping.views import teamsnippet
+from shipping.views.status import StatusJSON
 
 
 class DataMixin(object):
@@ -135,7 +137,7 @@ class DataMixin(object):
             srctime=push.push_date,
             **rundata
         )
-        run.revisions = push.changesets.all()
+        run.revisions.add(push.tip)
         run.activate()
         self.latest_run = run
         return run
@@ -166,7 +168,42 @@ class DataMixin(object):
         return signoff
 
 
-class TeamSnippetTest(TestCase, DataMixin):
+class TeamSnippetProcessMixin(object):
+    def process(self, flags):
+        context = teamsnippet(self.locale, [])['context']
+        ok_('applications' in context)
+        eq_(len(context['applications']), 1)
+        application, runs = context['applications'][0]
+        eq_(application, self.app)
+        run = self.check_runs_and_get(runs)
+        eq_(run['appversion'], self.av)
+        eq_(bool(run['is_active']), not(flags & self.NEEDS_UPDATE))
+        eq_(bool(run['accepted']),
+            bool(flags & self.HAS_SIGNOFF) or bool(self.fallback))
+        eq_(bool(run['under_review']), bool(flags & self.PENDING))
+        if flags & self.SUGGESTED:
+            eq_(run['is_active'], True)
+            eq_(run['suggested_shortrev'],
+                self.latest_run.revisions.all()[0].shortrev)
+            eq_(run['suggest_class'],
+                'error' if self.latest_run.errors else
+                'warning' if self.latest_run.allmissing else 'success')
+            eq_(run['suggest_glyph'],
+                'bolt' if self.latest_run.errors else
+                'graph' if self.latest_run.allmissing else 'badge')
+        else:
+            eq_(run['suggested_shortrev'], None)
+            eq_(run['suggest_class'], None)
+            eq_(run['suggest_glyph'], None)
+        signed = [a for a in (run.actions or []) if a.flag_name == 'accepted']
+        eq_(len(signed), 0)
+        if flags & self.REJECTED:
+            pass
+        # TODO: Test more actions
+        # TODO: Fallback
+
+
+class TeamSnippetTest(TestCase, DataMixin, TeamSnippetProcessMixin):
     """Test the team page snippet data without fallbacks or migrations.
     """
 
@@ -219,41 +256,8 @@ class TeamSnippetTest(TestCase, DataMixin):
     def check_runs_and_get(self, runs):
         """Subclass this if you run these tests on more than one run."""
         eq_(len(runs), 1)
+        eq_(runs[0]['tree'], self.tree)
         return runs[0]
-
-    def process(self, flags):
-        context = teamsnippet(self.locale, [])['context']
-        ok_('applications' in context)
-        eq_(len(context['applications']), 1)
-        application, runs = context['applications'][0]
-        eq_(application, self.app)
-        run = self.check_runs_and_get(runs)
-        eq_(run['appversion'], self.av)
-        eq_(run['tree'], self.tree)
-        eq_(bool(run['is_active']), not(flags & self.NEEDS_UPDATE))
-        eq_(bool(run['accepted']),
-            bool(flags & self.HAS_SIGNOFF) or bool(self.fallback))
-        eq_(bool(run['under_review']), bool(flags & self.PENDING))
-        if flags & self.SUGGESTED:
-            eq_(run['is_active'], True)
-            eq_(run['suggested_shortrev'],
-                self.latest_run.revisions.all()[0].shortrev)
-            eq_(run['suggest_class'],
-                'error' if self.latest_run.errors else
-                'warning' if self.latest_run.allmissing else 'success')
-            eq_(run['suggest_glyph'],
-                'bolt' if self.latest_run.errors else
-                'graph' if self.latest_run.allmissing else 'badge')
-        else:
-            eq_(run['suggested_shortrev'], None)
-            eq_(run['suggest_class'], None)
-            eq_(run['suggest_glyph'], None)
-        signed = [a for a in (run.actions or []) if a.flag_name == 'accepted']
-        eq_(len(signed), 0)
-        if flags & self.REJECTED:
-            pass
-        # TODO: Test more actions
-        # TODO: Fallback
 
     def test_no_progress(self):
         self.process(self.NEEDS_UPDATE)
@@ -409,7 +413,76 @@ class TeamSnippetTest(TestCase, DataMixin):
         self.process(self.REJECTED | self.PENDING)
 
 
-class TeamSnippetMigrationTest(TestCase, DataMixin):
+class StatusProcessMixin(object):
+    def process(self, flags):
+        view = StatusJSON(locales=[self.locale], trees=[], avs=[])
+        items = defaultdict(dict)
+        for item in view.get_data()[0]:
+            items[item['type']][item.get('id', item['label'])] = item
+        # de-defaultdict
+        items = dict(items.iteritems())
+        eq_(items['AppVer4Tree'], {self.tree.code: {
+            'type': 'AppVer4Tree',
+            'appversion': self.av.code,
+            'label': self.tree.code}})
+        self.check_runs(items['Build'])
+        if flags & (self.PENDING | self.HAS_SIGNOFF | self.REJECTED):
+            eq_(len(items['SignOff']), 1)
+            item = items['SignOff'][
+                '%s/%s' % (self.tree.code, self.locale.code)
+            ]
+            eq_(item['tree'], self.tree.code)
+            if flags & self.HAS_SIGNOFF:
+                eq_(item['state'], 'OK')
+                if flags & self.SUGGESTED:
+                    eq_(item['state_glyph'], 'graph')
+                else:
+                    eq_(item['state_glyph'], 'check')
+            else:
+                eq_(item['state'], None)
+                eq_(item['state_glyph'], '')
+            eq_('pending' in item['signoff'], bool(flags & self.PENDING))
+            eq_('accepted' in item['signoff'], bool(flags & self.HAS_SIGNOFF))
+            eq_('rejected' in item['signoff'], bool(flags & self.REJECTED))
+            signoffs = set(item['signoff'])
+            eq_(len(signoffs), len(item['signoff']))
+            eq_(signoffs - set(('pending', 'accepted', 'rejected')),
+                set([]))
+            if flags & (self.PENDING | self.REJECTED):
+                eq_('review' in item['action'], bool(flags & self.PENDING))
+                eq_('rejected' in item['action'], bool(flags & self.REJECTED))
+            else:
+                ok_('actions' not in item)
+        else:
+            ok_('SignOff' not in items)
+        if flags & (self.NEEDS_UPDATE | self.SUGGESTED):
+            eq_(len(items['NewPush']), 1)
+            item = items['NewPush'][
+                '%s/%s' % (self.tree.code, self.locale.code)
+            ]
+            if flags & self.SUGGESTED:
+                eq_(item['new_run'], 'sign off')
+            else:
+                ok_('new_run' not in item)
+            if flags & self.NEEDS_UPDATE:
+                eq_(item['needs_update'], True)
+            else:
+                ok_('needs_update' not in item)
+        else:
+            ok_('NewPush' not in items)
+
+
+
+class StatusTest(StatusProcessMixin, TeamSnippetTest, DataMixin):
+    """Test the dashboard status data without fallbacks or migrations.
+    """
+    def check_runs(self, runs):
+        eq_(len(runs), 1)
+        eq_(runs["%s/%s" % (self.tree.code, self.locale.code)]['tree'],
+            self.tree.code)
+
+
+class TeamSnippetMigrationTestcases(DataMixin):
     '''Test for appversion with a migration
 
     Changes:          *   *   *    *   *
@@ -419,8 +492,8 @@ class TeamSnippetMigrationTest(TestCase, DataMixin):
 
     def setUp(self):
         self.base()
-        self.repo, self.tree = self.create_repo()
-        self.beta_repo, self.beta_tree = self.create_repo('beta')
+        self.aurora_repo, self.aurora_tree = self.create_repo()
+        self.repo, self.tree = self.create_repo('beta')
         self.av = AppVersion.objects.create(
             app=self.app,
             version='1.0',
@@ -434,83 +507,77 @@ class TeamSnippetMigrationTest(TestCase, DataMixin):
             accepts_signoffs=False,
             fallback=self.av
         )
-        changesets = self.add_changesets(self.repo, 5)
+        changesets = self.add_changesets(self.aurora_repo, 5)
         # set up both base and beta to have active runs
         # before we do appversions, just so that they're active
         current_push_date = self.now()
         push_id = itertools.count(1)
         beta_push_id = itertools.count(1)
         push = self.add_push(push_id, changesets[0],
+            repository=self.aurora_repo,
             push_date=current_push_date)
         self.add_run(
             push,
+            tree=self.aurora_tree,
             total=100,
             changed=80,
             completion=80
         )
         self.pushes = [push]
         betapush = self.add_push(beta_push_id, changesets[0],
-            repository=self.beta_repo,
+            repository=self.repo,
             push_date=current_push_date)
         self.add_run(
             betapush,
-            tree=self.beta_tree,
+            tree=self.tree,
             total=100,
             changed=80,
             completion=80
         )
         self.beta_pushes = [betapush]
-        self.pushes.append(self.add_push(push_id, changesets[1]))
-        self.pushes.append(self.add_push(push_id, changesets[2]))
+        self.pushes.append(self.add_push(push_id, changesets[1],
+            repository=self.aurora_repo))
+        self.pushes.append(self.add_push(push_id, changesets[2],
+            repository=self.aurora_repo))
         # MERGE DAY!
         avt1 = AppVersionTreeThrough.objects.create(
             start=self.now(),
-            tree=self.tree,
+            tree=self.aurora_tree,
             appversion=self.av,
             end=None,
         )
         avt2 = AppVersionTreeThrough.objects.create(
             start=self.now(),
-            tree=self.beta_tree,
+            tree=self.tree,
             appversion=self.av,
             end=None)
         AppVersionTreeThrough.objects.create(
             start=avt2.start,
-            tree=self.tree,
+            tree=self.aurora_tree,
             appversion=self.next_av,
             end=None)
         avt1.end = avt2.start
         avt1.save()
         self.beta_pushes.append(self.add_push(beta_push_id,
             changesets[1:3],
-            repository=self.beta_repo))
+            repository=self.repo))
         # post-merge work on beta, maybe
         self.beta_pushes.append(self.add_push(beta_push_id,
             changesets[3],
-            repository=self.beta_repo))
+            repository=self.repo))
         self.beta_pushes.append(self.add_push(beta_push_id,
             changesets[4],
-            repository=self.beta_repo))
+            repository=self.repo))
 
     def check_runs_and_get(self, runs):
         eq_(len(runs), 2)
         for run in runs:
             if run['appversion'] == self.av:
+                eq_(runs[0]['tree'], self.tree)
                 return run
 
-    def process(self, **run_details):
-        context = teamsnippet(self.locale, [])['context']
-        ok_('applications' in context)
-        eq_(len(context['applications']), 1)
-        application, runs = context['applications'][0]
-        eq_(application, self.app)
-        run = self.check_runs_and_get(runs)
-        for key, value in run_details.iteritems():
-            ok_(key in run)
-            eq_(run[key], value)
-
     def test_nothing(self):
-        self.process(is_active=None, suggest_class=None)
+        self.process(self.NEEDS_UPDATE)
 
     def test_good_on_merge(self):
         '''got a good run on the last changeset of base,
@@ -518,6 +585,7 @@ class TeamSnippetMigrationTest(TestCase, DataMixin):
         push = self.pushes[2]
         self.add_run(
             push,
+            tree=self.aurora_tree,
             total=100,
             changed=80,
             completion=80
@@ -526,16 +594,12 @@ class TeamSnippetMigrationTest(TestCase, DataMixin):
         beta_push = self.beta_pushes[1]
         self.add_run(
             beta_push,
-            tree=self.beta_tree,
+            tree=self.tree,
             total=100,
             changed=80,
             completion=80
         )
-        self.process(
-            is_active=True,
-            suggest_class=None,
-            suggest_glyph=None
-        )
+        self.process(self.HAS_SIGNOFF)
 
     def test_missing_on_merge(self):
         '''got a good run prior to the last changeset of base,
@@ -543,6 +607,7 @@ class TeamSnippetMigrationTest(TestCase, DataMixin):
         push = self.pushes[1]
         self.add_run(
             push,
+            tree=self.aurora_tree,
             total=100,
             changed=80,
             completion=80
@@ -551,17 +616,12 @@ class TeamSnippetMigrationTest(TestCase, DataMixin):
         beta_push = self.beta_pushes[1]
         self.add_run(
             beta_push,
-            tree=self.beta_tree,
+            tree=self.tree,
             total=100,
             changed=80,
             completion=80
         )
-        self.process(
-            is_active=True,
-            suggested_shortrev=beta_push.tip.shortrev,
-            suggest_class='success',
-            suggest_glyph='badge'
-        )
+        self.process(self.HAS_SIGNOFF | self.SUGGESTED)
 
     def test_good_on_merge_and_more(self):
         '''got a good run on the last changeset of base,
@@ -569,6 +629,7 @@ class TeamSnippetMigrationTest(TestCase, DataMixin):
         push = self.pushes[2]
         self.add_run(
             push,
+            tree=self.aurora_tree,
             total=100,
             changed=80,
             completion=80
@@ -577,7 +638,7 @@ class TeamSnippetMigrationTest(TestCase, DataMixin):
         beta_push = self.beta_pushes[1]
         self.add_run(
             beta_push,
-            tree=self.beta_tree,
+            tree=self.tree,
             total=100,
             changed=80,
             completion=80
@@ -585,17 +646,12 @@ class TeamSnippetMigrationTest(TestCase, DataMixin):
         beta_push = self.beta_pushes[2]
         self.add_run(
             beta_push,
-            tree=self.beta_tree,
+            tree=self.tree,
             total=100,
             changed=80,
             completion=80
         )
-        self.process(
-            is_active=True,
-            suggested_shortrev=beta_push.tip.shortrev,
-            suggest_class='success',
-            suggest_glyph='badge'
-        )
+        self.process(self.HAS_SIGNOFF | self.SUGGESTED)
 
     def test_missing_on_merge_and_more(self):
         '''got a good run prior to the last changeset of base,
@@ -603,6 +659,7 @@ class TeamSnippetMigrationTest(TestCase, DataMixin):
         push = self.pushes[1]
         self.add_run(
             push,
+            tree=self.aurora_tree,
             total=100,
             changed=80,
             completion=80
@@ -611,7 +668,7 @@ class TeamSnippetMigrationTest(TestCase, DataMixin):
         beta_push = self.beta_pushes[1]
         self.add_run(
             beta_push,
-            tree=self.beta_tree,
+            tree=self.tree,
             total=100,
             changed=80,
             completion=80
@@ -619,14 +676,27 @@ class TeamSnippetMigrationTest(TestCase, DataMixin):
         beta_push = self.beta_pushes[2]
         self.add_run(
             beta_push,
-            tree=self.beta_tree,
+            tree=self.tree,
             total=100,
             changed=80,
             completion=80
         )
-        self.process(
-            is_active=True,
-            suggested_shortrev=beta_push.tip.shortrev,
-            suggest_class='success',
-            suggest_glyph='badge'
-        )
+        self.process(self.HAS_SIGNOFF | self.SUGGESTED)
+
+
+class TeamSnippetMigrationTest(
+        TeamSnippetMigrationTestcases,
+        TeamSnippetProcessMixin,
+        TestCase):
+    pass
+
+
+class StatusMigrationTest(StatusProcessMixin, TeamSnippetMigrationTestcases, DataMixin, TestCase):
+    """Test the dashboard status data without fallbacks or migrations.
+    """
+    def check_runs(self, runs):
+        eq_(len(runs), 2)
+        eq_(runs["%s/%s" % (self.aurora_tree.code, self.locale.code)]['tree'],
+            self.aurora_tree.code)
+        eq_(runs["%s/%s" % (self.tree.code, self.locale.code)]['tree'],
+            self.tree.code)

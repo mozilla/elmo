@@ -4,7 +4,7 @@
 /* global Exhibit */
 
 jQuery(document).one("scriptsLoaded.exhibit", function(evt) {
-    var EX_OPTIONS = ["result", "shipping", "signoff"];
+    var EX_OPTIONS = ["result", "action", "signoff"];
     var params = Exhibit.parseURLParameters();
     for (var i in EX_OPTIONS) {
         var option = EX_OPTIONS[i];
