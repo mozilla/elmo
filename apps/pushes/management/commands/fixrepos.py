@@ -9,9 +9,7 @@ that miss changeset mappings.
 from optparse import make_option
 
 from ..base import RepositoryCommand
-# XXX Achtung, Baby, django internals used here
-from django.db.models.sql import InsertQuery
-from django.db import router, transaction, connections
+from django.db import router, transaction
 
 from life.models import Changeset
 
@@ -38,27 +36,18 @@ class Command(RepositoryCommand):
         cnt = 0
         through = dbrepo.changesets.through
         using = router.db_for_write(dbrepo.__class__, instance=dbrepo)
-        connection = connections[using]
-        ins = InsertQuery(through)
-        ins.insert_values([(through.repository.field, None),
-                           (through.changeset.field, None)])
-        comp = ins.get_compiler(using)
-        comp.return_id = False
-        sqlinsert, _params = comp.as_sql()
-
         self.verbose("%s\t%d missing" % (dbrepo.name, missing))
         for revisions in self.chunk(self.nodes(hgrepo)):
             self.progress()
             with transaction.commit_on_success(using=using):
                 cs = Changeset.objects.filter(revision__in=revisions)
                 cs = cs.exclude(repositories=dbrepo)
-                csids = list(cs.values_list('id', flat=True))
-                if not csids:
+                vals = [through(repository=dbrepo, changeset=c) for c in cs]
+                if not vals:
                     continue
-                vals = [(dbrepo.id, csid) for csid in csids]
-                connection.cursor().executemany(sqlinsert, vals)
+                through.objects.bulk_create(vals)
                 transaction.set_dirty(using)
-                cnt += len(csids)
+                cnt += len(vals)
         self.normal("%s\tadded %d changesets" % (dbrepo.name, cnt))
         return
 
