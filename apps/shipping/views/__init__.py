@@ -111,7 +111,8 @@ def teamsnippet(loc, team_locales):
         _treeid_to_avt[avt.tree.id] = avt
 
     runs_with_open_av = [run for run in runs
-        if _treeid_to_avt[run.tree.id].appversion.accepts_signoffs]
+        if run.tree.id in _treeid_to_avt
+        and _treeid_to_avt[run.tree.id].appversion.accepts_signoffs]
     changesets = dict((tuple(t[:2]), t[2])
         for t in Run.revisions.through.objects
         .filter(run__in=runs_with_open_av,
@@ -131,7 +132,7 @@ def teamsnippet(loc, team_locales):
         appversion_has_pushes[(avt.appversion, locale_id)] = True
 
     def tree_to_appversion(tree):
-        avt = _treeid_to_avt[tree.id]
+        avt = tree.id in _treeid_to_avt and _treeid_to_avt[tree.id]
         return avt and avt.appversion or None
 
     def tree_to_application(tree):
