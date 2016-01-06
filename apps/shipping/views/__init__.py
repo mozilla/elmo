@@ -192,7 +192,7 @@ def teamsnippet(loc, team_locales):
         # because Django templates (stupidly) swallows lookup errors we
         # have to apply the missing defaults too
         defaults = (
-            "pending", "actions", "accepted", "suggested_shortrev",
+            "actions", "accepted", "suggested_shortrev",
             "is_active", "under_review", "suggest_glyph", "suggest_class",
             "fallback")
         for attr in defaults:
@@ -241,7 +241,7 @@ def teamsnippet(loc, team_locales):
 
             # get the suggested signoff. If there are existing actions
             # we'll unset it when we get the shortrevs for those below
-            if run_.id in suggested_rev:
+            if run_.id in suggested_rev and run.is_active:
                 run.suggested_shortrev = suggested_rev[run_.id][:12]
                 if run.errors:
                     run.suggest_glyph = 'bolt'
@@ -272,6 +272,7 @@ def teamsnippet(loc, team_locales):
                 # unset the suggestion if there's existing signoff action
                 if action.rev == run.suggested_shortrev:
                     run.suggested_shortrev = None
+                    run.suggest_glyph = run.suggest_class = None
                     # if we have a pending sign-off as the last thing,
                     # let's say so
                     if action.flag == Action.PENDING:
