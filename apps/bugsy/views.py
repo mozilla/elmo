@@ -28,10 +28,10 @@ def teamsnippet(locale):
                 'field0-0-1=cf_locale;type0-0-1=regexp;value0-0-1=^%s / ;'
                 'resolution=---'
                  % (locale.code, locale.code)).replace(' ', '%20')
-    return render_to_string('bugsy/team-snippet.html', {
-                    'locale': locale,
-                    'bugs_url': bugs_url,
-                  })
+    return {'template': 'bugsy/team-snippet.html',
+            'context': {'locale': locale,
+                        'bugs_url': bugs_url,
+                       }}
 
 
 def file_bugs(request):

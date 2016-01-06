@@ -97,7 +97,10 @@ def teamsnippet(loc, team_locales):
 
     # this locale isn't active in our trees yet
     if not runs:
-        return ''
+        return {'template': 'shipping/team-snippet.html',
+                'context': {'locale': loc,
+                            'applications': [],
+                            }}
 
     # Create these two based on all appversions attached to a tree so that in
     # the big loop on runs we don't need to make excessive queries for
@@ -281,12 +284,12 @@ def teamsnippet(loc, team_locales):
 
     progress_start = datetime.utcnow() - timedelta(days=settings.PROGRESS_DAYS)
 
-    return render_to_string('shipping/team-snippet.html',
-                            {'locale': loc,
+    return {'template': 'shipping/team-snippet.html',
+            'context': {'locale': loc,
                              'other_team_locales': other_team_locales,
                              'applications': applications,
                              'progress_start': progress_start,
-                            })
+                            }}
 
 
 def dashboard(request):

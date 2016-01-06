@@ -47,10 +47,3 @@ class BugsyTestCase(TestCase, EmbedsTestCaseMixin):
         ok_(isinstance(response, basestring))
         index_url = reverse('bugsy.views.index')
         ok_('href="%s"' % index_url in response)
-
-    def test_teamsnippet(self):
-        de = Locale.objects.create(
-          code='de',
-        )
-        response = teamsnippet(de)
-        ok_(isinstance(response, basestring))
