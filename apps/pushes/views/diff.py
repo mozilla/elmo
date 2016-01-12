@@ -24,8 +24,8 @@ from mercurial.hg import repository
 from mercurial.copies import pathcopies, _chain  # HG INTERNAL
 from mercurial.error import RepoLookupError
 
-from Mozilla.Parser import getParser
-from Mozilla.CompareLocales import AddRemove, Tree as DataTree
+from compare_locales.parser import getParser
+from compare_locales.compare import AddRemove, Tree as DataTree
 
 
 class BadRevision(Exception):
