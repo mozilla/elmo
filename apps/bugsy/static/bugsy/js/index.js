@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* global Exhibit */
+
 var BugImporters = {
   _counts: null,
   _comp: null
@@ -30,12 +32,17 @@ function parse_counts(url, data, callback, link) {
 }
 function parse_flags(url, data, callback, link) {
   var json = JSON.parse(data);
-  var items = [], hash = {}, flag;
+  var items = [], hash = {}, flag, false_positives = 0;
   for (var i=0, ii=json.bugs.length; i < ii; ++i) {
     var bug = json.bugs[i];
+    if (!bug.cf_locale) {
+      false_positives++;
+    }
     for (var j in bug.cf_locale) {
       flag = bug.cf_locale[j];
-      hash[flag] = (hash[flag] || 0) + 1;
+      if (bug.product !== 'Mozilla Localizations' || bug.component !== flag) {
+        hash[flag] = (hash[flag] || 0) + 1;
+      }
     }
   }
   for (flag in hash) {
@@ -45,10 +52,10 @@ function parse_flags(url, data, callback, link) {
     });
   }
   if (bug_count === null) {
-    bug_count = json.bugs.length;
+    bug_count = json.bugs.length - false_positives;
   }
   else {
-    bug_count += json.bugs.length;
+    bug_count += json.bugs.length - false_positives;
     show_bug_count();
   }
   callback({items: items});
