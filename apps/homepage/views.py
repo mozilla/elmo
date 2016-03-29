@@ -133,14 +133,6 @@ def locale_team(request, code):
 
     name = loc.name or loc.code
 
-    gliblocale = settings.VERBATIM_CONVERSIONS.get(
-        loc.code,
-        loc.code.replace('-', '_')
-    )
-    if gliblocale:
-        verbatim_url = 'https://localize.mozilla.org/%s/' % gliblocale
-    else:
-        verbatim_url = None
     try:
         cachebuster = (
             '?%d' % Run.objects.order_by('-pk').values_list('id', flat=True)[0]
@@ -154,7 +146,6 @@ def locale_team(request, code):
                     'shipping': shipping,
                     'bugs': bugs,
                     'webdashboard_url': settings.WEBDASHBOARD_URL,
-                    'verbatim_url': verbatim_url,
                     'PROGRESS_IMG_SIZE': settings.PROGRESS_IMG_SIZE,
                     'PROGRESS_IMG_NAME': settings.PROGRESS_IMG_NAME,
                     'cachebuster': cachebuster,
