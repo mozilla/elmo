@@ -56,17 +56,15 @@ class InstallPhase(BasePhase):
         "rmdir settings",
         "rm *.pyc"
     )
-    # TODO: Add caching once peep starts supporting it.
-    # See bug 1121459.
-    PEEP_INSTALL_PROD = (
-        "./vendor-local/lib/python/peep.py install "
+    PIP_INSTALL_PROD = (
+        "pip install "
         "-r requirements/compiled.txt "
         "-r requirements/prod.txt "
         "--target=%s" % TMP_VENDOR_DIR
     )
-    PEEP_REPLACE_VENDOR = [
+    PIP_REPLACE_VENDOR = [
     ]
-    PEEP_CLEANUP = "rm -rf %s" % TMP_VENDOR_DIR
+    PIP_CLEANUP = "rm -rf %s" % TMP_VENDOR_DIR
     
     SOUTH_EXEC = "./manage.py migrate"
     STATICFILES_COLLECT_EXEC = "./manage.py collectstatic --noinput"
@@ -80,8 +78,8 @@ class InstallPhase(BasePhase):
                 [cmd] for cmd in self.MIGRATE_ELMO_SITE
             ]
         self.commandlist += [
-            [self.PEEP_CLEANUP],
-            [self.PEEP_INSTALL_PROD],
+            [self.PIP_CLEANUP],
+            [self.PIP_INSTALL_PROD],
             ["rm -rf %s" % self.VENDOR_DIR],
             ["mv %s %s" % (self.TMP_VENDOR_DIR, self.VENDOR_DIR)]
         ]
