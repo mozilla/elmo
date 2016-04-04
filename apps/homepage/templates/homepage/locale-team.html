@@ -53,18 +53,15 @@ var LOCALE_CODE = '{{ locale.code }}';
     <li><a href="#bugzilla">Bugzilla</a></li>
     <li><a href="#webdashboard">Web Dashboard</a></li>
     <li><a href="https://wiki.mozilla.org/L10n:Teams:{{locale.code}}" class="external-link">Contact</a></li>
-    {% if verbatim_url %}
-    <li><a href="{{ verbatim_url }}" class="external-link">Verbatim</a></li>
-    {% endif %}
   </ul>
 </nav>
 {% endblock %}
 
 {% block content %}
 
-{{ shipping }}
+{% include shipping.template with context=shipping.context only %}
 
-{{ bugs }}
+{% include bugs.template with context=bugs.context only %}
 
 <div id="webdashboard">
 <p class="rss-icon-outer" style="float:right"><a href="{{ webdashboard_url }}?locale={{ locale.code }}"><img src="{% static "img/icons/feed.png" %}" alt="Subscribe to our feed"></a></p>

@@ -2,7 +2,7 @@
 # from funfactory/funfactory/requirements/compiled.txt
 
 # sha256: CNQWnQL9JIGaezIDuoXM9QN9xkbggusbIbPIftV29rw
-mercurial==3.2.4
+mercurial==3.7.3
 
 # doesn't compile on bm-l10n-dashboard01, disabled
 # sha256: H6pJd-mFBzHot_ih1YuGJzk6N0RUN4jsQ3-0XgbP5AE

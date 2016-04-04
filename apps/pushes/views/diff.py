@@ -120,6 +120,8 @@ class DiffView(View):
                            .filter(branch=1)
                            .order_by('-pk')
                            .values_list('revision', flat=True))[0]
+                # mercurial doesn't like unicode
+                anc_rev = str(anc_rev)
             except IndexError:
                 raise BadRevision("from and to parameter are not connected")
             changed, added, removed, copies = \

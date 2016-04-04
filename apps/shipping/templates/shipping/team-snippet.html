@@ -19,7 +19,7 @@
           </tr>
       </thead>
       <tbody>
-      {% for application, runs in applications %}
+      {% for application, runs in context.applications %}
       {% with firstapp=forloop.first %}
       {% if not forloop.first %}
       <tr class="separator"><td colspan="6"></td></tr>
@@ -60,7 +60,7 @@
           </td>
           <td class="treeprogress {{ runcycle }}">
             {% if run.prog_pos %}
-            <a href="{% url 'l10nstats.views.history_plot' %}?tree={{run.tree.code}}&amp;locale={{run.locale.code}}&amp;starttime={{ progress_start|date:"Y-m-d" }}">
+            <a href="{% url 'l10nstats.views.history_plot' %}?tree={{run.tree.code}}&amp;locale={{run.locale.code}}&amp;starttime={{ context.progress_start|date:"Y-m-d" }}">
               <div class="treeprogress-graph" style="background-position:{{run.prog_pos.x}}px {{run.prog_pos.y}}px;"></div>
             </a>
             {% endif %}
@@ -117,7 +117,7 @@
       </tbody>
     </table>
   <p><em>See detailed numbers
-  <a href="{% url 'shipping.views.dashboard' %}?locale={{locale.code}}{% for loc in other_team_locales %}&amp;locale={{ loc.code }}{% endfor %}"
+  <a href="{% url 'shipping.views.dashboard' %}?locale={{context.locale.code}}{% for loc in context.other_team_locales %}&amp;locale={{ loc.code }}{% endfor %}"
   >on the dashboard &rarr;</a></em></p>
 
   </div>

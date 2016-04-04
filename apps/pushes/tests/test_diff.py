@@ -18,6 +18,10 @@ from life.models import Repository
 from .base import mock_ui, RepoTestBase
 from pushes.views.diff import DiffView, BadRevision
 
+# mercurial doesn't take unicode strings, trigger errors
+import warnings
+warnings.filterwarnings('error', category=UnicodeWarning)
+
 
 class DiffTestCase(RepoTestBase):
 

@@ -126,21 +126,13 @@ def locale_team(request, code):
         .filter(team=loc).values_list('locale', flat=True)
     )
     from shipping.views import teamsnippet as ship_snippet
-    ship_div = mark_safe(ship_snippet(loc, team_locales))
+    shipping = ship_snippet(loc, team_locales)
 
     from bugsy.views import teamsnippet as bug_snippet
-    bug_div = mark_safe(bug_snippet(loc))
+    bugs = bug_snippet(loc)
 
     name = loc.name or loc.code
 
-    gliblocale = settings.VERBATIM_CONVERSIONS.get(
-        loc.code,
-        loc.code.replace('-', '_')
-    )
-    if gliblocale:
-        verbatim_url = 'https://localize.mozilla.org/%s/' % gliblocale
-    else:
-        verbatim_url = None
     try:
         cachebuster = (
             '?%d' % Run.objects.order_by('-pk').values_list('id', flat=True)[0]
@@ -151,10 +143,9 @@ def locale_team(request, code):
     return render(request, 'homepage/locale-team.html', {
                     'locale': loc,
                     'locale_name': name,
-                    'shipping': ship_div,
-                    'bugs': bug_div,
+                    'shipping': shipping,
+                    'bugs': bugs,
                     'webdashboard_url': settings.WEBDASHBOARD_URL,
-                    'verbatim_url': verbatim_url,
                     'PROGRESS_IMG_SIZE': settings.PROGRESS_IMG_SIZE,
                     'PROGRESS_IMG_NAME': settings.PROGRESS_IMG_NAME,
                     'cachebuster': cachebuster,
