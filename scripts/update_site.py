@@ -10,9 +10,6 @@ assets, migrates the database, and other nifty deployment tasks.
 
 Options:
   -h, --help            show this help message and exit
-  -e ENVIRONMENT, --environment=ENVIRONMENT
-                        Type of environment. One of (prod|dev|stage) Example:
-                        update_site.py -e stage
   -v, --verbose         Echo actions before taking them.
 """
 
@@ -23,22 +20,18 @@ from optparse import  OptionParser
 import update_commands
 
 
-ENV_BRANCH = update_commands.SourcePhase.ENV_BRANCH
-
-
-def update_site(env, verbose):
+def update_site(verbose, vendor):
     """Run through commands to update this site."""
     # do source first
     cmds = update_commands.SourcePhase(
-        environment=env,
         verbose=verbose
     )
     cmds.execute()
     # do install, update the commands module first
     reload(update_commands)
     cmds = update_commands.InstallPhase(
-        environment=env,
-        verbose=verbose
+        verbose=verbose,
+        vendor=vendor
     )
     cmds.execute()
 
@@ -52,20 +45,19 @@ def main():
         """.rstrip())
 
     options = OptionParser(usage=usage)
-    e_help = "Type of environment. One of (%s) Example: update_site.py \
-        -e stage" % '|'.join(ENV_BRANCH.keys())
-    options.add_option("-e", "--environment", help=e_help)
     options.add_option("-v", "--verbose",
                        help="Echo actions before taking them.",
                        action="store_true", dest="verbose")
+    options.add_option("--vendor",
+                       help="Install into vendor instead of virtualenv",
+                       action="store_true", dest="vendor")
     (opts, _) = options.parse_args()
+    if not opts.vendor:
+        # ensure we're in a virtualenv
+        if not hasattr(sys, 'real_prefix'):
+            options.error('Activate a virtualenv to install.')
 
-    if opts.environment in ENV_BRANCH.keys():
-        update_site(opts.environment, opts.verbose)
-    else:
-        sys.stderr.write("Invalid environment!\n")
-        options.print_help(sys.stderr)
-        sys.exit(1)
+    update_site(opts.verbose, opts.vendor)
 
 
 if __name__ == '__main__':

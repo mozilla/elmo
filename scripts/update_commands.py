@@ -9,17 +9,15 @@ import subprocess
 
 # Constants
 
-GIT_PULL = "git pull -q origin %(branch)s"
+GIT_PULL = "git pull --ff-only"
 GIT_SUBMODULE = "git submodule update --init --recursive"
 
 # Phases
 class BasePhase(object):
     commandlist = []
     
-    def __init__(self, verbose=False, environment=None):
-        assert(environment is not None)
+    def __init__(self, verbose=False):
         self.verbose = verbose
-        self.environment = environment
         self.basedir = os.path.abspath(
             os.path.join(os.path.dirname(__file__), '..')
         )
@@ -33,56 +31,47 @@ class BasePhase(object):
 
 
 class SourcePhase(BasePhase):
-    ENV_BRANCH = {
-        'dev': 'develop',
-        'stage': 'master',
-        'prod': 'master',
-    }
-    
-    def __init__(self, environment=None, **kwargs):
-        super(SourcePhase, self).__init__(environment=environment, **kwargs)
-        project_branch = {'branch': self.ENV_BRANCH[environment]}
+
+    def __init__(self, **kwargs):
+        super(SourcePhase, self).__init__(**kwargs)
         self.commandlist += [
-            [GIT_PULL % project_branch],
+            [GIT_PULL],
             [GIT_SUBMODULE]
         ]
 
 class InstallPhase(BasePhase):
+    PIP_INSTALL_VENV = (
+        "pip install "
+        "-r requirements/env.txt"
+    )
     VENDOR_DIR = './vendor'
     TMP_VENDOR_DIR = './vendor-tmp'
-    MIGRATE_ELMO_SITE = (
-        "mv settings/*.py elmo/settings/",
-        "rm settings/*.pyc",
-        "rmdir settings",
-        "rm *.pyc"
-    )
     PIP_INSTALL_PROD = (
         "pip install "
         "-r requirements/compiled.txt "
         "-r requirements/prod.txt "
         "--target=%s" % TMP_VENDOR_DIR
     )
-    PIP_REPLACE_VENDOR = [
-    ]
     PIP_CLEANUP = "rm -rf %s" % TMP_VENDOR_DIR
     
     SOUTH_EXEC = "./manage.py migrate"
     STATICFILES_COLLECT_EXEC = "./manage.py collectstatic --noinput"
     GIT_REVISION = "git rev-parse HEAD > collected/static/revision"
-    DJANGOCOMPRESSOR_COMPRESS_EXEC = "./manage.py compress"
+    DJANGOCOMPRESSOR_COMPRESS_EXEC = "./manage.py compress -f"
     REFRESH_FEEDS_EXEC = "./manage.py refresh_feeds"
-    def __init__(self, environment=None, **kwargs):
-        super(InstallPhase, self).__init__(environment=environment, **kwargs)
-        if os.path.isdir(os.path.join(self.basedir, 'settings')):
+    def __init__(self, vendor=False, **kwargs):
+        super(InstallPhase, self).__init__(**kwargs)
+        if vendor:
             self.commandlist += [
-                [cmd] for cmd in self.MIGRATE_ELMO_SITE
+                [self.PIP_CLEANUP],
+                [self.PIP_INSTALL_PROD],
+                ["rm -rf %s" % self.VENDOR_DIR],
+                ["mv %s %s" % (self.TMP_VENDOR_DIR, self.VENDOR_DIR)]
             ]
-        self.commandlist += [
-            [self.PIP_CLEANUP],
-            [self.PIP_INSTALL_PROD],
-            ["rm -rf %s" % self.VENDOR_DIR],
-            ["mv %s %s" % (self.TMP_VENDOR_DIR, self.VENDOR_DIR)]
-        ]
+        else:
+            self.commandlist += [
+                [self.PIP_INSTALL_VENV]
+            ]
     
         self.commandlist += [
             [self.SOUTH_EXEC],
