@@ -200,8 +200,8 @@ class JSONChangesets(SignoffDataView):
                     path = os.path.join(settings.REPOSITORY_BASE,
                                         props['repo'])
                     repo = repository(_ui(), path)
-                    ctx = repo[props['rev']]
-                    fctx = ctx.filectx(props['path'])
+                    ctx = repo[str(props['rev'])]
+                    fctx = ctx.filectx(str(props['path']))
                     locales = fctx.data().split()
                     for loc in locales:
                         extra_plats[loc].append(plat)
