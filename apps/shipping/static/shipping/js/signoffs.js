@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* global $, diffData, permissions, next_push_date */
+
 var dropMode = null;
 function dropDiff(event, ui) {
   $(this).append(ui.draggable);
@@ -24,7 +26,7 @@ $(document).ready(function() {
     }
   });
 
-  $('.diff').click(function(event) {
+  function openDiffTab(event) {
     event.stopPropagation();
     var dfs = $('.diffanchor').parent().prev().find('.shortrev');
     if (dfs.length < 2 || dfs[0].textContent == dfs[1].textContent) return;
@@ -35,7 +37,8 @@ $(document).ready(function() {
     };
     params = $.param(params);
     window.open(diffData.url + "?" + params);
-  });
+  }
+  $('.diff').click(openDiffTab);
 
   function hoverSO(showOrHide) {
     return function() {
@@ -50,19 +53,21 @@ $(document).ready(function() {
     };
   }
 
+  function clickSO() {
+    var self = $(this);
+    var so = $('input[data-push=' + this.getAttribute('data-push') + ']')
+      .not('.suggested');
+    if (! so.length) { return; }
+    var wasClicked = so.hasClass('clicked');
+    so.toggleClass('clicked');
+    // XXXX, guess what touch would do
+    if (wasClicked != so.hasClass('hidden')) {
+      so.toggleClass('hidden');
+    }
+  }
+
   $('.pushrow').hover(hoverSO('show'), hoverSO('hide'))
-    .click(function() {
-      var self = $(this);
-      var so = $('input[data-push=' + this.getAttribute('data-push') + ']')
-        .not('.suggested');
-      if (! so.length) { return; }
-      var wasClicked = so.hasClass('clicked');
-      so.toggleClass('clicked');
-      // XXXX, guess what touch would do
-      if (wasClicked != so.hasClass('hidden')) {
-        so.toggleClass('hidden');
-      }
-    });
+    .click(clickSO);
 
   if (permissions && permissions.canAddSignoff) {
     $('input.do_signoff').click(doSignoff);
@@ -125,7 +130,11 @@ $(document).ready(function() {
     // `next_push_date` is defined in the global window scope
     var req = $.get(url + '/more/', {push_date: next_push_date});
     req.then(function(response) {
-      $(response.html).insertBefore(this_row);
+      var new_rows = $(response.html);
+      new_rows.filter('.pushrow').hover(hoverSO('show'), hoverSO('hide'))
+        .click(clickSO);
+      new_rows.find('.diff').click(openDiffTab);
+      new_rows.insertBefore(this_row);
       if (!response.pushes_left) {
         button.attr('disabled', 'disabled');
       } else {

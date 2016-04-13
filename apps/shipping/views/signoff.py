@@ -383,6 +383,7 @@ class SignoffRowsView(SignoffView):
         else:
             return HttpResponseBadRequest(str(form.errors))
         context = self.get_context_data(lang, appver, next_push_date)
+        context['appver'] = appver
         html = render_to_string(
             self.template_name,
             context,
