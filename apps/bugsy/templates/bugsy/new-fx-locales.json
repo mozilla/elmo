@@ -17,12 +17,12 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
     "blocked": "fx-l10n-tracker"
   }, 
   {
-    "comment": "We need a bugzilla component for the '{{ loc }}' Localization, and a new value for the Locale custom field.\n\nPlease add a new value for the custom field 'Locale': {{ loc }} / {{ language }}\n\nThe details for the component should be:\n\nProduct: Mozilla Localizations\nComponent: {{ loc }} / {{ language }}\nDescription: {{ language }} Localization (...)\n\nAssignee: nobody\nQA Contact: Empty\n\n{{ name }}, could you provide a utf-8 encoded translation of '{{ language }} Localization' to include in the component description? In preparation of a new scheme, could you also fill out the descriptions for Firefox on https://localize.mozilla.org/{{ loc }}/bugzilla_components/, please? You'll be able to either log in with your ldap credentials once you have them (along with your hg access), or create an account there. Either way, I'll need to grant you permissions on the server, so poke me with your account details for that.\n\nOnce we have the description, this bug will be fixed by Mozilla staff.", 
+    "comment": "We need a Bugzilla component for the '{{ loc }}' Localization, and a new value for the Locale custom field.\n\nPlease add a new value for the custom field 'Locale': {{ loc }} / {{ language }}\n\nThe details for the component should be:\n\nProduct: Mozilla Localizations\nComponent: {{ loc }} / {{ language }}\nDescription: {{ language }} Localization (...)\n\nAssignee: nobody\nQA Contact: Empty\n\n{{ name }}, could you provide a utf-8 encoded translation of '{{ language }} Localization' to include in the component description?\n\nOnce we have the description, this bug will be fixed by Mozilla staff.", 
     "product": "bugzilla.mozilla.org", 
     "title": "bugzilla", 
     "cc": "{{ bugmail }},l10n@mozilla.com", 
     "rep_platform": "All", 
-    "short_desc": "Create l10n bugzilla component for {{ language }} ({{ loc }}), add value for Locale field", 
+    "short_desc": "Create l10n Bugzilla component for {{ language }} ({{ loc }}), add value for Locale field", 
     "component": "Administration", 
     "op_sys": "All", 
     "blocked": "fx-l10n-{{ loc }}"
@@ -34,7 +34,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
     "cc": "{{ bugmail }},l10n@mozilla.com", 
     "rep_platform": "All", 
     "short_desc": "Create ldap account for {{ name }} <{{ bugmail }}>", 
-    "component": "Account Requests", 
+    "component": "Infrastructure: LDAP", 
     "op_sys": "All", 
     "blocked": "fx-l10n-{{ loc }}"
   }, 
