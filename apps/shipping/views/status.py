@@ -8,10 +8,10 @@ from collections import defaultdict
 
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.generic import View
-from life.models import Changeset, Locale
+from life.models import Changeset, Locale, Push
 from l10nstats.models import Run, ProgressPosition
 from shipping.api import accepted_signoffs, flags4appversions
-from shipping.models import (Milestone, Action,
+from shipping.models import (Milestone, Action, Signoff,
                              Application, AppVersion)
 from django.views.decorators.cache import cache_control
 from django.utils import simplejson
@@ -222,7 +222,9 @@ class StatusJSON(SignoffDataView):
             result = 'success'
             tree = d['tree__code']
             locale = d['locale__code']
-            if missing or ('errors' in d and d['errors']):
+            if ('errors' in d and d['errors']):
+                result = 'error'
+            elif missing:
                 result = 'failure'
             elif d['obsolete']:
                 result = 'warnings'
@@ -247,33 +249,25 @@ class StatusJSON(SignoffDataView):
             if 'obsolete' in d and d['obsolete']:
                 rd['obsolete'] = d['obsolete']
             return rd
-        return prog_pos_items + map(toExhibit, q.values(*leafs))
+        run_items = map(toExhibit, q.values(*leafs))
+        self.runids2tree = dict((d['runid'], d['tree']) for d in run_items)
+        return prog_pos_items + run_items
 
     def get_signoffs(self):
-        avq = defaultdict(set)
+        appversions_with_pushes = []
+        _treeid_to_avt = {}
+        tree_ids = {}
+        avts = (AppVersion.trees.through.objects
+            .current()
+            .filter(appversion__accepts_signoffs=True)
+        )
         if self.avs:
-            for appver in (AppVersion.objects
-                           .filter(code__in=self.avs).values('id')):
-                avq['id__in'].add(appver['id'])
+            avts = avts.filter(appversion__code__in=self.avs)
+        for avt in avts.select_related('appversion__app', 'tree__l10n'):
+            _treeid_to_avt[avt.tree.id] = avt
+            tree_ids[avt.tree.code] = avt.tree.id
 
-        if self.trees:
-            av_ids = (AppVersion.trees.through.objects
-                      .current()
-                .filter(tree__code__in=self.trees)
-                .values_list('appversion_id', flat=True))
-            avq['id__in'].update(av_ids)
-
-        # restrict avq to building appversions open to signoffs
-        currently_building = set(AppVersion.trees.through.objects
-                                 .current()
-                                 .filter(appversion__accepts_signoffs=True)
-                                 .values_list('appversion_id', flat=True))
-        if avq:
-            avq['id__in'] &= currently_building
-        else:
-            avq['id__in'] = currently_building
-
-        appvers = AppVersion.objects.filter(**avq)
+        appvers = [avt.appversion for avt in _treeid_to_avt.values()]
         locales = None
         if self.locales:
             locales = list(Locale.objects
@@ -281,31 +275,130 @@ class StatusJSON(SignoffDataView):
                 .values_list('id', flat=True))
 
         locflags4av = flags4appversions(appvers, locales=locales)
-        tree_avs = (AppVersion.trees.through.objects
-                    .current()
-                    .filter(appversion__in=appvers))
-        av2tree = dict(tree_avs.values_list("appversion__code", "tree__code"))
+        av2tree = dict((avt.appversion.code, avt.tree.code)
+            for avt in _treeid_to_avt.itervalues())
         values = dict(Action._meta.get_field('flag').flatchoices)
         so_items = {}
+        actions = {}
         for av in appvers:
             for loc, (real_av, flags) in locflags4av[av].iteritems():
                 flag_values = [
                     (real_av == av.code or f != Action.ACCEPTED) and values[f]
                     or real_av
                     for f in flags]
-                so_items[(av2tree[av.code], loc)] = flag_values
+                item = {
+                    'flags': flag_values,
+                    'state': None,
+                    'action': []
+                }
+                if Action.ACCEPTED in flags:
+                    item['state'] = (real_av == av.code) and 'OK' or real_av
+                if Action.REJECTED in flags:
+                    item['action'].append('rejected')
+                if Action.PENDING in flags:
+                    item['action'].append('review')
+                so_items[(av2tree[av.code], loc)] = item
+                for flag, action in flags.items():
+                    if real_av == av.code or flag == Action.PENDING:
+                        actions[action] = [av, loc]
+        for action, signoff, push_date in (Action.objects
+            .filter(id__in = actions.keys())
+            .values_list('id', 'signoff', 'signoff__push__push_date')):
+                actions[action] += [signoff, push_date]
+        last_action = {}
+        last_signoff = {}
+        for action, (av, loc, signoff, push_date) in sorted(
+                actions.iteritems(),
+                key=lambda t: t[1][3],
+                reverse=True):
+            if (av, loc) in last_action:
+                continue
+            last_action[(av, loc)] = push_date
+            last_signoff[(av, loc)] = signoff
+
+        runs_with_open_av = [run for run, tree in self.runids2tree.items()
+            if tree in tree_ids and _treeid_to_avt[tree_ids[tree]].appversion.accepts_signoffs]
+        changesets = dict((tuple(t[:2]), t[2])
+            for t in Run.revisions.through.objects
+            .filter(run__in=runs_with_open_av,
+                    changeset__repositories__locale__isnull=False)
+            .values_list('run__tree', 'run__locale__code', 'changeset'))
+        pushdates = dict((tuple(t[:2]), t[2])
+            for t in Push.changesets.through.objects
+            .filter(changeset__in=set(changesets.values()))
+            .values_list('changeset', 'push__repository__forest', 'push__push_date'))
+        avl_has_new_run = set()
+        maybe_new_run = []
+        for (treeid, locale_code), changeset in changesets.iteritems():
+            avt = _treeid_to_avt[treeid]
+            push_date = pushdates[(changeset, avt.tree.l10n.id)]
+            if avt.start and push_date < avt.start:
+                # need update
+                appversions_with_pushes.append({
+                    "needs_update": True,
+                    "type": "NewPush",
+                    "label": avt.tree.code  + '/' + locale_code
+                })
+                continue
+            if avt.end and push_date > avt.end:
+                continue
+            if ((avt.appversion, locale_code) in last_action and
+                last_action[(avt.appversion, locale_code)] >= push_date):
+                    continue
+            maybe_new_run.append((avt.appversion, changeset, avt.tree.code,
+                locale_code, last_signoff.get((avt.appversion, locale_code))
+            ))
+
+        # find out if the sign-off is on the same revision as the last push
+        old_signoffs = filter(None, (t[4] for t in maybe_new_run))
+        signoffs_to_skip = set()
+        if old_signoffs:
+            so_tips = dict(Signoff.objects
+                .filter(id__in=old_signoffs)
+                .annotate(cs=Max("push__changesets"))
+                .values_list('id', 'cs'))
+            latest_changeset = dict((t[4], t[1]) for t in maybe_new_run)
+            for so_id, tip in so_tips.iteritems():
+                if latest_changeset[so_id] == tip:
+                    signoffs_to_skip.add(so_id)
+        for av, changeset, tree_code, locale_code, last_so in maybe_new_run:
+            if last_so in signoffs_to_skip:
+                continue
+            avl_has_new_run.add((tree_code, locale_code))
+            appversions_with_pushes.append({
+                "new_run": "sign off",
+                "type": "NewPush",
+                "label": tree_code + '/' + locale_code
+            })
 
         # make a list now
-        items = [{"type": "SignOff",
-                  "label": "%s/%s" % (tree, locale),
-                  "tree": tree,
-                  "signoff": sorted(values)}
-                 for (tree, locale), values in sorted(so_items.iteritems(),
-                                                      key=lambda t:t[0])]
+        items = []
+        for (tree, locale), values in sorted(so_items.iteritems(),
+                                             key=lambda t:t[0]):
+            glyph = ''
+            if values['state'] == 'OK':
+                glyph = 'check'
+                if (tree, locale) in avl_has_new_run:
+                    glyph = 'graph'
+            elif values['state']:
+                glyph = 'warning'
+            item = {
+                "type": "SignOff",
+                "label": "%s/%s" % (tree, locale),
+                "tree": tree,
+                "state": values['state'],
+                "state_glyph": glyph,
+                "signoff": sorted(values['flags'])
+            }
+            if values['action']:
+                item['action'] = values['action']
+            items.append(item)
+
         items += [{"type": "AppVer4Tree",
                    "label": tree,
                    "appversion": av}
                   for av, tree in av2tree.iteritems()]
+        items += appversions_with_pushes
         return items
 
     def content(self, request, items):

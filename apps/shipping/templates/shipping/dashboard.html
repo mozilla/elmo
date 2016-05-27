@@ -10,6 +10,7 @@
 
 {% block head_matter %}
 <link rel="stylesheet" href="{% static "shipping/css/dashboard.css" %}" type="text/css">
+<link rel="stylesheet" href="{% static "css/open-iconic.css" %}" type="text/css">
 <link href="{% url 'shipping.views.status.status_json' %}?{{ query }}" type="application/json" rel="exhibit-data"/>
 <style>
 .progress {
@@ -55,10 +56,10 @@
       data-ex-show-toolbox="false"
       data-ex-collectionID="buids"
       data-ex-column-labels="Locale, Tree, %, Errors, Missing, Warnings,
-       Reported, Obsolete, Unchanged, Status, History, Sign-off"
+       Reported, Obsolete, Unchanged, Status, History, Status, Action"
       data-ex-columns=".locale, .tree, .completion, .errors, .missing,
        .warnings, .report, .obsolete,  .unchanged, .changed,
-       .completion, .signoff"
+       .completion, .state, .new_run"
       data-ex-cellSpacing="0">
       <table style="display:none;">
     <tr>
@@ -89,18 +90,34 @@
              data-ex-style-subcontent="background-position:{&#123; .background_offset_x }}px {&#123; .background_offset_y }}px"></div>
          </a>
        </td>
-<td>
-  <span data-ex-if="exists(.tree.appversion)">
-  <span>
-  <a data-ex-href-subcontent="{% url 'shipping.views.signoff.signoff' "&#123;&#123;.locale&#125;&#125;" "&#123;&#123;.tree.appversion&#125;&#125;" %}">
-    <span data-ex-if="exists(.signoff )">
-      <span data-ex-content=".signoff"></span>
-      <span>none</span>
-    </span>
-  </a>
-  </span>
-  </span>
-</td>
+       <td class="signoffs status">
+         <span data-ex-if="exists(.tree.appversion)">
+         <a data-ex-href-subcontent="{% url 'shipping.views.signoff.signoff' "&#123;&#123;.locale&#125;&#125;" "&#123;&#123;.tree.appversion&#125;&#125;" %}">
+         <span data-ex-if='.state = "OK"'>
+           <span class="oi status-ok" data-ex-data-glyph-subcontent="{&#123;.state_glyph}}"></span>
+           <span><span class="oi status-fallback" data-ex-data-glyph-subcontent="{&#123;.state_glyph}}"></span> <span data-ex-content=".state"></span></span>
+         </span>
+         </a>
+         </span>
+       </td>
+       <td class="signoffs actions">
+         <span data-ex-if="exists(.tree.appversion)">
+           <a data-ex-href-subcontent="{% url 'shipping.views.signoff.signoff' "&#123;&#123;.locale&#125;&#125;" "&#123;&#123;.tree.appversion&#125;&#125;" %}">
+             <span data-ex-if="exists(.action)">
+               <span>
+                 <span data-ex-if='.action = "rejected"'><span class="oi rejected" data-glyph='x'></span></span>
+                 <span data-ex-if='contains(.action, "review")'><span class="oi pending" data-glyph="magnifying-glass"></span></span>
+               </span>
+             </span>
+             <span data-ex-if="exists(.new_run)">
+               <span data-ex-class-subcontent='oi suggest-{&#123;.result}}' data-glyph="graph"></span>
+             </span>
+             <span data-ex-if="exists(.needs_update)">
+               <span title="Needs Update" class="oi no_update" data-glyph="ban"></span>
+             </span>
+           </a>
+         </span>
+       </td>
     </tr>
       </table>
     </div>
@@ -128,9 +145,13 @@
        <div data-ex-role="facet" data-ex-expression=".locale" data-ex-facet-label="Locale"
          data-ex-height="5em"
          id="locale-facet"></div>
-       <div data-ex-role="facet" data-ex-expression=".signoff"
+       <div data-ex-role="facet" data-ex-expression=".state"
          data-ex-missing-label="none"
+         data-ex-sort-direction="reverse"
          data-ex-height="5em" data-ex-facet-label="Sign-off" id="signoff-facet"></div>
+       <div data-ex-role="facet" data-ex-expression="union(.action, .new_run)"
+         data-ex-missing-label="none"
+         data-ex-height="5em" data-ex-facet-label="Action" id="action-facet"></div>
        <div><a href="{% url 'shipping.views.index' %}?{{ request.GET.urlencode }}">Edit</a> this dashboard.</div>
      </td>
    </tr>
