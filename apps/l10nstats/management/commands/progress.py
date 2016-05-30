@@ -63,6 +63,7 @@ class Command(BaseCommand):
             tuples[(loc, tree)].append((srctime, completion))
             locales.add(loc)
             trees.add(tree)
+        initialCoverage = self.initialCoverage(tuples.keys(), startdate)
         locales = dict((l.code, l)
                        for l in
                        (Locale.objects
@@ -73,6 +74,8 @@ class Command(BaseCommand):
                       .filter(code__in=trees)))
         backobjs = []
         for (loc, tree), vals in tuples.iteritems():
+            if (loc, tree) in initialCoverage:
+                vals.insert(0, (startdate, initialCoverage[(loc, tree)]))
             if len(vals) > 1:
                 # maybe resize
                 vals = self.rescale(vals)
@@ -120,6 +123,25 @@ class Command(BaseCommand):
         ratio = float(top - bottom) / (_max - _min)
         scale = lambda v: (v - _min) * ratio + bottom
         return [(t, scale(c)) for t, c in vals]
+
+    def initialCoverage(self, tuples, startdate):
+        rv = {}
+        tree2locs = defaultdict(list)
+        for l,t in tuples:
+            tree2locs[t].append(l)
+        for tree, locales in tree2locs.iteritems():
+            locs = (Locale.objects
+                .filter(code__in=locales)
+                .filter(run__srctime__lt=startdate, run__tree__code=tree)
+                .annotate(mr=Max('run'))
+            )
+            for l, r in locs.values_list('code', 'mr'):
+                rv[(l, tree)] = r
+        r2r = dict(Run.objects
+            .filter(id__in=rv.values())
+            .values_list('id', 'completion')
+        )
+        return dict((t, r2r[r]) for t, r in rv.items())
 
 # python 2.6 helper
 # XXX remove when we migrate to 2.7
