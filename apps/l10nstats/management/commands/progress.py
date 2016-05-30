@@ -40,11 +40,30 @@ class Command(BaseCommand):
         scale = 1. * (self.width - 1) / total_seconds(enddate - startdate)
         runs = runs.filter(srctime__gte=startdate,
                            srctime__lte=enddate)
-        locales = sorted(runs.values_list('locale__code', flat=True)
-                        .distinct())
-        trees = sorted(runs.values_list('tree__code', flat=True)
-                       .distinct())
         runs = runs.order_by('srctime')
+        tuples = defaultdict(list)
+        tree2locs = defaultdict(set)
+        locales = set()
+        trees = set()
+        for loc, tree in (Run.objects
+                          .filter(active__isnull=False)
+                          .values_list('locale__code', 'tree__code')):
+            tree2locs[tree].add(loc)
+            locales.add(loc)
+            trees.add(tree)
+        for loc, tree, srctime, completion in runs.values_list('locale__code',
+                                                               'tree__code',
+                                                               'srctime',
+                                                               'completion'):
+            tuples[(loc, tree)].append((srctime, completion))
+            tree2locs[tree].add(loc)
+            locales.add(loc)
+            trees.add(tree)
+        initialCoverage = self.initialCoverage(tree2locs, startdate)
+        for (loc, tree), v in initialCoverage.items():
+            tuples[(loc, tree)].insert(0, (startdate, v))
+        locales = sorted(locales)
+        trees = sorted(trees)
         offloc = dict((loc, (i + 1) * self.height)
                       for i, loc in enumerate(locales))
         offtree = dict((tree, i * self.width)
@@ -53,17 +72,6 @@ class Command(BaseCommand):
         im = PIL.Image.new("RGBA", (self.width * len(trees),
                                     self.height * len(locales)))
         draw = PIL.ImageDraw.Draw(im, "RGBA")
-        tuples = defaultdict(list)
-        locales = set()
-        trees = set()
-        for loc, tree, srctime, completion in runs.values_list('locale__code',
-                                                               'tree__code',
-                                                               'srctime',
-                                                               'completion'):
-            tuples[(loc, tree)].append((srctime, completion))
-            locales.add(loc)
-            trees.add(tree)
-        initialCoverage = self.initialCoverage(tuples.keys(), startdate)
         locales = dict((l.code, l)
                        for l in
                        (Locale.objects
@@ -74,8 +82,6 @@ class Command(BaseCommand):
                       .filter(code__in=trees)))
         backobjs = []
         for (loc, tree), vals in tuples.iteritems():
-            if (loc, tree) in initialCoverage:
-                vals.insert(0, (startdate, initialCoverage[(loc, tree)]))
             rescale = self.rescale(vals)
             oldx = oldy = None
             _offy = offloc[loc]
@@ -126,11 +132,8 @@ class Command(BaseCommand):
             offset = (100.0 - span) * _min / (100.0 - _max + _min)
         return lambda v: (v - _min) * ratio + offset
 
-    def initialCoverage(self, tuples, startdate):
+    def initialCoverage(self, tree2locs, startdate):
         rv = {}
-        tree2locs = defaultdict(list)
-        for l,t in tuples:
-            tree2locs[t].append(l)
         for tree, locales in tree2locs.iteritems():
             locs = (Locale.objects
                 .filter(code__in=locales)
