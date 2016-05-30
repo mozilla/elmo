@@ -76,15 +76,13 @@ class Command(BaseCommand):
         for (loc, tree), vals in tuples.iteritems():
             if (loc, tree) in initialCoverage:
                 vals.insert(0, (startdate, initialCoverage[(loc, tree)]))
-            if len(vals) > 1:
-                # maybe resize
-                vals = self.rescale(vals)
+            rescale = self.rescale(vals)
             oldx = oldy = None
             _offy = offloc[loc]
             _offx = offtree[tree]
             for srctime, completion in vals:
                 x = _offx + int(total_seconds(srctime - startdate) * scale)
-                y = _offy - completion * (self.height - 1) / 100
+                y = _offy - rescale(completion) * (self.height - 1) / 100
                 if oldx is not None:
                     if x > oldx + 1:
                         draw.rectangle([oldx + 1, oldy, x, _offy],
@@ -111,18 +109,22 @@ class Command(BaseCommand):
         ProgressPosition.objects.all().delete()
         ProgressPosition.objects.bulk_create(backobjs)
 
-    def rescale(self, vals):
+    def rescale(self, vals, span=75.0):
+        # return a scaling function for coverage values
+        # Make graph at least "span" % high
+        # Ensure that upper and lower space have the same
+        # proportions as the original graph
         _min = min(c for _, c in vals)
         _max = max(c for _, c in vals)
-        if ((_min <= 25 and _max >= 75) or
+        if ((_max - _min) >= span or
             (_min >= _max)):
             # no resize needed or useful
-            return vals
-        bottom = _min if _min <= 25 else 25
-        top = _max if _max >= 75 else 75
-        ratio = float(top - bottom) / (_max - _min)
-        scale = lambda v: (v - _min) * ratio + bottom
-        return [(t, scale(c)) for t, c in vals]
+            return lambda v: v
+        offset = 0
+        ratio = span / (_max - _min)
+        if _max * ratio > 100:
+            offset = (100.0 - span) * _min / (100.0 - _max + _min)
+        return lambda v: (v - _min) * ratio + offset
 
     def initialCoverage(self, tuples, startdate):
         rv = {}
