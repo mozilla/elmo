@@ -12,7 +12,7 @@ import os.path
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
-from django.db.models import Max
+from django.db.models import Max, Q
 
 from l10nstats.models import Run, ProgressPosition
 from life.models import Locale, Tree
@@ -34,11 +34,14 @@ class Command(BaseCommand):
     area_fill = (0, 128, 0, 20)
 
     def handle(self, *args, **options):
+        q = Q()
+        if args:
+            q = Q(tree__code__in=args)
         runs = Run.objects.exclude(srctime__isnull=True)
         enddate = runs.aggregate(Max('srctime'))['srctime__max']
         startdate = enddate - timedelta(days=self.days)
         scale = 1. * (self.width - 1) / total_seconds(enddate - startdate)
-        runs = runs.filter(srctime__gte=startdate,
+        runs = runs.filter(q, srctime__gte=startdate,
                            srctime__lte=enddate)
         runs = runs.order_by('srctime')
         tuples = defaultdict(list)
@@ -46,7 +49,7 @@ class Command(BaseCommand):
         locales = set()
         trees = set()
         for loc, tree in (Run.objects
-                          .filter(active__isnull=False)
+                          .filter(q, active__isnull=False)
                           .values_list('locale__code', 'tree__code')):
             tree2locs[tree].add(loc)
             locales.add(loc)
