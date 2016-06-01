@@ -54,17 +54,19 @@ class Command(BaseCommand):
             tree2locs[tree].add(loc)
             locales.add(loc)
             trees.add(tree)
-        for loc, tree, srctime, completion in runs.values_list('locale__code',
-                                                               'tree__code',
-                                                               'srctime',
-                                                               'completion'):
-            tuples[(loc, tree)].append((srctime, completion))
+        runs = runs.values_list('locale__code',
+                                'tree__code',
+                                'srctime',
+                                'changed',
+                                'total')
+        for loc, tree, srctime, changed, total in runs:
+            tuples[(loc, tree)].append((srctime, changed, total))
             tree2locs[tree].add(loc)
             locales.add(loc)
             trees.add(tree)
         initialCoverage = self.initialCoverage(tree2locs, startdate)
-        for (loc, tree), v in initialCoverage.items():
-            tuples[(loc, tree)].insert(0, (startdate, v))
+        for (loc, tree), (c, t) in initialCoverage.items():
+            tuples[(loc, tree)].insert(0, (startdate, c, t))
         locales = sorted(locales)
         trees = sorted(trees)
         offloc = dict((loc, (i + 1) * self.height)
@@ -89,9 +91,9 @@ class Command(BaseCommand):
             oldx = oldy = None
             _offy = offloc[loc]
             _offx = offtree[tree]
-            for srctime, completion in vals:
+            for srctime, changed, total in vals:
                 x = _offx + int(total_seconds(srctime - startdate) * scale)
-                y = _offy - rescale(completion) * (self.height - 1) / 100
+                y = _offy - rescale(changed) * (self.height - 1)
                 if oldx is not None:
                     if x > oldx + 1:
                         draw.rectangle([oldx + 1, oldy, x, _offy],
@@ -118,21 +120,21 @@ class Command(BaseCommand):
         ProgressPosition.objects.all().delete()
         ProgressPosition.objects.bulk_create(backobjs)
 
-    def rescale(self, vals, span=75.0):
-        # return a scaling function for coverage values
+    def rescale(self, vals, span=.75):
+        # return a scaling function for change values
         # Make graph at least "span" % high
         # Ensure that upper and lower space have the same
         # proportions as the original graph
-        _min = min(c for _, c in vals)
-        _max = max(c for _, c in vals)
-        if ((_max - _min) >= span or
+        # The scaling function return a value 0 <= v <= 1
+        _min = min(c for _, c, __ in vals)
+        _max = max(c for _, c, __ in vals)
+        total = max(t for _, __, t in vals)
+        if ((_max - _min) >= total * span or
             (_min >= _max)):
             # no resize needed or useful
-            return lambda v: v
-        offset = 0
+            return lambda v: 1.0 * v / total
         ratio = span / (_max - _min)
-        if _max * ratio > 100:
-            offset = (100.0 - span) * _min / (100.0 - _max + _min)
+        offset = (1.0 - span) * _min / (total - _max + _min)
         return lambda v: (v - _min) * ratio + offset
 
     def initialCoverage(self, tree2locs, startdate):
@@ -145,9 +147,9 @@ class Command(BaseCommand):
             )
             for l, r in locs.values_list('code', 'mr'):
                 rv[(l, tree)] = r
-        r2r = dict(Run.objects
+        r2r = dict((id, (c, t)) for id, c, t in Run.objects
             .filter(id__in=rv.values())
-            .values_list('id', 'completion')
+            .values_list('id', 'changed', 'total')
         )
         return dict((t, r2r[r]) for t, r in rv.items())
 
