@@ -85,6 +85,21 @@ def history_plot(request):
     tree = locale = None
     tree = get_object_or_404(Tree, code=request.GET.get('tree'))
     locale = get_object_or_404(Locale, code=request.GET.get('locale'))
+    highlights = defaultdict(dict)
+    for param in sorted(
+        (p for p in request.GET.iterkeys() if p.startswith('hl-'))):
+            try:
+                _, i, kind = param.split('-')
+                i = int(i)
+            except:
+                continue
+            highlights[i][kind] = request.GET.get(param)
+    for i, highlight in highlights.items():
+        for k in ('s', 'e', 'c'):
+            if k not in highlight:
+                highlights.pop(i)
+                break
+    highlights = [v for i, v in sorted(highlights.iteritems())]
     q = q2 = Run.objects.filter(tree=tree, locale=locale)
     try:
         startrange = (q.order_by('srctime')
@@ -147,7 +162,8 @@ def history_plot(request):
                     'starttime': starttime,
                     'endtime': endtime,
                     'stamps': stamps,
-                    'runs': runs
+                    'runs': runs,
+                    'highlights': highlights
                   })
 
 
