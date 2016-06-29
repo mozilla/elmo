@@ -82,20 +82,20 @@ function renderPlot() {
     .attr("class", "missing-graph")
     .attr("stroke", "red")
     .attr("fill", "url(#missingGradient)");
-  svg.selectAll('a.marker')
+  var markers = svg.selectAll('a.marker')
     .data(data.slice(0, -1))
     .enter()
     .append('svg:a')
     .attr('class','marker missing')
     .attr('xlink:href', function(d) {return compare_link + '?run=' + d.run;})
-    .attr('xlink:show', 'new')
-    .attr('title', function(d) {return 'missing: ' + d.missing})
-    .append('path')
+    .attr('xlink:show', 'new');
+  markers.append('path')
     .attr('transform',
           function(d) {
             return "translate(" + tp.x(d.date) + "," + tp.y(d.missing) + ")";
             })
-    .attr("d", d3.svg.symbol().type('circle'));
+    .attr("d", d3.svg.symbol().type('circle'))
+  markers.append('title').text(function(d) {return 'missing: ' + d.missing;});
 }
 
 $(renderPlot);
