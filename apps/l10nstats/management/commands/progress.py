@@ -12,7 +12,7 @@ import os.path
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
-from django.db.models import Max
+from django.db.models import Max, Q
 
 from l10nstats.models import Run, ProgressPosition
 from life.models import Locale, Tree
@@ -34,17 +34,41 @@ class Command(BaseCommand):
     area_fill = (0, 128, 0, 20)
 
     def handle(self, *args, **options):
+        q = Q()
+        if args:
+            q = Q(tree__code__in=args)
         runs = Run.objects.exclude(srctime__isnull=True)
         enddate = runs.aggregate(Max('srctime'))['srctime__max']
         startdate = enddate - timedelta(days=self.days)
         scale = 1. * (self.width - 1) / total_seconds(enddate - startdate)
-        runs = runs.filter(srctime__gte=startdate,
+        runs = runs.filter(q, srctime__gte=startdate,
                            srctime__lte=enddate)
-        locales = sorted(runs.values_list('locale__code', flat=True)
-                        .distinct())
-        trees = sorted(runs.values_list('tree__code', flat=True)
-                       .distinct())
         runs = runs.order_by('srctime')
+        tuples = defaultdict(list)
+        tree2locs = defaultdict(set)
+        locales = set()
+        trees = set()
+        for loc, tree in (Run.objects
+                          .filter(q, active__isnull=False)
+                          .values_list('locale__code', 'tree__code')):
+            tree2locs[tree].add(loc)
+            locales.add(loc)
+            trees.add(tree)
+        runs = runs.values_list('locale__code',
+                                'tree__code',
+                                'srctime',
+                                'changed',
+                                'total')
+        for loc, tree, srctime, changed, total in runs:
+            tuples[(loc, tree)].append((srctime, changed, total))
+            tree2locs[tree].add(loc)
+            locales.add(loc)
+            trees.add(tree)
+        initialCoverage = self.initialCoverage(tree2locs, startdate)
+        for (loc, tree), (c, t) in initialCoverage.items():
+            tuples[(loc, tree)].insert(0, (startdate, c, t))
+        locales = sorted(locales)
+        trees = sorted(trees)
         offloc = dict((loc, (i + 1) * self.height)
                       for i, loc in enumerate(locales))
         offtree = dict((tree, i * self.width)
@@ -53,16 +77,6 @@ class Command(BaseCommand):
         im = PIL.Image.new("RGBA", (self.width * len(trees),
                                     self.height * len(locales)))
         draw = PIL.ImageDraw.Draw(im, "RGBA")
-        tuples = defaultdict(list)
-        locales = set()
-        trees = set()
-        for loc, tree, srctime, completion in runs.values_list('locale__code',
-                                                               'tree__code',
-                                                               'srctime',
-                                                               'completion'):
-            tuples[(loc, tree)].append((srctime, completion))
-            locales.add(loc)
-            trees.add(tree)
         locales = dict((l.code, l)
                        for l in
                        (Locale.objects
@@ -73,15 +87,13 @@ class Command(BaseCommand):
                       .filter(code__in=trees)))
         backobjs = []
         for (loc, tree), vals in tuples.iteritems():
-            if len(vals) > 1:
-                # maybe resize
-                vals = self.rescale(vals)
+            rescale = self.rescale(vals)
             oldx = oldy = None
             _offy = offloc[loc]
             _offx = offtree[tree]
-            for srctime, completion in vals:
+            for srctime, changed, total in vals:
                 x = _offx + int(total_seconds(srctime - startdate) * scale)
-                y = _offy - completion * (self.height - 1) / 100
+                y = _offy - rescale(changed) * (self.height - 1)
                 if oldx is not None:
                     if x > oldx + 1:
                         draw.rectangle([oldx + 1, oldy, x, _offy],
@@ -108,18 +120,38 @@ class Command(BaseCommand):
         ProgressPosition.objects.all().delete()
         ProgressPosition.objects.bulk_create(backobjs)
 
-    def rescale(self, vals):
-        _min = min(c for _, c in vals)
-        _max = max(c for _, c in vals)
-        if ((_min <= 25 and _max >= 75) or
+    def rescale(self, vals, span=.75):
+        # return a scaling function for change values
+        # Make graph at least "span" % high
+        # Ensure that upper and lower space have the same
+        # proportions as the original graph
+        # The scaling function return a value 0 <= v <= 1
+        _min = min(c for _, c, __ in vals)
+        _max = max(c for _, c, __ in vals)
+        total = max(t for _, __, t in vals)
+        if ((_max - _min) >= total * span or
             (_min >= _max)):
             # no resize needed or useful
-            return vals
-        bottom = _min if _min <= 25 else 25
-        top = _max if _max >= 75 else 75
-        ratio = float(top - bottom) / (_max - _min)
-        scale = lambda v: (v - _min) * ratio + bottom
-        return [(t, scale(c)) for t, c in vals]
+            return lambda v: 1.0 * v / total
+        ratio = span / (_max - _min)
+        offset = (1.0 - span) * _min / (total - _max + _min)
+        return lambda v: (v - _min) * ratio + offset
+
+    def initialCoverage(self, tree2locs, startdate):
+        rv = {}
+        for tree, locales in tree2locs.iteritems():
+            locs = (Locale.objects
+                .filter(code__in=locales)
+                .filter(run__srctime__lt=startdate, run__tree__code=tree)
+                .annotate(mr=Max('run'))
+            )
+            for l, r in locs.values_list('code', 'mr'):
+                rv[(l, tree)] = r
+        r2r = dict((id, (c, t)) for id, c, t in Run.objects
+            .filter(id__in=rv.values())
+            .values_list('id', 'changed', 'total')
+        )
+        return dict((t, r2r[r]) for t, r in rv.items())
 
 # python 2.6 helper
 # XXX remove when we migrate to 2.7
