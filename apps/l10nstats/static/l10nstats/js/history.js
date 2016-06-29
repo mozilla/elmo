@@ -64,6 +64,22 @@ function renderPlot() {
   data = d3.csv.parseRows($("#txtData").text().trim(), processRow);
   tp.yDomain([0, d3.max(data.map(function(d) { return d3.max([d.missing, d.obsolete]); }))]);
   tp.y2Domain([0, d3.max(data.map(function(d) { return d.unchanged; }))]);
+  svg.selectAll("rect.high")
+    .data(Array.from(document.querySelectorAll('.highlight')))
+    .enter()
+    .append('rect')
+    .attr('class', 'high')
+    .attr("x", function(e){
+      return tp.x(d3.time.format.iso.parse(e.dataset.start));
+    })
+    .attr("y", 0)
+    .attr("height", tp.height)
+    .attr("width", function(e) {
+      return tp.x(d3.time.format.iso.parse(e.dataset.end)) - tp.x(d3.time.format.iso.parse(e.dataset.start))
+    })
+    .attr("stroke", "none").attr("fill", function(e) {
+      return '#' + e.dataset.color;
+    });
   svg.append("path")
     .data([data])
     .attr("d", unchangedArea)
