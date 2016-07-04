@@ -299,7 +299,8 @@ class StatusJSON(SignoffDataView):
                     item['action'].append('review')
                 so_items[(av2tree[av.code], loc)] = item
                 for flag, action in flags.items():
-                    if real_av == av.code or flag == Action.PENDING:
+                    # don't keep track of fallback actions
+                    if not (real_av != av.code and flag == Action.ACCEPTED):
                         actions[action] = [av, loc]
         for action, signoff, push_date in (Action.objects
             .filter(id__in = actions.keys())

@@ -623,6 +623,37 @@ class TeamSnippetMigrationTestcases(DataMixin):
         )
         self.process(self.HAS_SIGNOFF | self.SUGGESTED)
 
+    def test_missing_on_merge_and_rejected(self):
+        '''got a good run prior to the last changeset of base,
+        same post-merge, no newer'''
+        push = self.pushes[1]
+        self.add_run(
+            push,
+            tree=self.aurora_tree,
+            total=100,
+            changed=80,
+            completion=80
+        )
+        self.add_signoff(push, Action.ACCEPTED)
+        push = self.pushes[2]
+        self.add_run(
+            push,
+            tree=self.aurora_tree,
+            total=100,
+            changed=80,
+            completion=80
+        )
+        beta_push = self.beta_pushes[1]
+        self.add_run(
+            beta_push,
+            tree=self.tree,
+            total=100,
+            changed=80,
+            completion=80
+        )
+        self.add_signoff(beta_push, Action.REJECTED)
+        self.process(self.HAS_SIGNOFF | self.REJECTED)
+
     def test_good_on_merge_and_more(self):
         '''got a good run on the last changeset of base,
         same post-merge, also newer'''
