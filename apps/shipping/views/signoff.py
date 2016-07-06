@@ -221,7 +221,29 @@ class SignoffView(TemplateView):
                     .filter(push_date__gte=last_push_date)
                 ).distinct()
             else:
-                pushes_q = pushes_q.distinct()[:count]
+                # find the latest run, use at least that many
+                # if they're less than count, use that
+                avt = appver.trees_over_time.latest()
+                runs = Run.objects.filter(
+                    tree=avt.tree,
+                    locale=lang)
+                if avt.start:
+                    runs = runs.filter(srctime__gt=avt.start)
+                if avt.end:
+                    # for historic views, also end time
+                    runs = runs.filter(srctime__lt=avt.end)
+                try:
+                    cutoff = runs.order_by('-srctime')[0].srctime
+                except IndexError:
+                    cutoff = None
+                if cutoff:
+                    cutoff_q = pushes_q.filter(push_date__gte=cutoff).distinct()
+                    if cutoff_q.count() > count:
+                        pushes_q = cutoff_q
+                    else:
+                        pushes_q = pushes_q.distinct()[:count]
+                else:
+                    pushes_q = pushes_q.distinct()[:count]
 
         # get pushes, changesets and signoffs/actions
         _p = list(pushes_q.values_list('id', flat=True))
