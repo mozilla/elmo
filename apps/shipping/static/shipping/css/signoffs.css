@@ -121,7 +121,7 @@ td.diff {
 }
 
 .cancel_signoff,
-.review_action,
+.review_signoff,
 .reopen_signoff {
     float: right;
 }
