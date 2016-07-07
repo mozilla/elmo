@@ -52,7 +52,7 @@
                 type="button" value="re-open&hellip;"
                 {% if not perms.shipping.add_signoff %}disabled{% endif %}>
 	      {% else %}
-                <input class="review_action" data-signoff="{{so.signoff.id}}"
+                <input class="review_signoff" data-signoff="{{so.signoff.id}}"
                 data-state="{{flag}}"
                 type="button" value="review&hellip;"
                 {% if not perms.shipping.review_signoff %}disabled{% endif %}>

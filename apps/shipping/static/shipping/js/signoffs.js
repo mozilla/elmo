@@ -84,13 +84,6 @@ $(document).ready(function() {
       minWidth: 300,
       title: 'Cancel'
     });
-    $('.cancel_signoff').click(function(event) {
-      var signoff_id = $(this).data('signoff');
-      var rs = $('#cancel_signoff');
-      $('input[name="signoff_id"]', rs).val(signoff_id);
-      rs.dialog('open');
-      return false;
-    });
 
     $('#reopen_signoff').dialog({
       autoOpen: false,
@@ -98,13 +91,7 @@ $(document).ready(function() {
       minWidth: 300,
       title: 'Re-open'
     });
-    $('.reopen_signoff').click(function(event) {
-      var signoff_id = $(this).data('signoff');
-      var rs = $('#reopen_signoff');
-      $('input[name="signoff_id"]', rs).val(signoff_id);
-      rs.dialog('open');
-      return false;
-    });
+    $('.cancel_signoff,.reopen_signoff').click(onSignoffAction);
 
   }
 
@@ -115,12 +102,7 @@ $(document).ready(function() {
       minWidth: 300,
       title: 'Review'
     });
-    $('.review_action').click(function(event) {
-      var signoff_id = event.target.getAttribute('data-signoff');
-      var rs = $('#review_signoff');
-      rs.children('form')[0].signoff_id.value = signoff_id;
-      rs.dialog('open');
-    });
+    $('.review_signoff').click(onSignoffAction);
   }
 
   $('button.load-more').click(function() {
@@ -139,6 +121,13 @@ $(document).ready(function() {
         button.attr('disabled', 'disabled');
       } else {
         next_push_date = response.next_push_date;
+      }
+      if (permissions && permissions.canReviewSignoff) {
+        new_rows.find('.review_signoff').click(onSignoffAction);
+      }
+      if (permissions && permissions.canAddSignoff) {
+        new_rows.find('input.do_signoff').click(doSignoff);
+        new_rows.find('.cancel_signoff,.reopen_signoff').click(onSignoffAction);
       }
       $('.pushes-left', this_row).text(response.pushes_left);
     });
@@ -194,4 +183,12 @@ function doSignoff(event) {
   var run = t.attr('data-run');
   sf.children('[name=run]').val(run);
   $.get(signoffDetailsURL, {push: push, run: run, first: firstSignoff}, showSignoff, 'html');
+}
+
+function onSignoffAction(event) {
+  var signoff_id = $(this).data('signoff');
+  var rs = $('#' + this.classList[0]);
+  $('input[name="signoff_id"]', rs).val(signoff_id);
+  rs.dialog('open');
+  return false;
 }

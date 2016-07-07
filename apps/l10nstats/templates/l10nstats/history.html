@@ -38,6 +38,12 @@ var compare_link = "{% url 'l10nstats.views.compare' %}";
 <div id="txtData" style="display:none;">{% for run in runs %}
 {{ run.srctime.isoformat }}Z,{{ run.run }},{{ run.missing }},{{ run.obsolete }},{{ run.unchanged }}{% endfor %}
 </div>
+{% for highlight in highlights %}
+<div style="display:none" class="highlight"
+     data-start="{{ highlight.s }}" data-end="{{ highlight.e }}"
+     data-color="{{ highlight.c }}"
+></div>
+{% endfor %}
 <p class="divider"></p>
 <h5>Legend</h5>
 <p>Missing strings are depicted as red area, the circle markers are
