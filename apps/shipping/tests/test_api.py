@@ -115,7 +115,8 @@ class ApiMigrationTest(TestCase):
             ({}, {locale.id}))
         eq_(_actions4appversion(self.new_av, {locale.id}, None, 100),
             ({}, {locale.id}))
-        flagdata = flags4appversions()
+        avs = AppVersion.objects.all()
+        flagdata = flags4appversions(avs)
         ok_(self.old_av in flagdata)
         ok_(self.new_av in flagdata)
         eq_(len(flagdata), 2)
@@ -140,7 +141,8 @@ class ApiMigrationTest(TestCase):
         eq_(Signoff.objects.get(action=action_id).locale_id, locale.id)
         eq_(_actions4appversion(self.new_av, {locale.id}, None, 100),
             ({}, {locale.id}))
-        flagdata = flags4appversions()
+        avs = AppVersion.objects.all()
+        flagdata = flags4appversions(avs)
         ok_(self.old_av in flagdata)
         ok_(self.new_av in flagdata)
         eq_(len(flagdata), 2)
