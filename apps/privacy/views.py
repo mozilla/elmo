@@ -53,7 +53,7 @@ def versions(request):
     """
     policies = Policy.objects.order_by('-pk')
     policies = policies.annotate(noc=Count('comments'))
-    policies = policies.select_related('comments')
+    policies = policies.prefetch_related('comments')
     los = LogEntry.objects.filter(content_type=Policy.contenttype())
     details = {}
     for lo in los.order_by('action_time'):

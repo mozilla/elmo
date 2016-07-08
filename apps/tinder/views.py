@@ -706,7 +706,7 @@ def showbuild(request, buildername, buildnumber):
     except (ValueError, Build.DoesNotExist):
         return HttpResponseNotFound("No such build")
 
-    steps = build.steps.order_by('pk').select_related('log')
+    steps = build.steps.order_by('pk').prefetch_related('logs')
     props = build.propertiesAsList()
     return render(request, 'tinder/showbuild.html', {
                     'build': build,

@@ -110,7 +110,9 @@ class MozLdapBackend(ModelBackend):
 
     def initialize(self):
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
-        ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, self.certfile)
+        # XXX this creates option errors, no idea why. keep it around
+        # if needed, seems to work fine without it
+        #ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, self.certfile)
         self.ldo = ldap.initialize(self.host)
         self.ldo.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
 

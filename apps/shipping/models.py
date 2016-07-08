@@ -174,7 +174,7 @@ class Milestone(models.Model):
     name = models.CharField(max_length=50)
     appver = models.ForeignKey(AppVersion)
     signoffs = models.ManyToManyField(Signoff, related_name='shipped_in',
-                                      null=True, blank=True)
+                                      blank=True)
     status = models.IntegerField(choices=STATUS_CHOICES, default=0)
 
     class Meta:

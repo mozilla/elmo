@@ -249,7 +249,8 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(response.status_code, 302)
 
         milestone_content_type, __ = ContentType.objects.get_or_create(
-          name='milestone',
+          app_label='shipping',
+          model='milestone'
         )
         perm, __ = Permission.objects.get_or_create(
           name='Can ship a Milestone',

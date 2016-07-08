@@ -9,7 +9,7 @@ from elmo.test import TestCase
 from nose.tools import eq_, ok_
 from django.http import QueryDict
 from django.core.urlresolvers import reverse
-from django.utils.safestring import SafeString
+from django.utils.safestring import SafeUnicode
 from shipping.tests.test_views import ShippingTestCaseBase
 from life.models import Tree, Locale
 from mbdb.models import Build
@@ -120,7 +120,7 @@ class ShowRunTestCase(TestCase):
         r = Run(errors=3)
         r.id = 1
         rv = showrun(r)
-        ok_(isinstance(rv, SafeString))
+        ok_(isinstance(rv, SafeUnicode))
         frag = parseFragment(rv)
         childNodes = list(frag)
         eq_(len(childNodes), 1)
@@ -137,7 +137,7 @@ class ShowRunTestCase(TestCase):
         r = Run(missing=3)
         r.id = 1
         rv = showrun(r)
-        ok_(isinstance(rv, SafeString))
+        ok_(isinstance(rv, SafeUnicode))
         frag = parseFragment(rv)
         childNodes = list(frag)
         eq_(len(childNodes), 1)
@@ -154,7 +154,7 @@ class ShowRunTestCase(TestCase):
         r = Run(missingInFiles=3)
         r.id = 1
         rv = showrun(r)
-        ok_(isinstance(rv, SafeString))
+        ok_(isinstance(rv, SafeUnicode))
         frag = parseFragment(rv)
         childNodes = list(frag)
         eq_(len(childNodes), 1)
@@ -171,7 +171,7 @@ class ShowRunTestCase(TestCase):
         r = Run(warnings=3)
         r.id = 1
         rv = showrun(r)
-        ok_(isinstance(rv, SafeString))
+        ok_(isinstance(rv, SafeUnicode))
         frag = parseFragment(rv)
         childNodes = list(frag)
         eq_(len(childNodes), 1)
@@ -188,7 +188,7 @@ class ShowRunTestCase(TestCase):
         r = Run(obsolete=3)
         r.id = 1
         rv = showrun(r)
-        ok_(isinstance(rv, SafeString))
+        ok_(isinstance(rv, SafeUnicode))
         frag = parseFragment(rv)
         childNodes = list(frag)
         eq_(len(childNodes), 1)
@@ -205,7 +205,7 @@ class ShowRunTestCase(TestCase):
         r = Run()
         r.id = 1
         rv = showrun(r)
-        ok_(isinstance(rv, SafeString))
+        ok_(isinstance(rv, SafeUnicode))
         frag = parseFragment(rv)
         childNodes = list(frag)
         eq_(len(childNodes), 1)
