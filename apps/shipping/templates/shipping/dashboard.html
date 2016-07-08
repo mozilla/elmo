@@ -6,6 +6,7 @@
 {% endcomment %} -->
 {% load compress %}
 {% load staticfiles %}
+{% load exhibit %}
 
 {% block head_matter %}
 <link rel="stylesheet" href="{% static "shipping/css/dashboard.css" %}" type="text/css">
@@ -47,7 +48,7 @@
      <td data-ex-role="viewPanel" data-ex-showAll="true">
        <span data-ex-role="lens" class="comparison" data-ex-item-types="Comparison" style="display:none">
          <span  data-ex-content=".label"></span>
-         <span data-ex-if-exists=".bug" class="bug"> (<a data-ex-href-subcontent="https://bugzilla.mozilla.org/show_bug.cgi?id={&#123;.bug}}" target="_blank">buglink</a>)</span>
+         <span data-ex-if-exists=".bug" class="bug"> (<a data-ex-href-subcontent="https://bugzilla.mozilla.org/show_bug.cgi?id={% expression ".bug" %}" target="_blank">buglink</a>)</span>
 
          <span data-ex-if-exists=".comment" class="comment"> (<em data-ex-content=".comment"></em>)</span>
        </span>
@@ -62,7 +63,7 @@
       data-ex-cellSpacing="0">
       <table style="display:none;">
     <tr>
-      <td class="locale_cell"><a data-ex-href-subcontent="{% url 'homepage.views.locale_team' '&#123;&#123;.locale&#125;&#125;' %}" data-ex-content=".locale"></a></td>
+      <td class="locale_cell"><a data-ex-href-subcontent="{% url 'homepage.views.locale_team' '{{ .locale }}' %}" data-ex-content=".locale"></a></td>
       <td data-ex-content=".tree" class-subcontent="tree_cell"></td>
 
       <td class="completion_cell" data-ex-content=".completion"></td>
@@ -73,35 +74,35 @@
       <td class="coverage_cell" data-ex-content=".obsolete"></td>
       <td class="coverage_cell" data-ex-content=".unchanged"></td>
       <td>
-        <a data-ex-href-subcontent="{% url 'compare_locales' %}?run={&#123;.runid}}" target="_blank">
+        <a data-ex-href-subcontent="{% url 'compare_locales' %}?run={% expression ".runid" %}" target="_blank">
           <table class="stats">
                <tr>
-                 <td title="changed" class="status changed" data-ex-width-subcontent="{&#123;.completion }}px"></td>
-                 <td title="missing" class="status missing" data-ex-width-subcontent="{&#123;100 * .missing / .total}}px"></td>
-                 <td title="unchanged" class="status unchanged" data-ex-width-subcontent="{&#123;100 * .unchanged / .total}}px"></td>
+                 <td title="changed" class="status changed" data-ex-width-subcontent="{% expression ".completion" %}px"></td>
+                 <td title="missing" class="status missing" data-ex-width-subcontent="{% expression "100 * .missing / .total" %}px"></td>
+                 <td title="unchanged" class="status unchanged" data-ex-width-subcontent="{% expression "100 * .unchanged / .total" %}px"></td>
                </tr>
            </table>
          </a>
        </td>
        <td>
-         <a data-ex-href-subcontent="{% url 'l10nstats.views.history_plot' %}?tree={&#123;.tree}}&amp;locale={&#123;.locale}}&amp;starttime={{ progress_start|date:"Y-m-d" }}">
+         <a data-ex-href-subcontent="{% url 'l10nstats.views.history_plot' %}?tree={% expression ".tree" %}&amp;locale={% expression ".locale" %}&amp;starttime={{ progress_start|date:"Y-m-d" }}">
            <div data-ex-if-exists=".background_offset_x" class="progress"
-             data-ex-style-subcontent="background-position:{&#123; .background_offset_x }}px {&#123; .background_offset_y }}px"></div>
+             data-ex-style-subcontent="background-position:{% expression ".background_offset_x" %}px {% expression ".background_offset_y" %}px"></div>
          </a>
        </td>
        <td class="signoffs status">
          <span data-ex-if="exists(.tree.appversion)">
-         <a data-ex-href-subcontent="{% url 'shipping.views.signoff.signoff' "&#123;&#123;.locale&#125;&#125;" "&#123;&#123;.tree.appversion&#125;&#125;" %}">
+         <a data-ex-href-subcontent="{% url 'shipping.views.signoff.signoff' "{{.locale}}" "{{.tree.appversion}}" %}">
          <span data-ex-if='.state = "OK"'>
-           <span class="oi status-ok" data-ex-data-glyph-subcontent="{&#123;.state_glyph}}"></span>
-           <span><span class="oi status-fallback" data-ex-data-glyph-subcontent="{&#123;.state_glyph}}"></span> <span data-ex-content=".state"></span></span>
+           <span class="oi status-ok" data-ex-data-glyph-subcontent="{% expression ".state_glyph" %}"></span>
+           <span><span class="oi status-fallback" data-ex-data-glyph-subcontent="{% expression ".state_glyph" %}"></span> <span data-ex-content=".state"></span></span>
          </span>
          </a>
          </span>
        </td>
        <td class="signoffs actions">
          <span data-ex-if="exists(.tree.appversion)">
-           <a data-ex-href-subcontent="{% url 'shipping.views.signoff.signoff' "&#123;&#123;.locale&#125;&#125;" "&#123;&#123;.tree.appversion&#125;&#125;" %}">
+           <a data-ex-href-subcontent="{% url 'shipping.views.signoff.signoff' "{{.locale}}" "{{.tree.appversion}}" %}">
              <span data-ex-if="exists(.action)">
                <span>
                  <span data-ex-if='.action = "rejected"'><span class="oi rejected" data-glyph='x'></span></span>
@@ -109,7 +110,7 @@
                </span>
              </span>
              <span data-ex-if="exists(.new_run)">
-               <span data-ex-class-subcontent='oi suggest-{&#123;.result}}' data-glyph="graph"></span>
+               <span data-ex-class-subcontent='oi suggest-{% expression ".result" %}' data-glyph="graph"></span>
              </span>
              <span data-ex-if="exists(.needs_update)">
                <span title="Needs Update" class="oi no_update" data-glyph="ban"></span>
