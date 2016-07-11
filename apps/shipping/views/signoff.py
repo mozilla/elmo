@@ -580,7 +580,7 @@ def review_signoff(request, locale_code, app_code):
         try:
             lang = Locale.objects.get(code=locale_code)
             appver = (AppVersion.objects
-                      .select_related('tree').get(code=app_code))
+                      .get(code=app_code))
             action = request.POST['action']
             signoff_id = int(request.POST['signoff_id'])
             flag = action == "accept" and Action.ACCEPTED or Action.REJECTED
