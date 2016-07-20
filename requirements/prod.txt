@@ -10,7 +10,7 @@ commonware==0.4.3
 # sha256: 7sV9MhlQHsbmhWRoJvLrjndoepP-N0p-aZRJBSDbCT4
 # tar.gz:
 # sha256: SBb4kgY1acqad1hPojy0mVwbO5VO-HUQKoIZIpy9LjM
-Django==1.8.13
+Django==1.8.14
 
 # six is required by django-appconf
 # py2.py3-none-any.whl:
