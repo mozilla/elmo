@@ -3,7 +3,6 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
-{% load url from future %}
 <h2>Active l10n repositories</h2>
 <ul>{% for repo in repos %}
   <li><a href="{% url 'pushes.views.pushlog' repo.name %}">{{repo.name}}</a></li>

@@ -7,6 +7,7 @@ them and stores its results in a cache).
 Ideally this management command should run in sync with the update job on
 planet, but at least every hour.
 """
+from __future__ import absolute_import
 
 import time
 import logging
@@ -25,5 +26,4 @@ class Command(BaseCommand):  # pragma: no cover
         note = 'Took %.4f to parse %s' % (t1 - t0, settings.L10N_FEED_URL)
         logging.info(note)
         if verbose:
-            print get_feed_items
-            print "\t", note
+            self.stdout.write(note)

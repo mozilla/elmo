@@ -1,26 +1,16 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+from __future__ import absolute_import
 
 from django.conf.urls import include, patterns, url
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.contrib import admin
 from django.conf import settings
 from django.http import HttpResponse
 
 ## Monkeypatches:
-## Here's the ideal place to put them if you need to monkeypatches anything
-## during Django's start-up.
-## ...
-
-## Monkeypatch session_csrf
-import session_csrf
-session_csrf.monkeypatch()
-from funfactory import admin
-admin.monkeypatch()
-
-# now that we patched admin, autodiscover the site
-from django.contrib import admin
-admin.autodiscover()
+## ... don't go here anymore, but in to elmo.apps.ElmoConfig
 
 def simple_x_frame_view(request):
     response = HttpResponse()

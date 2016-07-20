@@ -1,6 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+from __future__ import absolute_import
 
 import datetime
 import re
@@ -11,7 +12,7 @@ from elmo.test import TestCase
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
-from django.utils import simplejson as json
+import json
 from l10nstats.models import Run
 from commons.tests.mixins import EmbedsTestCaseMixin
 from life.models import Tree, Forest, Locale
@@ -248,7 +249,8 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(response.status_code, 302)
 
         milestone_content_type, __ = ContentType.objects.get_or_create(
-          name='milestone',
+          app_label='shipping',
+          model='milestone'
         )
         perm, __ = Permission.objects.get_or_create(
           name='Can ship a Milestone',

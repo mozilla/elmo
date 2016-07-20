@@ -4,6 +4,7 @@
 
 '''APIs for managing sign-offs and shipping metrics.
 '''
+from __future__ import absolute_import
 
 
 from collections import defaultdict
@@ -172,7 +173,7 @@ def _flags4av(flaglocs4av, loc4id, rv, av=None):
     Makes sure to get all fallbacks before processing an av via recursion.
     """
     if av is None:
-        av = flaglocs4av.iterkeys().next()
+        av = next(flaglocs4av.iterkeys())
     fallback = av.fallback
     flagdict4loc = flaglocs4av.pop(av)
     _rv = {}

@@ -4,6 +4,7 @@
 
 '''View methods for the source/pushlog views.
 '''
+from __future__ import absolute_import
 
 from itertools import cycle
 from datetime import datetime
@@ -14,6 +15,7 @@ from django.shortcuts import render
 from django.db.models import Q, Count
 
 from life.models import Push, File
+from functools import reduce
 
 
 def pushlog(request, repo_name):

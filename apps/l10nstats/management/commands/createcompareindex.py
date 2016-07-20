@@ -3,6 +3,7 @@
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
 'Save buildbot logs from disk into ElasticSearch'
+from __future__ import absolute_import
 
 from optparse import make_option
 
@@ -66,6 +67,6 @@ class Command(LoggingCommand):
                               body=indexargs)
             self.stdout.write('Created index %s\n' %
                               settings.ES_COMPARE_INDEX)
-        except Exception, e:
+        except Exception as e:
             # this is fatal in some way, but we don't need the stack trace
             raise CommandError(e)

@@ -1,6 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+from __future__ import absolute_import
 
 import re
 from urlparse import urlparse
@@ -8,21 +9,19 @@ from elmo.test import TestCase
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
-from django.utils import simplejson as json
+import json
 from django.core.cache import cache
+from django.test import override_settings
 from nose.tools import eq_, ok_
 
 
+@override_settings(
+    AUTHENTICATION_BACKENDS=('lib.auth.backends.MozLdapBackend',),
+    LDAP_HOST=None,
+    LDAP_DN=None,
+    LDAP_PASSWORD=None,
+)
 class AccountsTestCase(TestCase):
-
-    def setUp(self):
-        super(AccountsTestCase, self).setUp()
-        assert not settings.ARECIBO_SERVER_URL
-        # authentication tests assume the LDAP stuff was set up
-        if 'MozLdapBackend' not in settings.AUTHENTICATION_BACKENDS[0]:
-            raise AssertionError('MozLdapBackend must be the first '
-                                 'authentication backend. '
-                                 'Did you set up ldap_settings.py properly?')
 
     def test_login_long_username(self):
         url = reverse('accounts.views.login')

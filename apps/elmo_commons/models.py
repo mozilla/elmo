@@ -1,13 +1,14 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+from __future__ import absolute_import
 
 from django.db import models
 
 import datetime
 
 
-class DatedManager(models.Manager):
+class DatedQuerySet(models.QuerySet):
     def for_date(self, date):
         return (self.filter(models.Q(start__lte=date) |
                             models.Q(start__isnull=True))
@@ -23,7 +24,7 @@ class DurationThrough(models.Model):
                                  blank=True,
                                  null=True)
     end = models.DateTimeField(blank=True, null=True)
-    objects = DatedManager()
+    objects = DatedQuerySet.as_manager()
     unique = ('start', 'end')
 
     class Meta:

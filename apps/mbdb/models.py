@@ -4,9 +4,10 @@
 
 '''Models representing statuses of buildbot builds on multiple masters.
 '''
+from __future__ import absolute_import
 
 from django.db import models
-import fields
+from . import fields
 from django.conf import settings
 
 
@@ -66,21 +67,6 @@ class Change(models.Model):
         if self.tags:
             rv += u' (%s)' % ', '.join(map(unicode, self.tags.all()))
         return rv
-
-
-class Change_Tags(models.Model):
-    """Helper model for change.tags queries.
-
-    This model maps the ManyToManyField between Tag and Change,
-    and does not create any database entries itself, thanks to
-    Meta.managed = False.
-    """
-    change = models.ForeignKey(Change)
-    tag = models.ForeignKey(Tag)
-
-    class Meta:
-        unique_together = (('change', 'tag'),)
-        managed = False
 
 
 class SourceStamp(models.Model):
@@ -167,13 +153,12 @@ class Build(models.Model):
             else:
                 # otherwise, unbind the property, and fake a DoesNotExist
                 self.properties.remove(prop)
-            raise Property.DoesNotExist(name)
         except Property.DoesNotExist:
-            prop, created = Property.objects.get_or_create(name=name,
-                                                           source=source,
-                                                           value=value)
+            pass
+        prop, created = Property.objects.get_or_create(name=name,
+                                                       source=source,
+                                                       value=value)
         self.properties.add(prop)
-        self.save()
 
     def getProperty(self, name, default=None):
         if name == 'buildername':

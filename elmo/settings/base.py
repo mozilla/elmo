@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 # Django settings file for a project based on the playdoh template.
+from __future__ import absolute_import
 
 from funfactory.settings_base import (
     path,
@@ -15,6 +16,7 @@ from django.utils.functional import lazy
 
 ROOT_URLCONF = 'elmo.urls'
 TEST_RUNNER = 'elmo.test.TestSuiteRunner'
+NOSE_PLUGINS = ['elmo.nose.NoseAppsPlugin']
 
 DEBUG = TEMPLATE_DEBUG = False
 
@@ -95,10 +97,6 @@ INSTALLED_APPS = (
     # a manually maintained list of apps "from funfactory"
     'funfactory',
     'compressor',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.staticfiles',
     'commonware.response.cookies',
     'session_csrf',
 
@@ -106,27 +104,28 @@ INSTALLED_APPS = (
 
     # Local apps
     'commons',
-    'south',
-    'compressor',
     'raven.contrib.django.raven_compat',
 
     # Third-party apps
 
     # Django contrib apps
-    'django.contrib.staticfiles',
     'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.staticfiles',
 
     # L10n
 
     # elmo specific
-    'accounts',
-    'homepage',
-    'privacy',
     'life',
     'mbdb',
     'pushes',
-    'dashtags',
     'l10nstats',
+    'accounts',
+    'homepage',
+    'privacy',
+    'dashtags',
     'tinder',
     'shipping',
     'bugsy',
@@ -187,7 +186,7 @@ INCLUDE_ANALYTICS = False
 
 
 try:
-    import ldap_settings
+    from . import ldap_settings
 except ImportError:
     import warnings
     warnings.warn("ldap_settings not importable. No LDAP authentication")
@@ -197,7 +196,7 @@ else:
         if not getattr(ldap_settings, each, None):
             raise ValueError('%s must be set' % each)
 
-    from ldap_settings import *
+    from .ldap_settings import *
     # ImportErrors are not acceptable if ldap_loaded is True
     import ldap
     AUTHENTICATION_BACKENDS = ('lib.auth.backends.MozLdapBackend',)

@@ -4,6 +4,7 @@
 
 '''Views for logging in and out of l10n_site.
 '''
+from __future__ import absolute_import
 
 
 from django.contrib.auth.views import REDIRECT_FIELD_NAME
@@ -11,9 +12,9 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.views.decorators import cache
 from django.core.context_processors import csrf
-from django.utils import simplejson as json
+import json
 from django.contrib.auth.views import login as django_login
-from forms import AuthenticationForm
+from .forms import AuthenticationForm
 try:
     from lib.auth.backends import AUTHENTICATION_SERVER_ERRORS
 except ImportError:
@@ -66,7 +67,7 @@ def user_json(request):
             result['user_name'] = request.user.username
     else:
         result['csrf_token'] = request.csrf_token
-    return HttpResponse(json.dumps(result), mimetype="application/json")
+    return HttpResponse(json.dumps(result), content_type="application/json")
 
 
 def logout(request, redirect_field_name=REDIRECT_FIELD_NAME):

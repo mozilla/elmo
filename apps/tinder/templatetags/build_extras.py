@@ -4,6 +4,7 @@
 
 '''Django template filters to be used to display builds.
 '''
+from __future__ import absolute_import, division
 
 from django import template
 from django.utils.safestring import mark_safe
@@ -78,11 +79,11 @@ def showstep(step, autoescape=None):
             step_t = step_t.seconds
             if step_t > 5 * 60:
                 # we're longer than 5 mins, ignore seconds
-                step_t = "%d minutes" % (step_t / 60)
+                step_t = "%d minutes" % (step_t // 60)
             elif step_t <= 90:
                 step_t = "%d seconds" % step_t
             else:
-                step_t = "%d minutes %d seconds" % (step_t / 60, step_t % 60)
+                step_t = "%d minutes %d seconds" % (step_t // 60, step_t % 60)
     else:
         step_t = '-'
     fmt = '<span class="step_text">%s</span> <span class="step_time">%s</span>'

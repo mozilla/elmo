@@ -9,7 +9,6 @@ from nose.tools import eq_, ok_
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.contrib.auth.models import User, Permission
-from django.utils import simplejson as json
 from commons.tests.mixins import EmbedsTestCaseMixin
 from shipping.models import (
     Milestone,

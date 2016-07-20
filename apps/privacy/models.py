@@ -4,6 +4,7 @@
 
 '''Models representing privacy policies and how they change over time.
 '''
+from __future__ import absolute_import
 
 from django.db import models
 from django.utils.html import strip_tags
@@ -11,7 +12,7 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
 
-class CTMixin:
+class CTMixin(object):
     """Mixin to create a cached query for the ContentType for this model.
     """
     _ct = None
@@ -31,7 +32,7 @@ class Policy(models.Model, CTMixin):
     db entry each.
     """
     text = models.TextField(help_text='''use html markup''')
-    active = models.BooleanField()
+    active = models.BooleanField(default=False)
 
     class Meta:
         permissions = (('activate_policy', 'Can activate a policy'),)

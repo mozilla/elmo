@@ -4,6 +4,7 @@
 
 '''Views showing the build statuses.
 '''
+from __future__ import absolute_import, division, print_function
 
 from django.db.models import Q
 from django.db import connection
@@ -22,9 +23,10 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 import calendar
 from mbdb.models import (Build, Builder, BuildRequest,
-                         Change, Change_Tags, Log, Master, NumberedChange,
+                         Change, Log, Master, NumberedChange,
                          SourceStamp, Step, Property)
 from life.models import Push, Repository
+from functools import reduce
 
 
 resultclasses = ['success', 'warning', 'failure', 'skip', 'except']
@@ -36,7 +38,7 @@ class LogMountKeyError(Exception):
 
 def debug_(*msg):
     if False:
-        print ' '.join(msg)
+        print(' '.join(msg))
 
 
 def pmap(props, bld_ids):
@@ -150,7 +152,7 @@ def tbpl_inner(request):
         blds = blds.filter(properties__in=_p)
     nc = NumberedChange.objects.filter(sourcestamp__in=ss)
     changetags = defaultdict(list)
-    for ct in (Change_Tags.objects
+    for ct in (Change.tags.through.objects
                .filter(change__stamps__in=ss)
                .distinct()
                .select_related('tag')):
@@ -361,14 +363,19 @@ def _waterfall(request):
     of waterfall for testing purposes.
 
     '''
-    try:
-        end_t = max(Build.objects.order_by('-pk')[0].starttime,
-                    Change.objects.order_by('-pk')[0].when)
-        start_t = end_t - timedelta(1) / 2
-    except IndexError:
-        # wallpaper against an empty build database
-        end_t = datetime.max
-        start_t = datetime.min
+    start_t = end_t = None
+    times = sorted(
+        list(Build.objects
+                  .order_by('-pk')
+                  .values_list('starttime', flat=True)[:1]) +
+        list(Change.objects
+                   .order_by('-pk')
+                   .values_list('when', flat=True)[:1]),
+        reverse=True
+    )
+    if times:
+        end_t = times[0]
+        start_t = end_t - timedelta(1) // 2
     buildf = {}
     props = []
     isEnd = True
@@ -397,7 +404,7 @@ def _waterfall(request):
                 pass
         if 'hours' in request.GET:
             try:
-                td = timedelta(1) / 24 * int(request.GET['hours'])
+                td = timedelta(1) // 24 * int(request.GET['hours'])
                 if 'starttime' in request.GET and 'endtime' not in request.GET:
                     end_t = start_t + td
                     isEnd = False
@@ -420,28 +427,34 @@ def _waterfall(request):
                 props.append(Property.objects.filter(name=k).filter(value=v))
 
     # get the real hours, for consecutive queries
-    time_d = end_t - start_t
-    hours = int(round(time_d.seconds / 3600.0))
-    if time_d.days:
-        hours += time_d.days * 24
+    hours = 12
+    if end_t and start_t:
+        time_d = end_t - start_t
+        hours = int(round(time_d.seconds / 3600))
+        if time_d.days:
+            hours += time_d.days * 24
 
-    q_buildsdone = Build.objects.filter(Q(endtime__gt=start_t) |
-                                        Q(endtime__isnull=True),
-                                        Q(starttime__lte=end_t))
+    q_buildsdone = Build.objects.all()
+    q_changes = Change.objects.all()
+    if start_t:
+        q_buildsdone = q_buildsdone.filter(Q(endtime__gt=start_t) |
+                                           Q(endtime__isnull=True))
+        q_changes = q_changes.filter(when__gt=start_t)
+    if end_t:
+        q_buildsdone = q_buildsdone.filter(Q(starttime__lte=end_t))
+        q_changes = q_changes.filter(when__lte=end_t)
     if buildf:
         q_buildsdone = q_buildsdone.filter(**buildf)
     for p in  props:
         q_buildsdone = q_buildsdone.filter(properties__in=p)
     debug_("found %d builds" % q_buildsdone.count())
-    q_changes = Change.objects.filter(when__gt=start_t,
-                                      when__lte=end_t)
 
     def ievents(builds, changes, max_builds=None):
         starts = []
         c_iter = changes.order_by('-when', '-pk').iterator()
         builds = builds.select_related('builder', 'slave', 'sourcestamp')
         try:
-            c = c_iter.next()
+            c = next(c_iter)
         except StopIteration:
             c = None
         # yield an end change event if we have changes first
@@ -461,7 +474,7 @@ def _waterfall(request):
             builds = builds[:max_builds]
         b_iter = builds.iterator()
         try:
-            e = b_iter.next()
+            e = next(b_iter)
         except StopIteration:
             e = None
         b = None
@@ -478,7 +491,7 @@ def _waterfall(request):
                 starts.sort(lambda r, l: cmp(r.starttime, l.starttime))
                 b = starts.pop()
                 try:
-                    e = b_iter.next()
+                    e = next(b_iter)
                 except StopIteration:
                     e = None
                 continue
@@ -494,7 +507,7 @@ def _waterfall(request):
             assert c
             yield (c.when, 'start change', c)
             try:
-                c = c_iter.next()
+                c = next(c_iter)
             except StopIteration:
                 c = None
             if c:
@@ -549,7 +562,8 @@ def _waterfall(request):
         filters = ''
 
     def timestamp(dto):
-        return "%d" % calendar.timegm(dto.utctimetuple())
+        return ("%d" % calendar.timegm(dto.utctimetuple())
+            if dto else "NaN")
 
     hourlist = [12, 24]
     if hours in hourlist:
@@ -692,7 +706,7 @@ def showbuild(request, buildername, buildnumber):
     except (ValueError, Build.DoesNotExist):
         return HttpResponseNotFound("No such build")
 
-    steps = build.steps.order_by('pk').select_related('log')
+    steps = build.steps.order_by('pk').prefetch_related('logs')
     props = build.propertiesAsList()
     return render(request, 'tinder/showbuild.html', {
                     'build': build,
@@ -775,7 +789,7 @@ def showlog(request, step_id, name):
         try:
             chunks = generateLog(master, log.filename,
                                  channels=(Log.STDOUT, Log.STDERR, Log.HEADER))
-        except NoLogFile, e:
+        except NoLogFile as e:
             raise Http404(*e.args)
         return render(request, 'tinder/log.html', {
             'build': step.build,

@@ -4,6 +4,7 @@
 
 '''Clean up mbdb data that doesn't connect to data that elmo needs.
 '''
+from __future__ import absolute_import
 
 from collections import defaultdict
 from optparse import make_option

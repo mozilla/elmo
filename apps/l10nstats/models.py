@@ -4,6 +4,7 @@
 
 '''Models for compare-locales statistics.
 '''
+from __future__ import absolute_import
 
 from django.db import models
 from life.models import Locale, Tree, Changeset
@@ -116,20 +117,6 @@ class Run(models.Model):
                 compare = 'green (%d%%)' % d[prefix + 'completion']
                 cls = 'success'
             yield (d, cls, compare)
-
-
-class Run_Revisions(models.Model):
-    """Helper model for queries on run.revisions.
-
-    The model doesn't alter the schema and is set up such that it
-    can be used to create rich queries on Run/Changeset mappings.
-    """
-    run = models.ForeignKey(Run)
-    changeset = models.ForeignKey(Changeset)
-
-    class Meta:
-        unique_together = (('run', 'changeset'),)
-        managed = False
 
 
 class UnchangedInFile(models.Model):

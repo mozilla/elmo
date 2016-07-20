@@ -50,4 +50,4 @@ pip install python-ldap==2.3.13
 rm -rf vendor
 ./vendor-local/lib/python/peep.py install -r requirements/compiled.txt -r requirements/dev.txt --target=vendor
 
-FORCE_DB=true python manage.py test --noinput
+python manage.py test --noinput

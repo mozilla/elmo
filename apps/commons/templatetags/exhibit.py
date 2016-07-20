@@ -7,11 +7,9 @@ from __future__ import absolute_import
 
 from django import template
 from django.utils.safestring import mark_safe
-import bleach
 
 register = template.Library()
 
-@register.filter
-def bleach_safe(text, autoescape=None):
-    return mark_safe(bleach.linkify(bleach.clean(text)))
-bleach_safe.needs_autoescape = False
+@register.simple_tag
+def expression(expr):
+    return mark_safe("{{ " + expr + " }}")

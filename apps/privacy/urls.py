@@ -4,6 +4,7 @@
 
 '''URL mappings for the privacy app.
 '''
+from __future__ import absolute_import
 
 from django.conf.urls import patterns
 

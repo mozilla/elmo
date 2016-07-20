@@ -3,6 +3,7 @@
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
 'Save buildbot logs from disk into ElasticSearch'
+from __future__ import absolute_import, division
 
 from datetime import datetime
 from optparse import make_option
@@ -13,12 +14,12 @@ from django.core.management.base import BaseCommand, CommandError
 import elasticsearch
 from elasticsearch.helpers import bulk
 import json
+import six
 
 from l10nstats.models import Run
 from mbdb.models import Master, Log, Step
 from tinder.views import generateLog, NoLogFile
 from .. import LoggingCommand
-from .progress import total_seconds
 
 
 class Command(LoggingCommand):
@@ -95,14 +96,14 @@ class Command(LoggingCommand):
                                   chunk_size=self.chunksize)
             self.stdout.write('Successfully indexed %d logs, ' %
                               passed)
-            ellapsed = total_seconds(datetime.now() - start)
+            ellapsed = (datetime.now() - start).total_seconds()
             if ellapsed:
-                docs_per_sec = passed*1.0/ellapsed
+                docs_per_sec = passed/ellapsed
                 self.stdout.write('%.2f docs per second\n' % docs_per_sec)
             else:
-                self.stdout.write('really quick\n');
+                self.stdout.write('really quick\n')
             if errors:
-                print errors
+                self.stdout.write(six.text_type(errors))
                 raise CommandError('failed %d docs' % len(errors))
 
     def generateDocs(self, runs):

@@ -7,6 +7,7 @@
 The revisions don't necessarily need to be in the same repository, as long
 as the repositories are related.
 """
+from __future__ import absolute_import
 
 from difflib import SequenceMatcher
 import logging
@@ -55,7 +56,7 @@ class DiffView(View):
             paths = self.contextsAndPaths(request.GET['from'],
                                           request.GET['to'],
                                           reponame)
-        except BadRevision, e:
+        except BadRevision as e:
             return http.HttpResponseBadRequest(e.args[0])
         diffs = DataTree(dict)
         for path, action in paths:
@@ -155,7 +156,7 @@ class DiffView(View):
             # This prevents UnicodeWarning messages.
             ctx = repo.changectx(str(rev))
             return ctx, repo, self.repo
-        except RepoLookupError, e:
+        except RepoLookupError as e:
             # the favored repo doesn't have a changeset, look for an
             # active repo that does.
             try:

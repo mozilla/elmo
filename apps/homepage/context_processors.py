@@ -6,6 +6,7 @@
 Make the settings `INCLUDE_ANALYTICS` available to all templates so it can
 be used in the base.html template.
 """
+from __future__ import absolute_import
 from django.conf import settings
 
 

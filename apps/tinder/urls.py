@@ -4,9 +4,10 @@
 
 '''URL mappings for the tinder app.
 '''
+from __future__ import absolute_import
 
 from django.conf.urls import patterns, url
-from views import BuildsForChangeFeed
+from .views import BuildsForChangeFeed
 
 
 urlpatterns = patterns('tinder.views',

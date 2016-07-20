@@ -4,6 +4,7 @@
 
 '''Views for shipping metrics.
 '''
+from __future__ import absolute_import
 from collections import defaultdict
 
 from django.http import HttpResponse, HttpResponseBadRequest
@@ -14,7 +15,7 @@ from shipping.api import accepted_signoffs, flags4appversions
 from shipping.models import (Milestone, Action, Signoff,
                              Application, AppVersion)
 from django.views.decorators.cache import cache_control
-from django.utils import simplejson
+import json
 from django.db.models import Max
 
 from .utils import class_decorator
@@ -68,11 +69,11 @@ class SignoffDataView(View):
     def get(self, request, *args, **kwargs):
         try:
             self.process_request(request)
-        except BadRequestData, msg:
+        except BadRequestData as msg:
             return HttpResponseBadRequest(msg)
         try:
             data = self.get_data()
-        except RuntimeError, msg:
+        except RuntimeError as msg:
             return HttpResponseBadRequest(str(msg))
         content = self.content(request, *data)
         r = HttpResponse(content, content_type='text/plain; charset=utf-8')
@@ -91,8 +92,8 @@ class Changesets(SignoffDataView):
         tips = dict(sos.values_list('locale__code', 'tip'))
         revs = Changeset.objects.filter(id__in=tips.values())
         revmap = dict(revs.values_list('id', 'revision'))
-        return ('%s %s\n' % (l, revmap[tips[l]][:12])
-                for l in sorted(tips.keys()))
+        return ['%s %s\n' % (l, revmap[tips[l]][:12])
+                for l in sorted(tips.keys())]
 
 l10n_changesets = Changesets.as_view()
 
@@ -405,7 +406,7 @@ class StatusJSON(SignoffDataView):
     def content(self, request, items):
         data = self.EXHIBIT_SCHEMA.copy()
         data['items'] = items
-        return simplejson.dumps(data, indent=2)
+        return json.dumps(data, indent=2)
 
 
 status_json = StatusJSON.as_view()

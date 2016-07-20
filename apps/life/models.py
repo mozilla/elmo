@@ -5,6 +5,7 @@
 '''Models that represent data present outside of the l10n_site applications,
 most notable locales and hg repositories.
 '''
+from __future__ import absolute_import
 
 from django.db import models
 from django.dispatch import receiver
@@ -235,18 +236,6 @@ class Push(models.Model):
 
     def natural_key(self):
         return (self.repository.name, self.tip.shortrev)
-
-
-class Push_Changesets(models.Model):
-    """helper model for queries over the ManyToMany between Push and Changeset.
-    Non-managed, thus doesn't affect the db.
-    """
-    push = models.ForeignKey(Push)
-    changeset = models.ForeignKey(Changeset)
-
-    class Meta:
-        unique_together = (('push', 'changeset'),)
-        managed = False
 
 
 class TreeManager(models.Manager):

@@ -4,6 +4,7 @@
 
 """Views and helpers for sign-off views.
 """
+from __future__ import absolute_import, print_function
 
 import json
 from collections import defaultdict
@@ -19,9 +20,9 @@ from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView
 
 from life.models import (
-    Locale, Push, Repository, Push_Changesets, TeamLocaleThrough
+    Locale, Push, Repository, TeamLocaleThrough
 )
-from l10nstats.models import Run_Revisions, Run
+from l10nstats.models import Run
 from shipping.models import AppVersion, Signoff, Action
 from shipping.api import flags4appversions
 from shipping.forms import SignoffsPaginationForm
@@ -247,7 +248,7 @@ class SignoffView(TemplateView):
 
         # get pushes, changesets and signoffs/actions
         _p = list(pushes_q.values_list('id', flat=True))
-        pcs = (Push_Changesets.objects
+        pcs = (Push.changesets.through.objects
                .filter(push__in=_p)
                .order_by('-push__push_date', '-changeset__id'))
         actions4push = defaultdict(list)
@@ -275,7 +276,7 @@ class SignoffView(TemplateView):
         times4forest = dict((v, k) for k, v in forest4times.iteritems())
         run4push = dict()
         for f, changes in cs4f.iteritems():
-            rrs = (Run_Revisions.objects
+            rrs = (Run.revisions.through.objects
                    .order_by('changeset', 'run')
                    .filter(run__tree=tree4forest[f],
                            run__locale=lang,
@@ -340,7 +341,8 @@ class SignoffView(TemplateView):
     def collect(self, pcs, actions4push):
         """Prepare for collecting pushes. Result is set in self.pushes.
 
-        pcs is a Push_Changesets queryset, ordered by -push_date, -changeset_id
+        pcs is a Push.changesets.through queryset,
+        ordered by -push_date, -changeset_id
         actions4push is a dict mapping push ids to lists of action objects
 
         The result is a list of dictionaries, describing the table rows to be
@@ -422,7 +424,7 @@ class SignoffRowsView(SignoffView):
         }
         return HttpResponse(
             json.dumps(result),
-            mimetype="application/json; charset=UTF-8"
+            content_type="application/json; charset=UTF-8"
         )
 
     def get_context_data(self, lang, appver, next_push_date):
@@ -538,7 +540,7 @@ def add_signoff(request, locale_code, app_code):
                                  app_code)
             try:
                 push_id = int(request.POST['push'])
-            except (KeyError, ValueError), msg:
+            except (KeyError, ValueError) as msg:
                 return HttpResponseBadRequest(str(msg))
             push = Push.objects.get(id=push_id)
             if push.signoff_set.filter(appversion=appver).count():
@@ -560,8 +562,8 @@ def add_signoff(request, locale_code, app_code):
             so = Signoff.objects.create(push=push, appversion=appver,
                                         author=request.user, locale=lang)
             so.action_set.create(flag=Action.PENDING, author=request.user)
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
             return _redirect
     return _redirect
 
@@ -578,13 +580,13 @@ def review_signoff(request, locale_code, app_code):
         try:
             lang = Locale.objects.get(code=locale_code)
             appver = (AppVersion.objects
-                      .select_related('tree').get(code=app_code))
+                      .get(code=app_code))
             action = request.POST['action']
             signoff_id = int(request.POST['signoff_id'])
             flag = action == "accept" and Action.ACCEPTED or Action.REJECTED
-        except Exception, e:
+        except Exception as e:
             # logging.error("review_signoff called without action")
-            print e
+            print(e)
             return _redirect
 
         # verify integrity, make sure we have a sign-off for app/locale/id
@@ -592,7 +594,7 @@ def review_signoff(request, locale_code, app_code):
             so = appver.signoffs.get(locale=lang, id=signoff_id)
         except Signoff.DoesNotExist:
             # logging.error()
-            print 'no such signoff'
+            print('no such signoff')
             return _redirect
         comment = request.POST.get('comment', '')
         clean_old = (flag is Action.REJECTED and

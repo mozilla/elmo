@@ -4,6 +4,7 @@
 
 '''Django field implementations used in mbdb.
 '''
+from __future__ import absolute_import
 
 from django.db import models
 from django.conf import settings
@@ -14,8 +15,6 @@ try:
     pickle  # silence pyflakes
 except ImportError:
     import pickle
-
-from south.modelsinspector import add_introspection_rules
 
 
 class PickledObject(str):
@@ -75,10 +74,6 @@ class PickledObjectField(models.Field):
                                     connection=connection, prepared=True))
 
 
-# For South migrations to understand what this field is
-add_introspection_rules([], ["^mbdb\.fields\.PickledObjectField"])
-
-
 class ListField(models.Field):
     __metaclass__ = models.SubfieldBase
 
@@ -123,7 +118,3 @@ class ListField(models.Field):
         return super(ListField, self).get_db_prep_lookup(lookup_type, value,
                                                          connection=connection,
                                                          prepared=True)
-
-
-# For South migrations to understand what this field is
-add_introspection_rules([], ["^mbdb\.fields\.ListField"])

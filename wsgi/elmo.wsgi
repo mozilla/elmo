@@ -29,7 +29,6 @@ sys.path[:0] = new_sys_path
 # manage prepends /apps, /vendor and /vendor-local to sys.path on its own
 import manage
 
-
-import django.core.handlers.wsgi
 os.environ['DJANGO_SETTINGS_MODULE'] = 'elmo.settings'
-application = django.core.handlers.wsgi.WSGIHandler()
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()

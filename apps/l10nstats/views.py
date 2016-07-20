@@ -5,6 +5,7 @@
 '''Views for compare-locales output and statistics, in particular dashboards
 and progress graphs.
 '''
+from __future__ import absolute_import, division
 
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -18,7 +19,7 @@ from django.http import (HttpResponse, Http404,
                          HttpResponsePermanentRedirect,
                          HttpResponseBadRequest)
 from django.db.models import Min, Max
-from django.utils import simplejson
+import json
 import elasticsearch
 
 from l10nstats.models import Active, Run
@@ -216,7 +217,7 @@ def tree_progress(request, tree):
         datadict[stamp][r.locale.code] = (r.missing +
                                           r.missingInFiles +
                                           r.report)
-    data = [{'srctime': t, 'locales': simplejson.dumps(datadict[t])}
+    data = [{'srctime': t, 'locales': json.dumps(datadict[t])}
             for t in sorted(datadict.keys())]
 
     try:
@@ -298,7 +299,7 @@ def compare(request):
     except ValueError:
         return HttpResponseBadRequest('Invalid ID')
     # try disk first, then ES
-    json = ''
+    jsondata = ''
     doc = None
     for step in Step.objects.filter(name__startswith='moz_inspectlocales',
                                     build__run=run):
@@ -307,11 +308,11 @@ def compare(request):
                 for chunk in generateLog(run.build.builder.master.name,
                                          log.filename,
                                          channels=(Log.JSON,)):
-                    json += chunk['data']
+                    jsondata += chunk['data']
             except NoLogFile:
                 pass
-    if json:
-        doc = simplejson.loads(json)
+    if jsondata:
+        doc = json.loads(jsondata)
     elif hasattr(settings, 'ES_COMPARE_HOST'):
         es = elasticsearch.Elasticsearch(hosts=[settings.ES_COMPARE_HOST])
         try:
@@ -332,7 +333,7 @@ def compare(request):
     # create table widths for the progress bar
     widths = {}
     for k in ('changed', 'missing', 'missingInFiles', 'report', 'unchanged'):
-        widths[k] = getattr(run, k) * 300 / run.total
+        widths[k] = getattr(run, k) * 300 // run.total
 
     return render(request, 'l10nstats/compare.html', {
                     'run': run,

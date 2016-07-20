@@ -1,13 +1,16 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+from __future__ import absolute_import
 
 import datetime
 import re
 import os
 from elmo.test import TestCase
 from django.core.urlresolvers import reverse
+from django.core.cache import cache
 from django.conf import settings
+from django.test import override_settings
 from django.test.client import RequestFactory
 from nose.tools import eq_, ok_
 from life.models import Locale, TeamLocaleThrough
@@ -15,33 +18,19 @@ from commons.tests.mixins import EmbedsTestCaseMixin
 import urlparse
 
 
+def _local_feed_url(filename):
+    filepath = os.path.join(os.path.dirname(__file__), filename)
+    return 'file://' + filepath
+
+
+# side-step whatever authentication backend has been set up otherwise
+# we might end up trying to go online for some sort of LDAP lookup
+@override_settings(AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+))
 class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
 
-    def setUp(self):
-        super(HomepageTestCase, self).setUp()
-
-        # SESSION_COOKIE_SECURE has to be True for tests to work.
-        # The reason this might be switched off is if you have set it to False
-        # in your settings/local.py so you can use http://localhost:8000/
-        settings.SESSION_COOKIE_SECURE = True
-
-        # side-step whatever authentication backend has been set up otherwise
-        # we might end up trying to go online for some sort of LDAP lookup
-        self._original_auth_backends = settings.AUTHENTICATION_BACKENDS
-        settings.AUTHENTICATION_BACKENDS = (
-          'django.contrib.auth.backends.ModelBackend',
-        )
-
-        settings.L10N_FEED_URL = self._local_feed_url('test_rss20.xml')
-
-    def _local_feed_url(self, filename):
-        filepath = os.path.join(os.path.dirname(__file__), filename)
-        return 'file://' + filepath
-
-    def tearDown(self):
-        super(HomepageTestCase, self).tearDown()
-        settings.AUTHENTICATION_BACKENDS = self._original_auth_backends
-
+    @override_settings(COMPRESS_DEBUG_TOGGLE='no-compression')
     def test_handler500(self):
         # The reason for doing this COMPRESS_DEBUG_TOGGLE "hack" is because
         # our 500.html extends "base.html" which uses ``compress`` blocks.
@@ -50,45 +39,39 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         # That does the same as running django_compressor in offline mode
         # which is to basically do nothing and assume the compressed file just
         # exists.
-        _previous_setting = getattr(settings, 'COMPRESS_DEBUG_TOGGLE', None)
-        settings.COMPRESS_DEBUG_TOGGLE = 'no-compression'
+
+        # import the root urlconf like django does when it starts up
+        root_urlconf = __import__(settings.ROOT_URLCONF,
+                                  globals(), locals(), ['urls'], -1)
+        # ...so that we can access the 'handler500' defined in there
+        par, end = root_urlconf.handler500.rsplit('.', 1)
+        # ...which is an importable reference to the
+        # real handler500 function
+        views = __import__(par, globals(), locals(), [end], -1)
+        # ...and finally we the handler500 function at hand
+        handler500 = getattr(views, end)
+
+        # to make a mock call to the django view functions
+        # you need a request
+        fake_request = (RequestFactory()
+                        .get('/', {'no-compression': 'true'}))
+
+        # the reason for first causing an exception to be raised is because
+        # the handler500 function is only called by django when an
+        # exception has been raised which means sys.exc_info()
+        # is something.
         try:
-            # import the root urlconf like django does when it starts up
-            root_urlconf = __import__(settings.ROOT_URLCONF,
-                                      globals(), locals(), ['urls'], -1)
-            # ...so that we can access the 'handler500' defined in there
-            par, end = root_urlconf.handler500.rsplit('.', 1)
-            # ...which is an importable reference to the
-            # real handler500 function
-            views = __import__(par, globals(), locals(), [end], -1)
-            # ...and finally we the handler500 function at hand
-            handler500 = getattr(views, end)
+            raise NameError("sloppy code!")
+        except NameError:
+            # do this inside a frame that has a sys.exc_info()
+            response = handler500(fake_request)
+            eq_(response.status_code, 500)
+            ok_('Oops' in response.content)
 
-            # to make a mock call to the django view functions
-            # you need a request
-            fake_request = (RequestFactory()
-                            .get('/', {'no-compression': 'true'}))
-
-            # the reason for first causing an exception to be raised is because
-            # the handler500 function is only called by django when an
-            # exception has been raised which means sys.exc_info()
-            # is something.
-            try:
-                raise NameError("sloppy code!")
-            except NameError:
-                # do this inside a frame that has a sys.exc_info()
-                response = handler500(fake_request)
-                eq_(response.status_code, 500)
-                ok_('Oops' in response.content)
-        finally:
-            # If this was django 1.4 I would do:
-            #   from django.test.utils import override_settings
-            #   ...
-            #   @override_settings(COMPRESS_DEBUG_TOGGLE='...')
-            #   def test_handler500(self):
-            #       ...
-            settings.COMPRESS_DEBUG_TOGGLE = _previous_setting
-
+    # SESSION_COOKIE_SECURE has to be True for tests to work.
+    # The reason this might be switched off is if you have set it to False
+    # in your settings/local.py so you can use http://localhost:8000/
+    @override_settings(SESSION_COOKIE_SECURE=True)
     def test_secure_session_cookies(self):
         """secure session cookies should always be 'secure' and 'httponly'"""
         url = reverse('accounts.views.login')
@@ -139,9 +122,15 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
 
+    @override_settings(L10N_FEED_URL=_local_feed_url('test_rss20.xml'))
     def test_index_page_feed_reader(self):
+        # clear the cache of the empty feed we have for other tests
+        cache.clear()
         url = reverse('homepage.views.index')
-        response = self.client.get(url)
+        try:
+            response = self.client.get(url)
+        finally:
+            cache.clear()
         eq_(response.status_code, 200)
 
         content = response.content

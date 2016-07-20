@@ -5,11 +5,13 @@
 
 '''Unit testing for this module.
 '''
+from __future__ import absolute_import
 import datetime
 from elmo.test import TestCase
-from django.core.management.commands.dumpdata import Command
-from apps.mbdb.models import Property, Step, Build, Builder, Master, Slave
+from django.core import management
+from mbdb.models import Property, Step, Build, Builder, Master, Slave
 import json
+from cStringIO import StringIO
 
 
 class TestCustomDataType(str):
@@ -63,14 +65,9 @@ class ModelsTest(TestCase):
             prop = Property.objects.create(name='name %s' % i,
                                            source='foo',
                                            value=value)
-            dumpdata = Command()
-            # when calling handle() directly it's unable to pick up defaults
-            # in Command.option_list so we have to pick that up manually
-            defaults = dict(
-                (x.dest, x.default) for x in Command.option_list
-            )
-            jsondata = dumpdata.handle('mbdb', **defaults)
-            data = json.loads(jsondata)
+            mock_stdout = StringIO()
+            management.call_command('dumpdata', 'mbdb', stdout=mock_stdout)
+            data = json.loads(mock_stdout.getvalue())
             value_data = data[0]['fields']['value']
             # dump data will always dump the pickled data stringified
             self.assertEqual(unicode(value), value_data)

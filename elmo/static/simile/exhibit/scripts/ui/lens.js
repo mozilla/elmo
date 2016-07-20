@@ -495,6 +495,8 @@ Exhibit.Lens._parseSubcontentAttribute = function(value) {
     var fragments, current, open, close;
     fragments = [];
     current = 0;
+    /* XXX Hack: django encodes IRIs, decode this here */
+    value = decodeURI(value);
     while (current < value.length && (open = value.indexOf("{{", current)) >= 0) {
         close = value.indexOf("}}", open);
         if (close < 0) {

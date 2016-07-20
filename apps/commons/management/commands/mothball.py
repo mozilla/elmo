@@ -4,6 +4,7 @@
 
 '''Clean up mbdb data that doesn't connect to data that elmo needs.
 '''
+from __future__ import absolute_import, division
 
 import cmd
 from optparse import make_option
@@ -17,7 +18,6 @@ from django.conf import settings
 
 from life.models import Tree, Forest
 from mbdb.models import (Build, Step, Log, Property)
-from l10nstats.models import (Run_Revisions)
 
 
 class Repl(cmd.Cmd):
@@ -130,7 +130,7 @@ class Repl(cmd.Cmd):
         except DatabaseError:
             if recursion > 10:
                 raise
-            limit = int(query.count() / 2)
+            limit = query.count() // 2
             limit = query.order_by('pk').values_list('pk',flat=True)[limit]
             self.stdout.write('Bisecting at %d\n' % limit)
             self.bisect_delete(query.filter(pk__lt=limit),

@@ -1,6 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+from __future__ import absolute_import
 
 from django.test import TestCase
 from django.contrib.auth.models import User
@@ -110,10 +111,10 @@ class ApiMigrationTest(TestCase):
         locale = Locale.objects.get(code='da')
         repo = self._setup(locale, None, None)
         eq_(repo.changesets.count(), 1)
-        eq_(_actions4appversion(self.old_av, set([locale.id]), None, 100),
-            ({}, set([locale.id])))
-        eq_(_actions4appversion(self.new_av, set([locale.id]), None, 100),
-            ({}, set([locale.id])))
+        eq_(_actions4appversion(self.old_av, {locale.id}, None, 100),
+            ({}, {locale.id}))
+        eq_(_actions4appversion(self.new_av, {locale.id}, None, 100),
+            ({}, {locale.id}))
         avs = AppVersion.objects.all()
         flagdata = flags4appversions(avs)
         ok_(self.old_av in flagdata)
@@ -130,7 +131,7 @@ class ApiMigrationTest(TestCase):
         repo = self._setup(locale, Action.ACCEPTED, None)
         eq_(repo.changesets.count(), 2)
         flaglocs4av, not_found = _actions4appversion(self.old_av,
-                                                     set([locale.id]),
+                                                     {locale.id},
                                                      None,
                                                      100)
         eq_(not_found, set())
@@ -138,8 +139,8 @@ class ApiMigrationTest(TestCase):
         flag, action_id = flaglocs4av[locale.id].items()[0]
         eq_(flag, Action.ACCEPTED)
         eq_(Signoff.objects.get(action=action_id).locale_id, locale.id)
-        eq_(_actions4appversion(self.new_av, set([locale.id]), None, 100),
-            ({}, set([locale.id])))
+        eq_(_actions4appversion(self.new_av, {locale.id}, None, 100),
+            ({}, {locale.id}))
         avs = AppVersion.objects.all()
         flagdata = flags4appversions(avs)
         ok_(self.old_av in flagdata)
@@ -159,7 +160,7 @@ class ApiMigrationTest(TestCase):
         eq_(repo.changesets.count(), 3)
         flaglocs4av, __ = _actions4appversion(
             self.old_av,
-            set([locale.id]),
+            {locale.id},
             None,
             100,
         )
@@ -169,7 +170,7 @@ class ApiMigrationTest(TestCase):
 
         flaglocs4av, __ = _actions4appversion(
             self.old_av,
-            set([locale.id]),
+            {locale.id},
             None,
             100,
             up_until=self.pre_date
@@ -180,7 +181,7 @@ class ApiMigrationTest(TestCase):
 
         flaglocs4av, __ = _actions4appversion(
             self.old_av,
-            set([locale.id]),
+            {locale.id},
             None,
             100,
             up_until=self.post_date
@@ -196,10 +197,10 @@ class ApiMigrationTest(TestCase):
         locale = Locale.objects.get(code='da')
         repo = self._setup(locale, None, Action.ACCEPTED)
         eq_(repo.changesets.count(), 2)
-        eq_(_actions4appversion(self.old_av, set([locale.id]), None, 100),
-            ({}, set([locale.id])))
+        eq_(_actions4appversion(self.old_av, {locale.id}, None, 100),
+            ({}, {locale.id}))
         a4av, not_found = _actions4appversion(self.new_av,
-                                              set([locale.id]), None, 100)
+                                              {locale.id}, None, 100)
         eq_(not_found, set())
         eq_(a4av.keys(), [locale.id])
         flag, action_id = a4av[locale.id].items()[0]
@@ -238,20 +239,20 @@ class ApiMigrationTest(TestCase):
         repo = self._setup(de, None, Action.ACCEPTED)
         eq_(repo.changesets.count(), 2)
         a4av, not_found = _actions4appversion(self.old_av,
-                                              set([da.id, de.id]), None, 100)
-        eq_(not_found, set([de.id]))
+                                              {da.id, de.id}, None, 100)
+        eq_(not_found, {de.id})
         eq_(a4av.keys(), [da.id])
         flag, action_id = a4av[da.id].items()[0]
         eq_(flag, Action.ACCEPTED)
         a4av, not_found = _actions4appversion(self.new_av,
-                                              set([da.id, de.id]), None, 100)
-        eq_(not_found, set([da.id]))
+                                              {da.id, de.id}, None, 100)
+        eq_(not_found, {da.id})
         eq_(a4av.keys(), [de.id])
         flag, action_id = a4av[de.id].items()[0]
         eq_(flag, Action.ACCEPTED)
         a4av, not_found = _actions4appversion(self.old_av,
-                                              set([da.id, de.id]), None, 100)
-        eq_(not_found, set([de.id]))
+                                              {da.id, de.id}, None, 100)
+        eq_(not_found, {de.id})
         eq_(a4av.keys(), [da.id])
         flag, action_id = a4av[da.id].items()[0]
         eq_(flag, Action.ACCEPTED)

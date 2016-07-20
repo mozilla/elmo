@@ -5,11 +5,11 @@
 '''Command to fix any of the repositories in the database
 that miss changeset mappings.
 '''
+from __future__ import absolute_import
 
 from optparse import make_option
 
 from ..base import RepositoryCommand
-from django.db import router, transaction
 
 from life.models import Changeset
 
@@ -35,19 +35,20 @@ class Command(RepositoryCommand):
         missing = hgcount - dbcount
         cnt = 0
         through = dbrepo.changesets.through
-        using = router.db_for_write(dbrepo.__class__, instance=dbrepo)
+
         self.verbose("%s\t%d missing" % (dbrepo.name, missing))
         for revisions in self.chunk(self.nodes(hgrepo)):
             self.progress()
-            with transaction.commit_on_success(using=using):
-                cs = Changeset.objects.filter(revision__in=revisions)
-                cs = cs.exclude(repositories=dbrepo)
-                vals = [through(repository=dbrepo, changeset=c) for c in cs]
-                if not vals:
-                    continue
-                through.objects.bulk_create(vals)
-                transaction.set_dirty(using)
-                cnt += len(vals)
+            cs = Changeset.objects.filter(revision__in=revisions)
+            cs = cs.exclude(repositories=dbrepo)
+            csids = list(cs.values_list('id', flat=True))
+            if not csids:
+                continue
+            through.objects.bulk_create([
+                through(repository_id=dbrepo.id, changeset_id=csid)
+                for csid in csids
+            ])
+            cnt += len(csids)
         self.normal("%s\tadded %d changesets" % (dbrepo.name, cnt))
         return
 

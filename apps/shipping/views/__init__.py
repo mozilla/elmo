@@ -4,6 +4,7 @@
 
 '''Views for managing sign-offs and shipping metrics.
 '''
+from __future__ import absolute_import, division
 
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -14,14 +15,14 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django import http
 from life.models import Locale, Tree, Push, Changeset
-from l10nstats.models import Run_Revisions, Run, ProgressPosition
+from l10nstats.models import Run, ProgressPosition
 from shipping.models import Milestone, AppVersion, Action, Application
 from shipping.api import flags4appversions, accepted_signoffs
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Max
 from django.views.decorators.cache import cache_control
-from django.utils import simplejson
+import json
 from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
 
@@ -146,7 +147,7 @@ def teamsnippet(loc, team_locales):
     # in api.annotated_pushes, we only highlight the latest run if it's green
     suggested_runs = runs_with_open_av
 
-    suggested_rev = dict(Run_Revisions.objects
+    suggested_rev = dict(Run.revisions.through.objects
                          .filter(run__in=suggested_runs,
                                  changeset__repositories__locale__in=locs)
                          .values_list('run_id', 'changeset__revision'))
@@ -176,8 +177,8 @@ def teamsnippet(loc, team_locales):
         run.tree = run_.tree  # foreign key lookup
         application = tree_to_application(run_.tree)
         run.changed_ratio = run.completion
-        run.unchanged_ratio = 100 * run.unchanged / run.total
-        run.missing_ratio = 100 * run.allmissing / run.total
+        run.unchanged_ratio = 100 * run.unchanged // run.total
+        run.missing_ratio = 100 * run.allmissing // run.total
         # cheat a bit and make sure that the red stripe on the chart is at
         # least 1px wide
         if run.allmissing and run.missing_ratio == 0:
@@ -396,7 +397,7 @@ def stones_data(request):
                       'code': stone.code,
                       'age': age})
 
-    return http.HttpResponse(simplejson.dumps({'items': items}, indent=2))
+    return http.HttpResponse(json.dumps({'items': items}, indent=2))
 
 
 def open_mstone(request):

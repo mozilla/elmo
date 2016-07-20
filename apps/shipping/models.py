@@ -5,6 +5,7 @@
 '''Models representing Applications, Versions, Milestones and information
 which locales shipped in what.
 '''
+from __future__ import absolute_import
 
 import datetime
 from django.db import models
@@ -173,7 +174,7 @@ class Milestone(models.Model):
     name = models.CharField(max_length=50)
     appver = models.ForeignKey(AppVersion)
     signoffs = models.ManyToManyField(Signoff, related_name='shipped_in',
-                                      null=True, blank=True)
+                                      blank=True)
     status = models.IntegerField(choices=STATUS_CHOICES, default=0)
 
     class Meta:
@@ -206,20 +207,6 @@ class Milestone(models.Model):
             return rv
         else:
             return self.code
-
-
-class Milestone_Signoffs(models.Model):
-    """Helper model to query milestone.signoffs.
-
-    The model doesn't alter the schema and is set up such that it
-    can be used to create rich queries on Milestone/Signoff mappings.
-    """
-    milestone = models.ForeignKey(Milestone)
-    signoff = models.ForeignKey(Signoff)
-
-    class Meta:
-        unique_together = (('milestone', 'signoff'),)
-        managed = False
 
 
 TYPE_CHOICES = (

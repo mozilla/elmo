@@ -7,7 +7,7 @@
 {% load build_extras %}
 {% load compress %}
 {% load staticfiles %}
-{% load url from future %}
+
 {% block title_matter %}{{ build.builder.name }} build {{ build.buildnumber }}{% endblock %}
 {% block head_matter %}
 {% compress css %}

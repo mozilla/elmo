@@ -1,13 +1,14 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+from __future__ import absolute_import
 
 import datetime
 from nose.tools import eq_, ok_
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.contrib.auth.models import User, Permission
-from django.utils import simplejson as json
+import json
 from commons.tests.mixins import EmbedsTestCaseMixin
 from shipping.models import (
     Milestone,

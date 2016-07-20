@@ -5,6 +5,7 @@
 '''Django command to import existing buildbot build pickles into the
 mbdb database.
 '''
+from __future__ import absolute_import, print_function
 
 import pickle
 from glob import glob
@@ -41,13 +42,13 @@ class Command(BaseCommand):
         for builderconf in builderconfs:
             buildername = builderconf[len(basedir) + 1:-8]
             if raw_input('Import %s? ' % buildername).lower() != 'y':
-                print 'Skipping %s' % buildername
+                print('Skipping %s' % buildername)
                 continue
             builder = pickle.load(open(builderconf))
             builder.basedir = builderconf[:-8]
             builder.determineNextBuildNumber()
             if buildername != builder.getName():
-                print '%s is %s in reality' % (buildername, builder.getName())
+                print('%s is %s in reality' % (buildername, builder.getName()))
                 buildername = builder.getName()
             try:
                 dbbuilder = Builder.objects.get(name=buildername)
@@ -63,7 +64,7 @@ class Command(BaseCommand):
                                            category=builder.category,
                                            bigState=builder.currentBigState)
                 firstBuild = 0
-                print "Created %s" % dbbuilder
+                print("Created %s" % dbbuilder)
             try:
                 firstBuild = int(raw_input('First build number (%d): '
                                            % firstBuild))
@@ -71,9 +72,9 @@ class Command(BaseCommand):
                 pass
             g = iterOverBuilds(builder, dbbuilder, buildername, firstBuild)
             try:
-                localvars = g.next()
+                localvars = next(g)
             except StopIteration:
-                print "no more builds for %s" % buildername
+                print("no more builds for %s" % buildername)
                 continue
             builders.append([g, localvars])
 
@@ -83,7 +84,7 @@ class Command(BaseCommand):
                                            r[1]['build'].getTimes()[0]))
             localvars = builders[0][1]
             try:
-                builders[0][1] = builders[0][0].next()
+                builders[0][1] = next(builders[0][0])
             except StopIteration:
                 # builder is exhausted, drop it from the list.
                 # this is basically the end condition for the loop
@@ -92,10 +93,10 @@ class Command(BaseCommand):
             builder = localvars['builder']
             dbbuilder = localvars['dbbuilder']
             buildnumber = localvars['buildnumber']
-            print buildername, buildnumber
+            print(buildername, buildnumber)
             try:
                 dbbuilder.builds.get(buildnumber=buildnumber)
-                print "Got build $d" % buildnumber
+                print("Got build $d" % buildnumber)
                 continue
             except:
                 pass

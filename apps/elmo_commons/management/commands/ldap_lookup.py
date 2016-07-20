@@ -4,6 +4,7 @@
 
 '''Tool for doing local LDAP lookups
 '''
+from __future__ import absolute_import
 
 
 from optparse import make_option
@@ -44,9 +45,9 @@ class Command(BaseCommand):
             if (isinstance(value, list) and value
                  and isinstance(value[0], basestring)):
                 value = ', '.join(value)
-            print key.ljust(20), value
+            self.stdout.write(key.ljust(20) + " " + str(value))
 
-        print "\nLOCAL USER ".ljust(79, '-')
+        self.stdout.write("\nLOCAL USER ".ljust(79, '-'))
         try:
             user = User.objects.get(email=mail)
             show("Username", user.username)
@@ -56,14 +57,16 @@ class Command(BaseCommand):
             show("Active", user.is_active)
             show("Superuser", user.is_superuser)
             show("Staff", user.is_staff)
-            print "Groups:".ljust(20),
+            self.stdout.write("Groups:".ljust(20), ending='')
             if user.groups.all():
-                print ', '.join([x.name for x in user.groups.all()])
+                self.stdout.write(
+                    ', '.join([x.name for x in user.groups.all()])
+                )
             else:
-                print "none"
+                self.stdout.write("none")
 
         except User.DoesNotExist:
-            print "Does NOT exist locally"
+            self.stdout.write("Does NOT exist locally")
 
         backend = MozLdapBackend()
         backend.connect()
@@ -76,7 +79,7 @@ class Command(BaseCommand):
                     search_filter,
                 )
 
-            print "\nIN LDAP ".ljust(79, '-')
+            self.stdout.write("\nIN LDAP ".ljust(79, '-'))
             uid = None
             for uid, data in results:
                 for key, value in data.iteritems():
@@ -105,7 +108,7 @@ class Command(BaseCommand):
                     search_filter,
                     ['cn']
                 )
-                print "\nLDAP GROUPS ".ljust(79, '-')
+                self.stdout.write("\nLDAP GROUPS ".ljust(79, '-'))
                 _group_mappings_reverse = {}
                 for django_name, ldap_names in GROUP_MAPPINGS.items():
                     ldap_names = flatten_group_names(ldap_names)
@@ -114,11 +117,11 @@ class Command(BaseCommand):
 
                 groups = [x[1]['cn'][0] for x in group_results]
                 for group in groups:
-                    print group.ljust(16), '-> ',
-                    print _group_mappings_reverse.get(
-                        group,
-                        '*not a Django group*'
-                    )
+                    self.stdout.write(group.ljust(16) + ' -> ' +
+                        _group_mappings_reverse.get(
+                            group,
+                            '*not a Django group*'
+                    ))
 
         finally:
             backend.disconnect()

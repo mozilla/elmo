@@ -1,17 +1,14 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+from __future__ import absolute_import
 
 from collections import defaultdict
 import re
 
 from django import http
 from django.shortcuts import get_object_or_404
-try:
-    import json
-    json.dumps  # silence pyflakes
-except ImportError:
-    from django.utils import simplejson as json
+import json
 
 from life.models import Repository, Changeset, Push, Branch
 
@@ -171,10 +168,9 @@ class ForkHierarchy(object):
         self.forks = forks
 
     def create_json(self):
-        forks = sorted((t for t in self.forks.iteritems()),
-                       key=lambda (cs, repos): cs.id)
         node = rv = {}
-        for cs, repos in forks:
+        for cs in sorted(self.forks.keys()):
+            repos = self.forks[cs]
             children = [{
                 "repo": repo.name,
                 "revision": self.heads[repo.name].revision

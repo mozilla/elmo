@@ -4,12 +4,13 @@
 
 '''Views for the bug handling pages.
 '''
+from __future__ import absolute_import
 
 from django.http import HttpResponse
 from django.template import Context, Template
 from django.template.loader import render_to_string
 from django.shortcuts import render
-from django.utils import simplejson
+import json
 
 from life.models import Locale
 
@@ -52,8 +53,8 @@ def get_bug_links(request):
         })
         item = dict((k, t.render(c)) for k, t in opts.iteritems())
         bugs[loc] = item
-    return HttpResponse(simplejson.dumps(bugs, indent=2),
-                        mimetype="application/json")
+    return HttpResponse(json.dumps(bugs, indent=2),
+                        content_type="application/json")
 
 
 def new_locale(request):
