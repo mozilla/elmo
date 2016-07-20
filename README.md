@@ -4,7 +4,7 @@ ELMO
 Elmo is an infrastructure of web apps that are intended to help the
 l10n community.
 
-https://wiki.mozilla.org/L10n:Dashboard/Elmo
+https://wiki.mozilla.org/Elmo
 
 
 Getting started
