@@ -42,59 +42,19 @@ def debug_(*msg):
 
 
 def pmap(props, bld_ids):
-    """Create a map of build ids to dicts with the requested properties.
-
-    NOTE: this is a hack for optimization. Because there is no model for
-    build properties we have to use the OneToOne table used to "connect" the
-    Build and Property model in an efficient way which doens't cause massively
-    complex joins which require temporary tables.
-
-    NOTE 2: This function assumes that the list of `props` is reasonably
-    limited or else the `WHERE id IN (...)` is going to in efficient.
-    """
+    """Create a map of build ids to dicts with the requested properties."""
     if not bld_ids:
         return {}
 
-    # model Build is "connected" to model Property with a OneToOne foreign key
-    # reference which is not a model but is a database table.
-    # We're accessing this auxilliary table to avoid complex joins which force
-    # MySQL to use a temporary table.
-    b2pf = Build._meta.get_field_by_name('properties')[0]
-    args = {'t': b2pf.m2m_db_table(),
-            'b': b2pf.m2m_column_name(),
-            'p': b2pf.m2m_reverse_name()}
-    pattern = '''SELECT `%(t)s`.`%(b)s`, `%(t)s`.`%(p)s`
-      FROM `%(t)s` WHERE (
-        `%(t)s`.`%(b)s` >= %(bs_min)s AND
-        `%(t)s`.`%(b)s` <= %(bs_max)s AND
-        `%(t)s`.`%(p)s` IN (%(ps)s));'''
-    args['bs_min'] = min(bld_ids)
-    args['bs_max'] = max(bld_ids)
-
-    # create a set of primary keys of ALL properties by these names which we'll
-    # use as a operator against the auxilliary table
-    pq = Property.objects.filter(name__in=props)
-    property_ids = set(pq.values_list('id', flat=True))
-    args['ps'] = ','.join(map(str, property_ids))
-    cursor = connection.cursor()
-    cursor.execute(pattern % args)
-    # master list of all properties (but not organized by build ids)
-    props = defaultdict(list)
-    # the subset of `property_ids` that is in the auxilliary table
-    all_pids = set()
-    for bid, pid in cursor.fetchall():
-        props[bid].append(pid)
-        all_pids.add(pid)
-    prop_map = {}
-    # build up a temporary dictionary of all properties to avoid multiple SQL
-    # calls in the loop belowe
-    for p in Property.objects.filter(id__in=all_pids):
-        prop_map[p.id] = (p.name, p.value)
+    build_props = list(Build.properties.through.objects
+        .filter(build__in=bld_ids, property__name__in=props)
+        .values_list('build', 'property'))
+    bound_props = dict((p.id, p)
+        for p in Property.objects.filter(id__in=set(p for _, p in build_props)))
     rv = defaultdict(dict)
-    for bid, pids in props.items():
-        for p in pids:
-            name, value = prop_map[p]
-            rv[bid][name] = value
+    for build, prop in build_props:
+        prop = bound_props[prop]
+        rv[build][prop.name] = prop.value
     return rv
 
 
