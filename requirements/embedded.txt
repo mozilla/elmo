@@ -1,5 +1,0 @@
-# Embedded requirements.
-
-# Those dependencies are currently embedded in the repository
-# in ./vendor-local/lib/python/. There is no need to install them.
-
