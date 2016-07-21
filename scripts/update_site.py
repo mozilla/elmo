@@ -20,7 +20,7 @@ from optparse import  OptionParser
 import update_commands
 
 
-def update_site(verbose, vendor):
+def update_site(verbose):
     """Run through commands to update this site."""
     # do source first
     cmds = update_commands.SourcePhase(
@@ -30,8 +30,7 @@ def update_site(verbose, vendor):
     # do install, update the commands module first
     reload(update_commands)
     cmds = update_commands.InstallPhase(
-        verbose=verbose,
-        vendor=vendor
+        verbose=verbose
     )
     cmds.execute()
 
@@ -48,16 +47,12 @@ def main():
     options.add_option("-v", "--verbose",
                        help="Echo actions before taking them.",
                        action="store_true", dest="verbose")
-    options.add_option("--vendor",
-                       help="Install into vendor instead of virtualenv",
-                       action="store_true", dest="vendor")
     (opts, _) = options.parse_args()
-    if not opts.vendor:
-        # ensure we're in a virtualenv
-        if not hasattr(sys, 'real_prefix'):
-            options.error('Activate a virtualenv to install.')
+    # ensure we're in a virtualenv
+    if not hasattr(sys, 'real_prefix'):
+        options.error('Activate a virtualenv to install.')
 
-    update_site(opts.verbose, opts.vendor)
+    update_site(opts.verbose)
 
 
 if __name__ == '__main__':

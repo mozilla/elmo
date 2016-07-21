@@ -1,7 +1,7 @@
 # Development requirements
 
 # Include production requirements
--r prod.txt
+-r env.txt
 
 # sha256: 0a6hxKphuDZtakLdNlBiL7-cY07STq9_N5yLlw5e1E4
 coverage==4.1
