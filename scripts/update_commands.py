@@ -44,48 +44,19 @@ class InstallPhase(BasePhase):
         "pip install "
         "-r requirements/env.txt"
     )
-    VENDOR_DIR = './vendor'
-    TMP_VENDOR_DIR = './vendor-tmp'
-    PIP_INSTALL_PROD = (
-        "pip install "
-        "-r requirements/compiled.txt "
-        "-r requirements/prod.txt "
-        "--target=%s" % TMP_VENDOR_DIR
-    )
-    PIP_CLEANUP = "rm -rf %s" % TMP_VENDOR_DIR
-    
     MIGRATE_EXEC = "./manage.py migrate"
     STATICFILES_COLLECT_EXEC = "./manage.py collectstatic --noinput"
     GIT_REVISION = "git rev-parse HEAD > collected/static/revision"
     DJANGOCOMPRESSOR_COMPRESS_EXEC = "./manage.py compress -f"
     REFRESH_FEEDS_EXEC = "./manage.py refresh_feeds"
-    def __init__(self, vendor=False, **kwargs):
+    def __init__(self, **kwargs):
         super(InstallPhase, self).__init__(**kwargs)
-        if vendor:
-            self.commandlist += [
-                [self.PIP_CLEANUP],
-                [self.PIP_INSTALL_PROD],
-                ["rm -rf %s" % self.VENDOR_DIR],
-                ["mv %s %s" % (self.TMP_VENDOR_DIR, self.VENDOR_DIR)]
-            ]
-        else:
-            self.commandlist += [
-                [self.PIP_INSTALL_VENV]
-            ]
-    
+
         self.commandlist += [
+            [self.PIP_INSTALL_VENV],
             [self.MIGRATE_EXEC],
-        ]
-    
-        self.commandlist += [
             [self.STATICFILES_COLLECT_EXEC],
-            [self.GIT_REVISION],
-        ]
-    
-        self.commandlist += [
             [self.DJANGOCOMPRESSOR_COMPRESS_EXEC],
-        ]
-    
-        self.commandlist += [
+            [self.GIT_REVISION],
             [self.REFRESH_FEEDS_EXEC],
         ]
