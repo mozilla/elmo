@@ -3,7 +3,6 @@
 # Those dependencies are currently embedded in the repository
 # in ./vendor-local/lib/python/. There is no need to install them.
 
-feedparser==5.1
 http://ftp.tummy.com/pub/python-memcached/old-releases/python-memcached-1.47.tar.gz
 pytz==2012d
 raven==3.1.16
