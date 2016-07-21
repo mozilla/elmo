@@ -19,7 +19,6 @@ from commons.tests.mixins import EmbedsTestCaseMixin
 from life.models import Repository, Push, Branch, File
 from pushes import repo_fixtures
 from pushes.utils import get_or_create_changeset
-from pushes.views.api import jsonify
 from pushes.utils import handlePushes, PushJS
 from .base import mock_ui, RepoTestBase
 
@@ -33,69 +32,6 @@ class PushesTestCase(TestCase, EmbedsTestCaseMixin):
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
         # like I said, a very basic test
-
-
-class JSONifyTestCase(TestCase):
-    def test_json(self):
-        ref = {
-            'foo': [1, 2, 3],
-            '12': "string"
-            }
-        response = jsonify(lambda r: r)(ref)
-        ok_(isinstance(response, http.HttpResponse))
-        ok_(response.status_code, 200)
-        eq_(response["Access-Control-Allow-Origin"], "*")
-        r_data = json.loads(response.content)
-        eq_(r_data, ref)
-
-    def test_fail(self):
-        ref = http.HttpResponseBadRequest('oh picky')
-        response = jsonify(lambda r: r)(ref)
-        eq_(response["Access-Control-Allow-Origin"], "*")
-        eq_(ref, response)
-
-
-class ApiTestCase(RepoTestBase):
-
-    def setUp(self):
-        super(ApiTestCase, self).setUp()
-        self.repo_data = repo_fixtures.network(self._base)
-        for name, hgrepo in self.repo_data['repos'].iteritems():
-            dbrepo = Repository.objects.create(
-                name=name,
-                url='http://localhost:8001/%s/' % name
-            )
-            for i in hgrepo:
-                get_or_create_changeset(dbrepo, hgrepo, hgrepo[i].hex())
-
-    def test_network(self):
-        '''test the basic output of the network api'''
-        url = reverse('pushes.views.api.network')
-        response = self.client.get(url, {
-            'revision': self.repo_data['forks'][0]
-            })
-        eq_(response.status_code, 200)
-        data = json.loads(response.content)
-        id4rev = dict((c['revision'], c['id'])
-                      for c in data['changesets'].itervalues())
-        ref_forks = map(lambda r: str(id4rev[r]), self.repo_data['forks'])
-        children = data['children']
-        for f in ref_forks:
-            ok_(len(children[f]) > 1)
-
-        ref_heads = map(lambda r: str(id4rev[r]), self.repo_data['heads'])
-        for h in ref_heads:
-            ok_(h not in children)
-
-    def test_fork(self):
-        '''test the basic output of the network api'''
-        repo = self.repo_data['repos'].keys()[0]
-        url = reverse('pushes.views.api.forks', args=[repo])
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        data = json.loads(response.content)
-        eq_(data['repo'], repo)
-        ok_(data['revision'] in self.repo_data['heads'])
 
 
 class TestHandlePushes(RepoTestBase):
