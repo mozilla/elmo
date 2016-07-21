@@ -11,7 +11,6 @@ from collections import defaultdict
 
 from django.db.models import Max, Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponse
-from django.template import RequestContext
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 # TODO: from django.views.decorators.cache import cache_control
@@ -410,8 +409,7 @@ class SignoffRowsView(SignoffView):
         context['appver'] = appver
         html = render_to_string(
             self.template_name,
-            context,
-            context_instance=RequestContext(request)
+            context
         )
         if context['next_push_date']:
             next_push_date = context['next_push_date'].isoformat()
