@@ -3,8 +3,10 @@
 # Include production requirements
 -r env.txt
 
-# sha256: 0a6hxKphuDZtakLdNlBiL7-cY07STq9_N5yLlw5e1E4
 coverage==4.1
 
-# sha256: uDndLZwRfHAUMMFJlWkYpCOphjtIsJyQ4wpgE-fS9E8
 mock==2.0.0
+
+django-debug-toolbar==1.5
+
+django-extensions==1.6.7
