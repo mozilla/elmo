@@ -18,6 +18,7 @@ from life.models import Locale, Tree, Push, Changeset
 from l10nstats.models import Run, ProgressPosition
 from shipping.models import Milestone, AppVersion, Action, Application
 from shipping.api import flags4appversions, accepted_signoffs
+import shipping.views.milestone
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Max
@@ -287,7 +288,7 @@ def teamsnippet(loc, team_locales):
 def dashboard(request):
     # legacy parameter. It's better to use the About milestone page for this.
     if 'ms' in request.GET:
-        url = reverse('shipping.views.milestone.about',
+        url = reverse(shipping.views.milestone.about,
                       args=[request.GET['ms']])
         return redirect(url)
 
@@ -406,7 +407,7 @@ def open_mstone(request):
             mstone.save()
         except:
             pass
-    return http.HttpResponseRedirect(reverse('shipping.views.milestone.about',
+    return http.HttpResponseRedirect(reverse(shipping.views.milestone.about,
                                              args=[mstone.code]))
 
 
@@ -421,7 +422,7 @@ def confirm_ship_mstone(request):
         raise http.Http404("ms must be supplied")
     mstone = get_object_or_404(Milestone, code=request.GET['ms'])
     if mstone.status != Milestone.OPEN:
-        return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
+        return http.HttpResponseRedirect(reverse(milestones))
     flags4loc = (flags4appversions([mstone.appver])
                  [mstone.appver])
 
@@ -454,7 +455,7 @@ def ship_mstone(request):
     if not request.user.has_perm('shipping.can_ship'):
         # XXX: personally I'd prefer if this was a raised 4xx error (peter)
         # then I can guarantee better test coverage
-        return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
+        return http.HttpResponseRedirect(reverse(milestones))
 
     mstone = get_object_or_404(Milestone, code=request.POST['ms'])
     if mstone.status != Milestone.OPEN:
@@ -466,7 +467,7 @@ def ship_mstone(request):
     # XXX create event
     mstone.save()
 
-    return http.HttpResponseRedirect(reverse('shipping.views.milestone.about',
+    return http.HttpResponseRedirect(reverse(shipping.views.milestone.about,
                                              args=[mstone.code]))
 
 
@@ -480,10 +481,10 @@ def confirm_drill_mstone(request):
     if not request.GET.get('ms'):
         raise http.Http404("ms must be supplied")
     if not request.user.has_perm('shipping.can_ship'):
-        return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
+        return http.HttpResponseRedirect(reverse(milestones))
     mstone = get_object_or_404(Milestone, code=request.GET['ms'])
     if mstone.status != Milestone.OPEN:
-        return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
+        return http.HttpResponseRedirect(reverse(milestones))
 
     drill_base = (Milestone.objects
                   .filter(appver=mstone.appver, status=Milestone.SHIPPED)
@@ -508,7 +509,7 @@ def drill_mstone(request):
     if not request.user.has_perm('shipping.can_ship'):
         # XXX: personally I'd prefer if this was a raised 4xx error (peter)
         # then I can guarantee better test coverage
-        return http.HttpResponseRedirect(reverse('shipping.views.milestones'))
+        return http.HttpResponseRedirect(reverse(milestones))
 
     mstone = get_object_or_404(Milestone, code=request.POST.get('ms'))
     base = get_object_or_404(Milestone, code=request.POST.get('base'))
@@ -520,5 +521,5 @@ def drill_mstone(request):
     mstone.status = Milestone.SHIPPED
     # XXX create event
     mstone.save()
-    return redirect(reverse('shipping.views.milestone.about',
+    return redirect(reverse(shipping.views.milestone.about,
                             args=[mstone.code]))

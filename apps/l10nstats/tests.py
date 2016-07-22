@@ -17,6 +17,8 @@ from .models import Run, Active
 from .templatetags.run_filters import showrun
 from commons.tests.mixins import EmbedsTestCaseMixin
 from html5lib import parseFragment
+import l10nstats.views
+import shipping.views
 
 
 class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
@@ -42,7 +44,7 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
         """render the tree_status view and check that all static files are
         accessible"""
         appver, tree, milestone = self._create_appver_tree_milestone()
-        url = reverse('l10nstats.views.history_plot')
+        url = reverse('locale-tree-history')
         response = self.client.get(url)
         eq_(response.status_code, 404)
         locale, __ = Locale.objects.get_or_create(
@@ -64,12 +66,12 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
         accessible"""
         appver, tree, milestone = self._create_appver_tree_milestone()
 
-        url = reverse('l10nstats.views.tree_progress', args=['XXX'])
+        url = reverse('tree-history', args=['XXX'])
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
         # _create_appver_milestone() creates a mock tree
-        url = reverse('l10nstats.views.tree_progress', args=[tree.code])
+        url = reverse('tree-history', args=[tree.code])
         response = self.client.get(url)
         eq_(response.status_code, 200)
         ok_('no statistics for %s' % tree.code in response.content)
@@ -82,11 +84,11 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
 
     def test_render_index_legacy(self):
         """the old dashboard should redirect to the shipping dashboard"""
-        url = reverse('l10nstats.views.index')
+        url = reverse(l10nstats.views.index)
         response = self.client.get(url)
 
         eq_(response.status_code, 301)
-        ok_(reverse('shipping.views.index') in
+        ok_(reverse(shipping.views.index) in
              urlparse(response['location']).path)
 
         # now try it with a query string as well
@@ -95,7 +97,7 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
 
         qd = QueryDict(urlparse(response['location']).query)
         eq_(qd['av'], 'fx 1.0')
-        ok_(reverse('shipping.views.index') in
+        ok_(reverse(shipping.views.index) in
              urlparse(response['location']).path)
 
     def test_compare_with_invalid_id(self):
@@ -105,7 +107,7 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
         See https://bugzilla.mozilla.org/show_bug.cgi?id=698634
         """
 
-        url = reverse('l10nstats.views.compare')
+        url = reverse('compare-locales')
         response = self.client.get(url, {'run': 'xxx'})
         eq_(response.status_code, 400)
 

@@ -115,10 +115,10 @@ def locale_team(request, code):
     try:
         loc = Locale.objects.get(code=code)
     except Locale.DoesNotExist:
-        return redirect('homepage.views.teams')
+        return redirect('teams')
     try:
         team_locale = TeamLocaleThrough.objects.current().get(locale=loc)
-        return redirect('homepage.views.locale_team', team_locale.team.code)
+        return redirect('l10n-team', team_locale.team.code)
     except TeamLocaleThrough.DoesNotExist:
         pass
 
@@ -159,10 +159,10 @@ def locale_team(request, code):
 
 def pushlog_redirect(request, path):
     return HttpResponsePermanentRedirect(
-        reverse('pushes.views.pushlog',
+        reverse('pushes:pushlog',
                 kwargs={'repo_name': path}) + '?' + request.GET.urlencode())
 
 
 def diff_redirect(request):
     return HttpResponsePermanentRedirect(
-        reverse('pushes.views.diff') + '?' + request.GET.urlencode())
+        reverse('pushes:diff') + '?' + request.GET.urlencode())

@@ -27,7 +27,7 @@ class PushesTestCase(TestCase, EmbedsTestCaseMixin):
 
     def test_render_push_log(self):
         """basic test rendering the pushlog"""
-        url = reverse('pushes.views.pushlog')
+        url = reverse('pushes:pushlog')
         response = self.client.get(url)
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)

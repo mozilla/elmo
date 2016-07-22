@@ -29,7 +29,7 @@ from shipping.forms import SignoffsPaginationForm
 
 def signoff_locale(request, locale_code):
     get_object_or_404(Locale, code=locale_code)
-    return redirect(reverse('homepage.views.locale_team', args=[locale_code]),
+    return redirect(reverse('l10n-team', args=[locale_code]),
                     permanent=True)
 
 

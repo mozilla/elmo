@@ -22,9 +22,9 @@ site.</p>
 {% endif %}
 <div id="policy">{{ policy.text|safe }}</div>
 <p>{%if activation %}Active since {{activation|date}}. {% endif %}Check <a
-href="{% url 'privacy.views.versions' %}">version history</a>.</p>
+href="{% url 'privacy:versions' %}">version history</a>.</p>
 {% else %}
 <p class="notice"><span>Policy not found, you may want to to check the <a
-href="{% url 'privacy.views.versions' %}">version history</a>.</span></p>
+href="{% url 'privacy:versions' %}">version history</a>.</span></p>
 {% endif %}
 {% endblock %}

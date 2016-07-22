@@ -6,19 +6,18 @@
 '''
 from __future__ import absolute_import
 
-from django.conf.urls import patterns, url
-from .views import BuildsForChangeFeed
+from django.conf.urls import url
+from . import views
 
 
-urlpatterns = patterns('tinder.views',
-                       (r'^waterfall$', 'waterfall'),
-                       (r'^tbpl$', 'tbpl'),
-                       (r'^tbpl-rows$', 'tbpl_rows', {}, 'tinder_update_tbpl'),
-                       (r'^builds_for', 'builds_for_change'),
-                       (r'^builders/([^/]+)/(\d+)', 'showbuild',
-                        {}, 'tinder_show_build'),
-                       (r'^log/([0-9]+)/([^/]+)$', 'showlog', {}, 'showlog'),
-                       # feed instances need a name so use url() here
-                       url(r'^feeds/builds_for_change/(\d+)/$',
-                           BuildsForChangeFeed(), name='BuildsForChangeFeed'),
-                       )
+urlpatterns = [
+    url(r'^waterfall$', views.waterfall),
+    url(r'^tbpl$', views.tbpl),
+    url(r'^tbpl-rows$', views.tbpl_rows, name='tinder-update-tbpl'),
+    url(r'^builds_for', views.builds_for_change),
+    url(r'^builders/([^/]+)/(\d+)', views.showbuild, name='tinder-showbuild'),
+    url(r'^log/([0-9]+)/([^/]+)$', views.showlog, name='tinder-showlog'),
+    # feed instances need a name so use url() here
+    url(r'^feeds/builds_for_change/(\d+)/$',
+        views.BuildsForChangeFeed(), name='BuildsForChangeFeed'),
+]

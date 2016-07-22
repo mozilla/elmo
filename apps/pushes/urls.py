@@ -3,9 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
 
-from django.conf.urls import patterns
+from django.conf.urls import url
+from . import views
 
-urlpatterns = patterns('pushes.views',
-                       (r'^pushes/(?P<repo_name>.+)?$', 'pushlog'),
-                       (r'^diff/$', 'diff'),
-)
+urlpatterns = [
+    url(r'^pushes/(?P<repo_name>.+)?$', views.pushlog, name='pushlog'),
+    url(r'^diff/$', views.diff, name='diff'),
+]

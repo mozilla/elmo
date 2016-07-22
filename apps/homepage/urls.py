@@ -6,12 +6,13 @@
 '''
 from __future__ import absolute_import
 
-from django.conf.urls import patterns
+from django.conf.urls import url
+from . import views
 
-urlpatterns = patterns('homepage.views',
-                       (r'^$', 'index'),
-                       (r'^teams/$', 'teams'),
-                       (r'^teams/(.*)$', 'locale_team'),
-                       (r'^pushes/(.*)$', 'pushlog_redirect'),
-                       (r'^shipping/diff$', 'diff_redirect'),
-                       )
+urlpatterns = [
+    url(r'^$', views.index, name='homepage'),
+    url(r'^teams/$', views.teams, name='teams'),
+    url(r'^teams/(.*)$', views.locale_team, name='l10n-team'),
+    url(r'^pushes/(.*)$', views.pushlog_redirect),
+    url(r'^shipping/diff$', views.diff_redirect),
+]

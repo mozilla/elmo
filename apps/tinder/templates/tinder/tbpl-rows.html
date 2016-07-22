@@ -17,7 +17,7 @@
 {% for build in stamp.builds %}
 <div class="buildbox {{build.build|res2class}}">
   {%if build.end %}
-  <a target="_blank" href="{% url 'tinder.views.showbuild' build.builder build.number %}">{{ build.props.tree }} {{ build.props.locale }}</a>
+  <a target="_blank" href="{% url 'tinder-showbuild' build.builder build.number %}">{{ build.props.tree }} {{ build.props.locale }}</a>
   {% else %}
   {{ build.build|showbuild }}
   {% endif %}

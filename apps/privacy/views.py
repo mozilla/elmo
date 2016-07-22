@@ -114,7 +114,7 @@ def post_policy(request):
                                 Comment.contenttype().id, c.id,
                                 force_unicode(c), ADDITION)
 
-    return redirect(reverse('privacy.views.show_policy',
+    return redirect(reverse('privacy:show',
                             kwargs={'id': p.id}))
 
 
@@ -123,7 +123,7 @@ def activate_policy(request):
     priviledges.
     """
     if not request.user.has_perm('privacy.activate_policy'):
-        return HttpResponseRedirect(reverse('privacy.views.versions'))
+        return HttpResponseRedirect(reverse('privacy:versions'))
     if request.method == "POST":
         try:
             policy = get_object_or_404(Policy, id=request.POST['active'])
@@ -146,7 +146,7 @@ def activate_policy(request):
                                         change_message="activate")
             policy.active = True
             policy.save()
-    return HttpResponseRedirect(reverse('privacy.views.versions'))
+    return HttpResponseRedirect(reverse('privacy:versions'))
 
 
 def add_comment(request):
@@ -166,4 +166,4 @@ def add_comment(request):
         LogEntry.objects.log_action(request.user.id,
                                     Comment.contenttype().id, c.id,
                                     force_unicode(c), ADDITION)
-    return redirect(reverse('privacy.views.versions'))
+    return redirect(reverse('privacy:versions'))

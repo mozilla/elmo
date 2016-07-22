@@ -9,7 +9,7 @@
 
 {% block content %}
 <h4>Select the applications you want to migrate:</h4>
-<form action="{% url 'shipping.views.release.migrate_appversions' %}" method="POST">{%csrf_token%}
+<form action="{% url 'shipping-release-migrate' %}" method="POST">{%csrf_token%}
 <table>
 {% for av in appvers %}
   <tr>

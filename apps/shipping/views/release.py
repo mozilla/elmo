@@ -131,8 +131,6 @@ class MigrateAppversions(generic.View):
                  tree=tree,  # tree is central, see above
                  start=migration_date))
 
-migrate_appversions = MigrateAppversions.as_view()
-
 
 def selectappversions4milestones(request):
     lastdigits = re.compile('\d+$')
