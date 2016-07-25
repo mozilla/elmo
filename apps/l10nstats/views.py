@@ -58,16 +58,6 @@ def index(request):
     return HttpResponsePermanentRedirect(url)
 
 
-def homesnippet():
-    week_ago = datetime.utcnow() - timedelta(7)
-    act = Active.objects.filter(run__srctime__gt=week_ago)
-    act = act.order_by('run__tree__code')
-    act = act.values_list('run__tree__code', flat=True).distinct()
-    return render_to_string('l10nstats/snippet.html', {
-            'trees': act,
-            })
-
-
 def teamsnippet(loc):
     act = Run.objects.filter(locale=loc, active__isnull=False)
     week_ago = datetime.utcnow() - timedelta(7)

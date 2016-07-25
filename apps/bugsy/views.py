@@ -19,10 +19,6 @@ def index(request):
     return render(request, 'bugsy/index.html')
 
 
-def homesnippet():
-    return render_to_string('bugsy/snippet.html')
-
-
 def teamsnippet(locale):
     bugs_url = ('https://bugzilla.mozilla.org/buglist.cgi?'
                 'field0-0-0=component;type0-0-0=regexp;value0-0-0=^%s / ;'

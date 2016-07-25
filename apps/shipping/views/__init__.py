@@ -68,16 +68,6 @@ def index(request):
                   })
 
 
-def homesnippet():
-    q = (AppVersion.objects
-         .filter(milestone__status=Milestone.OPEN)
-         .select_related('app'))
-    q = q.order_by('app__name', '-version')
-    return render_to_string('shipping/snippet.html', {
-            'appvers': q,
-            })
-
-
 class RunElement(dict):
     def __getattr__(self, key):  # for dot notation
         return self[key]

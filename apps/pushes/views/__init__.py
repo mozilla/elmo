@@ -15,12 +15,3 @@ from .diff import diff
 # make pyflakes happy
 diff = diff
 pushlog = pushlog
-
-
-def homesnippet():
-    repos = Repository.objects.filter(forest__isnull=False)
-    repos = repos.annotate(lpd=Max('push__push_date'))
-    repos = repos.order_by('-lpd')
-    return render_to_string('pushes/snippet.html', {
-            'repos': repos[:5],
-            })

@@ -9,7 +9,7 @@ from django.core.urlresolvers import reverse
 from elmo.test import TestCase
 from commons.tests.mixins import EmbedsTestCaseMixin
 from life.models import Locale
-from bugsy.views import homesnippet, teamsnippet
+from bugsy.views import teamsnippet
 
 
 class BugsyTestCase(TestCase, EmbedsTestCaseMixin):
@@ -42,9 +42,3 @@ class BugsyTestCase(TestCase, EmbedsTestCaseMixin):
         ok_(struct)
         item = struct[0]
         ok_(item['product'])  # one of many
-
-    def test_homesnippet(self):
-        response = homesnippet()
-        ok_(isinstance(response, basestring))
-        index_url = reverse('bugsy.views.index')
-        ok_('href="%s"' % index_url in response)
