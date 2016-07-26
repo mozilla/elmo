@@ -39,7 +39,7 @@
       <td>
         <a data-ex-content=".label"
 	   data-ex-class-subcontent="building-{&#123;.building}}"
-        data-ex-href-subcontent="{% url 'shipping.views.milestone.about'  "{&#123;.code}}" %}"></a>
+        data-ex-href-subcontent="{% url 'shipping.views.milestone.about'  "{{.code}}" %}"></a>
       </td>
       <td>
         <span data-ex-if=".status = '{{ Milestone.SHIPPED }}'">
