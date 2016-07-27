@@ -24,11 +24,12 @@ urlpatterns = [
 ]
 
 urlpatterns += [
-    url(r'^/l10n-changesets$', status.l10n_changesets,
+    url(r'^/l10n-changesets$', status.Changesets.as_view(),
         name='shipping-l10n_changesets'),
-    url(r'^/shipped-locales$', status.shipped_locales,
+    url(r'^/shipped-locales$', status.ShippedLocales.as_view(),
         name='shipping-shipped_locales'),
-    url(r'^/api/status$', status.status_json, name='shipping-status_json'),
+    url(r'^/api/status$', status.StatusJSON.as_view(),
+        name='shipping-status_json'),
 ]
 
 urlpatterns += [
@@ -44,9 +45,11 @@ urlpatterns += [
 ]
 
 urlpatterns += [
-    url(r'^/signoffs/(.*)/(.*)/more/$', signoff.signoff_rows),
+    url(r'^/signoffs/(.*)/(.*)/more/$', signoff.SignoffRowsView.as_view(),
+        name='shipping-signoff-rows'),
     url(r'^/signoffs/(.*)/$', signoff.signoff_locale),
-    url(r'^/signoffs/(.*?)/(.*)', signoff.signoff, name='shipping-signoff'),
+    url(r'^/signoffs/(.*?)/(.*)', signoff.SignoffView.as_view(),
+        name='shipping-signoff'),
     url(r'^/signoffs-details/(.*?)/(.*)', signoff.signoff_details,
         name='shipping-signoff_details'),
     url(r'^/add-signoff/(.*?)/(.*)', signoff.add_signoff),  # POST only

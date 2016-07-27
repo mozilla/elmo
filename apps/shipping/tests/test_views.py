@@ -21,7 +21,6 @@ import shipping.views
 import shipping.views.app
 import shipping.views.milestone
 import shipping.views.release
-import shipping.views.signoff
 import shipping.views.status
 
 
@@ -165,7 +164,7 @@ class ShippingTestCase(ShippingTestCaseBase):
 
     def test_l10n_changesets_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
-        url = reverse(shipping.views.status.l10n_changesets)
+        url = reverse('shipping-l10n_changesets')
         # Fail
         response = self.client.get(url)
         # neither ms or av specified
@@ -198,7 +197,7 @@ class ShippingTestCase(ShippingTestCaseBase):
 
     def test_shipped_locales_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
-        url = reverse(shipping.views.status.shipped_locales)
+        url = reverse('shipping-shipped_locales')
         # Fail
         response = self.client.get(url)
         eq_(response.status_code, 400)
@@ -316,7 +315,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(urlparse(response['location']).path, url)
 
     def test_status_json_basic(self):
-        url = reverse(shipping.views.status.status_json)
+        url = reverse('shipping-status_json')
         response = self.client.get(url)
         eq_(response.status_code, 200)
         struct = json.loads(response.content)
@@ -341,7 +340,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(response['Access-Control-Allow-Origin'], '*')
 
     def test_status_json_by_treeless_appversion(self):
-        url = reverse(shipping.views.status.status_json)
+        url = reverse('shipping-status_json')
         appver, tree, milestone = self._create_appver_tree_milestone()
         # get the AppVersionThrough, and set it's duration to the past
         avt = appver.trees_over_time.get(tree=tree)
@@ -356,7 +355,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(struct['items'], [])
 
     def test_status_json_multiple_locales_multiple_trees(self):
-        url = reverse(shipping.views.status.status_json)
+        url = reverse('shipping-status_json')
 
         appver, tree, milestone = self._create_appver_tree_milestone()
         locale_en, __ = Locale.objects.get_or_create(
@@ -517,7 +516,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(response.status_code, 404)
 
         def get_query(content):
-            json_url = reverse(shipping.views.status.status_json)
+            json_url = reverse('shipping-status_json')
             return re.findall('href="%s\?([^"]*)"' % json_url, content)[0]
 
         response = self.client.get(url)

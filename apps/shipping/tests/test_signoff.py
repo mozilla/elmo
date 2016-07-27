@@ -45,7 +45,7 @@ class SignOffTest(TestCase, EmbedsTestCaseMixin):
 
     def test_l10n_changesets(self):
         """Test that l10n-changesets is OK"""
-        url = reverse(shipping.views.status.l10n_changesets)
+        url = reverse('shipping-l10n_changesets')
         url += '?av=fx1.0'
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -56,7 +56,7 @@ de l10n de 0002
 
     def test_shipped_locales(self):
         """Test that shipped-locales is OK"""
-        url = reverse(shipping.views.status.shipped_locales)
+        url = reverse('shipping-shipped_locales')
         url += '?av=fx1.0'
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -68,7 +68,7 @@ en-US
 
     def test_status_json(self):
         """Test that the status json for the dashboard is OK"""
-        url = reverse(shipping.views.status.status_json)
+        url = reverse('shipping-status_json')
         response = self.client.get(url, {'av': 'fx1.0'})
         eq_(response.status_code, 200)
         ok_('max-age=60' in response['Cache-Control'])
@@ -133,7 +133,7 @@ en-US
         response = self.client.post(ship, {'ms': mile.code})
         eq_(response.status_code, 403)
         # verify l10n-changesets and json, and shipped-locales
-        url = reverse(shipping.views.status.l10n_changesets)
+        url = reverse('shipping-l10n_changesets')
         response = self.client.get(url, {'ms': mile.code})
         eq_(response.status_code, 200)
         eq_(response.content, "da l10n da 0003\nde l10n de 0002\n")
@@ -154,7 +154,7 @@ en-US
                                'platforms': ['windows', 'linux']
                             }
                            })
-        url = reverse(shipping.views.status.shipped_locales)
+        url = reverse('shipping-shipped_locales')
         response = self.client.get(url, {'ms': mile.code})
         eq_(response.status_code, 200)
         eq_(response.content, "da\nde\nen-US\n")
@@ -169,7 +169,7 @@ en-US
 
     def test_signoff_static_files(self):
         """render the signoffs page and chek that all static files work"""
-        url = reverse(shipping.views.signoff.signoff,
+        url = reverse('shipping-signoff',
                       args=['de', self.av.code])
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -194,7 +194,7 @@ en-US
         )
 
         # lastly, take a perfectly healthy signoff URL
-        url = reverse(shipping.views.signoff.signoff,
+        url = reverse('shipping-signoff',
                       args=[locale.code, self.av.code])
         eq_(self.client.get(url).status_code, 200)
 
@@ -213,7 +213,7 @@ en-US
         eq_(self.client.get(url).status_code, 404)
 
     def test_signoff_rows_invalid_next_push_date(self):
-        url = reverse(shipping.views.signoff.signoff_rows,
+        url = reverse('shipping-signoff-rows',
                       args=['de', self.av.code])
         response = self.client.get(url)
         # missing the push_date GET parameter
@@ -224,7 +224,7 @@ en-US
         eq_(response.status_code, 400)
 
     def test_signoff_rows(self):
-        url = reverse(shipping.views.signoff.signoff_rows,
+        url = reverse('shipping-signoff-rows',
                       args=['de', self.av.code])
         p1, p2, p3 = Push.objects.all().order_by('push_date')[:3]
         next_push_date = p3.push_date.isoformat()

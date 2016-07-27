@@ -4,9 +4,9 @@
 from __future__ import absolute_import
 
 from django.conf.urls import url
-from . import views
+from .views import diff, pushlog
 
 urlpatterns = [
-    url(r'^pushes/(?P<repo_name>.+)?$', views.pushlog, name='pushlog'),
-    url(r'^diff/$', views.diff, name='diff'),
+    url(r'^pushes/(?P<repo_name>.+)?$', pushlog.pushlog, name='pushlog'),
+    url(r'^diff/$', diff.DiffView.as_view(), name='diff'),
 ]
