@@ -15,7 +15,7 @@ from life.models import Tree, Locale
 from mbdb.models import Build
 from .models import Run, Active
 from .templatetags.run_filters import showrun
-from commons.tests.mixins import EmbedsTestCaseMixin
+from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from html5lib import parseFragment
 import l10nstats.views
 import shipping.views

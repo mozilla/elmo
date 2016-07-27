@@ -15,7 +15,7 @@ from mercurial import commands as hgcommands
 from mercurial.hg import repository
 from mercurial.error import RepoError, RepoLookupError
 
-from commons.tests.mixins import EmbedsTestCaseMixin
+from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from life.models import Repository, Push, Branch, File
 from pushes import repo_fixtures
 from pushes.utils import get_or_create_changeset

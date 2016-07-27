@@ -14,7 +14,7 @@ from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 import json
 from l10nstats.models import Run
-from commons.tests.mixins import EmbedsTestCaseMixin
+from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from life.models import Tree, Forest, Locale
 from shipping.models import Milestone, Application, AppVersion
 import shipping.views

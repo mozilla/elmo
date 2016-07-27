@@ -11,7 +11,7 @@ import datetime
 from tempfile import gettempdir
 from nose.tools import eq_, ok_
 from elmo.test import TestCase
-from commons.tests.mixins import EmbedsTestCaseMixin
+from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from django.core.urlresolvers import reverse
 from django.test import override_settings
 from django.test.client import Client
