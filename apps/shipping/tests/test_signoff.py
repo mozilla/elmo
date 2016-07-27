@@ -29,6 +29,8 @@ from life.models import (
     Forest
 )
 from shipping.views.signoff import SignoffView
+import shipping.views.signoff
+import shipping.views.status
 
 
 class SignOffTest(TestCase, EmbedsTestCaseMixin):
@@ -43,7 +45,7 @@ class SignOffTest(TestCase, EmbedsTestCaseMixin):
 
     def test_l10n_changesets(self):
         """Test that l10n-changesets is OK"""
-        url = reverse('shipping.views.status.l10n_changesets')
+        url = reverse('shipping-l10n_changesets')
         url += '?av=fx1.0'
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -54,7 +56,7 @@ de l10n de 0002
 
     def test_shipped_locales(self):
         """Test that shipped-locales is OK"""
-        url = reverse('shipping.views.status.shipped_locales')
+        url = reverse('shipping-shipped_locales')
         url += '?av=fx1.0'
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -66,7 +68,7 @@ en-US
 
     def test_status_json(self):
         """Test that the status json for the dashboard is OK"""
-        url = reverse('shipping.views.status.status_json')
+        url = reverse('shipping-status_json')
         response = self.client.get(url, {'av': 'fx1.0'})
         eq_(response.status_code, 200)
         ok_('max-age=60' in response['Cache-Control'])
@@ -116,10 +118,10 @@ en-US
             Permission.objects.get(codename='can_open')
         )
         assert self.client.login(username='fxbld', password='secret')
-        ship = reverse('shipping.views.ship_mstone')
+        ship = reverse(shipping.views.ship_mstone)
         response = self.client.post(ship, {'ms': mile.code})
         eq_(response.status_code, 403)
-        _open = reverse('shipping.views.open_mstone')
+        _open = reverse(shipping.views.open_mstone)
         response = self.client.post(_open, {'ms': mile.code})
         eq_(response.status_code, 302)
         response = self.client.post(ship, {'ms': mile.code})
@@ -131,11 +133,11 @@ en-US
         response = self.client.post(ship, {'ms': mile.code})
         eq_(response.status_code, 403)
         # verify l10n-changesets and json, and shipped-locales
-        url = reverse('shipping.views.status.l10n_changesets')
+        url = reverse('shipping-l10n_changesets')
         response = self.client.get(url, {'ms': mile.code})
         eq_(response.status_code, 200)
         eq_(response.content, "da l10n da 0003\nde l10n de 0002\n")
-        url = reverse('shipping.views.milestone.json_changesets')
+        url = reverse('shipping-milestone-json_changesets')
         response = self.client.get(url, {'ms': mile.code,
                                          'platforms': 'windows, linux'})
         eq_(response.status_code, 200)
@@ -152,7 +154,7 @@ en-US
                                'platforms': ['windows', 'linux']
                             }
                            })
-        url = reverse('shipping.views.status.shipped_locales')
+        url = reverse('shipping-shipped_locales')
         response = self.client.get(url, {'ms': mile.code})
         eq_(response.status_code, 200)
         eq_(response.content, "da\nde\nen-US\n")
@@ -160,14 +162,14 @@ en-US
     def test_dashboard_static_files(self):
         """render the shipping dashboard and check that all static files are
         accessible"""
-        url = reverse('shipping.views.dashboard')
+        url = reverse(shipping.views.dashboard)
         response = self.client.get(url)
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
 
     def test_signoff_static_files(self):
         """render the signoffs page and chek that all static files work"""
-        url = reverse('shipping.views.signoff.signoff',
+        url = reverse('shipping-signoff',
                       args=['de', self.av.code])
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -176,23 +178,23 @@ en-US
     def test_redirect_signoff_locale(self):
         locale = Locale.objects.get(code='de')
 
-        url = reverse('shipping.views.signoff.signoff_locale', args=['xxx'])
+        url = reverse(shipping.views.signoff.signoff_locale, args=['xxx'])
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
-        url = reverse('shipping.views.signoff.signoff_locale',
+        url = reverse(shipping.views.signoff.signoff_locale,
                       args=[locale.code])
 
         response = self.client.get(url)
         eq_(response.status_code, 301)  # permanent
         self.assertRedirects(
             response,
-            reverse('homepage.views.locale_team', args=[locale.code]),
+            reverse('l10n-team', args=[locale.code]),
             status_code=301
         )
 
         # lastly, take a perfectly healthy signoff URL
-        url = reverse('shipping.views.signoff.signoff',
+        url = reverse('shipping-signoff',
                       args=[locale.code, self.av.code])
         eq_(self.client.get(url).status_code, 200)
 
@@ -211,7 +213,7 @@ en-US
         eq_(self.client.get(url).status_code, 404)
 
     def test_signoff_rows_invalid_next_push_date(self):
-        url = reverse('shipping.views.signoff.signoff_rows',
+        url = reverse('shipping-signoff-rows',
                       args=['de', self.av.code])
         response = self.client.get(url)
         # missing the push_date GET parameter
@@ -222,7 +224,7 @@ en-US
         eq_(response.status_code, 400)
 
     def test_signoff_rows(self):
-        url = reverse('shipping.views.signoff.signoff_rows',
+        url = reverse('shipping-signoff-rows',
                       args=['de', self.av.code])
         p1, p2, p3 = Push.objects.all().order_by('push_date')[:3]
         next_push_date = p3.push_date.isoformat()
@@ -240,7 +242,7 @@ en-US
                                        locale__code='de')
         assert accepted.status == Action.ACCEPTED
 
-        cancel_url = reverse('shipping.views.signoff.cancel_signoff',
+        cancel_url = reverse(shipping.views.signoff.cancel_signoff,
                              args=['de', appver.code])
 
         # only accepts POST
@@ -284,7 +286,7 @@ en-US
         eq_(response.status_code, 400)
 
         # pl has a pending signoff
-        cancel_url = reverse('shipping.views.signoff.cancel_signoff',
+        cancel_url = reverse(shipping.views.signoff.cancel_signoff,
                              args=['pl', appver.code])
         signoff = Signoff.objects.get(appversion=appver,
                                       locale__code='pl')
@@ -303,7 +305,7 @@ en-US
         accepted = Signoff.objects.get(appversion=appver,
                                       locale__code='de')
         assert accepted.status == Action.ACCEPTED
-        reopen_url = reverse('shipping.views.signoff.reopen_signoff',
+        reopen_url = reverse(shipping.views.signoff.reopen_signoff,
                              args=['de', appver.code])
 
         # only accepts POST

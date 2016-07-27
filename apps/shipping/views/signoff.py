@@ -29,7 +29,7 @@ from shipping.forms import SignoffsPaginationForm
 
 def signoff_locale(request, locale_code):
     get_object_or_404(Locale, code=locale_code)
-    return redirect(reverse('homepage.views.locale_team', args=[locale_code]),
+    return redirect(reverse('l10n-team', args=[locale_code]),
                     permanent=True)
 
 
@@ -388,9 +388,6 @@ class SignoffView(TemplateView):
             self._prev = push.id
 
 
-signoff = SignoffView.as_view()
-
-
 class SignoffRowsView(SignoffView):
 
     template_name = 'shipping/signoff-rows.html'
@@ -433,9 +430,6 @@ class SignoffRowsView(SignoffView):
             next_push_date=next_push_date,
             count=self.count
         )
-
-
-signoff_rows = SignoffRowsView.as_view()
 
 
 def signoff_details(request, locale_code, app_code):
@@ -525,7 +519,7 @@ def add_signoff(request, locale_code, app_code):
     """Actual worker to add a sign-off to the database.
     Requires shipping.add_signoff permission.
     """
-    _redirect = redirect('shipping.views.signoff.signoff',
+    _redirect = redirect('shipping-signoff',
                          locale_code, app_code)
     if request.user.has_perm("shipping.add_signoff"):
         # permissions are cool, let's check the data
@@ -571,7 +565,7 @@ def review_signoff(request, locale_code, app_code):
     """Actual worker to review a sign-off.
     Requires shipping.review_signoff permission.
     """
-    _redirect = redirect('shipping.views.signoff.signoff',
+    _redirect = redirect('shipping-signoff',
                          locale_code, app_code)
     if request.user.has_perm("shipping.review_signoff"):
         # permissions are cool, let's check the data
@@ -618,7 +612,7 @@ def cancel_signoff(request, locale_code, appver_code):
     """Actual worker to cancel a pending sign-off.
     Requires shipping.add_signoff permission.
     """
-    _redirect = redirect('shipping.views.signoff.signoff',
+    _redirect = redirect('shipping-signoff',
                          locale_code, appver_code)
     if not request.user.has_perm("shipping.add_signoff"):
         return _redirect
@@ -658,7 +652,7 @@ def reopen_signoff(request, locale_code, appver_code):
     """Actual worker to reopen a canceled sign-off.
     Requires shipping.add_signoff permission.
     """
-    _redirect = redirect('shipping.views.signoff.signoff',
+    _redirect = redirect('shipping-signoff',
                          locale_code, appver_code)
     if not request.user.has_perm("shipping.add_signoff"):
         return _redirect

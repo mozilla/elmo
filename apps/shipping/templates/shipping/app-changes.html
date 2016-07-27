@@ -42,7 +42,7 @@ table.standard td[rowspan] {
 <tr>
   <td class="milestone">{% if row.code %}<a href="{% if row.isAppVersion %}{% url 'shipping.views.app.changes' row.code %}{% else %}{% url 'shipping.views.milestone.about' row.code %}{% endif %}" target="_blank">{% endif %}{{row.name}}{% if row.code %}</a>{% endif %}</td>
   <td>
-    {% for loc, cls in row.changes %}<a class="{{cls}}" href="{% url 'shipping.views.signoff.signoff' loc appver.code %}">{{loc}}</a> {% endfor %}
+    {% for loc, cls in row.changes %}<a class="{{cls}}" href="{% url 'shipping-signoff' loc appver.code %}">{{loc}}</a> {% endfor %}
   </td>
   {% if row.rowspan %}
   <td rowspan="{{ row.rowspan }}" style="{% if row.rowspan_last %}vertical-align:top{% else %}vertical-align:bottom{% endif %}">

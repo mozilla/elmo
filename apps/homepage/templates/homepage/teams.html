@@ -34,7 +34,7 @@
 <a href="https://developer.mozilla.org/en/Localization_Quick_Start_Guide">start a new localization</a>.</p>
 <p>Search for name or locale code: <input type="text" id="id_locale_code"></p>
 <ul id="teams">{% for loc in locales %}
-  <li class="{{ loc.code|lower }} {{ loc.name|lower|default:"" }}"><a href="{% url 'homepage.views.locale_team' loc.code %}">
+  <li class="{{ loc.code|lower }} {{ loc.name|lower|default:"" }}"><a href="{% url 'l10n-team' loc.code %}">
   {% if loc.name %}{{loc.name}}{% else %}{{loc.code}}{% endif %}</a>
   </li>
 {% endfor %}

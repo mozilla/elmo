@@ -34,7 +34,7 @@ function updateOnTimeout() {
   random += 1;
   params['after'] = last_id;
   params['random'] = random;
-  $.get('{% url "tinder_update_tbpl" %}', params,
+  $.get('{% url "tinder-update-tbpl" %}', params,
         function(data, res) {
           if (res == 'success' && data) {
             $('#buildrows>tbody>tr[class*=pending]').remove()

@@ -281,7 +281,7 @@ class LDAPAuthTestCase(TestCase):
 
         # try it from the "outside"
         from django.core.urlresolvers import reverse
-        url = reverse('accounts.views.login')
+        url = reverse('login')
         settings_before = settings.AUTHENTICATION_BACKENDS
 
         try:

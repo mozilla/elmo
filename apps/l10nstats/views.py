@@ -26,6 +26,7 @@ from l10nstats.models import Active, Run
 from life.models import Locale, Tree
 from mbdb.models import Log, Step
 from tinder.views import generateLog, NoLogFile
+import shipping.views
 
 
 def getRunsBefore(tree, stamp, locales):
@@ -52,7 +53,7 @@ def index(request):
     """redirect to the new improved dashboard which had all the features of the
     l10nstats dashboard.
     """
-    url = reverse('shipping.views.dashboard')
+    url = reverse(shipping.views.dashboard)
     if request.META.get('QUERY_STRING'):
         url += '?' + request.META.get('QUERY_STRING')
     return HttpResponsePermanentRedirect(url)

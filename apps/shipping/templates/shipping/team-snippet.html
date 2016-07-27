@@ -38,17 +38,17 @@
           </td>
           <td class="treestatus {{ runcycle }}">
               {% if run.errors %}
-                  <a href="{% url 'l10nstats.views.compare' %}?run={{ run.id }}" class="error">
+                  <a href="{% url 'compare-locales' %}?run={{ run.id }}" class="error">
                       {{ run.errors }} errors
                   </a>
               {% endif %}
               {% if run.allmissing %}
-                  <a href="{% url 'l10nstats.views.compare' %}?run={{ run.id }}" class="error">
+                  <a href="{% url 'compare-locales' %}?run={{ run.id }}" class="error">
                       {{ run.allmissing }} missing
                   </a>
               {% endif %}
               {% if not run.errors and not run.allmissing %}
-              <a href="{% url 'l10nstats.views.compare' %}?run={{ run.id }}" class="translated">Translated</a>
+              <a href="{% url 'compare-locales' %}?run={{ run.id }}" class="translated">Translated</a>
               {% endif %}
               {# <small>{{ run.completion }} % changed</small>#}
               <table class="stats"><tbody><tr>
@@ -59,7 +59,7 @@
           </td>
           <td class="treeprogress {{ runcycle }}">
             {% if run.prog_pos %}
-            <a href="{% url 'l10nstats.views.history_plot' %}?tree={{run.tree.code}}&amp;locale={{run.locale.code}}&amp;starttime={{ context.progress_start|date:"Y-m-d" }}">
+            <a href="{% url 'locale-tree-history' %}?tree={{run.tree.code}}&amp;locale={{run.locale.code}}&amp;starttime={{ context.progress_start|date:"Y-m-d" }}">
               <div class="treeprogress-graph" style="background-position:{{run.prog_pos.x}}px {{run.prog_pos.y}}px;"></div>
             </a>
             {% endif %}
@@ -76,23 +76,23 @@
           <td class="signoffs actions {{ runcycle }}">
         <!-- closed -->
         {% if not run.appversion.accepts_signoffs %}
-            <a href="{% url 'shipping.views.signoff.signoff' run.locale.code run.appversion.code %}"
+            <a href="{% url 'shipping-signoff' run.locale.code run.appversion.code %}"
                class="closed-sign-offs">Not open</a>
         <!-- old -->
         {% elif not run.is_active %}
-            <a href="{% url 'shipping.views.signoff.signoff' run.locale.code run.appversion.code %}"
+            <a href="{% url 'shipping-signoff' run.locale.code run.appversion.code %}"
                class="button button-white no-sign-offs">
                    <span class="oi status-fallback" data-glyph="warning"></span>Needs update
             </a>
         <!-- No status -->
         {% elif not run.actions and not run.suggested_shortrev %}
-            <a href="{% url 'shipping.views.signoff.signoff' run.locale.code run.appversion.code %}"
+            <a href="{% url 'shipping-signoff' run.locale.code run.appversion.code %}"
                class="button button-white no-sign-offs">
                    {% if run.suggested_shortrev %}Sign off{% else %}Up to date{% endif %}
             </a>
         {% else %}
             {% for action in run.actions %}
-              <a class="button button-white {{ action.flag_name }}" href="{% url 'shipping.views.signoff.signoff' run.locale.code run.appversion.code %}#{{ action.rev }}">
+              <a class="button button-white {{ action.flag_name }}" href="{% url 'shipping-signoff' run.locale.code run.appversion.code %}#{{ action.rev }}">
                   {% if action.flag_name == "pending" %}
                   <span class="oi" data-glyph="magnifying-glass"></span>In Review
                   {% else %} {# rejected #}
@@ -102,7 +102,7 @@
             {% endfor %}
             <!-- Suggested -->
             {% if run.suggested_shortrev %}
-                <a class="button button-white" href="{% url 'shipping.views.signoff.signoff' run.locale.code run.appversion.code %}#{{ run.suggested_shortrev }}">
+                <a class="button button-white" href="{% url 'shipping-signoff' run.locale.code run.appversion.code %}#{{ run.suggested_shortrev }}">
                     <span class="oi suggest-{{ run.suggest_class }}" data-glyph="{{ run.suggest_glyph }}"></span>
                     Sign off?
                 </a>

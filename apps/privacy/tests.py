@@ -16,7 +16,7 @@ from commons.tests.mixins import EmbedsTestCaseMixin
 class PrivacyTestCase(TestCase, EmbedsTestCaseMixin):
 
     def test_render_show_policy(self):
-        url = reverse('privacy.views.show_policy')
+        url = reverse('privacy:show')
         response = self.client.get(url)
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
@@ -41,12 +41,12 @@ class PrivacyTestCase(TestCase, EmbedsTestCaseMixin):
         self.assert_all_embeds(response.content)
 
     def test_render_policy_versions(self):
-        url = reverse('privacy.views.versions')
+        url = reverse('privacy:versions')
         response = self.client.get(url)
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
 
-        add_url = reverse('privacy.views.add_policy')
+        add_url = reverse('privacy:add')
         data = {'content': "Bla bla", 'comment': "First"}
         response = self.client.post(add_url, data)
         eq_(response.status_code, 403)
@@ -81,12 +81,12 @@ class PrivacyTestCase(TestCase, EmbedsTestCaseMixin):
 
         policy, = Policy.objects.all()
         ok_(not policy.active)
-        policy_url = reverse('privacy.views.show_policy',
+        policy_url = reverse('privacy:show',
                              args=[policy.pk])
         ok_(policy_url in response.content)
 
         # now activate it
-        activate_url = reverse('privacy.views.activate_policy')
+        activate_url = reverse('privacy:activate')
         response = self.client.get(activate_url)
         # because you're not allowed yet
         eq_(response.status_code, 302)
@@ -112,7 +112,7 @@ class PrivacyTestCase(TestCase, EmbedsTestCaseMixin):
 
         # lastly post a comment to this policy
         data = {'policy': 'xxx', 'comment': 'Cool!'}
-        comment_url = reverse('privacy.views.add_comment')
+        comment_url = reverse('privacy:comment')
         response = self.client.post(comment_url, data)
         eq_(response.status_code, 404)
         data['policy'] = 123

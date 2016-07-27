@@ -24,7 +24,7 @@ from nose.tools import eq_, ok_
 class AccountsTestCase(TestCase):
 
     def test_login_long_username(self):
-        url = reverse('accounts.views.login')
+        url = reverse('login')
         data = dict(
           username='some_with_a_really_long@emailaddress.com',
           password='secret'
@@ -42,7 +42,7 @@ class AccountsTestCase(TestCase):
 
         response = self.client.post(url, data)
         ok_(response.status_code, 302)
-        url = reverse('accounts.views.user_json')
+        url = reverse('user-json')
         response = self.client.get(url)
         ok_(response.status_code, 200)
         eq_(response['Content-Type'], 'application/json')
@@ -62,7 +62,7 @@ class AccountsTestCase(TestCase):
                     ok_(int(maxlength) > 30)
 
     def test_user_json(self):
-        url = reverse('accounts.views.user_json')
+        url = reverse('user-json')
         response = self.client.get(url)
         eq_(response.status_code, 200)
         data = json.loads(response.content)
@@ -104,7 +104,7 @@ class AccountsTestCase(TestCase):
         eq_(data['user_name'], "Peter")
 
     def test_logout(self):
-        url = reverse('accounts.views.logout')
+        url = reverse('logout')
         user = User.objects.create_user(
           'something_short',
           'an.email.that.is@very.looong.com',
@@ -119,12 +119,12 @@ class AccountsTestCase(TestCase):
         path = urlparse(response['Location']).path
         eq_(path, '/')
 
-        response = self.client.get(reverse('accounts.views.user_json'))
+        response = self.client.get(reverse('user-json'))
         data = json.loads(response.content)
         ok_('user_name' not in data)
 
     def test_logout_with_next_url(self):
-        url = reverse('accounts.views.logout')
+        url = reverse('logout')
         user = User.objects.create_user(
           'something_short',
           'an.email.that.is@very.looong.com',
@@ -142,7 +142,7 @@ class AccountsTestCase(TestCase):
         eq_(path, '/foo/bar')
 
     def test_ajax_login(self):
-        url = reverse('accounts.views.login')
+        url = reverse('login')
 
         user = User.objects.create_user(
           'something_short',
@@ -201,7 +201,7 @@ class AccountsTestCase(TestCase):
         # funfactory initiates an important monkeypatch which we need
         ok_('funfactory' in settings.INSTALLED_APPS)
 
-        login_url = reverse('accounts.views.user_json')
+        login_url = reverse('user-json')
 
         cookies_before = self.client.cookies
         assert not self.client.cookies
@@ -217,7 +217,7 @@ class AccountsTestCase(TestCase):
         admin.save()
 
         # any page with a POST form will do
-        url = reverse('privacy.views.add_policy')
+        url = reverse('privacy:add')
         response = self.client.get(url)
         ok_('href="/#login"' in response.content)
         assert self.client.login(username='admin', password='secret')

@@ -8,12 +8,13 @@ from elmo.test import TestCase
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 from shipping.models import Milestone, Application, AppVersion
+import shipping.views.release
 
 
 class ShippingReleaseTestCase(TestCase):
 
     def test_create_milestones(self):
-        url = reverse('shipping.views.release.create_milestones')
+        url = reverse(shipping.views.release.create_milestones)
         eq_(self.client.get(url).status_code, 405)
 
         # not logged in
@@ -77,7 +78,7 @@ class ShippingReleaseTestCase(TestCase):
         """proves that we solved
         https://bugzilla.mozilla.org/show_bug.cgi?id=798529
         """
-        url = reverse('shipping.views.release.create_milestones')
+        url = reverse(shipping.views.release.create_milestones)
 
         admin = User.objects.create_user(
             'admin',

@@ -12,6 +12,7 @@ from django.utils.html import conditional_escape
 from django.core.urlresolvers import reverse
 
 from mbdb.models import Change, Build
+import tinder.views
 
 register = template.Library()
 
@@ -28,20 +29,20 @@ def showbuild(build_or_step, autoescape=None):
         # blame column
         c = build_or_step
         fmt = ('<a href="' +
-               reverse('tinder.views.builds_for_change') +
+               reverse(tinder.views.builds_for_change) +
                '?change=%d" title="%s">%s</a>')
         return mark_safe(fmt % (c.number, c.when.isoformat(), esc(c.who)))
     if isinstance(build_or_step, Build):
         fmt = '<a href="%s" title="%s">Build %d</a><br/>%s %s'
         build = build_or_step
-        b_url = reverse('tinder.views.showbuild',
+        b_url = reverse(tinder.views.showbuild,
                         args=[build.builder.name, build.buildnumber])
         rv = fmt % (b_url, build.starttime.isoformat(), build.buildnumber,
                     build.getProperty('tree'), build.getProperty('locale'))
         rv += '<br/>%s' % build.slave.name
         if build.sourcestamp.changes.count():
             fmt = ('<a href="' +
-                   reverse('tinder.views.builds_for_change') +
+                   reverse(tinder.views.builds_for_change) +
                    '?change=%d">%d</a>')
             links = map(lambda c: fmt % (c.number, c.number),
                         build.sourcestamp.changes.order_by('pk'))

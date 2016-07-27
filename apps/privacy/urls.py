@@ -6,12 +6,13 @@
 '''
 from __future__ import absolute_import
 
-from django.conf.urls import patterns
+from django.conf.urls import url
+from . import views
 
-urlpatterns = patterns('privacy.views',
-                       (r'^(?P<id>\d+)?$', 'show_policy'),
-                       (r'^versions$', 'versions'),
-                       (r'^add$', 'add_policy'),
-                       (r'^activate$', 'activate_policy'),
-                       (r'^comment$', 'add_comment'),
-                       )
+urlpatterns = [
+    url(r'^(?P<id>\d+)?$', views.show_policy, name='show'),
+    url(r'^versions$', views.versions, name='versions'),
+    url(r'^add$', views.add_policy, name='add'),
+    url(r'^activate$', views.activate_policy, name='activate'),
+    url(r'^comment$', views.add_comment, name='comment'),
+]

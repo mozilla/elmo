@@ -635,7 +635,7 @@ class BuildsForChangeFeed(Feed):
         return ", ".join(title)
 
     def link(self, change):
-        lnk = (reverse('tinder.views.builds_for_change') +
+        lnk = (reverse(builds_for_change) +
                '?change=%d' % change.pk)
         lnk = self.request.build_absolute_uri(lnk)
         return lnk
@@ -649,7 +649,7 @@ class BuildsForChangeFeed(Feed):
         return builds.order_by('starttime')
 
     def item_link(self, build):
-        lnk = reverse('tinder_show_build',
+        lnk = reverse(showbuild,
                       args=(build.builder.name, build.buildnumber))
         lnk = self.request.build_absolute_uri(lnk)
         return lnk

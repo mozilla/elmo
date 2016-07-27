@@ -6,11 +6,12 @@
 '''
 from __future__ import absolute_import
 
-from django.conf.urls import patterns
+from django.conf.urls import url
+from . import views
 
-urlpatterns = patterns('l10nstats.views',
-    (r'^$', 'index'),
-    (r'^history$', 'history_plot'),
-    (r'^compare$', 'compare', {}, 'compare_locales'),
-    (r'^tree-status/([^/]+)$', 'tree_progress'),
-)
+urlpatterns = [
+    url(r'^$', views.index),
+    url(r'^history$', views.history_plot, name='locale-tree-history'),
+    url(r'^compare$', views.compare, name='compare-locales'),
+    url(r'^tree-status/([^/]+)$', views.tree_progress, name='tree-history'),
+]

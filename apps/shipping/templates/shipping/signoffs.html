@@ -24,13 +24,13 @@
 <script>
 var diffData = {
   locale: "{{lang.code}}",
-  url: "{% url 'pushes.views.diff' %}"
+  url: "{% url 'pushes:diff' %}"
 };
 var permissions = {
   canAddSignoff: {% if appver.accepts_signoffs %} {{ perms.shipping.add_signoff|yesno:"true,false" }}{% else %}false{% endif %},
   canReviewSignoff: {{ perms.shipping.review_signoff|yesno:"true,false" }}
 };
-var signoffDetailsURL = "{% url 'shipping.views.signoff.signoff_details' language.code appver.code %}";
+var signoffDetailsURL = "{% url 'shipping-signoff_details' language.code appver.code %}";
 var firstSignoff = {{ first|yesno:"true,false" }};
 {% if next_push_date %}
 var next_push_date = '{{ next_push_date }}';
@@ -45,7 +45,7 @@ var next_push_date = '{{ next_push_date }}';
 {% block content %}
 <ul>
   <li><a href="{% url 'shipping.views.dashboard' %}?av={{appver.code}}">{{appver}}</a></li>
-  <li><a href="{% url 'homepage.views.locale_team' team_locale.code %}">{{team_locale}}</a></li>
+  <li><a href="{% url 'l10n-team' team_locale.code %}">{{team_locale}}</a></li>
 </ul>
 <h1>Sign-offs for {{appver}} in {{language}}</h1>
 <p>{% if not appver.accepts_signoffs %}{{appver}} is not open for new sign-offs. It's either too early or too late

@@ -95,8 +95,6 @@ class Changesets(SignoffDataView):
         return ['%s %s\n' % (l, revmap[tips[l]][:12])
                 for l in sorted(tips.keys())]
 
-l10n_changesets = Changesets.as_view()
-
 
 @class_decorator(cache_control(max_age=60))
 class ShippedLocales(SignoffDataView):
@@ -114,9 +112,6 @@ class ShippedLocales(SignoffDataView):
             return loc + '\n'
 
         return map(withPlatforms, sorted(locales))
-
-
-shipped_locales = ShippedLocales.as_view()
 
 
 @class_decorator(cache_control(max_age=60))
@@ -407,6 +402,3 @@ class StatusJSON(SignoffDataView):
         data = self.EXHIBIT_SCHEMA.copy()
         data['items'] = items
         return json.dumps(data, indent=2)
-
-
-status_json = StatusJSON.as_view()

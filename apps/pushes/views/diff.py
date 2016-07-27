@@ -309,6 +309,3 @@ class DiffView(View):
                               'newval': newhtml,
                               'entity': item_or_pair[0]})
         return lines
-
-
-diff = DiffView.as_view()
