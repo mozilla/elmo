@@ -42,7 +42,10 @@ def update_site(verbose):
     if verbose and pydel:
         sys.stdout.write("rm %s\n" % ' '.join(pydel))
     for f in pydel:
-        os.remove(os.path.join(basedir, f))
+        try:
+            os.remove(os.path.join(basedir, f))
+        except OSError:
+            pass  # if the file doesn't exist, that's OK
     if verbose:
         sys.stdout.write("git merge --ff-only\n")
     subprocess.check_call(
