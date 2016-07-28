@@ -7,39 +7,8 @@ import os
 import sys
 import subprocess
 
-# Constants
 
-GIT_PULL = "git pull --ff-only"
-GIT_SUBMODULE = "git submodule update --init --recursive"
-
-# Phases
-class BasePhase(object):
-    commandlist = []
-    
-    def __init__(self, verbose=False):
-        self.verbose = verbose
-        self.basedir = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..')
-        )
-
-
-    def execute(self):
-        for cmd in self.commandlist:
-            if self.verbose:
-                sys.stdout.write("%s\n" % ' '.join(cmd))
-            subprocess.check_call(cmd, shell=True, cwd=self.basedir)
-
-
-class SourcePhase(BasePhase):
-
-    def __init__(self, **kwargs):
-        super(SourcePhase, self).__init__(**kwargs)
-        self.commandlist += [
-            [GIT_PULL],
-            [GIT_SUBMODULE]
-        ]
-
-class InstallPhase(BasePhase):
+class InstallPhase(object):
     PIP_INSTALL_VENV = (
         "pip install "
         "-r requirements/env.txt"
@@ -49,10 +18,12 @@ class InstallPhase(BasePhase):
     GIT_REVISION = "git rev-parse HEAD > collected/static/revision"
     DJANGOCOMPRESSOR_COMPRESS_EXEC = "./manage.py compress -f"
     REFRESH_FEEDS_EXEC = "./manage.py refresh_feeds"
-    def __init__(self, **kwargs):
-        super(InstallPhase, self).__init__(**kwargs)
-
-        self.commandlist += [
+    def __init__(self, verbose=False):
+        self.verbose = verbose
+        self.basedir = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..')
+        )
+        self.commandlist = [
             [self.PIP_INSTALL_VENV],
             [self.MIGRATE_EXEC],
             [self.STATICFILES_COLLECT_EXEC],
@@ -60,3 +31,9 @@ class InstallPhase(BasePhase):
             [self.GIT_REVISION],
             [self.REFRESH_FEEDS_EXEC],
         ]
+
+    def execute(self):
+        for cmd in self.commandlist:
+            if self.verbose:
+                sys.stdout.write("%s\n" % ' '.join(cmd))
+            subprocess.check_call(cmd, shell=True, cwd=self.basedir)

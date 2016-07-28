@@ -14,21 +14,45 @@ Options:
 """
 
 import os
+import subprocess
 import sys
 from textwrap import dedent
 from optparse import  OptionParser
-import update_commands
 
 
 def update_site(verbose):
     """Run through commands to update this site."""
-    # do source first
-    cmds = update_commands.SourcePhase(
-        verbose=verbose
+    basedir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..')
     )
-    cmds.execute()
+    # do source first
+    # fetch first,
+    # check for deleted python files,
+    # delete their pyc
+    # then merge.
+    # Thus, we'll remove left-over .pyc and remove module dirs
+    if verbose:
+        sys.stdout.write("git fetch\n")
+    subprocess.check_call(['git', 'fetch'], cwd=basedir)
+    logoutput = subprocess.check_output(
+        ['git', 'log', '--name-only', '--diff-filter=D', 'HEAD..FETCH_HEAD'],
+        cwd=basedir)
+    deleted = logoutput.split()
+    pydel = [f + 'c' for f in deleted if f.endswith('.py')]
+    if verbose and pydel:
+        sys.stdout.write("rm %s\n" % ' '.join(pydel))
+    for f in pydel:
+        os.remove(os.path.join(basedir, f))
+    if verbose:
+        sys.stdout.write("git merge --ff-only\n")
+    subprocess.check_call(
+        ['git', 'merge', '--ff-only', 'FETCH_HEAD'], cwd=basedir)
+    if verbose:
+        sys.stdout.write("git submodule update --init --recursive\n")
+    subprocess.check_call(
+        ['git', 'submodule', 'update', '--init', '--recursive'], cwd=basedir)
     # do install, update the commands module first
-    reload(update_commands)
+    import update_commands
     cmds = update_commands.InstallPhase(
         verbose=verbose
     )
