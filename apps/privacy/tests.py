@@ -10,7 +10,7 @@ from django.contrib.auth.models import User, Permission
 from django.contrib.admin.models import LogEntry, CHANGE
 from django.conf import settings
 from .models import Policy, Comment
-from commons.tests.mixins import EmbedsTestCaseMixin
+from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 
 
 class PrivacyTestCase(TestCase, EmbedsTestCaseMixin):

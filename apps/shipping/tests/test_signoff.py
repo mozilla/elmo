@@ -9,7 +9,7 @@ from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.contrib.auth.models import User, Permission
 import json
-from commons.tests.mixins import EmbedsTestCaseMixin
+from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from shipping.models import (
     Milestone,
     AppVersion,

@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""tests for templatetags in commons"""
+"""tests for bleach filter"""
 from __future__ import absolute_import
 
 from django.template import Template
@@ -10,12 +10,12 @@ from django.template import Context
 from elmo.test import TestCase
 from nose.tools import eq_, ok_
 
-class TemplatetagsTestCase(TestCase):
+class BleachFilterTestCase(TestCase):
 
     def test_bleach_safe(self):
 
         template_as_string = """
-        {% load commons_filters %}
+        {% load bleach_filters %}
         {{ msg|bleach_safe }}
         """
         template = Template(template_as_string)

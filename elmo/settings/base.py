@@ -103,7 +103,6 @@ INSTALLED_APPS = (
     'elmo',
 
     # Local apps
-    'commons',
     'raven.contrib.django.raven_compat',
 
     # Third-party apps
@@ -125,7 +124,6 @@ INSTALLED_APPS = (
     'accounts',
     'homepage',
     'privacy',
-    'dashtags',
     'tinder',
     'shipping',
     'bugsy',

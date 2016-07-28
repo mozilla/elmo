@@ -35,7 +35,7 @@ def showbuild(build_or_step, autoescape=None):
     if isinstance(build_or_step, Build):
         fmt = '<a href="%s" title="%s">Build %d</a><br/>%s %s'
         build = build_or_step
-        b_url = reverse(tinder.views.showbuild,
+        b_url = reverse('tinder-showbuild',
                         args=[build.builder.name, build.buildnumber])
         rv = fmt % (b_url, build.starttime.isoformat(), build.buildnumber,
                     build.getProperty('tree'), build.getProperty('locale'))

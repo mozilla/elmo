@@ -14,7 +14,7 @@ from django.test import override_settings
 from django.test.client import RequestFactory
 from nose.tools import eq_, ok_
 from life.models import Locale, TeamLocaleThrough
-from commons.tests.mixins import EmbedsTestCaseMixin
+from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 import urlparse
 
 
