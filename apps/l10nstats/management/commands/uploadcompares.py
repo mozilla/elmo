@@ -6,7 +6,6 @@
 from __future__ import absolute_import, division
 
 from datetime import datetime
-from optparse import make_option
 import itertools
 
 from django.conf import settings
@@ -23,15 +22,15 @@ from .. import LoggingCommand
 
 
 class Command(LoggingCommand):
-    option_list = BaseCommand.option_list + (
-        make_option('--chunksize', default=50, type='int',
-                    help='Handle n runs at a time'),
-        make_option('--limit', default=None, type='int',
-                    help='Limit the number of chunks'),
-        make_option('--backwards', action='store_true',
-                    help='Go back in time'),
-        )
     help = 'Save compare-locales data from disk into ElasticSearch'
+
+    def add_arguments(self, parser):
+        parser.add_argument('--chunksize', default=50, type=int,
+                            help='Handle n runs at a time')
+        parser.add_argument('--limit', default=None, type=int,
+                            help='Limit the number of chunks')
+        parser.add_argument('--backwards', action='store_true',
+                            help='Go back in time')
 
     def handleWithLogging(self, *args, **options):
         if not (hasattr(settings, 'ES_COMPARE_INDEX') and

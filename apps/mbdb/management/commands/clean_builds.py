@@ -6,9 +6,6 @@
 '''
 from __future__ import absolute_import
 
-from collections import defaultdict
-from optparse import make_option
-
 from django.core.management.base import BaseCommand, CommandError
 
 from mbdb.models import (Builder, BuildRequest, SourceStamp, NumberedChange,
@@ -23,13 +20,12 @@ def freeze(cls):
 
 
 class Command(BaseCommand):
-    option_list = BaseCommand.option_list
 
     help = 'Clean up build data with no impact on elmo'
 
     def handle(self, *args, **options):
         # We might have race conditions with data that hasn't yet generated
-        # builds that matter. Reduce the risk by only running on 
+        # builds that matter. Reduce the risk by only running on
         # idle builders, and limiting all queries to the data we have at
         # that point.
         if Builder.objects.exclude(bigState='idle').count():
@@ -40,7 +36,7 @@ class Command(BaseCommand):
         changes = freeze(Change)
         tags = freeze(Tag)
         files = freeze(File)
-        
+
         # find build requests without builds
         q = buildrequests.filter(builds__isnull=True)
         cnt = q.count()
@@ -85,4 +81,3 @@ class Command(BaseCommand):
             q.delete()
         else:
             self.stdout.write('No orphaned files found\n')
-

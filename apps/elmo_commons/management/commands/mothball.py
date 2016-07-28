@@ -7,7 +7,6 @@
 from __future__ import absolute_import, division
 
 import cmd
-from optparse import make_option
 import os
 import os.path
 

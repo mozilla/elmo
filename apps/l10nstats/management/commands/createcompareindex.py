@@ -5,10 +5,8 @@
 'Save buildbot logs from disk into ElasticSearch'
 from __future__ import absolute_import
 
-from optparse import make_option
-
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 import elasticsearch
 
 from .. import LoggingCommand
@@ -24,15 +22,15 @@ properties = {
 
 
 class Command(LoggingCommand):
-    option_list = BaseCommand.option_list + (
-        make_option('--delete', action="store_true",
-                    help="Delete an existing index (DATALOSS!)"),
-        make_option('--shards',
-                    help="Number of shards to create"),
-        make_option('--replicas',
-                    help="Number of replicas to create"),
-        )
     help = 'Create an ElasticSearch index for compare-locales data'
+
+    def add_arguments(self, parser):
+        parser.add_argument('--delete', action="store_true",
+                            help="Delete an existing index (DATALOSS!)")
+        parser.add_argument('--shards',
+                            help="Number of shards to create")
+        parser.add_argument('--replicas',
+                            help="Number of replicas to create")
 
     def handleWithLogging(self, *args, **options):
         if not (hasattr(settings, 'ES_COMPARE_INDEX') and

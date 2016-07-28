@@ -7,20 +7,19 @@ that miss changeset mappings.
 '''
 from __future__ import absolute_import
 
-from optparse import make_option
-
 from ..base import RepositoryCommand
 
 from life.models import Changeset
 
 
 class Command(RepositoryCommand):
-    option_list = RepositoryCommand.option_list + (
-        make_option('--chunk-size', type='int', default=50,
-                    help='Specify the chunk size to use for '\
-                    'changeset queries [default=50]'),
-        )
     help = 'Find repositories with missing changeset entries in the db.'
+
+    def add_arguments(self, parser):
+        super(Command, self).add_arguments(parser)
+        parser.add_argument('--chunk-size', type=int, default=50,
+                            help='Specify the chunk size to use for '\
+                            'changeset queries [default=50]')
 
     def handleOptions(self, **kwargs):
         self.chunksize = kwargs.get('chunk_size', self.chunksize)

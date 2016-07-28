@@ -19,13 +19,17 @@ from life.models import Repository
 class RepositoryCommand(BaseCommand):
     _needsNewline = False
 
+    def add_arguments(self, parser):
+        parser.add_argument('repos', nargs='*',
+                            help='Only repositories starting with this')
+
     def handle(self, *args, **options):
         self.verbosity = options.pop('verbosity', 1)
         self.handleOptions(**options)
         from mercurial.ui import ui as _ui
         from mercurial.hg import repository
 
-        repos = self.repos_for_names(*args)
+        repos = self.repos_for_names(*options['repos'])
         ui = _ui()
         for dbrepo in repos:
             repopath = str(resolve(dbrepo.name))

@@ -8,7 +8,6 @@ from __future__ import absolute_import, division
 
 from collections import defaultdict
 from datetime import timedelta
-from optparse import make_option
 import os.path
 
 from django.core.management.base import BaseCommand
@@ -23,10 +22,6 @@ import PIL.ImageDraw
 
 
 class Command(BaseCommand):
-    option_list = BaseCommand.option_list + (
-        make_option('-q', '--quiet', dest='quiet', action='store_true',
-                    help='Run quietly'),
-        )
     help = 'Create background images for progress previews'
     width = settings.PROGRESS_IMG_SIZE['x']
     height = settings.PROGRESS_IMG_SIZE['y']
