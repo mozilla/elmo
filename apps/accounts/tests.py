@@ -3,14 +3,15 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
 
+import json
 import re
 from urlparse import urlparse
 from elmo.test import TestCase
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
-import json
 from django.core.cache import cache
+from django.template import engines
 from django.test import override_settings
 from nose.tools import eq_, ok_
 
@@ -187,11 +188,17 @@ class AccountsTestCase(TestCase):
 
     def test_django_session_csrf(self):
         """test that we're correctly using session CSRF tokens
-        (as opposed to cookies)"""
-        ok_('session_csrf.context_processor'
-            in settings.TEMPLATE_CONTEXT_PROCESSORS)
-        ok_('django.core.context_processors.csrf'
-            not in settings.TEMPLATE_CONTEXT_PROCESSORS)
+        (as opposed to cookies) for all template engines"""
+        import session_csrf
+        import django.template.context_processors
+        for engine in engines.all():
+            # ensure that session_csrf comes after django.template...
+            processors = engine.engine.template_context_processors
+            eq_(processors.count(django.template.context_processors.csrf), 1)
+            eq_(processors.count(session_csrf.context_processor), 1)
+            ok_(processors.index(django.template.context_processors.csrf) <
+                processors.index(session_csrf.context_processor),
+                msg='sessions_csrf needs to be after django default')
 
         ok_('session_csrf.CsrfMiddleware' in settings.MIDDLEWARE_CLASSES)
         ok_('django.middleware.csrf.CsrfViewMiddleware'

@@ -45,8 +45,7 @@ ADMINS = (
 MANAGERS = ADMINS
 
 # these are appropriate settings only for local development
-DEBUG = TEMPLATE_DEBUG = True
-#TEMPLATE_STRING_IF_INVALID = '!{ %s }'
+DEBUG = TEMPLATES[0]['OPTIONS']['debug'] = True
 COMPRESS_ENABLED = False
 SESSION_COOKIE_SECURE = False
 
