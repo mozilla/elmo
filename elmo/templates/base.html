@@ -44,7 +44,7 @@
                     <nav id="nav-main" role="menubar">
                         <span class="toggle" role="button" aria-controls="nav-main-menu" tabindex="0">{{ _('Menu') }}</span>
                         <ul role="menu" id="nav-main-menu">
-                            <li role="menuitem"><a href="{% url 'homepage.views.teams' %}">{{_('Teams')}}</a></li>
+                            <li role="menuitem"><a href="{% url 'teams' %}">{{_('Teams')}}</a></li>
                             <li role="menuitem"><a href="//wiki.mozilla.org/L10n">{{_('Docs')}}</a></li>
                             <li role="menuitem"><a href="//blog.mozilla.com/l10n">{{_('Blog')}}</a></li>
                             <li role="menuitem"><a href="//wiki.mozilla.org/L10n:Communication">{{_('Contact')}}</a></li>
@@ -55,7 +55,7 @@
                     </nav>
 
                     {% block site_header_logo %}
-                    <h2><a href="{% url 'homepage.views.index' %}"><img src="{% static "img/mozilla-l10n-logo.png" %}" alt="mozilla l10n"></a></h2>
+                    <h2><a href="{% url 'homepage' %}"><img src="{% static "img/mozilla-l10n-logo.png" %}" alt="mozilla l10n"></a></h2>
                     {% endblock %}
                 </header>
                 {% endblock %}
@@ -78,7 +78,7 @@
                   </div>
 
                   <ul class="footer-nav">
-                    <li><a href="{% url 'privacy.views.show_policy' %}">{{_('Privacy Policy')}}</a></li>
+                    <li><a href="{% url 'privacy:show' %}">{{_('Privacy Policy')}}</a></li>
                     <li><a href="http://mozilla.org/about/legal.html">{{_('Legal Notices')}}</a></li>
                   </ul>
               </div>
@@ -86,7 +86,7 @@
             {% endblock %}
         </div>
         <script>
-        var CONFIG = {USER_URL: '{% url 'accounts.views.user_json' %}',
+        var CONFIG = {USER_URL: '{% url 'user-json' %}',
                       CURRENT_URL: {% if request %}'{{ request.get_full_path }}'{% else %}window.location.href{% endif %}, {# needed because of some lack of RequestContext #}
                       LOADING_GIF_URL: '{% static "img/loading.gif" %}',
                       NEEDS_RELOAD: {% if login_form_needs_reload and request %}true{% else %} false{% endif %}

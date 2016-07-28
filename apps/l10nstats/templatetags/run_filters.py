@@ -26,7 +26,7 @@ def showrun(run):
     if not isinstance(run, Run):
         return mark_safe("&nbsp;")
     fmt = ('<a %%s href="%s?run=%%d">%%s</a>' %
-            reverse('l10nstats.views.compare'))
+            reverse('compare-locales'))
     missing = run.missing + run.missingInFiles
     data = {'missing': missing}
     for k in ('errors', 'warnings', 'total'):

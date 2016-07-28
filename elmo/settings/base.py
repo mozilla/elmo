@@ -168,9 +168,7 @@ COMPRESS_CSS_FILTERS = (
   'compressor.filters.css_default.CssAbsoluteFilter',
   'compressor.filters.cssmin.CSSMinFilter',
 )
-COMPRESS_JS_FILTERS = (
-  'lib.filters.void_js_filter.VoidJSFilter',
-)
+COMPRESS_JS_FILTERS = []  # empty, no actual compression
 STATICFILES_FINDERS = (
   'django.contrib.staticfiles.finders.FileSystemFinder',
   'django.contrib.staticfiles.finders.AppDirectoriesFinder',

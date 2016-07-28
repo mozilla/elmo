@@ -225,5 +225,3 @@ class JSONChangesets(SignoffDataView):
         ]
         content = ''.join(content)
         return content
-
-json_changesets = JSONChangesets.as_view()

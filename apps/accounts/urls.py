@@ -5,10 +5,11 @@
 'Url mappings for accounts app'
 from __future__ import absolute_import
 
-from django.conf.urls import patterns
+from django.conf.urls import url
+from . import views
 
-urlpatterns = patterns('accounts.views',
-    (r'^login', 'login'),
-    (r'^user.json$', 'user_json'),
-    (r'^logout$', 'logout'),
-)
+urlpatterns = [
+    url(r'^login', views.login, name='login'),
+    url(r'^user.json$', views.user_json, name='user-json'),
+    url(r'^logout$', views.logout, name='logout'),
+]

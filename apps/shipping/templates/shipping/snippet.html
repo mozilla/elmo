@@ -1,9 +1,0 @@
-<!-- {% comment %}
-   - This Source Code Form is subject to the terms of the Mozilla Public
-   - License, v. 2.0. If a copy of the MPL was not distributed with this
-   - file, You can obtain one at http://mozilla.org/MPL/2.0/.
-{% endcomment %} -->
-<h2>Open Milestones for sign-off</h2>
-<ul>{% for av in appvers %}
-  <li><a href="{% url 'shipping.views.dashboard' %}?av={{av.code}}">{{ av }}</a></li>
-{% endfor %}</ul>

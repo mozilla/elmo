@@ -74,7 +74,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
     @override_settings(SESSION_COOKIE_SECURE=True)
     def test_secure_session_cookies(self):
         """secure session cookies should always be 'secure' and 'httponly'"""
-        url = reverse('accounts.views.login')
+        url = reverse('login')
         # run it as a mocked AJAX request because that's how elmo does it
         response = self.client.post(url,
           {'username': 'peterbe',
@@ -109,7 +109,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         ok_(self.client.cookies['sessionid']['httponly'])
 
         # should now be logged in
-        url = reverse('accounts.views.user_json')
+        url = reverse('user-json')
         response = self.client.get(url)
         eq_(response.status_code, 200)
         # "Hi Peter" or something like that
@@ -117,7 +117,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
 
     def test_index_page(self):
         """load the current homepage index view"""
-        url = reverse('homepage.views.index')
+        url = reverse('homepage')
         response = self.client.get(url)
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
@@ -126,7 +126,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
     def test_index_page_feed_reader(self):
         # clear the cache of the empty feed we have for other tests
         cache.clear()
-        url = reverse('homepage.views.index')
+        url = reverse('homepage')
         try:
             response = self.client.get(url)
         finally:
@@ -174,20 +174,20 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
           name=None,
         )
 
-        url = reverse('homepage.views.teams')
+        url = reverse('teams')
         response = self.client.get(url)
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
         content = response.content.split('id="teams"')[1]
         content = content.split('<footer')[0]
 
-        url_fr = reverse('homepage.views.locale_team', args=['fr'])
-        url_sv = reverse('homepage.views.locale_team', args=['sv-SE'])
-        url_br = reverse('homepage.views.locale_team', args=['br-BR'])
+        url_fr = reverse('l10n-team', args=['fr'])
+        url_sv = reverse('l10n-team', args=['sv-SE'])
+        url_br = reverse('l10n-team', args=['br-BR'])
         ok_(url_fr in content)
         ok_(url_sv in content)
         ok_(url_br in content)
-        url_en = reverse('homepage.views.locale_team', args=['en-US'])
+        url_en = reverse('l10n-team', args=['en-US'])
         ok_(url_en not in content)
         ok_(-1 < content.find('br-BR')
                < content.find('French')
@@ -210,14 +210,14 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
           locale=sr_latn
         )
 
-        url = reverse('homepage.views.teams')
+        url = reverse('teams')
         response = self.client.get(url)
         eq_(response.status_code, 200)
         content = response.content.split('id="teams"')[1]
         content = content.split('<footer')[0]
 
-        url_sr = reverse('homepage.views.locale_team', args=['sr'])
-        url_sr_latn = reverse('homepage.views.locale_team', args=['sr-Latn'])
+        url_sr = reverse('l10n-team', args=['sr'])
+        url_sr_latn = reverse('l10n-team', args=['sr-Latn'])
         ok_(url_sr in content)
         ok_(url_sr_latn not in content)
 
@@ -259,8 +259,8 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
           locale=sr_latn
         )
 
-        url_sr = reverse('homepage.views.locale_team', args=['sr'])
-        url_sr_latn = reverse('homepage.views.locale_team', args=['sr-Latn'])
+        url_sr = reverse('l10n-team', args=['sr'])
+        url_sr_latn = reverse('l10n-team', args=['sr-Latn'])
 
         response = self.client.get(url_sr_latn)
         self.assertRedirects(response, url_sr)
@@ -292,11 +292,11 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
           code='sv-SE',
           name='Swedish',
         )
-        url = reverse('homepage.views.locale_team', args=['xxx'])
+        url = reverse('l10n-team', args=['xxx'])
         response = self.client.get(url)
         # XXX would love for this to be a 404 instead (peterbe)
         eq_(response.status_code, 302)
-        url = reverse('homepage.views.locale_team', args=['sv-SE'])
+        url = reverse('l10n-team', args=['sv-SE'])
         response = self.client.get(url)
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
@@ -311,7 +311,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         """test if the old /pushes url redirects to /source/pushes"""
         old_response = self.client.get('/pushes/repo?path=query')
         eq_(old_response.status_code, 301)
-        target_url = reverse('pushes.views.pushlog',
+        target_url = reverse('pushes:pushlog',
                              kwargs={'repo_name': 'repo'})
         new_response = self.client.get(target_url, {'path': 'query'})
         eq_(new_response.status_code, 200)
@@ -324,7 +324,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
                     '&tree=fx_beta&repo=some_repo&url=&locale=')
         old_response = self.client.get(diff_url)
         eq_(old_response.status_code, 301)
-        target_url = reverse('pushes.views.diff')
+        target_url = reverse('pushes:diff')
         # not testing response, as we don't have a repo to back this up
         opath, oparam, oquery, ohash = \
             urlparse.urlparse(old_response['Location'])[2:]
@@ -343,7 +343,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
               name='Language-%d' % i,
               code='L%d' % i
             )
-        url = reverse('homepage.views.index')
+        url = reverse('homepage')
         response = self.client.get(url)
         assert response['ETag']
         etag_first = response['ETag']

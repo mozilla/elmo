@@ -17,6 +17,11 @@ from l10nstats.models import Run
 from commons.tests.mixins import EmbedsTestCaseMixin
 from life.models import Tree, Forest, Locale
 from shipping.models import Milestone, Application, AppVersion
+import shipping.views
+import shipping.views.app
+import shipping.views.milestone
+import shipping.views.release
+import shipping.views.status
 
 
 class ShippingTestCaseBase(TestCase, EmbedsTestCaseMixin):
@@ -58,20 +63,20 @@ class ShippingTestCase(ShippingTestCaseBase):
 
     def test_basic_render_index_page(self):
         """render the shipping index page"""
-        url = reverse('shipping.views.index')
+        url = reverse(shipping.views.index)
         response = self.client.get(url)
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
 
     def test_basic_render_app_changes(self):
         """render shipping.views.app.changes"""
-        url = reverse('shipping.views.app.changes',
+        url = reverse(shipping.views.app.changes,
                       args=['junk'])
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
         appver, __, ___ = self._create_appver_tree_milestone()
-        url = reverse('shipping.views.app.changes',
+        url = reverse(shipping.views.app.changes,
                       args=[appver.code])
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -81,7 +86,7 @@ class ShippingTestCase(ShippingTestCaseBase):
 
     def test_basic_render_confirm_drill_mstone(self):
         """render shipping.views.confirm_drill_mstone"""
-        url = reverse('shipping.views.confirm_drill_mstone')
+        url = reverse(shipping.views.confirm_drill_mstone)
         response = self.client.get(url)
         eq_(response.status_code, 404)
         appver, __, milestone = self._create_appver_tree_milestone()
@@ -114,7 +119,7 @@ class ShippingTestCase(ShippingTestCaseBase):
 
     def test_basic_render_confirm_ship_mstone(self):
         """render shipping.views.confirm_ship_mstone"""
-        url = reverse('shipping.views.confirm_ship_mstone')
+        url = reverse(shipping.views.confirm_ship_mstone)
         response = self.client.get(url)
         eq_(response.status_code, 404)
         appver, __, milestone = self._create_appver_tree_milestone()
@@ -145,7 +150,7 @@ class ShippingTestCase(ShippingTestCaseBase):
 
     def test_dashboard_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
-        url = reverse('shipping.views.dashboard')
+        url = reverse(shipping.views.dashboard)
         # Fail
         response = self.client.get(url, dict(av="junk"))
         eq_(response.status_code, 404)
@@ -159,7 +164,7 @@ class ShippingTestCase(ShippingTestCaseBase):
 
     def test_l10n_changesets_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
-        url = reverse('shipping.views.status.l10n_changesets')
+        url = reverse('shipping-l10n_changesets')
         # Fail
         response = self.client.get(url)
         # neither ms or av specified
@@ -192,7 +197,7 @@ class ShippingTestCase(ShippingTestCaseBase):
 
     def test_shipped_locales_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
-        url = reverse('shipping.views.status.shipped_locales')
+        url = reverse('shipping-shipped_locales')
         # Fail
         response = self.client.get(url)
         eq_(response.status_code, 400)
@@ -215,7 +220,7 @@ class ShippingTestCase(ShippingTestCaseBase):
 
     def test_confirm_ship_mstone_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
-        url = reverse('shipping.views.confirm_ship_mstone')
+        url = reverse(shipping.views.confirm_ship_mstone)
 
         admin = User.objects.create_user(
           username='admin',
@@ -240,7 +245,7 @@ class ShippingTestCase(ShippingTestCaseBase):
 
     def test_ship_mstone_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
-        url = reverse('shipping.views.ship_mstone')
+        url = reverse(shipping.views.ship_mstone)
         # Fail
         response = self.client.get(url, dict(ms="junk"))
         eq_(response.status_code, 405)
@@ -279,20 +284,20 @@ class ShippingTestCase(ShippingTestCaseBase):
 
     def test_milestones_static_files(self):
         """render the milestones page and check all static files"""
-        url = reverse('shipping.views.milestones')
+        url = reverse(shipping.views.milestones)
         response = self.client.get(url)
         eq_(response.status_code, 200)
         self.assert_all_embeds(response.content)
 
     def test_about_milestone_static_files(self):
         """render the about milestone page and check all static files"""
-        url = reverse('shipping.views.milestone.about',
+        url = reverse(shipping.views.milestone.about,
                       args=['junk'])
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
         __, ___, milestone = self._create_appver_tree_milestone()
-        url = reverse('shipping.views.milestone.about',
+        url = reverse(shipping.views.milestone.about,
                       args=[milestone.code])
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -302,15 +307,15 @@ class ShippingTestCase(ShippingTestCaseBase):
         """calling the dashboard with a 'ms' parameter (which is or is not a
         valid Milestone) should redirect to the about milestone page instead.
         """
-        url = reverse('shipping.views.dashboard')
+        url = reverse(shipping.views.dashboard)
         response = self.client.get(url, {'ms': 'anything'})
         eq_(response.status_code, 302)
-        url = reverse('shipping.views.milestone.about',
+        url = reverse(shipping.views.milestone.about,
                       args=['anything'])
         eq_(urlparse(response['location']).path, url)
 
     def test_status_json_basic(self):
-        url = reverse('shipping.views.status.status_json')
+        url = reverse('shipping-status_json')
         response = self.client.get(url)
         eq_(response.status_code, 200)
         struct = json.loads(response.content)
@@ -335,7 +340,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(response['Access-Control-Allow-Origin'], '*')
 
     def test_status_json_by_treeless_appversion(self):
-        url = reverse('shipping.views.status.status_json')
+        url = reverse('shipping-status_json')
         appver, tree, milestone = self._create_appver_tree_milestone()
         # get the AppVersionThrough, and set it's duration to the past
         avt = appver.trees_over_time.get(tree=tree)
@@ -350,7 +355,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(struct['items'], [])
 
     def test_status_json_multiple_locales_multiple_trees(self):
-        url = reverse('shipping.views.status.status_json')
+        url = reverse('shipping-status_json')
 
         appver, tree, milestone = self._create_appver_tree_milestone()
         locale_en, __ = Locale.objects.get_or_create(
@@ -502,7 +507,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         """the dashboard view takes request.GET parameters, massages them and
         turn them into a query string that gets passed to the JSON view later.
         """
-        url = reverse('shipping.views.dashboard')
+        url = reverse(shipping.views.dashboard)
         response = self.client.get(url, {'locale': 'xxx'})
         eq_(response.status_code, 404)
         response = self.client.get(url, {'tree': 'xxx'})
@@ -511,7 +516,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(response.status_code, 404)
 
         def get_query(content):
-            json_url = reverse('shipping.views.status.status_json')
+            json_url = reverse('shipping-status_json')
             return re.findall('href="%s\?([^"]*)"' % json_url, content)[0]
 
         response = self.client.get(url)
@@ -588,7 +593,7 @@ class ShippingTestCase(ShippingTestCaseBase):
     def test_dashboard_with_wrong_args(self):
         """dashboard() view takes arguments 'locale' and 'tree' and if these
         aren't correct that view should raise a 404"""
-        url = reverse('shipping.views.dashboard')
+        url = reverse(shipping.views.dashboard)
         response = self.client.get(url, {'locale': 'xxx'})
         eq_(response.status_code, 404)
 

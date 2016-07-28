@@ -3,12 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
 
-from django.conf.urls import patterns
+from django.conf.urls import url
+from .views import diff, pushlog
 
-urlpatterns = patterns('pushes.views',
-                       (r'^pushes/(?P<repo_name>.+)?$', 'pushlog'),
-                       (r'^diff/$', 'diff'),
-                       # external APIs below, web apps can use these
-                       (r'^api/network/$', 'api.network'),
-                       (r'^api/forks/(.+)/?$', 'api.forks'),
-)
+urlpatterns = [
+    url(r'^pushes/(?P<repo_name>.+)?$', pushlog.pushlog, name='pushlog'),
+    url(r'^diff/$', diff.DiffView.as_view(), name='diff'),
+]

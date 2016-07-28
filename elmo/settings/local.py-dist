@@ -23,6 +23,10 @@ DATABASES = {
             'charset' : 'utf8',
             'use_unicode' : True,
         },
+        'TEST': {
+            'CHARSET': "utf8",
+            'COLLATION': 'utf8_general_ci',
+        },
         'TEST_CHARSET': 'utf8',
         'TEST_COLLATION': 'utf8_general_ci',
     },

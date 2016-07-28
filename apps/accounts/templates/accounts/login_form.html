@@ -4,7 +4,7 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 
-<form {% if not form.errors %}style="display:none"{% endif %} class="site_login" method="post" action="{% url 'accounts.views.login' %}">
+<form {% if not form.errors %}style="display:none"{% endif %} class="site_login" method="post" action="{% url 'login' %}">
     <section class="login">
         <div style="display:none"><input type="hidden" name="next" value=""></div>
 
@@ -33,6 +33,6 @@
     </section>
 
     <section class="logout" style="display:none">
-        <button class="button" data-href="{% url 'accounts.views.logout' %}">Log out</button>
+        <button class="button" data-href="{% url 'logout' %}">Log out</button>
     </section>
 </form>

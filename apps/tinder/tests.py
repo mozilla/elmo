@@ -17,6 +17,7 @@ from django.test import override_settings
 from django.test.client import Client
 from mbdb.models import (Build, Change, Master, Log, Property, SourceStamp,
                          Builder, Slave)
+import tinder.views
 from tinder.views import _waterfall, LogMountKeyError
 from tinder.templatetags import build_extras
 
@@ -49,7 +50,7 @@ class WaterfallStarted(TestCase):
         self.assertEqual(build_rows[2][0]['obj'], None)
 
     def testHtml(self):
-        url = reverse('tinder.views.waterfall')
+        url = reverse(tinder.views.waterfall)
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
@@ -63,7 +64,7 @@ class WaterfallParallel(TestCase):
 
     def testHtml(self):
         '''Testing parallel builds in _waterfall'''
-        url = reverse('tinder.views.waterfall')
+        url = reverse(tinder.views.waterfall)
         response = self.client.get(url)
         eq_(response.status_code, 200)
 
@@ -301,7 +302,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
           filename='foo.log',
           step=step,
         )
-        url = reverse('tinder.views.showlog',
+        url = reverse('tinder-showlog',
                       args=[step.id, log.name])
         with open(os.path.join(self.temp_directory, log.filename), 'w') as f:
             f.write(SAMPLE_BUILD_LOG_PAYLOAD)
@@ -324,7 +325,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
           filename='foo.log',
           step=step,
         )
-        url = reverse('tinder.views.showlog',
+        url = reverse('tinder-showlog',
                       args=[step.id, log.name])
         self.assertRaises(
             LogMountKeyError,
@@ -345,7 +346,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
           isFinished=True,
           step=step,
         )
-        url = reverse('tinder.views.showlog',
+        url = reverse('tinder-showlog',
                       args=[step.id, log.name])
         response = self.client.get(url)
         content = response.content
@@ -354,7 +355,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         ok_(htmlcontent in content)
 
     def test_render_tbpl(self):
-        url = reverse('tinder.views.tbpl')
+        url = reverse(tinder.views.tbpl)
         response = self.client.get(url)
         eq_(response.status_code, 200)
         self.assert_all_embeds(response)
@@ -362,7 +363,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
     def test_render_showbuild(self):
         build, = Build.objects.all()[:1]
         builder = build.builder
-        url = reverse('tinder.views.showbuild',
+        url = reverse(tinder.views.showbuild,
                       args=[builder.name, build.buildnumber])
         response = self.client.get(url)
         eq_(response.status_code, 200)
@@ -370,7 +371,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
 
     def test_render_showbuild_bad_buildername(self):
         build, = Build.objects.all()[:1]
-        url = reverse('tinder.views.showbuild',
+        url = reverse(tinder.views.showbuild,
                       args=['junkjunk', build.buildnumber])
         response = self.client.get(url)
         eq_(response.status_code, 404)
@@ -378,13 +379,13 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
     def test_render_showbuild_bad_buildnumber(self):
         build, = Build.objects.all()[:1]
         builder = build.builder
-        url = reverse('tinder.views.showbuild',
+        url = reverse(tinder.views.showbuild,
                       args=[builder.name, 666])
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
     def test_render_builds_for_change(self):
-        url = reverse('tinder.views.builds_for_change')
+        url = reverse(tinder.views.builds_for_change)
         response = self.client.get(url)
         eq_(response.status_code, 404)
 

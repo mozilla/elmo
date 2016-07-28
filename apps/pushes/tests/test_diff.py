@@ -64,7 +64,7 @@ class DiffTestCase(RepoTestBase):
           url='http://localhost:8001/%s/' % self.repo_name
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -110,7 +110,7 @@ class DiffTestCase(RepoTestBase):
           url='http://localhost:8001/%s/' % self.repo_name
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -154,7 +154,7 @@ class DiffTestCase(RepoTestBase):
           url='http://localhost:8001/%s/' % self.repo_name
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -199,7 +199,7 @@ class DiffTestCase(RepoTestBase):
           url='http://localhost:8001/%s/' % self.repo_name
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -241,7 +241,7 @@ class DiffTestCase(RepoTestBase):
           url='http://localhost:8001/%s/' % self.repo_name
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -283,7 +283,7 @@ class DiffTestCase(RepoTestBase):
           url=repo_url
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -329,7 +329,7 @@ class DiffTestCase(RepoTestBase):
           url='http://localhost:8001/%s/' % self.repo_name
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -367,7 +367,7 @@ class DiffTestCase(RepoTestBase):
           url='http://localhost:8001/%s/' % self.repo_name
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -414,7 +414,7 @@ class DiffTestCase(RepoTestBase):
           url='http://localhost:8001/%s/' % self.repo_name
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -463,7 +463,7 @@ class DiffTestCase(RepoTestBase):
           url='http://localhost:8001/%s/' % self.repo_name
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -512,7 +512,7 @@ class DiffTestCase(RepoTestBase):
           url='http://localhost:8001/%s/' % self.repo_name
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -563,7 +563,7 @@ class DiffTestCase(RepoTestBase):
           url='http://localhost:8001/%s/' % self.repo_name
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -584,7 +584,7 @@ class DiffTestCase(RepoTestBase):
         ui = mock_ui()
         hgcommands.init(ui, self.repo)
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {})
         eq_(response.status_code, 400)
         response = self.client.get(url, {'repo': 'junk'})
@@ -647,7 +647,7 @@ class DiffTestCase(RepoTestBase):
           url='http://localhost:8001/%s/' % self.repo_name
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -686,7 +686,7 @@ class DiffTestCase(RepoTestBase):
           url='http://localhost:8001/%s/' % self.repo_name
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -733,7 +733,7 @@ class DiffTestCase(RepoTestBase):
           url='http://localhost:8001/%s/' % self.repo_name
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -811,7 +811,7 @@ class DiffTestCase(RepoTestBase):
         eq_(line['class'], 'added')
         eq_(line['entity'], 'new_in_clone')
         # integration test part, successful load and spot checks
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         # right now, we can't diff between repos, this might change!
         response = self.client.get(url, {'repo': 'clone',
                                          'from': rev_from[:12],
@@ -861,7 +861,7 @@ class DiffTestCase(RepoTestBase):
         eq_(badrev.exception.args,
             ('from and to parameter are not connected',))
         # integration test part, failure to load
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         # right now, we can't diff between repos, this might change!
         response = self.client.get(url, {'repo': 'one',
                                          'from': rev_from[:12],
@@ -902,7 +902,7 @@ class DiffTestCase(RepoTestBase):
           url=repo_url
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -946,7 +946,7 @@ class DiffTestCase(RepoTestBase):
           url=repo_url
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -990,7 +990,7 @@ class DiffTestCase(RepoTestBase):
           url=repo_url
         )
 
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
         response = self.client.get(url, {
           'repo': self.repo_name,
           'from': rev0,
@@ -1037,7 +1037,7 @@ class DiffTestCase(RepoTestBase):
           name=self.repo_name,
           url=repo_url
         )
-        url = reverse('pushes.views.diff')
+        url = reverse('pushes:diff')
 
         response = self.client.get(url, {
           'repo': self.repo_name,

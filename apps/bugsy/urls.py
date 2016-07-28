@@ -6,12 +6,13 @@
 '''
 from __future__ import absolute_import
 
-from django.conf.urls import patterns
+from django.conf.urls import url
+from . import views
 
-urlpatterns = patterns('bugsy.views',
-    (r'^$', 'index'),
-    (r'^new-locale$', 'new_locale'),
-    (r'^new-locale-bugs.json$', 'new_locale_bugs'),
-    (r'^file-bugs$', 'file_bugs'),
-    (r'^bug-links$', 'get_bug_links'),
-)
+urlpatterns = [
+    url(r'^$', views.index, name='bugsy'),
+    url(r'^new-locale$', views.new_locale),
+    url(r'^new-locale-bugs.json$', views.new_locale_bugs),
+    url(r'^file-bugs$', views.file_bugs, name='file-bugs'),
+    url(r'^bug-links$', views.get_bug_links),
+]
