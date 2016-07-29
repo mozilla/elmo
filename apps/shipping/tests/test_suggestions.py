@@ -6,30 +6,24 @@ from collections import defaultdict
 import datetime
 import itertools
 from nose.tools import eq_, ok_
-from django.core.urlresolvers import reverse
 from django.test import TestCase
-from django.contrib.auth.models import User, Permission
-from elmo_commons.tests.mixins import EmbedsTestCaseMixin
+from django.contrib.auth.models import User
 from shipping.models import (
-    Milestone,
     AppVersion,
     Action,
     Signoff,
     Application,
     AppVersionTreeThrough
 )
-from shipping import api
 from life.models import (
     Locale,
     Push,
     Repository,
-    Branch,
     Changeset,
     Tree,
     Forest
 )
-from l10nstats.models import Run, Active
-from shipping.views.signoff import SignoffView
+from l10nstats.models import Run
 from shipping.views import teamsnippet
 from shipping.views.status import StatusJSON
 
@@ -469,7 +463,6 @@ class StatusProcessMixin(object):
                 ok_('needs_update' not in item)
         else:
             ok_('NewPush' not in items)
-
 
 
 class StatusTest(StatusProcessMixin, TeamSnippetTest, DataMixin):

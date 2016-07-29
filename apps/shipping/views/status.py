@@ -6,14 +6,16 @@
 '''
 from __future__ import absolute_import
 from collections import defaultdict
+import os
+import re
 
 from django.http import HttpResponse, HttpResponseBadRequest
+from django.conf import settings
 from django.views.generic import View
 from life.models import Changeset, Locale, Push
 from l10nstats.models import Run, ProgressPosition
 from shipping.api import accepted_signoffs, flags4appversions
-from shipping.models import (Milestone, Action, Signoff,
-                             Application, AppVersion)
+from shipping.models import Action, Signoff, AppVersion
 from django.views.decorators.cache import cache_control
 import json
 from django.db.models import Max
@@ -27,15 +29,14 @@ class BadRequestData(Exception):
 
 
 class SignoffDataView(View):
-    """Base view to reuse code to handle ms= or av= query params.
+    """Base view to reuse code to handle av= query params.
 
-    First pass is process_request, which sets self.ms and self.av.
+    First pass is process_request, which sets self.av.
     Overload this method to handle further args.
-    Second pass is get_data, which gets either
-    - a shipped milestone, and calls data_for_milestone, or
+    Second pass is get_data, which gets
     - a appversion, and calls data_for_appversion.
-    Both of these return tuples, which is then used by the
     actual content creation step, content(), which returns a string or
+    These tuples are then used by the
     iterator of strings, to be passed into the response.
     """
     filename = None
@@ -43,28 +44,20 @@ class SignoffDataView(View):
     def process_request(self, request, *args, **kwargs):
         form = SignoffFilterForm(request.GET)
         if form.is_valid():
-            self.mile = form.cleaned_data['ms']
             self.appver = form.cleaned_data['av']
             self.up_until = form.cleaned_data['up_until']
         else:
             raise BadRequestData(form.errors.items())
 
     def get_data(self):
-        if self.mile:
-            if self.mile.status == Milestone.SHIPPED:
-                return self.data_for_milestone(self.mile)
-            appver = self.mile.appver
-        elif self.appver:
+        if self.appver:
             appver = self.appver
         else:
-            raise RuntimeError("Expecting either ms or av")
+            raise RuntimeError("Need appversion")
         return self.data_for_appversion(appver)
 
     def data_for_appversion(self, appver):
         return (accepted_signoffs(appver, up_until=self.up_until),)
-
-    def data_for_milestone(self, mile):
-        return (mile.signoffs,)
 
     def get(self, request, *args, **kwargs):
         try:
@@ -94,6 +87,70 @@ class Changesets(SignoffDataView):
         revmap = dict(revs.values_list('id', 'revision'))
         return ['%s %s\n' % (l, revmap[tips[l]][:12])
                 for l in sorted(tips.keys())]
+
+
+@class_decorator(cache_control(max_age=60))
+class JSONChangesets(SignoffDataView):
+    """Create a json l10n-changesets.
+    This takes optional arguments of triples to link to files in repos
+    specifying a special platform build. Used for multi-locale builds
+    for fennec so far.
+      multi_PLATFORM_repo: repository to load maemo-locales from
+      multi_PLATFORM_rev: revision of file to load (default is usually fine)
+      multi_PLATFORM_path: path inside the repo, say locales/maemo-locales
+    """
+    filename = 'l10n-changesets.json'
+
+    def content(self, request, signoffs):
+        sos = signoffs.annotate(tip=Max('push__changesets__id'))
+        tips = dict(sos.values_list('locale__code', 'tip'))
+        revmap = dict(Changeset.objects
+                      .filter(id__in=tips.values())
+                      .values_list('id', 'revision'))
+        platforms = re.split('[ ,]+', request.GET.get('platforms', ''))
+        multis = defaultdict(dict)
+        for k, v in request.GET.iteritems():
+            if not k.startswith('multi_'):
+                continue
+            plat, prop = k.split('_')[1:3]
+            multis[plat][prop] = v
+        extra_plats = defaultdict(list)
+        try:
+            from mercurial.hg import repository
+            from mercurial.ui import ui as _ui
+            _ui  # silence pyflakes
+        except:
+            _ui = None
+        if _ui is not None:
+            for plat in sorted(multis.keys()):
+                try:
+                    props = multis[plat]
+                    path = os.path.join(settings.REPOSITORY_BASE,
+                                        props['repo'])
+                    repo = repository(_ui(), path)
+                    ctx = repo[str(props['rev'])]
+                    fctx = ctx.filectx(str(props['path']))
+                    locales = fctx.data().split()
+                    for loc in locales:
+                        extra_plats[loc].append(plat)
+                except:
+                    pass
+
+        tmpl = '''  "%(loc)s": {
+    "revision": "%(rev)s",
+    "platforms": ["%(plats)s"]
+  }'''
+        content = [
+          '{\n',
+          ',\n'.join(tmpl % {'loc': l,
+                             'rev': revmap[tips[l]][:12],
+                             'plats': '", "'.join(platforms + extra_plats[l])}
+                              for l in sorted(tips.keys())
+                              ),
+          '\n}\n'
+        ]
+        content = ''.join(content)
+        return content
 
 
 @class_decorator(cache_control(max_age=60))

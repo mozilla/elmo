@@ -40,7 +40,7 @@ table.standard td[rowspan] {
 <table class="standard">
 {% for row in rows %}
 <tr>
-  <td class="milestone">{% if row.code %}<a href="{% if row.isAppVersion %}{% url 'shipping.views.app.changes' row.code %}{% else %}{% url 'shipping.views.milestone.about' row.code %}{% endif %}" target="_blank">{% endif %}{{row.name}}{% if row.code %}</a>{% endif %}</td>
+  <td class="milestone">{% if row.code %}<a href="{% if row.isAppVersion %}{% url 'shipping.views.app.changes' row.code %}{% endif %}" target="_blank">{% endif %}{{row.name}}{% if row.code %}</a>{% endif %}</td>
   <td>
     {% for loc, cls in row.changes %}<a class="{{cls}}" href="{% url 'shipping-signoff' loc appver.code %}">{{loc}}</a> {% endfor %}
   </td>

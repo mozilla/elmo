@@ -5,28 +5,23 @@ from __future__ import absolute_import
 
 import datetime
 import re
-from urlparse import urlparse
 from nose.tools import eq_, ok_
-#from django.test import TestCase
 from elmo.test import TestCase
 from django.core.urlresolvers import reverse
-from django.contrib.auth.models import User, Permission
-from django.contrib.contenttypes.models import ContentType
 import json
 from l10nstats.models import Run
 from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from life.models import Tree, Forest, Locale
-from shipping.models import Milestone, Application, AppVersion
+from shipping.models import Application, AppVersion
 import shipping.views
 import shipping.views.app
-import shipping.views.milestone
 import shipping.views.release
 import shipping.views.status
 
 
 class ShippingTestCaseBase(TestCase, EmbedsTestCaseMixin):
 
-    def _create_appver_tree_milestone(self):
+    def _create_appver_tree(self):
         app = Application.objects.create(
           name='firefox',
           code='fx'
@@ -50,13 +45,7 @@ class ShippingTestCaseBase(TestCase, EmbedsTestCaseMixin):
                                             start=None,
                                             end=None)
 
-        milestone = Milestone.objects.create(
-          code='one',
-          name='One',
-          appver=appver,
-        )
-
-        return appver, tree, milestone
+        return appver, tree
 
 
 class ShippingTestCase(ShippingTestCaseBase):
@@ -75,7 +64,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
-        appver, __, ___ = self._create_appver_tree_milestone()
+        appver, __ = self._create_appver_tree()
         url = reverse(shipping.views.app.changes,
                       args=[appver.code])
         response = self.client.get(url)
@@ -83,70 +72,6 @@ class ShippingTestCase(ShippingTestCaseBase):
         self.assert_all_embeds(response.content)
         ok_('<title>Locale changes for %s' % appver in response.content)
         ok_('<h1>Locale changes for %s' % appver in response.content)
-
-    def test_basic_render_confirm_drill_mstone(self):
-        """render shipping.views.confirm_drill_mstone"""
-        url = reverse(shipping.views.confirm_drill_mstone)
-        response = self.client.get(url)
-        eq_(response.status_code, 404)
-        appver, __, milestone = self._create_appver_tree_milestone()
-        response = self.client.get(url, {'ms': milestone.code})
-        eq_(response.status_code, 302)  # not permission to view
-
-        admin = User.objects.create_user(
-          username='admin',
-          email='admin@mozilla.com',
-          password='secret',
-        )
-        admin.user_permissions.add(
-          Permission.objects.get(codename='can_ship')
-        )
-        assert self.client.login(username='admin', password='secret')
-        response = self.client.get(url, {'ms': 'junk'})
-        eq_(response.status_code, 404)
-
-        response = self.client.get(url, {'ms': milestone.code})
-        eq_(response.status_code, 302)
-
-        milestone.status = Milestone.OPEN
-        milestone.save()
-        response = self.client.get(url, {'ms': milestone.code})
-        eq_(response.status_code, 200)
-
-        self.assert_all_embeds(response.content)
-        ok_('<title>Shipping %s' % milestone in response.content)
-        ok_('<h1>Shipping %s' % milestone in response.content)
-
-    def test_basic_render_confirm_ship_mstone(self):
-        """render shipping.views.confirm_ship_mstone"""
-        url = reverse(shipping.views.confirm_ship_mstone)
-        response = self.client.get(url)
-        eq_(response.status_code, 404)
-        appver, __, milestone = self._create_appver_tree_milestone()
-        response = self.client.get(url, {'ms': milestone.code})
-        eq_(response.status_code, 302)  # not permission to view
-
-        # Note how confirm doesn't require the 'can_ship' permission even
-        # though the POST to actually ship does require the permission. The
-        # reason for this is because the confirmation page has been used to
-        # summorize what can be shipped and this URL is shared with people
-        # outside this permission.
-        # In fact, you don't even need to be logged in.
-
-        response = self.client.get(url, {'ms': 'junk'})
-        eq_(response.status_code, 404)
-
-        response = self.client.get(url, {'ms': milestone.code})
-        eq_(response.status_code, 302)
-
-        milestone.status = Milestone.OPEN
-        milestone.save()
-        response = self.client.get(url, {'ms': milestone.code})
-        eq_(response.status_code, 200)
-
-        self.assert_all_embeds(response.content)
-        ok_('<title>Shipping %s' % milestone in response.content)
-        ok_('<h1>Shipping %s' % milestone in response.content)
 
     def test_dashboard_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
@@ -156,7 +81,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(response.status_code, 404)
 
         # to succeed we need sample fixtures
-        appver, __, ___ = self._create_appver_tree_milestone()
+        appver, __ = self._create_appver_tree()
 
         # Succeed
         response = self.client.get(url, dict(av=appver.code))
@@ -167,32 +92,15 @@ class ShippingTestCase(ShippingTestCaseBase):
         url = reverse('shipping-l10n_changesets')
         # Fail
         response = self.client.get(url)
-        # neither ms or av specified
+        # no av specified
         eq_(response.status_code, 400)
 
-        response = self.client.get(url, dict(ms="junk"))
-        eq_(response.status_code, 400)
         response = self.client.get(url, dict(av="junk"))
         eq_(response.status_code, 400)
 
         # to succeed we need sample fixtures
-        appver, __, milestone = self._create_appver_tree_milestone()
-        # but it can fail on 'up_until'
-        response = self.client.get(url, dict(ms=milestone.code,
-                                             up_until='junk'))
-        eq_(response.status_code, 400)
-
-        # finally
-        response = self.client.get(url, dict(ms=milestone.code))
-        eq_(response.status_code, 200)
-        response = self.client.get(url, dict(ms=milestone.code, av=''))
-        eq_(response.status_code, 200)
+        appver, __ = self._create_appver_tree()
         response = self.client.get(url, dict(av=appver.code))
-        eq_(response.status_code, 200)
-        response = self.client.get(url, dict(av=appver.code, ms=''))
-        eq_(response.status_code, 200)
-        response = self.client.get(url, dict(ms=milestone.code,
-                                             up_until='2012-05-07'))
         eq_(response.status_code, 200)
 
     def test_shipped_locales_bad_urls(self):
@@ -208,111 +116,9 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(response.status_code, 400)
 
         # to succeed we need sample fixtures
-        appver, __, milestone = self._create_appver_tree_milestone()
-        response = self.client.get(url, dict(ms=milestone.code))
-        eq_(response.status_code, 200)
-        response = self.client.get(url, dict(ms=milestone.code, av=''))
-        eq_(response.status_code, 200)
+        appver, __ = self._create_appver_tree()
         response = self.client.get(url, dict(av=appver.code))
         eq_(response.status_code, 200)
-        response = self.client.get(url, dict(av=appver.code, ms=''))
-        eq_(response.status_code, 200)
-
-    def test_confirm_ship_mstone_bad_urls(self):
-        """test that bad GET parameters raise 404 errors not 500s"""
-        url = reverse(shipping.views.confirm_ship_mstone)
-
-        admin = User.objects.create_user(
-          username='admin',
-          email='admin@mozilla.com',
-          password='secret',
-        )
-        admin.user_permissions.add(
-          Permission.objects.get(codename='can_ship')
-        )
-        assert self.client.login(username='admin', password='secret')
-
-        # Fail
-        response = self.client.get(url, dict(ms="junk"))
-        eq_(response.status_code, 404)
-
-        # Succeed
-        __, ___, milestone = self._create_appver_tree_milestone()
-        milestone.status = Milestone.OPEN
-        milestone.save()
-        response = self.client.get(url, dict(ms=milestone.code))
-        eq_(response.status_code, 200)
-
-    def test_ship_mstone_bad_urls(self):
-        """test that bad GET parameters raise 404 errors not 500s"""
-        url = reverse(shipping.views.ship_mstone)
-        # Fail
-        response = self.client.get(url, dict(ms="junk"))
-        eq_(response.status_code, 405)
-        response = self.client.post(url, dict(ms="junk"))
-        # redirects because we're not logged and don't have the permission
-        eq_(response.status_code, 302)
-
-        milestone_content_type, __ = ContentType.objects.get_or_create(
-          app_label='shipping',
-          model='milestone'
-        )
-        perm, __ = Permission.objects.get_or_create(
-          name='Can ship a Milestone',
-          content_type=milestone_content_type,
-          codename='can_ship'
-        )
-        admin = User.objects.create(
-          username='admin',
-        )
-        admin.set_password('secret')
-        admin.user_permissions.add(perm)
-        admin.save()
-        assert self.client.login(username='admin', password='secret')
-
-        __, ___, milestone = self._create_appver_tree_milestone()
-        response = self.client.post(url, dict(ms="junk"))
-        eq_(response.status_code, 404)
-
-        milestone.status = Milestone.OPEN
-        milestone.save()
-        response = self.client.post(url, dict(ms=milestone.code))
-        eq_(response.status_code, 302)
-
-        milestone = Milestone.objects.get(code=milestone.code)
-        eq_(milestone.status, Milestone.SHIPPED)
-
-    def test_milestones_static_files(self):
-        """render the milestones page and check all static files"""
-        url = reverse(shipping.views.milestones)
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        self.assert_all_embeds(response.content)
-
-    def test_about_milestone_static_files(self):
-        """render the about milestone page and check all static files"""
-        url = reverse(shipping.views.milestone.about,
-                      args=['junk'])
-        response = self.client.get(url)
-        eq_(response.status_code, 404)
-
-        __, ___, milestone = self._create_appver_tree_milestone()
-        url = reverse(shipping.views.milestone.about,
-                      args=[milestone.code])
-        response = self.client.get(url)
-        eq_(response.status_code, 200)
-        self.assert_all_embeds(response.content)
-
-    def test_legacy_redirect_about_milestone(self):
-        """calling the dashboard with a 'ms' parameter (which is or is not a
-        valid Milestone) should redirect to the about milestone page instead.
-        """
-        url = reverse(shipping.views.dashboard)
-        response = self.client.get(url, {'ms': 'anything'})
-        eq_(response.status_code, 302)
-        url = reverse(shipping.views.milestone.about,
-                      args=['anything'])
-        eq_(urlparse(response['location']).path, url)
 
     def test_status_json_basic(self):
         url = reverse('shipping-status_json')
@@ -321,7 +127,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         struct = json.loads(response.content)
         eq_(struct['items'], [])
 
-        appver, tree, milestone = self._create_appver_tree_milestone()
+        appver, tree = self._create_appver_tree()
         locale, __ = Locale.objects.get_or_create(
           code='en-US',
           name='English',
@@ -341,7 +147,7 @@ class ShippingTestCase(ShippingTestCaseBase):
 
     def test_status_json_by_treeless_appversion(self):
         url = reverse('shipping-status_json')
-        appver, tree, milestone = self._create_appver_tree_milestone()
+        appver, tree = self._create_appver_tree()
         # get the AppVersionThrough, and set it's duration to the past
         avt = appver.trees_over_time.get(tree=tree)
         n = datetime.datetime.utcnow()
@@ -357,7 +163,7 @@ class ShippingTestCase(ShippingTestCaseBase):
     def test_status_json_multiple_locales_multiple_trees(self):
         url = reverse('shipping-status_json')
 
-        appver, tree, milestone = self._create_appver_tree_milestone()
+        appver, tree = self._create_appver_tree()
         locale_en, __ = Locale.objects.get_or_create(
           code='en-US',
           name='English',
@@ -543,7 +349,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         eq_(response.status_code, 200)
         eq_(get_query(response.content), 'locale=en-US&locale=ta')
 
-        appver, __, ___ = self._create_appver_tree_milestone()
+        appver, __ = self._create_appver_tree()
         tree, = Tree.objects.all()
         response = self.client.get(url, {'tree': tree.code})
         eq_(response.status_code, 200)
@@ -617,7 +423,7 @@ class ShippingTestCase(ShippingTestCaseBase):
         response = self.client.get(url, {'tree': 'xxx'})
         eq_(response.status_code, 404)
 
-        self._create_appver_tree_milestone()
+        self._create_appver_tree()
         assert Tree.objects.all().exists()
         tree, = Tree.objects.all()
 
@@ -630,7 +436,7 @@ class ShippingTestCase(ShippingTestCaseBase):
 
 class DriversTest(ShippingTestCaseBase):
     def test_drivers(self):
-        appver, tree, __ = self._create_appver_tree_milestone()
+        appver, tree = self._create_appver_tree()
         l10n_beta = Forest.objects.create(
           name='releases/l10n/mozilla-beta',
           url='http://hg.mozilla.org/releases/l10n/mozilla-beta/',

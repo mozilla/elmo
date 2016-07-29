@@ -43,7 +43,7 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
     def test_history_static_files(self):
         """render the tree_status view and check that all static files are
         accessible"""
-        appver, tree, milestone = self._create_appver_tree_milestone()
+        appver, tree = self._create_appver_tree()
         url = reverse('locale-tree-history')
         response = self.client.get(url)
         eq_(response.status_code, 404)
@@ -64,13 +64,13 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
     def test_tree_status_static_files(self):
         """render the tree_status view and check that all static files are
         accessible"""
-        appver, tree, milestone = self._create_appver_tree_milestone()
+        appver, tree = self._create_appver_tree()
 
         url = reverse('tree-history', args=['XXX'])
         response = self.client.get(url)
         eq_(response.status_code, 404)
 
-        # _create_appver_milestone() creates a mock tree
+        # _create_appver_tree() creates a mock tree
         url = reverse('tree-history', args=[tree.code])
         response = self.client.get(url)
         eq_(response.status_code, 200)
