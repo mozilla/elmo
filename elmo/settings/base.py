@@ -50,22 +50,24 @@ TIME_ZONE = 'UTC'
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = ''
 
-# List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
-)
-
-TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.contrib.auth.context_processors.auth',
-    'django.core.context_processors.debug',
-    'django.core.context_processors.request',
-    'session_csrf.context_processor',
-    'django.core.context_processors.static',
-    'accounts.context_processors.accounts',
-    'homepage.context_processors.analytics',
-)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.contrib.auth.context_processors.auth',
+                'django.core.context_processors.debug',
+                'django.core.context_processors.request',
+                'session_csrf.context_processor',
+                'django.core.context_processors.static',
+                'accounts.context_processors.accounts',
+                'homepage.context_processors.analytics',
+            ],
+            'debug': False
+        }
+    },
+]
 
 # This is the common prefix displayed in front of ALL static files
 STATIC_URL = '/static/'

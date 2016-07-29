@@ -10,7 +10,6 @@ We're keeping log files for a day, and build data for seven.
 # BuilderStatus.determineNextBuildNumber still works.
 
 from datetime import datetime, timedelta
-from optparse import make_option
 import os.path
 import tarfile
 
@@ -23,17 +22,17 @@ from mbdb.models import Builder, Build, Log
 
 class Command(BaseCommand):
     chunksize = 100
-    option_list = BaseCommand.option_list + (
-        make_option('--dry-run', '-n', action='store_true',
-                    help="Dry run, don't touch files and database"),
-        make_option('--backup', default=None,
-                    help="Back up logs in this directory"),
-        make_option('--limit', default=None, type="int",
-                    help="Limit cycles, a cycle is %d builds" % chunksize),
-    )
     help = __doc__
     logsoffset = timedelta(days=1)
     buildoffset = timedelta(days=7)
+
+    def add_arguments(self, parser):
+        parser.add_argument('--dry-run', '-n', action='store_true',
+                    help="Dry run, don't touch files and database")
+        parser.add_argument('--backup', default=None,
+                    help="Back up logs in this directory")
+        parser.add_argument('--limit', default=None, type=int,
+                    help="Limit cycles, a cycle is %d builds" % self.chunksize)
 
     def handle(self, *args, **options):
         dry_run = options['dry_run']

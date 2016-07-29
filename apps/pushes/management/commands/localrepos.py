@@ -7,21 +7,19 @@ of an upstream database.
 '''
 from __future__ import absolute_import
 
-from optparse import make_option
-
 from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    option_list = BaseCommand.option_list + (
-        make_option('--rebase', action='store_true',
-                    help='Use --rebase for hg pull'),
-        make_option('-u', '--update', action='store_true',
-                    help='Use -u for hg pull'),
-        make_option('-a', '--all', action='store_true',
-                    help='Refresh all repositories'),
-        )
     help = 'Update set of local clones'
+
+    def add_arguments(self, parser):
+        parser.add_argument('--rebase', action='store_true',
+                            help='Use --rebase for hg pull')
+        parser.add_argument('-u', '--update', action='store_true',
+                            help='Use -u for hg pull')
+        parser.add_argument('-a', '--all', action='store_true',
+                            help='Refresh all repositories')
 
     def handle(self, *args, **options):
         rebase = options.get('rebase', False)

@@ -7,12 +7,11 @@
 from __future__ import absolute_import
 
 
+import json
 from django.contrib.auth.views import REDIRECT_FIELD_NAME
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.views.decorators import cache
-from django.core.context_processors import csrf
-import json
 from django.contrib.auth.views import login as django_login
 from .forms import AuthenticationForm
 try:

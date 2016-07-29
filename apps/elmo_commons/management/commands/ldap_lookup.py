@@ -7,8 +7,6 @@
 from __future__ import absolute_import
 
 
-from optparse import make_option
-
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from lib.auth.backends import (
@@ -31,10 +29,6 @@ LDAP_IGNORE_ATTRIBUTES = (
 
 
 class Command(BaseCommand):
-    option_list = BaseCommand.option_list + (
-        make_option('-q', '--quiet', dest='quiet', action='store_true',
-                    help='Run quietly'),
-        )
     help = 'Look up users in LDAP'
     args = 'mailaddress'
 

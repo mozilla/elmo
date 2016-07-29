@@ -6,7 +6,6 @@
 '''
 from __future__ import absolute_import
 
-from optparse import make_option
 import os.path
 
 from django.core.management.base import BaseCommand, CommandError
@@ -18,21 +17,17 @@ from django.conf import settings
 
 
 class Command(BaseCommand):
-    option_list = BaseCommand.option_list + (
-        make_option('-q', '--quiet', dest='quiet', action='store_true',
-                    help='Run quietly'),
-        )
     help = 'Update l10n repos to revisions shipped'
-    args = 'milestone code'
+
+    def add_arguments(self, parser):
+        parser.add_argument('milestone', help='milestone code')
 
     def handle(self, *args, **options):
-        # quiet = options.get('quiet', False)  # not used
-        if not args:
-            return
         try:
-            ms = Milestone.objects.get(code=args[0])
+            ms = Milestone.objects.get(code=options['milestone'])
         except:
-            raise CommandError("No milestone with code %s found" % args[0])
+            raise CommandError("No milestone with code %s found" %
+                               options['milestone'])
 
         forest = ms.appver.trees_over_time.latest().tree.l10n.name.split('/')
 

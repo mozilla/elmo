@@ -286,7 +286,7 @@ def compare(request):
     """HTML pretty-fied output of compare-locales.
     """
     try:
-        run = get_object_or_404(Run, id=request.GET['run'])
+        run = get_object_or_404(Run, id=request.GET.get('run'))
     except ValueError:
         return HttpResponseBadRequest('Invalid ID')
     # try disk first, then ES

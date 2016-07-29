@@ -6,7 +6,6 @@
 '''
 from __future__ import absolute_import
 
-from optparse import make_option
 import os.path
 from urllib2 import urlopen
 import re
@@ -32,10 +31,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
 class Command(BaseCommand):
-    option_list = BaseCommand.option_list + (
-        make_option('-q', '--quiet', dest='quiet', action='store_true',
-                    help='Run quietly'),
-        )
     help = 'TEMPORARY Download bugograms for new locales from wikimo'
 
     sectioner = re.compile('===? (.*?) ===?\n(.*?)(?===)', re.M | re.S)
@@ -55,7 +50,7 @@ class Command(BaseCommand):
             for section in self.sectioner.finditer(page):
                 title = section.group(1)
                 content = self.params.sub(lambda m: '{{ %s }}' % m.group(1),
-                                      section.group(2))
+                                          section.group(2))
                 offset = 0
                 props = {}
                 for m in self.props.finditer(content):
