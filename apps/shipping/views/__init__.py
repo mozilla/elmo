@@ -6,13 +6,12 @@
 '''
 from __future__ import absolute_import, division
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from datetime import datetime, timedelta
-import re
 import urllib
 
 from django.shortcuts import render, get_object_or_404, redirect
-from django.template.loader import render_to_string
+from django.views.generic import TemplateView
 from django import http
 from life.models import Locale, Tree, Push, Changeset
 from l10nstats.models import Run, ProgressPosition
@@ -22,8 +21,6 @@ import shipping.views.milestone
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Max
-from django.views.decorators.cache import cache_control
-import json
 from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
 
@@ -67,6 +64,41 @@ def index(request):
                     'selected_avs': selected_avs,
                     'selected_locales': selected_locales
                   })
+
+
+class Drivers(TemplateView):
+    template_name = 'shipping/drivers.html'
+    android_params = [
+        '',
+        'platforms=android',
+        'multi_android-multilocale_repo=releases/mozilla-beta',
+        'multi_android-multilocale_rev=default',
+        'multi_android-multilocale_path=mobile/android/locales/maemo-locales'
+    ]
+
+    def get_context_data(self, **kwargs):
+        context = super(Drivers, self).get_context_data(**kwargs)
+        avts = (
+            AppVersion.trees.through.objects
+            .current()
+            .filter(tree__run__active__isnull=False)
+            .distinct()
+            .order_by('appversion__app__name', 'appversion__code')
+            .select_related('appversion__app', 'tree')
+        )
+        apps_and_versions = OrderedDict()
+        for avt in avts:
+            if avt.appversion.app not in apps_and_versions:
+                apps_and_versions[avt.appversion.app] = []
+            apps_and_versions[avt.appversion.app].append(avt)
+            if avt.tree.code == 'fennec_beta':
+                # ok, let's create the beta json url
+                url = reverse('shipping-json_changesets')
+                url += '?av=' + avt.appversion.code
+                url += '&'.join(self.android_params)
+                setattr(avt, 'json_changesets', url)
+        context['apps_and_versions'] = apps_and_versions
+        return context
 
 
 class RunElement(dict):
