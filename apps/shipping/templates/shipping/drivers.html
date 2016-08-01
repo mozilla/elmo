@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+<!-- {% comment %}
+   - This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/.
+{% endcomment %} -->
+{% load staticfiles %}
+
+{% block title_matter %}Drivers{% endblock %}
+{% block javascript_matter %}
+
+{% block head_matter %}
+<link rel="stylesheet" href="{% static "shipping/css/drivers.css" %}" type="text/css">
+<link rel="stylesheet" href="{% static "shipping/css/snippet.css" %}" type="text/css">
+{% endblock %}
+
+{% endblock %}
+
+{% block content %}
+<h1>Drivers</h1>
+
+<table id="drivers" class='trees'>
+    <thead>
+        <tr>
+            <th>Application</th>
+            <th>Version</th>
+            <th>L10n Progress</th>
+            <th>Fallbacks/Betas</th>
+            <th>Latest Sign-Offs</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for app, avts in apps_and_versions.items %}
+        {% with firstapp=forloop.first %}
+        {% if not forloop.first %}
+        <tr class="separator"><td colspan="4"></td></tr>
+        {% endif %}
+        {% for avt in avts %}
+        <tr class="{% if forloop.first %} topline{% if firstapp %} toprow{% endif %}{% endif %}">
+        {% if forloop.first %}
+            <td class="appname " rowspan="{{ avts|length }}">
+              <h3 id="{{ app.code }}">{{ app.name }} <a href="#{{ app.code }}" class="permalink">#</a></h3>
+            </td>
+        {% endif %}
+            <td class="version  {% cycle 'odd-td' 'even-td' as runcycle %}">{{ avt.appversion.version }}</td>
+            <td class="{{ runcycle }}"><a href="{% url 'tree-history' avt.tree.code %}">{{ avt.tree }}</a></td>
+            <td class="{{ runcycle }}"><a href="{% url 'shipping-appversion-history' avt.appversion.code %}">{{ avt.appversion }}</a></td>
+            <td class="{{ runcycle }}">{% if "beta" in avt.tree.code %}<a href="{% if avt.json_changesets %}{{ avt.json_changesets }}{% else %}{% url 'shipping-l10n_changesets' %}?av={{ avt.appversion.code }}{% endif %}">{{avt.appversion.code}}{% if avt.json_changesets %} (json){% endif %}</a>{% endif %}</td>
+        </tr>
+        {% endfor %}
+        {% endwith %}
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

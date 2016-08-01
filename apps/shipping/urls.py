@@ -14,6 +14,7 @@ from .views import status, milestone, app, signoff, release
 urlpatterns = [
     url(r'^/?$', views.index),
     url(r'^/dashboard/?$', views.dashboard),
+    url(r'^/drivers$', views.Drivers.as_view(), name='shipping-drivers'),
     url(r'^/milestones$', views.milestones),
     url(r'^/stones-data$', views.stones_data),
     url(r'^/open-mstone$', views.open_mstone),
@@ -41,7 +42,8 @@ urlpatterns += [
 ]
 
 urlpatterns += [
-    url(r'^/app/locale-changes/(.*)', app.changes),
+    url(r'^/app/locale-changes/(.*)', app.changes,
+        name='shipping-appversion-history'),
 ]
 
 urlpatterns += [
