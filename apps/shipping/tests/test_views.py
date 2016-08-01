@@ -626,3 +626,45 @@ class ShippingTestCase(ShippingTestCaseBase):
 
         response = self.client.get(url, {'tree': [tree.code]})
         eq_(response.status_code, 200)
+
+
+class DriversTest(ShippingTestCaseBase):
+    def test_drivers(self):
+        appver, tree, __ = self._create_appver_tree_milestone()
+        l10n_beta = Forest.objects.create(
+          name='releases/l10n/mozilla-beta',
+          url='http://hg.mozilla.org/releases/l10n/mozilla-beta/',
+        )
+        beta = Tree.objects.create(
+          code='fennec_beta',
+          l10n=l10n_beta,
+        )
+        appver = AppVersion.objects.create(
+          app=appver.app,
+          version='2',
+          code='fennec2',
+        )
+        appver.trees.through.objects.create(tree=beta,
+                                            appversion=appver,
+                                            start=None,
+                                            end=None)
+        locale, __ = Locale.objects.get_or_create(
+          code='en-US',
+          name='English',
+        )
+        run = Run.objects.create(tree=tree, locale=locale)
+        run.activate()
+        run = Run.objects.create(tree=beta, locale=locale)
+        run.activate()
+        url = reverse('shipping-drivers')
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        apps_and_versions = response.context['apps_and_versions']
+        eq_(apps_and_versions.keys(), [appver.app])
+        avts = apps_and_versions.values()[0]
+        # Fennec first
+        ok_(hasattr(avts[0], 'json_changesets'))
+        eq_(avts[0].tree, beta)
+        # Firefox next
+        ok_(not hasattr(avts[1], 'json_changesets'))
+        eq_(avts[1].tree, tree)

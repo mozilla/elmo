@@ -93,7 +93,7 @@ class Drivers(TemplateView):
             apps_and_versions[avt.appversion.app].append(avt)
             if avt.tree.code == 'fennec_beta':
                 # ok, let's create the beta json url
-                url = reverse('shipping-json_changesets')
+                url = reverse('shipping-milestone-json_changesets')
                 url += '?av=' + avt.appversion.code
                 url += '&'.join(self.android_params)
                 setattr(avt, 'json_changesets', url)
