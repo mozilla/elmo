@@ -60,5 +60,5 @@ def new_locale(request):
 def new_locale_bugs(request):
     alias = request.GET.get('app', 'fx')
     return render(request, 'bugsy/new-%s-locales.json' % alias,
-                  request.GET,
+                  request.GET.dict(),
                   content_type='application/javascript')
