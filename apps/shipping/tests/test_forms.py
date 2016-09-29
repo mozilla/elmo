@@ -8,7 +8,7 @@ from nose.tools import eq_, ok_
 from django.test import TestCase
 from shipping.forms import SignoffFilterForm
 from life.models import Tree, Forest
-from shipping.models import AppVersion, Milestone, Application
+from shipping.models import AppVersion, Application
 
 
 class FormTests(TestCase):
@@ -39,34 +39,21 @@ class FormTests(TestCase):
             end=None
         )
 
-        self.milestone = Milestone.objects.create(
-          code='one',
-          name='One',
-          appver=self.appver,
-        )
-
     def test_signoff_filter_form(self):
         form = SignoffFilterForm({})
-        ok_(form.is_valid())
-        eq_(form.cleaned_data['ms'], None)
-        eq_(form.cleaned_data['av'], None)
-        eq_(form.cleaned_data['up_until'], None)
+        ok_(not form.is_valid())
 
         form = SignoffFilterForm({
           'av': '',
-          'ms': '',
           'up_until': '',
         })
-        ok_(form.is_valid())
-        eq_(form.cleaned_data['ms'], None)
-        eq_(form.cleaned_data['av'], None)
-        eq_(form.cleaned_data['up_until'], None)
+        ok_(not form.is_valid())
 
         # check a couple of recognized recognized up_until values
         form = SignoffFilterForm({
           'up_until': '2012-08-17 14:50:00',
         })
-        ok_(form.is_valid())
+        ok_(not form.is_valid())
 
         eq_(form.cleaned_data['up_until'],
             datetime.datetime(2012, 8, 17, 14, 50, 0))
@@ -84,7 +71,7 @@ class FormTests(TestCase):
         form = SignoffFilterForm({
           'av': '',
         })
-        ok_(form.is_valid())
+        ok_(not form.is_valid())
 
         # ...that doesn't exist
         form = SignoffFilterForm({
@@ -97,20 +84,5 @@ class FormTests(TestCase):
         # ...that does exist
         form = SignoffFilterForm({
           'av': self.appver.code,
-        })
-        ok_(form.is_valid())
-
-        # and a Milestone
-        # ...that doesn't exist
-        form = SignoffFilterForm({
-          'ms': 'xx',
-        })
-        ok_(not form.is_valid())
-        ok_(form.errors)
-        ok_('ms' in form.errors)
-
-        # ...that exists
-        form = SignoffFilterForm({
-          'ms': self.milestone.code,
         })
         ok_(form.is_valid())

@@ -165,66 +165,6 @@ STATUS_CHOICES = (
 )
 
 
-class Milestone(models.Model):
-    """ stores unique milestones like fx35b4
-    The milestone is open for signoff between string_freeze and code
-    """
-    UPCOMING, OPEN, SHIPPED = range(3)
-    code = models.CharField(max_length=30, unique=True)
-    name = models.CharField(max_length=50)
-    appver = models.ForeignKey(AppVersion)
-    signoffs = models.ManyToManyField(Signoff, related_name='shipped_in',
-                                      blank=True)
-    status = models.IntegerField(choices=STATUS_CHOICES, default=0)
-
-    class Meta:
-        permissions = (('can_open', 'Can open a Milestone for sign-off'),
-                       ('can_ship', 'Can ship a Milestone'))
-
-    def get_start_event(self):
-        try:
-            return Event.objects.get(type=0, milestone=self)
-        except:
-            return None
-
-    def get_end_event(self):
-        try:
-            return Event.objects.get(type=1, milestone=self)
-        except:
-            return None
-
-    start_event = property(get_start_event)
-    end_event = property(get_end_event)
-
-    def __unicode__(self):
-        if self.name is not None:
-            rv = '%s %s' % (self.appver.app.name, self.appver.version)
-            if self.name:
-                if self.name.startswith('.'):
-                    rv += self.name
-                else:
-                    rv += ' ' + self.name
-            return rv
-        else:
-            return self.code
-
-
-TYPE_CHOICES = (
-    (0, 'signoff start'),
-    (1, 'signoff end'),
-)
-
-
-class Event(models.Model):
-    name = models.CharField(max_length=50)
-    type = models.IntegerField(choices=TYPE_CHOICES)
-    date = models.DateField()
-    milestone = models.ForeignKey(Milestone, related_name='events')
-
-    def __unicode__(self):
-        return '%s for %s (%s)' % (self.name, self.milestone, self.date)
-
-
 class SignoffForm(ModelForm):
     class Meta:
         model = Signoff

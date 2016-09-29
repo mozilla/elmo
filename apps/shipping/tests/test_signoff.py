@@ -11,7 +11,6 @@ from django.contrib.auth.models import User, Permission
 import json
 from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from shipping.models import (
-    Milestone,
     AppVersion,
     Action,
     Signoff,
@@ -103,61 +102,6 @@ en-US
         so = sos['fx/pl']
         eq_(so['signoff'], ['pending'])
         eq_(so['tree'], 'fx')
-
-    def test_ship_milestone(self):
-        """Go through a shipping cycle and verify the results"""
-        mile = self.av.milestone_set.create(code='fx1.0b1',
-                                            name='Build 1')
-        releng = User.objects.create_user(
-            username='fxbld',
-            email='fxbld@mozilla.com',
-            password='secret',
-        )
-        releng.user_permissions.add(
-            Permission.objects.get(codename='can_ship'),
-            Permission.objects.get(codename='can_open')
-        )
-        assert self.client.login(username='fxbld', password='secret')
-        ship = reverse(shipping.views.ship_mstone)
-        response = self.client.post(ship, {'ms': mile.code})
-        eq_(response.status_code, 403)
-        _open = reverse(shipping.views.open_mstone)
-        response = self.client.post(_open, {'ms': mile.code})
-        eq_(response.status_code, 302)
-        response = self.client.post(ship, {'ms': mile.code})
-        eq_(response.status_code, 302)
-        mile = self.av.milestone_set.all()[0]  # refresh mile from the db
-        eq_(mile.status, Milestone.SHIPPED)
-        eq_(mile.signoffs.count(), 2)
-        # now that it's shipped, it should error to ship again
-        response = self.client.post(ship, {'ms': mile.code})
-        eq_(response.status_code, 403)
-        # verify l10n-changesets and json, and shipped-locales
-        url = reverse('shipping-l10n_changesets')
-        response = self.client.get(url, {'ms': mile.code})
-        eq_(response.status_code, 200)
-        eq_(response.content, "da l10n da 0003\nde l10n de 0002\n")
-        url = reverse('shipping-milestone-json_changesets')
-        response = self.client.get(url, {'ms': mile.code,
-                                         'platforms': 'windows, linux'})
-        eq_(response.status_code, 200)
-        ok_('max-age=60' in response['Cache-Control'])
-        json_changes = json.loads(response.content)
-        eq_(json_changes, {'de':
-                            {
-                                'revision': 'l10n de 0002',
-                                'platforms': ['windows', 'linux']
-                            },
-                            'da':
-                            {
-                               'revision': 'l10n da 0003',
-                               'platforms': ['windows', 'linux']
-                            }
-                           })
-        url = reverse('shipping-shipped_locales')
-        response = self.client.get(url, {'ms': mile.code})
-        eq_(response.status_code, 200)
-        eq_(response.content, "da\nde\nen-US\n")
 
     def test_dashboard_static_files(self):
         """render the shipping dashboard and check that all static files are

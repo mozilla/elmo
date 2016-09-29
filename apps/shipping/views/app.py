@@ -8,29 +8,18 @@ from __future__ import absolute_import
 
 from collections import defaultdict
 from django.shortcuts import render, get_object_or_404
-from shipping.models import (Milestone, AppVersion,
-                             Action, Signoff)
+from shipping.models import AppVersion, Action, Signoff
 from shipping.api import flags4appversions
 
 
 def changes(request, app_code):
-    """Show which milestones on the given appversion took changes for which
-    locale
+    """Show fallbacks for a given appversion.
     """
     av = get_object_or_404(AppVersion, code=app_code)
-    ms_names = {}
-    ms_codes = {}
-    for ms in (Milestone.objects
-               .filter(appver=av)
-               .select_related('appver__app')):
-        ms_names[ms.id] = str(ms)
-        ms_codes[ms.id] = ms.code
     rows = []
     changes = None
-    ms_id = None
     latest = {}
     current = {}
-    ms_name = None
     # get historic data that enters this appversion
     # get that in fallback order, we'll reverse afterwards
     flags4av = flags4appversions([av])
@@ -109,46 +98,10 @@ def changes(request, app_code):
     avrow = None  # keep track of the first row
     rowspan = 0
     locales_group.clear()
-    current = {}
-    # we're only doing sign-offs for this appversion now, and for milestones
-    # of this appversion
-    for _mid, loc, pid in (Milestone.signoffs.through.objects
-                           .filter(milestone__appver=av)
-                           .filter(signoff__appversion=av)
-                           .order_by('milestone__id',
-                                     'signoff__locale__code')
-                           .values_list('milestone__id',
-                                        'signoff__locale__code',
-                                        'signoff__push__id')):
-        if _mid != ms_id:
-            ms_id = _mid
-            # next milestone, bootstrap new row
-            if latest:
-                # previous milestone has locales left, update previous changes
-                changes += [(_loc, 'dropped') for _loc in latest.iterkeys()]
-                changes.sort()
-            latest = current
-            current = {}
-            ms_name = ms_names[ms_id]
-            changes = []
-            rows.append({'name': ms_name,
-                         'code': ms_codes[ms_id],
-                         'changes': changes})
-            rowspan += 1
-            if avrow is None:
-                avrow = rows[-1]
-        if loc not in latest:
-            changes.append((loc, 'added'))
-            locales_group.add(loc)
-        else:
-            lpid = latest.pop(loc)
-            if lpid != pid:
-                changes.append((loc, 'changed'))
-        current[loc] = pid
 
-    # see if we have some locales dropped in the last milestone
+    # see if we have some locales dropped in the last appver
     if latest:
-        # previous milestone has locales left, update previous changes
+        # previous appver has locales left, update previous changes
         changes += [(loc, 'dropped') for loc in latest.iterkeys()]
         changes.sort()
     # add group info to the avrow
@@ -158,7 +111,7 @@ def changes(request, app_code):
             'rowspan_last': True,
             'group_locales_count': len(locales_group)
             })
-    # finally, check if there's more signoffs after the last shipped milestone
+    # finally, check if there's more signoffs after the last shipped appver
     newso = [(loc, loc in current and 'changed' or 'added')
         for loc, pid in accepted.iteritems()
         if current.get(loc) != pid]

@@ -8,17 +8,14 @@ from __future__ import absolute_import, division
 
 from collections import defaultdict, OrderedDict
 from datetime import datetime, timedelta
-import urllib
-import json
 
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render
 from django.views.generic import TemplateView
 from django import http
 from life.models import Locale, Tree, Push, Changeset
 from l10nstats.models import Run, ProgressPosition
-from shipping.models import Milestone, AppVersion, Action, Application
-from shipping.api import flags4appversions, accepted_signoffs
-import shipping.views.milestone
+from shipping.models import AppVersion, Action
+from shipping.api import flags4appversions
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Max
@@ -94,7 +91,7 @@ class Drivers(TemplateView):
             apps_and_versions[avt.appversion.app].append(avt)
             if avt.tree.code == 'fennec_beta':
                 # ok, let's create the beta json url
-                url = reverse('shipping-milestone-json_changesets')
+                url = reverse('shipping-json_changesets')
                 url += '?av=' + avt.appversion.code
                 url += '&'.join(self.android_params)
                 setattr(avt, 'json_changesets', url)
@@ -319,12 +316,6 @@ def teamsnippet(loc, team_locales):
 
 
 def dashboard(request):
-    # legacy parameter. It's better to use the About milestone page for this.
-    if 'ms' in request.GET:
-        url = reverse(shipping.views.milestone.about,
-                      args=[request.GET['ms']])
-        return redirect(url)
-
     query = defaultdict(list)
     subtitles = []
 
@@ -372,187 +363,3 @@ def dashboard(request):
                     'progress_start': progress_start,
                     'query': mark_safe(urlencode(query, True)),
                   })
-
-
-def milestones(request):
-    """Administrate milestones.
-
-    Opens an exhibit that offers the actions below depending on
-    milestone status and user permissions.
-    """
-    # we need to use {% url %} with an exhibit {{.foo}} as param,
-    # fake { and } to be safe in urllib.quote, which is what reverse
-    # calls down the line.
-    if '{' not in urllib.always_safe:
-        always_safe = urllib.always_safe
-        urllib.always_safe = always_safe + '{}'
-    else:
-        always_safe = None
-    # XXX this should have some sort of try:finally: to safely restore urllib
-    r = render(request, 'shipping/milestones.html', {
-                  'login_form_needs_reload': True,
-                  'request': request,
-                  'Milestone': Milestone,
-                })
-    if always_safe is not None:
-        urllib.always_safe = always_safe
-    return r
-
-
-def stones_data(request):
-    """JSON data to be used by milestones
-    """
-    latest = defaultdict(int)
-    items = []
-    stones = Milestone.objects.order_by('-pk').select_related('appver__app')
-    building = list(AppVersion.trees.through.objects
-                    .current()
-                    .values_list('appversion', flat=True))
-    maxage = 5
-    for stone in stones:
-        age = latest[stone.appver.id]
-        if age >= maxage:
-            continue
-        latest[stone.appver.id] += 1
-        items.append({'label': str(stone),
-                      'appver': str(stone.appver),
-                      'building': stone.appver_id in building,
-                      'status': stone.status,
-                      'code': stone.code,
-                      'age': age})
-
-    return http.HttpResponse(json.dumps({'items': items}, indent=2))
-
-
-def open_mstone(request):
-    """Open a milestone.
-
-    Only available to POST, and requires signoff.can_open permissions.
-    Redirects to milestone.about().
-    """
-    if (request.method == "POST" and
-        'ms' in request.POST and
-        request.user.has_perm('shipping.can_open')):
-        try:
-            mstone = Milestone.objects.get(code=request.POST['ms'])
-            mstone.status = Milestone.OPEN
-            # XXX create event
-            mstone.save()
-        except:
-            pass
-    return http.HttpResponseRedirect(reverse(shipping.views.milestone.about,
-                                             args=[mstone.code]))
-
-
-def confirm_ship_mstone(request):
-    """Intermediate page when shipping a milestone.
-
-    Gathers all data to verify when shipping.
-    Ends up in ship_mstone if everything is fine.
-    Redirects to milestones() in case of trouble.
-    """
-    if not request.GET.get('ms'):
-        raise http.Http404("ms must be supplied")
-    mstone = get_object_or_404(Milestone, code=request.GET['ms'])
-    if mstone.status != Milestone.OPEN:
-        return http.HttpResponseRedirect(reverse(milestones))
-    flags4loc = (flags4appversions([mstone.appver])
-                 [mstone.appver])
-
-    pending_locs = []
-    good = 0
-    for loc, (real_av, flags) in flags4loc.iteritems():
-        if real_av == mstone.appver.code and Action.PENDING in flags:
-            # pending
-            pending_locs.append(loc)
-        if Action.ACCEPTED in flags:
-            # good
-            good += 1
-    pending_locs.sort()
-    return render(request, 'shipping/confirm-ship.html', {
-                  'mstone': mstone,
-                  'pending_locs': pending_locs,
-                  'good': good,
-                  'login_form_needs_reload': True,
-                  'request': request,
-                  })
-
-
-def ship_mstone(request):
-    """The actual worker method to ship a milestone.
-
-    Redirects to milestone.about().
-    """
-    if request.method != "POST":
-        return http.HttpResponseNotAllowed(["POST"])
-    if not request.user.has_perm('shipping.can_ship'):
-        # XXX: personally I'd prefer if this was a raised 4xx error (peter)
-        # then I can guarantee better test coverage
-        return http.HttpResponseRedirect(reverse(milestones))
-
-    mstone = get_object_or_404(Milestone, code=request.POST['ms'])
-    if mstone.status != Milestone.OPEN:
-        return http.HttpResponseForbidden('Can only ship open milestones')
-    cs = (accepted_signoffs(mstone.appver)
-          .values_list('id', flat=True))
-    mstone.signoffs.add(*list(cs))  # add them
-    mstone.status = Milestone.SHIPPED
-    # XXX create event
-    mstone.save()
-
-    return http.HttpResponseRedirect(reverse(shipping.views.milestone.about,
-                                             args=[mstone.code]))
-
-
-def confirm_drill_mstone(request):
-    """Intermediate page when fire-drilling a milestone.
-
-    Gathers all data to verify when shipping.
-    Ends up in drill_mstone if everything is fine.
-    Redirects to milestones() in case of trouble.
-    """
-    if not request.GET.get('ms'):
-        raise http.Http404("ms must be supplied")
-    if not request.user.has_perm('shipping.can_ship'):
-        return http.HttpResponseRedirect(reverse(milestones))
-    mstone = get_object_or_404(Milestone, code=request.GET['ms'])
-    if mstone.status != Milestone.OPEN:
-        return http.HttpResponseRedirect(reverse(milestones))
-
-    drill_base = (Milestone.objects
-                  .filter(appver=mstone.appver, status=Milestone.SHIPPED)
-                  .order_by('-pk')
-                  .select_related())
-    return render(request, 'shipping/confirm-drill.html', {
-                    'mstone': mstone,
-                    'older': drill_base[:3],
-                    'login_form_needs_reload': True,
-                    'request': request,
-                  })
-
-
-def drill_mstone(request):
-    """The actual worker method to ship a milestone.
-
-    Only avaible to POST.
-    Redirects to milestone.about().
-    """
-    if request.method != "POST":
-        return http.HttpResponseNotAllowed(["POST"])
-    if not request.user.has_perm('shipping.can_ship'):
-        # XXX: personally I'd prefer if this was a raised 4xx error (peter)
-        # then I can guarantee better test coverage
-        return http.HttpResponseRedirect(reverse(milestones))
-
-    mstone = get_object_or_404(Milestone, code=request.POST.get('ms'))
-    base = get_object_or_404(Milestone, code=request.POST.get('base'))
-    if mstone.status != Milestone.OPEN:
-        return http.HttpResponseForbidden('Can only ship open milestones')
-
-    so_ids = list(base.signoffs.values_list('id', flat=True))
-    mstone.signoffs = so_ids  # add signoffs of base ms
-    mstone.status = Milestone.SHIPPED
-    # XXX create event
-    mstone.save()
-    return redirect(reverse(shipping.views.milestone.about,
-                            args=[mstone.code]))

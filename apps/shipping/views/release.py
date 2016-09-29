@@ -6,14 +6,10 @@ from __future__ import absolute_import
 import re
 from collections import defaultdict
 from datetime import datetime
-from django.db.models import Max, Q
-from django.http import HttpResponseBadRequest
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect
 from django.views import generic
-from django.views.decorators.http import require_POST
 
-from shipping.models import (Application, AppVersion, AppVersionTreeThrough,
-                             Milestone)
+from shipping.models import Application, AppVersion, AppVersionTreeThrough
 
 
 def select_appversions(request):
@@ -51,7 +47,7 @@ class MigrateAppversions(generic.View):
     The request part requires POST.
     '''
     def post(self, request):
-        _redirect = redirect('shipping.views.milestones')
+        _redirect = redirect('shipping.views.dashboard')
         if not request.user.has_perm('shipping.can_ship'):
             return _redirect
         migration_date = datetime.strptime(request.POST.get('migration-date'),
@@ -60,8 +56,11 @@ class MigrateAppversions(generic.View):
         av_details = {}
         for app in app_codes:
             av_details[app] = {'code': request.POST[app + '-code'],
-                              'version': request.POST[app + '-version'],
-                              'fallback': app + '-fallback' in request.POST}
+                               'version': request.POST[app + '-version'],
+                               'fallback': app + '-fallback' in request.POST}
+        # focus dashboard on the appversions we create
+        _redirect += '?' + \
+            '&'.join('av=' + avd['code'] for avd in av_details.values())
         app_ids = list(Application.objects
                        .filter(code__in=app_codes)
                        .values_list('id', flat=True))
@@ -130,83 +129,3 @@ class MigrateAppversions(generic.View):
          .create(appversion=av,
                  tree=tree,  # tree is central, see above
                  start=migration_date))
-
-
-def selectappversions4milestones(request):
-    lastdigits = re.compile('\d+$')
-
-    def inc(s):
-        return lastdigits.sub(lambda m: str(int(m.group()) + 1), s)
-
-    avts = list(AppVersionTreeThrough.objects
-                .current()
-                .filter(Q(tree__code__endswith='aurora') |
-                        Q(tree__code__endswith='beta'))
-                .select_related('appversion__app', 'tree'))
-    appvers = [avt.appversion_id for avt in avts]
-    latest_miles = list(AppVersion.objects
-                        .filter(id__in=appvers)
-                        .annotate(latest_mile=Max("milestone"))
-                        .values_list('latest_mile', flat=True))
-    miles = dict((ms.appver_id, {
-        "code": inc(ms.code),
-        "name": inc(ms.name),
-        "good": ms.status == Milestone.SHIPPED
-        })
-        for ms in Milestone.objects.filter(id__in=latest_miles))
-    data = defaultdict(dict)
-    for avt in avts:
-        branch = avt.tree.code.split("_")[1]
-        data[avt.appversion.app][branch] = {
-            "milestone": miles.get(avt.appversion_id,
-                {
-                    "code": avt.appversion.code + "_beta_b1",
-                    "name": "Beta Build 1",
-                    "good": True
-                }),
-            "appversion": avt.appversion,
-            "branch": branch
-        }
-    data = sorted(({
-        'app': app,
-        'avs': [d['aurora'], d['beta']]
-            } for app, d in data.iteritems()), key=lambda d: d['app'].code)
-    return render(request, 'shipping/select-milestones.html', {
-        "apps": data,
-        })
-
-
-@require_POST
-def create_milestones(request):
-    _redirect = redirect('shipping.views.milestones')
-    if not request.user.has_perm('shipping.can_ship'):
-        return _redirect
-    new_miles = defaultdict(dict)
-    for av in request.POST.getlist('av'):
-        if not request.POST.get('code-%s' % av):
-            return HttpResponseBadRequest("'code' not in posted details")
-        new_miles[av]['code'] = request.POST['code-%s' % av]
-        # name can be blank
-        # see https://bugzilla.mozilla.org/show_bug.cgi?id=798529
-        new_miles[av]['name'] = request.POST.get('name-%s' % av, '')
-
-    # first, let's make sure all data is OK, and then create stuff
-    for av, details in new_miles.iteritems():
-        details['av'] = get_object_or_404(AppVersion, code=av)
-
-    # it survived the data input check,
-    # now check those code not to already exist
-    codes = [details['code'] for details in new_miles.itervalues()]
-    already_exists = (Milestone.objects
-                      .filter(code__in=codes)
-                      .values_list('code', flat=True))
-    if already_exists:
-        return HttpResponseBadRequest(
-            "Milestone for %s already created" % ', '.join(already_exists)
-        )
-
-    for details in new_miles.itervalues():
-        details['av'].milestone_set.create(code=details['code'],
-                                           name=details['name'],
-                                           status=Milestone.OPEN)
-    return _redirect

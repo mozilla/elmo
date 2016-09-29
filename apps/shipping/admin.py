@@ -3,18 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
 
-from shipping.models import (
-  Action, Milestone, Event, Application, AppVersion)
+from shipping.models import Action, Application, AppVersion
 from django.contrib import admin
-
-
-class MilestoneAdmin(admin.ModelAdmin):
-    exclude = ('signoffs',)
 
 
 admin.site.register(Application)
 admin.site.register(AppVersion)
 admin.site.register(AppVersion.trees.through)
-admin.site.register(Milestone, MilestoneAdmin)
 admin.site.register(Action)
-admin.site.register(Event)

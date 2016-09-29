@@ -3,10 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
 
-import datetime
 from django import forms
-from django.conf import settings
-from shipping.models import Milestone, AppVersion
+from shipping.models import AppVersion
 
 
 class ModelInstanceField(forms.fields.Field):
@@ -27,8 +25,7 @@ class ModelInstanceField(forms.fields.Field):
 
 
 class SignoffFilterForm(forms.Form):
-    ms = ModelInstanceField(Milestone, key='code', required=False)
-    av = ModelInstanceField(AppVersion, key='code', required=False)
+    av = ModelInstanceField(AppVersion, key='code')
     up_until = forms.fields.DateTimeField(required=False)
 
 
