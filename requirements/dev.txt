@@ -3,7 +3,7 @@
 # Include production requirements
 -r env.txt
 
-coverage==4.1
+coverage==4.2
 
 mock==2.0.0
 
