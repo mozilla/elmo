@@ -28,7 +28,9 @@ class Command(BaseCommand):
         # builds that matter. Reduce the risk by only running on
         # idle builders, and limiting all queries to the data we have at
         # that point.
-        if Builder.objects.exclude(bigState='idle').count():
+        if (Builder.objects
+            .exclude(bigState='idle')
+            .exclude(bigState='offline').count()):
             raise CommandError('Wait for all builders to be idle')
         buildrequests = freeze(BuildRequest)
         sourcestamps = freeze(SourceStamp)
