@@ -58,9 +58,6 @@ class MigrateAppversions(generic.View):
             av_details[app] = {'code': request.POST[app + '-code'],
                                'version': request.POST[app + '-version'],
                                'fallback': app + '-fallback' in request.POST}
-        # focus dashboard on the appversions we create
-        _redirect += '?' + \
-            '&'.join('av=' + avd['code'] for avd in av_details.values())
         app_ids = list(Application.objects
                        .filter(code__in=app_codes)
                        .values_list('id', flat=True))
