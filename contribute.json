@@ -9,7 +9,7 @@
         "irc": "irc://irc.mozilla.org/#l10n",
         "irc-contacts": [
             "Pike"
-        ],
+        ]
     },
     "urls": {
         "prod": "https://l10n.mozilla.org/",
