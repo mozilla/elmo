@@ -8,6 +8,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.contrib import admin
 from django.conf import settings
 from django.http import HttpResponse
+from django.views.generic import TemplateView
 
 ## Monkeypatches:
 ## ... don't go here anymore, but in to elmo.apps.ElmoConfig
@@ -28,7 +29,9 @@ urlpatterns = [
     url(r'^bugs/', include('bugsy.urls')),
     url(r'^accounts/', include('accounts.urls')),
     url(r'^', include('homepage.urls')),
-
+    url(r'^contribute.json$',
+        TemplateView.as_view(template_name='contribute.json',
+                             content_type='application/json')),
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
     # to INSTALLED_APPS to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
