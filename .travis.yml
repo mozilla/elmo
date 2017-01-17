@@ -1,0 +1,17 @@
+sudo: false
+language: python
+python:
+    - "2.7"
+before_install:
+    - git submodule update --init --recursive
+install:
+    - pip install -U pip
+    - pip install -r requirements/dev.txt
+before_script:
+    #- cp elmo/settings/ldap_settings.py-dist elmo/settings/ldap_settings.py
+    - cp elmo/settings/travis-local.py elmo/settings/local.py
+    - mysql -e 'CREATE DATABASE IF NOT EXISTS test_elmo;'
+script:
+    - python manage.py test --noinput
+services:
+    - mysql
