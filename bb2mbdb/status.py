@@ -45,17 +45,8 @@ def setupBridge(master, settings, config):
     on the given settings.
     '''
 
-    # allow settings to be none for tests
-    if settings is not None:
-        os.environ['DJANGO_SETTINGS_MODULE'] = settings
-
-    import django
-    django.setup()
-
     import bb2mbdb.utils
-    reload(bb2mbdb.utils)
     import mbdb.models
-    reload(mbdb.models)
     from bb2mbdb.utils import modelForSource, modelForChange, modelForLog, \
         timeHelper
     from mbdb.models import Master, Slave, Builder, BuildRequest, Build

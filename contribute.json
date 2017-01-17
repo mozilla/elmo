@@ -1,0 +1,23 @@
+{
+    "description": "The code that runs https://l10n.mozilla.org/",
+    "name": "elmo",
+    "repository": {
+        "license": "MPL2",
+        "url": "https://github.com/mozilla/elmo"
+    },
+    "participate": {
+        "irc": "irc://irc.mozilla.org/#l10n",
+        "irc-contacts": [
+            "Pike"
+        ]
+    },
+    "urls": {
+        "prod": "https://l10n.mozilla.org/",
+        "stage": "https://l10n.allizom.org/"
+    },
+    "bugs": {
+        "list": "https://bugzilla.mozilla.org/buglist.cgi?product=Webtools&component=elmo",
+        "report": "https://bugzilla.mozilla.org/enter_bug.cgi?product=Webtools&component=elmo",
+        "mentored": "https://bugzilla.mozilla.org/buglist.cgi?f1=bug_mentor&o1=isnotempty&query_format=advanced&bug_status=NEW&product=Webtools&component=elmo"
+    }
+}

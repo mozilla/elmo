@@ -9,7 +9,7 @@ from __future__ import absolute_import
 from django.core.management.base import BaseCommand, CommandError
 
 from mbdb.models import (Builder, BuildRequest, SourceStamp, NumberedChange,
-                         Change, Tag, File)
+                         Change, Tag, File, Property)
 
 
 def freeze(cls):
@@ -28,7 +28,9 @@ class Command(BaseCommand):
         # builds that matter. Reduce the risk by only running on
         # idle builders, and limiting all queries to the data we have at
         # that point.
-        if Builder.objects.exclude(bigState='idle').count():
+        if (Builder.objects
+            .exclude(bigState='idle')
+            .exclude(bigState='offline').count()):
             raise CommandError('Wait for all builders to be idle')
         buildrequests = freeze(BuildRequest)
         sourcestamps = freeze(SourceStamp)
@@ -36,6 +38,7 @@ class Command(BaseCommand):
         changes = freeze(Change)
         tags = freeze(Tag)
         files = freeze(File)
+        properties = freeze(Property)
 
         # find build requests without builds
         q = buildrequests.filter(builds__isnull=True)
@@ -81,3 +84,12 @@ class Command(BaseCommand):
             q.delete()
         else:
             self.stdout.write('No orphaned files found\n')
+
+        # find properties without builds
+        q = properties.filter(builds__isnull=True)
+        cnt = q.count()
+        if cnt:
+            self.stdout.write('Deleting %d properties\n' % cnt)
+            q.delete()
+        else:
+            self.stdout.write('No orphaned properties found\n')
