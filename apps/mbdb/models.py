@@ -97,7 +97,7 @@ class Property(models.Model):
 
     To support complex property values, they are internally pickled.
     """
-    name = models.CharField(max_length=20, db_index=True)
+    name = models.CharField(max_length=40, db_index=True)
     source = models.CharField(max_length=20, db_index=True)
     value = fields.PickledObjectField(null=True, blank=True)
 

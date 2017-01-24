@@ -6,6 +6,11 @@ l10n community.
 
 https://wiki.mozilla.org/Elmo
 
+Test status
+-----------
+Develop: [![Build Status](https://travis-ci.org/mozilla/elmo.svg?branch=develop)](https://travis-ci.org/mozilla/elmo)
+
+Master: [![Build Status](https://travis-ci.org/mozilla/elmo.svg?branch=master)](https://travis-ci.org/mozilla/elmo)
 
 Getting started
 ---------------
