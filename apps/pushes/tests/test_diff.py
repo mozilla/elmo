@@ -729,7 +729,7 @@ class DiffTestCase(RepoTestBase):
         # unit test part
         v = DiffView()
         v.getrepo('orig')
-        files = v.contextsAndPaths(rev_from, rev_to, 'orig')
+        files = v.contextsAndPaths(rev_from, rev_to)
         eq_(files, [('file.dtd', 'changed')])
         lines = v.diffLines('file.dtd', 'changed')
         eq_(len(lines), 3)
@@ -785,7 +785,7 @@ class DiffTestCase(RepoTestBase):
         v = DiffView()
         v.getrepo('one')
         with self.assertRaises(BadRevision) as badrev:
-            v.contextsAndPaths(rev_from, rev_to, 'one')
+            v.contextsAndPaths(rev_from, rev_to)
         eq_(badrev.exception.args,
             ('from and to parameter are not connected',))
         # integration test part, failure to load
@@ -1034,6 +1034,91 @@ class DiffTestCase(RepoTestBase):
         eq_(response.status_code, 200)
         self.assertIn('line-added', response.content)
         self.assertNotIn('line-removed', response.content)
+
+    def test_local_path_of_fork(self):
+        """Test diffing a fork"""
+        hgrepo = hglib.init(self.repo).open()
+        (open(hgrepo.pathto('file.dtd'), 'w')
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
+
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
+        (open(hgrepo.pathto('file.dtd'), 'w')
+            .write('''
+            <!ENTITY key1 "Hello">
+            '''))
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        dbrepo = self.dbrepo(changesets_from=hgrepo)
+        hgrepo.close()
+        fork = self.dbrepo(name='fork')
+        fork.fork_of = dbrepo
+        fork.save()
+
+        url = reverse('pushes:diff')
+
+        # test forward, key removed
+        response = self.client.get(url, {
+            'repo': fork.name,
+            'from': rev0,
+            'to': rev1
+        })
+        eq_(response.status_code, 200)
+        self.assertIn('line-removed', response.content)
+        self.assertNotIn('line-added', response.content)
+
+    def test_local_path_of_divergent_fork(self):
+        """Test diffing a fork with divergent commits"""
+        hgrepo = hglib.init(self.repo).open()
+        (open(hgrepo.pathto('file.dtd'), 'w')
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit",
+                      addremove=True)
+        rev0 = hgrepo[0].node()
+        (open(hgrepo.pathto('file.dtd'), 'w')
+            .write('''
+            <!ENTITY key1 "Hello">
+            '''))
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        hgrepo.update(rev=rev0)
+        (open(hgrepo.pathto('file.dtd'), 'w')
+            .write('''
+            <!ENTITY key2 "Cruel">
+            '''))
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Branch commit")
+        rev2 = hgrepo[2].node()
+
+        dbrepo = self.dbrepo(changesets_from=hgrepo, revrange=rev1)
+        fork = self.dbrepo(name='fork', changesets_from=hgrepo,
+                           revrange=rev2)
+        fork.fork_of = dbrepo
+        fork.save()
+        hgrepo.close()
+
+        url = reverse('pushes:diff')
+
+        # test forward, key removed
+        response = self.client.get(url, {
+            'repo': fork.name,
+            'from': rev1,
+            'to': rev2
+        })
+        eq_(response.status_code, 200)
+        self.assertIn('line-removed', response.content)
+        self.assertIn('line-added', response.content)
 
 
 class ProcessForkTestCase(RepoTestBase):

@@ -54,8 +54,7 @@ class DiffView(View):
             return http.HttpResponseBadRequest("Missing 'to' parameter")
         try:
             paths = self.contextsAndPaths(request.GET['from'],
-                                          request.GET['to'],
-                                          reponame)
+                                          request.GET['to'])
         except BadRevision as e:
             return http.HttpResponseBadRequest(e.args[0])
         diffs = DataTree(dict)
@@ -91,25 +90,24 @@ class DiffView(View):
     def getrepo(self, reponame):
         self.repo = Repository.objects.get(name=reponame)
 
-    def contextsAndPaths(self, _from, _to, suggested_repo):
+    def contextsAndPaths(self, _from, _to):
         # if we get 'default' or 'tip' as revision, retrieve that
         # from the db, so that we don't rely on our local clones
         # having the same data as upstream for unified repos
         if _from in ('default', 'tip'):
             _from = (Changeset.objects
-                     .filter(repositories__name=suggested_repo)
+                     .filter(repositories=self.repo)
                      .filter(branch=1)  # default branch
                      .order_by('-pk')
                      .values_list('revision', flat=True)[0])
         if _to in ('default', 'tip'):
             _to = (Changeset.objects
-                  .filter(repositories__name=suggested_repo)
+                  .filter(repositories=self.repo)
                   .filter(branch=1)  # default branch
                   .order_by('-pk')
                   .values_list('revision', flat=True)[0])
-        repopath = settings.REPOSITORY_BASE + '/' + suggested_repo
         ui = _ui()
-        repo = repository(ui, repopath)
+        repo = repository(ui, self.repo.local_path())
         # Convert the 'from' and 'to' to strings (instead of unicode)
         # in case mercurial needs to look for the key in binary data.
         # This prevents UnicodeWarning messages.
@@ -186,8 +184,7 @@ class DiffView(View):
                 # original error
                 raise e
         # ok, new repo
-        repopath = settings.REPOSITORY_BASE + '/' + dbrepo.name
-        otherrepo = repository(_ui(), repopath)
+        otherrepo = repository(_ui(), dbrepo.local_path())
         return otherrepo.changectx(str(rev)), otherrepo, dbrepo
 
     def processFork(self, fromrepo, ctx1, torepo, ctx2, anc_rev):

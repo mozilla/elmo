@@ -13,7 +13,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 from django.views.generic import View
-from life.models import Changeset, Locale, Push
+from life.models import Repository, Changeset, Locale, Push
 from l10nstats.models import Run, ProgressPosition
 from shipping.api import accepted_signoffs, flags4appversions
 from shipping.models import Action, Signoff, AppVersion
@@ -119,8 +119,9 @@ class JSONChangesets(SignoffDataView):
         import hglib
         for plat in sorted(multis.keys()):
             props = multis[plat]
+            dbrepo = Repository.objects.get(name=props['repo'])
             path = os.path.join(settings.REPOSITORY_BASE,
-                                props['repo'])
+                                dbrepo.local_path())
             try:
                 repo = hglib.open(path)
             except:
@@ -131,7 +132,7 @@ class JSONChangesets(SignoffDataView):
                 if rev in ('default', 'tip'):
                     # let's not rely on the repo to have this right
                     rev = (Changeset.objects
-                           .filter(repositories__name=props['repo'])
+                           .filter(repositories=dbrepo)
                            .filter(branch=1)  # default branch
                            .order_by('-pk')
                            .values_list('revision', flat=True)[0])
