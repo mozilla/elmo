@@ -49,8 +49,9 @@ class Command(BaseCommand):
             if not os.path.isdir(os.path.join(repopath, '.hg')):
                 # new repo, need to clone
                 if os.path.isdir(repopath):
-                    self.stdout.write(("\n\nCannot clone %s, "
-                           "existing directory in the way\n\n") % name)
+                    self.stdout.write((
+                        "\n\nCannot clone %s, "
+                        "existing directory in the way\n\n") % name)
                     continue
                 _parent = os.path.dirname(repopath)
                 if not os.path.isdir(_parent):

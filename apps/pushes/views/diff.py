@@ -126,8 +126,8 @@ class DiffView(View):
             except IndexError:
                 raise BadRevision("from and to parameter are not connected")
             changed, added, removed, copies = \
-                    self.processFork(fromrepo, self.ctx1, torepo, self.ctx2,
-                                     anc_rev)
+                self.processFork(fromrepo, self.ctx1, torepo, self.ctx2,
+                                 anc_rev)
         # split up the copies info into thos that were renames and those that
         # were copied.
         self.moved = {}
@@ -203,10 +203,9 @@ class DiffView(View):
             try:
                 added.remove(f)
                 # this file moved from ctx1 to ct2, adjust copies
-                if (f in more_reverse and
-                    f in first_copies):
+                if f in more_reverse and f in first_copies:
                     if more_reverse[f] == first_copies[f]:
-                        #file moving back and forth, check manifests below
+                        # file moving back and forth, check manifests below
                         check_manifests.add(first_copies[f])
             except ValueError:
                 removed.append(f)
@@ -280,7 +279,7 @@ class DiffView(View):
             if action == 'delete':
                 lines.append({
                   'class': 'removed',
-                  'oldval': [{'value':a_entities[a_map[item_or_pair]].val}],
+                  'oldval': [{'value': a_entities[a_map[item_or_pair]].val}],
                   'newval': '',
                   'entity': item_or_pair
                 })

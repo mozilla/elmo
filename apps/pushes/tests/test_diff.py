@@ -36,21 +36,21 @@ class DiffTestCase(RepoTestBase):
         """Change one file by adding a new line to it"""
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
 
         hgrepo.addremove()
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="initial commit")
         rev0 = hgrepo[0].node()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             <!ENTITY key3 "World">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            <!ENTITY key3 "World">
+            '''))
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="Second commit")
         rev1 = hgrepo[1].node()
@@ -79,35 +79,35 @@ class DiffTestCase(RepoTestBase):
         """Change one file by editing an existing line"""
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
 
         hgrepo.addremove()
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="initial commit")
         rev0 = hgrepo[0].node()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruelle">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruelle">
+            '''))
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="Second commit")
         rev1 = hgrepo[1].node()
         hgrepo.close()
 
         Repository.objects.create(
-          name=self.repo_name,
-          url='http://localhost:8001/%s/' % self.repo_name
+            name=self.repo_name,
+            url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
@@ -120,34 +120,34 @@ class DiffTestCase(RepoTestBase):
         """Change one file by removal of a line"""
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
 
         hgrepo.addremove()
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="initial commit")
         rev0 = hgrepo[0].node()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            '''))
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="Second commit")
         rev1 = hgrepo[1].node()
         hgrepo.close()
 
         Repository.objects.create(
-          name=self.repo_name,
-          url='http://localhost:8001/%s/' % self.repo_name
+            name=self.repo_name,
+            url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
@@ -160,19 +160,19 @@ class DiffTestCase(RepoTestBase):
         """Change by adding a new second file"""
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
 
         hgrepo.addremove()
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="initial commit")
         rev0 = hgrepo[0].node()
         (open(hgrepo.pathto('file2.dtd'), 'w')
-             .write('''
-             <!ENTITY key9 "Monde">
-             '''))
+            .write('''
+            <!ENTITY key9 "Monde">
+            '''))
         hgrepo.addremove()
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="Second commit")
@@ -180,15 +180,15 @@ class DiffTestCase(RepoTestBase):
         hgrepo.close()
 
         Repository.objects.create(
-          name=self.repo_name,
-          url='http://localhost:8001/%s/' % self.repo_name
+            name=self.repo_name,
+            url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
@@ -202,10 +202,10 @@ class DiffTestCase(RepoTestBase):
         """Change by removing a file, with parser"""
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
 
         hgrepo.addremove()
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
@@ -218,15 +218,15 @@ class DiffTestCase(RepoTestBase):
         hgrepo.close()
 
         Repository.objects.create(
-          name=self.repo_name,
-          url='http://localhost:8001/%s/' % self.repo_name
+            name=self.repo_name,
+            url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
@@ -242,7 +242,7 @@ class DiffTestCase(RepoTestBase):
         """Change by removing a file, without parser"""
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.txt'), 'w')
-             .write('line 1\nline 2\n'))
+            .write('line 1\nline 2\n'))
 
         hgrepo.addremove()
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
@@ -256,15 +256,15 @@ class DiffTestCase(RepoTestBase):
 
         repo_url = 'http://localhost:8001/%s/' % self.repo_name
         Repository.objects.create(
-          name=self.repo_name,
-          url=repo_url
+            name=self.repo_name,
+            url=repo_url
         )
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
@@ -281,10 +281,10 @@ class DiffTestCase(RepoTestBase):
         """Change by doing a rename without any content editing"""
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
 
         hgrepo.addremove()
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
@@ -298,15 +298,15 @@ class DiffTestCase(RepoTestBase):
         hgrepo.close()
 
         Repository.objects.create(
-          name=self.repo_name,
-          url='http://localhost:8001/%s/' % self.repo_name
+            name=self.repo_name,
+            url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
@@ -318,7 +318,7 @@ class DiffTestCase(RepoTestBase):
         """Change by doing a rename of a file without parser"""
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.txt'), 'w')
-             .write('line 1\nline 2\n'))
+            .write('line 1\nline 2\n'))
 
         hgrepo.addremove()
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
@@ -332,15 +332,15 @@ class DiffTestCase(RepoTestBase):
         hgrepo.close()
 
         Repository.objects.create(
-          name=self.repo_name,
-          url='http://localhost:8001/%s/' % self.repo_name
+            name=self.repo_name,
+            url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
@@ -352,10 +352,10 @@ class DiffTestCase(RepoTestBase):
         """Change by doing a rename with content editing"""
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
 
         hgrepo.addremove()
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
@@ -364,26 +364,26 @@ class DiffTestCase(RepoTestBase):
         hgrepo.move(hgrepo.pathto('file.dtd'),
                     hgrepo.pathto('newnamefile.dtd'))
         (open(hgrepo.pathto('newnamefile.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             <!ENTITY key3 "World">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            <!ENTITY key3 "World">
+            '''))
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="Second commit")
         rev1 = hgrepo[1].node()
         hgrepo.close()
 
         Repository.objects.create(
-          name=self.repo_name,
-          url='http://localhost:8001/%s/' % self.repo_name
+            name=self.repo_name,
+            url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
@@ -397,10 +397,10 @@ class DiffTestCase(RepoTestBase):
         """Change by doing a rename with bad content editing"""
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
 
         hgrepo.addremove()
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
@@ -409,26 +409,26 @@ class DiffTestCase(RepoTestBase):
         hgrepo.move(hgrepo.pathto('file.dtd'),
                     hgrepo.pathto('newnamefile.dtd'))
         (codecs.open(hgrepo.pathto('newnamefile.dtd'), 'w', 'latin1')
-             .write(u'''
-             <!ENTITY key1 "Hell\xe2">
-             <!ENTITY key2 "Cruel">
-             <!ENTITY key3 "W\ex3rld">
-             '''))
+            .write(u'''
+            <!ENTITY key1 "Hell\xe2">
+            <!ENTITY key2 "Cruel">
+            <!ENTITY key3 "W\ex3rld">
+            '''))
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="Second commit")
         rev1 = hgrepo[1].node()
         hgrepo.close()
 
         Repository.objects.create(
-          name=self.repo_name,
-          url='http://localhost:8001/%s/' % self.repo_name
+            name=self.repo_name,
+            url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
         html_diff = (response.content
@@ -442,10 +442,10 @@ class DiffTestCase(RepoTestBase):
         """Change by doing a rename on a previously broken file"""
         hgrepo = hglib.init(self.repo).open()
         (codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1')
-             .write(u'''
-             <!ENTITY key1 "Hell\xe3">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write(u'''
+            <!ENTITY key1 "Hell\xe3">
+            <!ENTITY key2 "Cruel">
+            '''))
 
         hgrepo.addremove()
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
@@ -454,25 +454,25 @@ class DiffTestCase(RepoTestBase):
         hgrepo.move(hgrepo.pathto('file.dtd'),
                     hgrepo.pathto('newnamefile.dtd'))
         (open(hgrepo.pathto('newnamefile.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "World">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "World">
+            '''))
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="Second commit")
         rev1 = hgrepo[1].node()
         hgrepo.close()
 
         Repository.objects.create(
-          name=self.repo_name,
-          url='http://localhost:8001/%s/' % self.repo_name
+            name=self.repo_name,
+            url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
         html_diff = (response.content
@@ -488,10 +488,10 @@ class DiffTestCase(RepoTestBase):
         """Change by copying a broken file"""
         hgrepo = hglib.init(self.repo).open()
         (codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1')
-             .write(u'''
-             <!ENTITY key1 "Hell\xe3">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write(u'''
+            <!ENTITY key1 "Hell\xe3">
+            <!ENTITY key2 "Cruel">
+            '''))
 
         hgrepo.addremove()
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
@@ -500,25 +500,25 @@ class DiffTestCase(RepoTestBase):
         hgrepo.copy(hgrepo.pathto('file.dtd'),
                     hgrepo.pathto('newnamefile.dtd'))
         (open(hgrepo.pathto('newnamefile.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "World">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "World">
+            '''))
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="Second commit")
         rev1 = hgrepo[1].node()
         hgrepo.close()
 
         Repository.objects.create(
-          name=self.repo_name,
-          url='http://localhost:8001/%s/' % self.repo_name
+            name=self.repo_name,
+            url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
         html_diff = (response.content
@@ -541,10 +541,10 @@ class DiffTestCase(RepoTestBase):
         eq_(response.status_code, 404)
 
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
 
         hgrepo.addremove()
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
@@ -553,8 +553,8 @@ class DiffTestCase(RepoTestBase):
         hgrepo.close()
 
         Repository.objects.create(
-          name=self.repo_name,
-          url='http://localhost:8001/%s/' % self.repo_name
+            name=self.repo_name,
+            url='http://localhost:8001/%s/' % self.repo_name
         )
 
         # missing 'from' and 'to'
@@ -563,8 +563,8 @@ class DiffTestCase(RepoTestBase):
 
         # missing 'to'
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0
+            'repo': self.repo_name,
+            'from': rev0
         })
         eq_(response.status_code, 400)
 
@@ -572,10 +572,10 @@ class DiffTestCase(RepoTestBase):
         """Change by copying a file with no content editing"""
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
         hgrepo.addremove()
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="initial commit")
@@ -588,15 +588,15 @@ class DiffTestCase(RepoTestBase):
         hgrepo.close()
 
         Repository.objects.create(
-          name=self.repo_name,
-          url='http://localhost:8001/%s/' % self.repo_name
+            name=self.repo_name,
+            url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
@@ -610,7 +610,7 @@ class DiffTestCase(RepoTestBase):
         hgrepo = hglib.init(self.repo).open()
 
         (open(hgrepo.pathto('file.txt'), 'w')
-             .write('line 1\nline 2\n'))
+            .write('line 1\nline 2\n'))
         hgrepo.addremove()
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="initial commit")
@@ -623,15 +623,15 @@ class DiffTestCase(RepoTestBase):
         hgrepo.close()
 
         Repository.objects.create(
-          name=self.repo_name,
-          url='http://localhost:8001/%s/' % self.repo_name
+            name=self.repo_name,
+            url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
@@ -644,10 +644,10 @@ class DiffTestCase(RepoTestBase):
         """Change by copying a file and then content editing"""
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
 
         hgrepo.addremove()
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
@@ -656,25 +656,25 @@ class DiffTestCase(RepoTestBase):
         hgrepo.copy(hgrepo.pathto('file.dtd'),
                     hgrepo.pathto('newnamefile.dtd'))
         (open(hgrepo.pathto('newnamefile.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key3 "World">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key3 "World">
+            '''))
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="Second commit")
         rev1 = hgrepo[1].node()
         hgrepo.close()
 
         Repository.objects.create(
-          name=self.repo_name,
-          url='http://localhost:8001/%s/' % self.repo_name
+            name=self.repo_name,
+            url='http://localhost:8001/%s/' % self.repo_name
         )
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
@@ -800,10 +800,10 @@ class DiffTestCase(RepoTestBase):
         """Modify a binary file"""
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.png'), 'wb')
-             .write(base64.b64decode(
-                 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAAAACklE'
-                 'QVR4nGNoAAAAggCBd81ytgAAAABJRU5ErkJggg=='
-                 )))
+            .write(base64.b64decode(
+                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAAAACklE'
+                'QVR4nGNoAAAAggCBd81ytgAAAABJRU5ErkJggg=='
+                )))
 
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="initial commit",
@@ -811,10 +811,10 @@ class DiffTestCase(RepoTestBase):
         rev0 = hgrepo[0].node()
         # a bit unfair of a change but works for the tests
         (open(hgrepo.pathto('file.png'), 'wb')
-             .write(base64.b64decode(
-                 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAAAACklE'
-                 'QVR4nGNgAAAAAgABSK+kcQAAAABJRU5ErkJggg=='
-                 )))
+            .write(base64.b64decode(
+                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAAAACklE'
+                'QVR4nGNgAAAAAgABSK+kcQAAAABJRU5ErkJggg=='
+                )))
 
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="Second commit")
@@ -822,15 +822,15 @@ class DiffTestCase(RepoTestBase):
 
         repo_url = 'http://localhost:8001/' + self.repo_name + '/'
         Repository.objects.create(
-          name=self.repo_name,
-          url=repo_url
+            name=self.repo_name,
+            url=repo_url
         )
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
@@ -846,7 +846,7 @@ class DiffTestCase(RepoTestBase):
         # do this to trigger an exception on Mozilla.Parser.readContents
         _content = u'<!ENTITY key1 "Hell\xe3">\n'
         (codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1')
-          .write(_content))
+               .write(_content))
 
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="initial commit",
@@ -854,7 +854,7 @@ class DiffTestCase(RepoTestBase):
         rev0 = hgrepo[0].node()
 
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write(u'<!ENTITY key1 "Hello">\n'))
+            .write(u'<!ENTITY key1 "Hello">\n'))
 
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="Second commit")
@@ -862,15 +862,15 @@ class DiffTestCase(RepoTestBase):
 
         repo_url = 'http://localhost:8001/' + self.repo_name + '/'
         Repository.objects.create(
-          name=self.repo_name,
-          url=repo_url
+            name=self.repo_name,
+            url=repo_url
         )
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
@@ -884,7 +884,7 @@ class DiffTestCase(RepoTestBase):
         hgrepo = hglib.init(self.repo).open()
 
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write(u'<!ENTITY key1 "Hello">\n'))
+            .write(u'<!ENTITY key1 "Hello">\n'))
 
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="initial commit",
@@ -894,7 +894,7 @@ class DiffTestCase(RepoTestBase):
         # do this to trigger an exception on Mozilla.Parser.readContents
         _content = u'<!ENTITY key1 "Hell\xe3">\n'
         (codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1')
-          .write(_content))
+            .write(_content))
 
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="Second commit")
@@ -902,15 +902,15 @@ class DiffTestCase(RepoTestBase):
 
         repo_url = 'http://localhost:8001/' + self.repo_name + '/'
         Repository.objects.create(
-          name=self.repo_name,
-          url=repo_url
+            name=self.repo_name,
+            url=repo_url
         )
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
@@ -928,7 +928,7 @@ class DiffTestCase(RepoTestBase):
         hgrepo = hglib.init(self.repo).open()
 
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write(u'<!ENTITY key1 "Hello">\n'))
+            .write(u'<!ENTITY key1 "Hello">\n'))
 
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="initial commit",
@@ -938,7 +938,7 @@ class DiffTestCase(RepoTestBase):
         # do this to trigger an exception on Mozilla.Parser.readContents
         _content = u'<!ENTITY key1 "Hell\xe3">\n'
         (codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1')
-          .write(_content))
+            .write(_content))
 
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="Second commit")
@@ -946,29 +946,29 @@ class DiffTestCase(RepoTestBase):
 
         repo_url = 'http://localhost:8001/' + self.repo_name + '/'
         Repository.objects.create(
-          name=self.repo_name,
-          url=repo_url
+            name=self.repo_name,
+            url=repo_url
         )
         url = reverse('pushes:diff')
 
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': rev1
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
         })
         eq_(response.status_code, 200)
 
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': 'xxx',
-          'to': rev1
+            'repo': self.repo_name,
+            'from': 'xxx',
+            'to': rev1
         })
         eq_(response.status_code, 400)
 
         response = self.client.get(url, {
-          'repo': self.repo_name,
-          'from': rev0,
-          'to': 'xxx'
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': 'xxx'
         })
         eq_(response.status_code, 400)
 

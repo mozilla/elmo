@@ -18,7 +18,7 @@ class Command(RepositoryCommand):
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
         parser.add_argument('--chunk-size', type=int, default=50,
-                            help='Specify the chunk size to use for '\
+                            help='Specify the chunk size to use for '
                             'changeset queries [default=50]')
 
     def handleOptions(self, **kwargs):
