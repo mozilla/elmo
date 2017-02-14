@@ -14,23 +14,17 @@ class Command(BaseCommand):
     help = 'Update set of local clones'
 
     def add_arguments(self, parser):
-        parser.add_argument('--rebase', action='store_true',
-                            help='Use --rebase for hg pull')
         parser.add_argument('-u', '--update', action='store_true',
                             help='Use -u for hg pull')
         parser.add_argument('-a', '--all', action='store_true',
                             help='Refresh all repositories')
 
     def handle(self, *args, **options):
-        rebase = options.get('rebase', False)
         update = options.get('update', False)
         all = options.get('all', False)
-        if rebase:
-            pull_args = {'rebase': True}
-        elif update:
-            pull_args = {'update': True}
-        else:
-            pull_args = {}
+        pull_args = {}
+        if update:
+            pull_args['update'] = True
         from life.models import Repository, Changeset
         import hglib
         import os.path
