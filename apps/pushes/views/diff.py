@@ -92,6 +92,21 @@ class DiffView(View):
         self.repo = Repository.objects.get(name=reponame)
 
     def contextsAndPaths(self, _from, _to, suggested_repo):
+        # if we get 'default' or 'tip' as revision, retrieve that
+        # from the db, so that we don't rely on our local clones
+        # having the same data as upstream for unified repos
+        if _from in ('default', 'tip'):
+            _from = (Changeset.objects
+                     .filter(repositories__name=suggested_repo)
+                     .filter(branch=1)  # default branch
+                     .order_by('-pk')
+                     .values_list('revision', flat=True)[0])
+        if _to in ('default', 'tip'):
+            _to = (Changeset.objects
+                  .filter(repositories__name=suggested_repo)
+                  .filter(branch=1)  # default branch
+                  .order_by('-pk')
+                  .values_list('revision', flat=True)[0])
         repopath = settings.REPOSITORY_BASE + '/' + suggested_repo
         ui = _ui()
         repo = repository(ui, repopath)

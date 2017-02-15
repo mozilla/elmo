@@ -972,6 +972,69 @@ class DiffTestCase(RepoTestBase):
         })
         eq_(response.status_code, 400)
 
+    def test_default_and_tip(self):
+        """Test default and tip as from and to revision"""
+        hgrepo = hglib.init(self.repo).open()
+        (open(hgrepo.pathto('file.dtd'), 'w')
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
+
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
+        (open(hgrepo.pathto('file.dtd'), 'w')
+            .write('''
+            <!ENTITY key1 "Hello">
+            '''))
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        dbrepo = self.dbrepo(changesets_from=hgrepo)
+        hgrepo.close()
+
+        url = reverse('pushes:diff')
+
+        # test forward, key removed
+        response = self.client.get(url, {
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': 'default'
+        })
+        eq_(response.status_code, 200)
+        self.assertIn('line-removed', response.content)
+        self.assertNotIn('line-added', response.content)
+
+        response = self.client.get(url, {
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': 'tip'
+        })
+        eq_(response.status_code, 200)
+        self.assertIn('line-removed', response.content)
+        self.assertNotIn('line-added', response.content)
+
+        # test backward, key added
+        response = self.client.get(url, {
+            'repo': self.repo_name,
+            'from': 'default',
+            'to': rev0
+        })
+        eq_(response.status_code, 200)
+        self.assertIn('line-added', response.content)
+        self.assertNotIn('line-removed', response.content)
+
+        response = self.client.get(url, {
+            'repo': self.repo_name,
+            'from': 'tip',
+            'to': rev0
+        })
+        eq_(response.status_code, 200)
+        self.assertIn('line-added', response.content)
+        self.assertNotIn('line-removed', response.content)
+
 
 class ProcessForkTestCase(RepoTestBase):
     'Test that output of DiffView.processFork matches .status() and copies()'
