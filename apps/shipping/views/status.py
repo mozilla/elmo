@@ -127,8 +127,16 @@ class JSONChangesets(SignoffDataView):
                 raise SuspiciousOperation("Repo %s doesn't exist" %
                                           str(props['repo']))
             try:
+                rev = str(props['rev'])
+                if rev in ('default', 'tip'):
+                    # let's not rely on the repo to have this right
+                    rev = (Changeset.objects
+                           .filter(repositories__name=props['repo'])
+                           .filter(branch=1)  # default branch
+                           .order_by('-pk')
+                           .values_list('revision', flat=True)[0])
                 locales = repo.cat(files=['path:'+str(props['path'])],
-                                   rev=str(props['rev'])).split()
+                                   rev=rev).split()
             finally:
                 repo.close()
             for loc in locales:
