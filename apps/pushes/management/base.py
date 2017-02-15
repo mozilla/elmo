@@ -26,18 +26,16 @@ class RepositoryCommand(BaseCommand):
     def handle(self, *args, **options):
         self.verbosity = options.pop('verbosity', 1)
         self.handleOptions(**options)
-        from mercurial.ui import ui as _ui
-        from mercurial.hg import repository
+        import hglib
 
         repos = self.repos_for_names(*options['repos'])
-        ui = _ui()
         for dbrepo in repos:
             repopath = str(resolve(dbrepo.name))
             if not os.path.isdir(os.path.join(repopath, '.hg')):
                 self.minimal(("\n  Cannot process %s, "
                               "there's no local clone\n\n") % dbrepo.name)
                 continue
-            hgrepo = repository(ui, repopath)
+            hgrepo = hglib.open(repopath)
             try:
                 self.handleRepo(dbrepo, hgrepo)
             except StopIteration:
@@ -62,7 +60,7 @@ class RepositoryCommand(BaseCommand):
         """
         # count the db entries, excluding changeset 000000000000
         dbcount = dbrepo.changesets.exclude(id=1).count()
-        hgcount = len(hgrepo)
+        hgcount = int(hgrepo.log(revrange="tip")[0].rev) + 1
         return self.handleRepoWithCounts(dbrepo, hgrepo, dbcount, hgcount)
 
     def handleRepoWithCounts(self, dbrepo, hgrepo, dbcount, hgcount):

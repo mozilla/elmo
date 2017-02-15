@@ -6,21 +6,15 @@ from __future__ import absolute_import
 import os
 import datetime
 import time
-import json
-from nose.tools import eq_, ok_
+from nose.tools import eq_
 from elmo.test import TestCase
-from django import http
 from django.core.urlresolvers import reverse
-from mercurial import commands as hgcommands
-from mercurial.hg import repository
-from mercurial.error import RepoError, RepoLookupError
+import hglib
 
 from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from life.models import Repository, Push, Branch, File
-from pushes import repo_fixtures
-from pushes.utils import get_or_create_changeset
 from pushes.utils import handlePushes, PushJS
-from .base import mock_ui, RepoTestBase
+from .base import RepoTestBase
 
 
 class PushesTestCase(TestCase, EmbedsTestCaseMixin):
@@ -48,28 +42,25 @@ class TestHandlePushes(RepoTestBase):
         )
         self.assertEqual(handlePushes(repo.pk, []), None)
 
-        ui = mock_ui()
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
 
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit",
+                      addremove=True)
+        rev0 = hgrepo[0].node()
 
         timestamp = int(time.time())
         push_id = 100
         username = 'jdoe'
         pushjs0 = PushJS(push_id, {
-          'date': timestamp,
-          'changesets': [rev0],
-          'user': username,
+            'date': timestamp,
+            'changesets': [rev0],
+            'user': username,
         })
         result = handlePushes(repo.pk, [pushjs0])
         self.assertEqual(result, 1)
@@ -94,64 +85,56 @@ class TestHandlePushes(RepoTestBase):
 
     def test_handlePushes_messedup_revisions(self):
         repo = Repository.objects.create(
-          name='mozilla-central',
-          url='file:///' + self.repo
+            name='mozilla-central',
+            url='file:///' + self.repo
         )
         self.assertEqual(handlePushes(repo.pk, []), None)
 
-        ui = mock_ui()
-
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
 
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit",
+                      addremove=True)
+        rev0 = hgrepo[0].node()
 
         timestamp = int(time.time())
         pushjs0 = PushJS(100, {
-          'date': timestamp,
-          'changesets': [rev0[::-1]],
-          'user': 'jdoe',
+            'date': timestamp,
+            'changesets': [rev0[::-1]],
+            'user': 'jdoe',
         })
-        self.assertRaises(RepoLookupError, handlePushes,
+        self.assertRaises(KeyError, handlePushes,
                           repo.pk, [pushjs0])
 
     def test_handlePushes_space_files(self):
         repo = Repository.objects.create(
-          name='mozilla-central',
-          url='file:///' + self.repo
+            name='mozilla-central',
+            url='file:///' + self.repo
         )
         self.assertEqual(handlePushes(repo.pk, []), None)
 
-        ui = mock_ui()
-
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd '), 'w')  # deliberate trailing space
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
 
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit",
+                      addremove=True)
+        rev0 = hgrepo[0].node()
 
         timestamp = int(time.time())
         pushjs0 = PushJS(100, {
-          'date': timestamp,
-          'changesets': [rev0],
-          'user': 'jdoe',
+            'date': timestamp,
+            'changesets': [rev0],
+            'user': 'jdoe',
         })
         handlePushes(repo.pk, [pushjs0])
 
@@ -160,32 +143,28 @@ class TestHandlePushes(RepoTestBase):
 
     def test_handlePushes_repeated(self):
         repo = Repository.objects.create(
-          name='mozilla-central',
-          url='file:///' + self.repo
+            name='mozilla-central',
+            url='file:///' + self.repo
         )
         self.assertEqual(handlePushes(repo.pk, []), None)
 
-        ui = mock_ui()
-
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
 
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit",
+                      addremove=True)
+        rev0 = hgrepo[0].node()
 
         timestamp = int(time.time())
         pushjs0 = PushJS(100, {
-          'date': timestamp,
-          'changesets': [rev0],
-          'user': 'jdoe',
+            'date': timestamp,
+            'changesets': [rev0],
+            'user': 'jdoe',
         })
         # first time
         pushes_initial = Push.objects.all().count()
@@ -202,82 +181,74 @@ class TestHandlePushes(RepoTestBase):
 
     def test_handlePushes_cause_repoerror(self):
         repo = Repository.objects.create(
-          name='mozilla-central',
-          url='file:///does/not/exist'
+            name='mozilla-central',
+            url='file:///does/not/exist'
         )
         self.assertEqual(handlePushes(repo.pk, []), None)
 
-        ui = mock_ui()
-
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
 
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit",
+                      addremove=True)
+        rev0 = hgrepo[0].node()
 
         timestamp = int(time.time())
         pushjs0 = PushJS(100, {
-          'date': timestamp,
-          'changesets': [rev0],
-          'user': 'jdoe',
+            'date': timestamp,
+            'changesets': [rev0],
+            'user': 'jdoe',
         })
-        self.assertRaises(RepoError, handlePushes,
+        self.assertRaises(hglib.error.CommandError, handlePushes,
                           repo.pk, [pushjs0])
 
     def test_handlePushes_twice(self):
         repo = Repository.objects.create(
-          name='mozilla-central',
-          url='file://' + self.repo
+            name='mozilla-central',
+            url='file://' + self.repo
         )
 
-        ui = mock_ui()
-        hgcommands.init(ui, self.repo)
-        hgrepo = repository(ui, self.repo)
+        hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             '''))
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            '''))
 
-        hgcommands.addremove(ui, hgrepo)
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="initial commit")
-        rev0 = hgrepo[0].hex()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit",
+                      addremove=True)
+        rev0 = hgrepo[0].node()
 
         timestamp = int(time.time())
         pushjs0 = PushJS(100, {
-          'date': timestamp,
-          'changesets': [rev0],
-          'user': 'jdoe',
+            'date': timestamp,
+            'changesets': [rev0],
+            'user': 'jdoe',
         })
         result = handlePushes(repo.pk, [pushjs0])
 
         (open(hgrepo.pathto('file.dtd'), 'w')
-             .write('''
-             <!ENTITY key1 "Hello">
-             <!ENTITY key2 "Cruel">
-             <!ENTITY key3 "World">
-             '''))
-        hgcommands.commit(ui, hgrepo,
-                  user="Jane Doe <jdoe@foo.tld>",
-                  message="Second commit")
-        rev1 = hgrepo[1].hex()
+            .write('''
+            <!ENTITY key1 "Hello">
+            <!ENTITY key2 "Cruel">
+            <!ENTITY key3 "World">
+            '''))
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
 
         # a second time
         timestamp = int(time.time())
         pushjs0 = PushJS(101, {
-          'date': timestamp,
-          'changesets': [rev1],
-          'user': 'jdoe',
+            'date': timestamp,
+            'changesets': [rev1],
+            'user': 'jdoe',
         })
 
         # re-fetch

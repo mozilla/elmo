@@ -45,7 +45,7 @@ class RepoTestBase(TestCase):
         )
         if changesets_from is None:
             return repo
-        for rev in changesets_from:
-            get_or_create_changeset(repo, changesets_from,
-                                    changesets_from[rev].hex())
+        for rev in changesets_from.log(revrange='head()'):
+            ctx = changesets_from[rev]
+            get_or_create_changeset(repo, changesets_from, ctx)
         return repo
