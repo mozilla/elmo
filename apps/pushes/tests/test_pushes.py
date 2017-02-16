@@ -40,7 +40,6 @@ class TestHandlePushes(RepoTestBase):
           name='mozilla-central',
           url='file:///' + self.repo
         )
-        self.assertEqual(handlePushes(repo.pk, []), None)
 
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
@@ -88,7 +87,6 @@ class TestHandlePushes(RepoTestBase):
             name='mozilla-central',
             url='file:///' + self.repo
         )
-        self.assertEqual(handlePushes(repo.pk, []), None)
 
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
@@ -116,7 +114,6 @@ class TestHandlePushes(RepoTestBase):
             name='mozilla-central',
             url='file:///' + self.repo
         )
-        self.assertEqual(handlePushes(repo.pk, []), None)
 
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd '), 'w')  # deliberate trailing space
@@ -146,7 +143,6 @@ class TestHandlePushes(RepoTestBase):
             name='mozilla-central',
             url='file:///' + self.repo
         )
-        self.assertEqual(handlePushes(repo.pk, []), None)
 
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')
@@ -184,7 +180,6 @@ class TestHandlePushes(RepoTestBase):
             name='mozilla-central',
             url='file:///does/not/exist'
         )
-        self.assertEqual(handlePushes(repo.pk, []), None)
 
         hgrepo = hglib.init(self.repo).open()
         (open(hgrepo.pathto('file.dtd'), 'w')

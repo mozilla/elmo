@@ -7,12 +7,15 @@
 from __future__ import absolute_import, division
 
 from datetime import datetime
+import json
 import os.path
+import urllib2
 import hglib
 
 from life.models import Repository, Push, Changeset, Branch, File
 from django.conf import settings
-from django.db import transaction
+from django.db import transaction, connection
+from six.moves import range
 
 
 def getURL(repo, limit):
@@ -61,8 +64,8 @@ def get_or_create_changeset(repo, hgrepo, ctx):
     # has an ID
     cs.save()
 
-    cs.parents = p_dict.values()
-    repo.changesets.add(cs, *(p_dict.values()))
+    cs.parents = list(p_dict.values())
+    repo.changesets.add(cs, *(list(p_dict.values())))
     spacefiles = [p for p in ctx.files() if p.endswith(' ')]
     goodfiles = [p for p in ctx.files() if not p.endswith(' ')]
     if goodfiles:
@@ -72,14 +75,13 @@ def get_or_create_changeset(repo, hgrepo, ctx):
         chunk_size = len(goodfiles) // chunk_count
         if len(goodfiles) % chunk_size:
             chunk_size += 1
-        for i in xrange(chunk_count):
+        for i in range(chunk_count):
             good_chunk = goodfiles[i * chunk_size:(i + 1) * chunk_size]
             existingfiles = File.objects.filter(path__in=good_chunk)
             existingpaths = existingfiles.values_list('path',
                                                       flat=True)
             existingpaths = dict.fromkeys(existingpaths)
-            missingpaths = filter(lambda p: p not in existingpaths,
-                                  good_chunk)
+            missingpaths = [p for p in good_chunk if p not in existingpaths]
             File.objects.bulk_create([
                 File(path=p)
                 for p in missingpaths
@@ -89,8 +91,7 @@ def get_or_create_changeset(repo, hgrepo, ctx):
     for path in spacefiles:
         # hack around mysql ignoring trailing ' ', and some
         # of our localizers checking in files with trailing ' '.
-        f = filter(lambda fo: fo.path == path,
-                   File.objects.filter(path=path))
+        f = [fo for fo in File.objects.filter(path=path) if fo.path == path]
         if f:
             cs.files.add(f[0])
         else:
@@ -101,20 +102,32 @@ def get_or_create_changeset(repo, hgrepo, ctx):
     return cs
 
 
-def handlePushes(repo_id, submits, do_update=True):
-    if not submits:
-        return
+def handlePushes(repo_id, submits, do_update=False, close_connection=False):
+    if close_connection:
+        # maybe we lost the connection, close it to make sure we get a new one
+        connection.close()
     repo = Repository.objects.get(id=repo_id)
     hgrepo = _hg_repository_sync(repo.name, repo.url, submits,
                                  do_update=do_update)
+    revs = reduce(
+        lambda r, l: r+l,
+        (data.changesets for data in submits),
+        [])
+    if not revs:
+        r = urllib2.urlopen(repo.url + u'json-log?rev=head()')
+        data = json.load(r)
+        revs += [d['node'] for d in data['entries']]
+        if not revs:
+            revs.append(data['node'])
+    rev_to_changeset = {}
+    for revision in revs:
+        rev_to_changeset[revision] = \
+            get_or_create_changeset(repo, hgrepo, hgrepo[revision])
     # roll the complete push into one transaction, with all the jazz
     # about changesets and files and etc.
     with transaction.atomic():
         for data in submits:
-            changesets = []
-            for revision in data.changesets:
-                cs = get_or_create_changeset(repo, hgrepo, hgrepo[revision])
-                changesets.append(cs)
+            changesets = [rev_to_changeset[rev] for rev in data.changesets]
             p, __ = Push.objects.get_or_create(
               repository=repo,
               push_id=data.id, user=data.user,
@@ -123,6 +136,7 @@ def handlePushes(repo_id, submits, do_update=True):
             p.changesets = changesets
             p.save()
         repo.save()
+    hgrepo.close()
     return len(submits)
 
 
@@ -139,11 +153,7 @@ def _hg_repository_sync(name, url, submits, do_update=True):
         hgrepo.open()
     else:
         hgrepo = hglib.open(repopath)
-        cs = submits[-1].changesets[-1]
-        try:
-            hgrepo[cs]
-        except KeyError:
-            hgrepo.pull(source=str(url))
-            if do_update:
-                hgrepo.update()
+        hgrepo.pull(source=str(url))
+        if do_update:
+            hgrepo.update()
     return hgrepo
