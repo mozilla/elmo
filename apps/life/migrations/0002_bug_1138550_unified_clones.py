@@ -15,11 +15,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='forest',
             name='fork_of',
-            field=models.ForeignKey(related_name='forks', on_delete=django.db.models.deletion.PROTECT, to='life.Forest', null=True),
+            field=models.ForeignKey(related_name='forks', on_delete=django.db.models.deletion.PROTECT, default=None, blank=True, to='life.Forest', null=True),
         ),
         migrations.AddField(
             model_name='repository',
             name='fork_of',
-            field=models.ForeignKey(related_name='forks', on_delete=django.db.models.deletion.PROTECT, to='life.Repository', null=True),
+            field=models.ForeignKey(related_name='forks', on_delete=django.db.models.deletion.PROTECT, default=None, blank=True, to='life.Repository', null=True),
         ),
     ]

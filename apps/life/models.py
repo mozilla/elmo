@@ -146,7 +146,8 @@ class Forest(models.Model):
     name = models.CharField(max_length=100, unique=True)
     url = models.URLField()
     archived = models.BooleanField(default=False)
-    fork_of = models.ForeignKey('self', null=True, on_delete=models.PROTECT,
+    fork_of = models.ForeignKey('self', null=True, blank=True, default=None,
+                                on_delete=models.PROTECT,
                                 related_name='forks')
 
     def __unicode__(self):
@@ -199,7 +200,8 @@ class Repository(models.Model):
                                related_name='repositories')
     locale = models.ForeignKey(Locale, null=True, blank=True)
     archived = models.BooleanField(default=False)
-    fork_of = models.ForeignKey('self', null=True, on_delete=models.PROTECT,
+    fork_of = models.ForeignKey('self', null=True, blank=True, default=None,
+                                on_delete=models.PROTECT,
                                 related_name='forks')
 
     def last_known_push(self):

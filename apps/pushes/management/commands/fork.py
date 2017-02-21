@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 from django.core.management.base import BaseCommand, CommandError
 from django.utils.six.moves import input
+import hglib
 
 from life.models import Forest, Repository
 
@@ -26,23 +27,8 @@ class Command(BaseCommand):
                             help='Forked Repository or Forest')
 
     def handle(self, orig, fork, dry_run=False, **options):
-        import hglib
-        try:
-            orig = Repository.objects.get(name=orig)
-        except Repository.DoesNotExist:
-            try:
-                orig = Forest.objects.get(name=orig)
-            except Forest.DoesNotExist:
-                raise CommandError(
-                    '%s is neither Repository nor Forest' % orig)
-        try:
-            fork = Repository.objects.get(name=fork)
-        except Repository.DoesNotExist:
-            try:
-                fork = Forest.objects.get(name=fork)
-            except Forest.DoesNotExist:
-                raise CommandError(
-                    '%s is neither Repository nor Forest' % fork)
+        orig = self.repo_or_forest(orig)
+        fork = self.repo_or_forest(fork)
         if type(orig) is not type(fork):
             raise CommandError(
                 '%s and %s need to be both Repository or Forest' %
@@ -85,3 +71,14 @@ They don't exist in %s""" % (', '.join(sorted(missing)), orig))
         if not dry_run:
             fork.fork_of = orig
             fork.save()
+
+    def repo_or_forest(self, name):
+        try:
+            repo_like = Repository.objects.get(name=name)
+        except Repository.DoesNotExist:
+            try:
+                repo_like = Forest.objects.get(name=name)
+            except Forest.DoesNotExist:
+                raise CommandError(
+                    '%s is neither Repository nor Forest' % name)
+        return repo_like
