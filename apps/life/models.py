@@ -7,6 +7,8 @@ most notable locales and hg repositories.
 '''
 from __future__ import absolute_import
 
+import os
+from django.conf import settings
 from django.db import models
 from django.dispatch import receiver
 from django.db.models.signals import post_save
@@ -144,12 +146,35 @@ class Forest(models.Model):
     name = models.CharField(max_length=100, unique=True)
     url = models.URLField()
     archived = models.BooleanField(default=False)
+    fork_of = models.ForeignKey('self', null=True, blank=True, default=None,
+                                on_delete=models.PROTECT,
+                                related_name='forks')
 
     def __unicode__(self):
         return self.name
 
     def natural_key(self):
         return (self.name,)
+
+    def relative_path(self):
+        '''If this is a unified local clone, find out which forest
+        we're pulling for that.
+        Relative path to the clones, thus the name.
+        '''
+        relative_path = self.name
+        if self.fork_of:
+            relative_path = self.fork_of.name
+        return relative_path
+
+    def local_path(self):
+        '''If this is a unified local clone, find out which forest
+        we're pulling for that.
+        Used to compute where to search for the local clone, thus
+        the name.
+        '''
+        return os.path.join(
+            settings.REPOSITORY_BASE,
+            *self.relative_path().split('/'))
 
 
 class RepositoryManager(models.Manager):
@@ -175,6 +200,9 @@ class Repository(models.Model):
                                related_name='repositories')
     locale = models.ForeignKey(Locale, null=True, blank=True)
     archived = models.BooleanField(default=False)
+    fork_of = models.ForeignKey('self', null=True, blank=True, default=None,
+                                on_delete=models.PROTECT,
+                                related_name='forks')
 
     def last_known_push(self):
         try:
@@ -182,6 +210,28 @@ class Repository(models.Model):
         except IndexError:
             # no push in repo, return 0
             return 0
+
+    def relative_path(self):
+        '''If this is a unified local clone, find out which repo
+        we're pulling for that.
+        Relative path to the clone, thus the name.
+        '''
+        relative_path = self.name
+        if self.fork_of:
+            relative_path = self.fork_of.name
+        if self.forest and self.forest.fork_of:
+            relative_path = self.forest.fork_of.name + '/' + self.locale.code
+        return relative_path
+
+    def local_path(self):
+        '''If this is a unified local clone, find out which repo
+        we're pulling for that.
+        Used to compute where to search for the local clone, thus
+        the name.
+        '''
+        return os.path.join(
+            settings.REPOSITORY_BASE,
+            *self.relative_path().split('/'))
 
     def save(self, *args, **kwargs):
         # do we need an initial changeset? self.id will be set

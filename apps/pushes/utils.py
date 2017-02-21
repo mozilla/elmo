@@ -107,7 +107,7 @@ def handlePushes(repo_id, submits, do_update=False, close_connection=False):
         # maybe we lost the connection, close it to make sure we get a new one
         connection.close()
     repo = Repository.objects.get(id=repo_id)
-    hgrepo = _hg_repository_sync(repo.name, repo.url, submits,
+    hgrepo = _hg_repository_sync(repo.local_path(), repo.url,
                                  do_update=do_update)
     revs = reduce(
         lambda r, l: r+l,
@@ -140,8 +140,7 @@ def handlePushes(repo_id, submits, do_update=False, close_connection=False):
     return len(submits)
 
 
-def _hg_repository_sync(name, url, submits, do_update=True):
-    repopath = os.path.join(settings.REPOSITORY_BASE, name)
+def _hg_repository_sync(repopath, url, do_update=False):
     configpath = os.path.join(repopath, '.hg', 'hgrc')
     if not os.path.isfile(configpath):
         if not os.path.isdir(os.path.dirname(repopath)):
