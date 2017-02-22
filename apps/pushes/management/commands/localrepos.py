@@ -14,25 +14,19 @@ class Command(BaseCommand):
     help = 'Update set of local clones'
 
     def add_arguments(self, parser):
-        parser.add_argument('--rebase', action='store_true',
-                            help='Use --rebase for hg pull')
         parser.add_argument('-u', '--update', action='store_true',
                             help='Use -u for hg pull')
         parser.add_argument('-a', '--all', action='store_true',
                             help='Refresh all repositories')
 
     def handle(self, *args, **options):
-        rebase = options.get('rebase', False)
         update = options.get('update', False)
         all = options.get('all', False)
-        if rebase:
-            pull_args = ['--rebase']
-        elif update:
-            pull_args = ['-u']
-        else:
-            pull_args = []
+        pull_args = {}
+        if update:
+            pull_args['update'] = True
         from life.models import Repository, Changeset
-        from mercurial import dispatch
+        import hglib
         import os.path
         from django.conf import settings
 
@@ -51,11 +45,13 @@ class Command(BaseCommand):
 
         for name, url in repos.values_list('name', 'url'):
             repopath = str(resolve(name))
+            self.stdout.write(name + '\n')
             if not os.path.isdir(os.path.join(repopath, '.hg')):
                 # new repo, need to clone
                 if os.path.isdir(repopath):
-                    self.stdout.write(("\n\nCannot clone %s, "
-                           "existing directory in the way\n\n") % name)
+                    self.stdout.write((
+                        "\n\nCannot clone %s, "
+                        "existing directory in the way\n\n") % name)
                     continue
                 _parent = os.path.dirname(repopath)
                 if not os.path.isdir(_parent):
@@ -67,12 +63,9 @@ class Command(BaseCommand):
                              % str(e))
                         )
                         continue
-                dispatch.dispatch(
-                    dispatch.request(['clone', str(url), repopath])
-                    )
+                hglib.clone(str(url), repopath)
             else:
-                dispatch.dispatch(
-                    dispatch.request(['pull', '-R', repopath] + pull_args)
-                    )
+                with hglib.open(repopath) as client:
+                    client.pull(**pull_args)
 
         open(resolve('.latest_cs'), 'w').write('%i\n' % latest_cs)

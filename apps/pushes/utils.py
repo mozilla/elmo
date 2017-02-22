@@ -7,15 +7,15 @@
 from __future__ import absolute_import, division
 
 from datetime import datetime
+import json
 import os.path
-from mercurial.hg import repository
-from mercurial.ui import ui
-from mercurial.error import RepoError
-from mercurial.commands import pull, update, clone
+import urllib2
+import hglib
 
 from life.models import Repository, Push, Changeset, Branch, File
 from django.conf import settings
-from django.db import transaction
+from django.db import transaction, connection
+from six.moves import range
 
 
 def getURL(repo, limit):
@@ -35,24 +35,23 @@ class PushJS(object):
         return '<Push: %d>' % self.id
 
 
-def get_or_create_changeset(repo, hgrepo, revision):
+def get_or_create_changeset(repo, hgrepo, ctx):
     try:
-        cs = Changeset.objects.get(revision=revision)
+        cs = Changeset.objects.get(revision=ctx.node())
         repo.changesets.add(cs)
         return cs
     except Changeset.DoesNotExist:
         pass
     # create the changeset, but first, let's see if we need the parents
-    ctx = hgrepo.changectx(revision)
-    parents = map(lambda _cx: _cx.hex(), ctx.parents())
+    parent_revs = [parent.node() for parent in ctx.parents()]
     p_dict = dict(Changeset.objects
-                  .filter(revision__in=parents)
+                  .filter(revision__in=parent_revs)
                   .values_list('revision', 'id'))
-    for p in parents:
-        if p not in p_dict:
+    for p in ctx.parents():
+        if p.node() not in p_dict:
             p_cs = get_or_create_changeset(repo, hgrepo, p)
             p_dict[p_cs.revision] = p_cs.id
-    cs = Changeset(revision=revision)
+    cs = Changeset(revision=ctx.node())
     cs.user = ctx.user().decode('utf-8', 'replace')
     cs.description = ctx.description().decode('utf-8', 'replace')
     branch = ctx.branch()
@@ -65,8 +64,8 @@ def get_or_create_changeset(repo, hgrepo, revision):
     # has an ID
     cs.save()
 
-    cs.parents = p_dict.values()
-    repo.changesets.add(cs, *(p_dict.values()))
+    cs.parents = list(p_dict.values())
+    repo.changesets.add(cs, *(list(p_dict.values())))
     spacefiles = [p for p in ctx.files() if p.endswith(' ')]
     goodfiles = [p for p in ctx.files() if not p.endswith(' ')]
     if goodfiles:
@@ -76,14 +75,13 @@ def get_or_create_changeset(repo, hgrepo, revision):
         chunk_size = len(goodfiles) // chunk_count
         if len(goodfiles) % chunk_size:
             chunk_size += 1
-        for i in xrange(chunk_count):
+        for i in range(chunk_count):
             good_chunk = goodfiles[i * chunk_size:(i + 1) * chunk_size]
             existingfiles = File.objects.filter(path__in=good_chunk)
             existingpaths = existingfiles.values_list('path',
                                                       flat=True)
             existingpaths = dict.fromkeys(existingpaths)
-            missingpaths = filter(lambda p: p not in existingpaths,
-                                  good_chunk)
+            missingpaths = [p for p in good_chunk if p not in existingpaths]
             File.objects.bulk_create([
                 File(path=p)
                 for p in missingpaths
@@ -93,8 +91,7 @@ def get_or_create_changeset(repo, hgrepo, revision):
     for path in spacefiles:
         # hack around mysql ignoring trailing ' ', and some
         # of our localizers checking in files with trailing ' '.
-        f = filter(lambda fo: fo.path == path,
-                   File.objects.filter(path=path))
+        f = [fo for fo in File.objects.filter(path=path) if fo.path == path]
         if f:
             cs.files.add(f[0])
         else:
@@ -105,20 +102,32 @@ def get_or_create_changeset(repo, hgrepo, revision):
     return cs
 
 
-def handlePushes(repo_id, submits, do_update=True):
-    if not submits:
-        return
+def handlePushes(repo_id, submits, do_update=False, close_connection=False):
+    if close_connection:
+        # maybe we lost the connection, close it to make sure we get a new one
+        connection.close()
     repo = Repository.objects.get(id=repo_id)
-    hgrepo = _hg_repository_sync(repo.name, repo.url, submits,
+    hgrepo = _hg_repository_sync(repo.local_path(), repo.url,
                                  do_update=do_update)
+    revs = reduce(
+        lambda r, l: r+l,
+        (data.changesets for data in submits),
+        [])
+    if not revs:
+        r = urllib2.urlopen(repo.url + u'json-log?rev=head()')
+        data = json.load(r)
+        revs += [d['node'] for d in data['entries']]
+        if not revs:
+            revs.append(data['node'])
+    rev_to_changeset = {}
+    for revision in revs:
+        rev_to_changeset[revision] = \
+            get_or_create_changeset(repo, hgrepo, hgrepo[revision])
     # roll the complete push into one transaction, with all the jazz
     # about changesets and files and etc.
     with transaction.atomic():
         for data in submits:
-            changesets = []
-            for revision in data.changesets:
-                cs = get_or_create_changeset(repo, hgrepo, revision)
-                changesets.append(cs)
+            changesets = [rev_to_changeset[rev] for rev in data.changesets]
             p, __ = Push.objects.get_or_create(
               repository=repo,
               push_id=data.id, user=data.user,
@@ -127,45 +136,23 @@ def handlePushes(repo_id, submits, do_update=True):
             p.changesets = changesets
             p.save()
         repo.save()
+    hgrepo.close()
     return len(submits)
 
 
-def _hg_repository_sync(name, url, submits, do_update=True):
-    ui_ = ui()
-    repopath = os.path.join(settings.REPOSITORY_BASE, name)
+def _hg_repository_sync(repopath, url, do_update=False):
     configpath = os.path.join(repopath, '.hg', 'hgrc')
     if not os.path.isfile(configpath):
         if not os.path.isdir(os.path.dirname(repopath)):
             os.makedirs(os.path.dirname(repopath))
-        clone(ui_, str(url), str(repopath),
-              pull=False, uncompressed=False, rev=[],
-              noupdate=False)
+        hgrepo = hglib.clone(source=str(url), dest=str(repopath))
         cfg = open(configpath, 'a')
         cfg.write('default-push = ssh%s\n' % str(url)[4:])
         cfg.close()
-        ui_.readconfig(configpath)
-        hgrepo = repository(ui_, repopath)
+        hgrepo.open()
     else:
-        ui_.readconfig(configpath)
-        hgrepo = repository(ui_, repopath)
-        cs = submits[-1].changesets[-1]
-        try:
-            hgrepo.changectx(cs)
-        except RepoError:
-            pull(ui_, hgrepo, source=str(url),
-                 force=False, update=False,
-                 rev=[])
-            if do_update:
-                # Make sure that we're not triggering workers in post 2.6
-                # hg. That's not stable, at least as we do it.
-                # Monkey patch time
-                try:
-                    from mercurial import worker
-                    if hasattr(worker, '_startupcost'):
-                        # use same value as hg for non-posix
-                        worker._startupcost = 1e30
-                except ImportError:
-                    # no worker, no problem
-                    pass
-                update(ui_, hgrepo)
+        hgrepo = hglib.open(repopath)
+        hgrepo.pull(source=str(url))
+        if do_update:
+            hgrepo.update()
     return hgrepo

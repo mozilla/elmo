@@ -54,8 +54,7 @@ class DiffView(View):
             return http.HttpResponseBadRequest("Missing 'to' parameter")
         try:
             paths = self.contextsAndPaths(request.GET['from'],
-                                          request.GET['to'],
-                                          reponame)
+                                          request.GET['to'])
         except BadRevision as e:
             return http.HttpResponseBadRequest(e.args[0])
         diffs = DataTree(dict)
@@ -91,10 +90,24 @@ class DiffView(View):
     def getrepo(self, reponame):
         self.repo = Repository.objects.get(name=reponame)
 
-    def contextsAndPaths(self, _from, _to, suggested_repo):
-        repopath = settings.REPOSITORY_BASE + '/' + suggested_repo
+    def contextsAndPaths(self, _from, _to):
+        # if we get 'default' or 'tip' as revision, retrieve that
+        # from the db, so that we don't rely on our local clones
+        # having the same data as upstream for unified repos
+        if _from in ('default', 'tip'):
+            _from = (Changeset.objects
+                     .filter(repositories=self.repo)
+                     .filter(branch=1)  # default branch
+                     .order_by('-pk')
+                     .values_list('revision', flat=True)[0])
+        if _to in ('default', 'tip'):
+            _to = (Changeset.objects
+                  .filter(repositories=self.repo)
+                  .filter(branch=1)  # default branch
+                  .order_by('-pk')
+                  .values_list('revision', flat=True)[0])
         ui = _ui()
-        repo = repository(ui, repopath)
+        repo = repository(ui, self.repo.local_path())
         # Convert the 'from' and 'to' to strings (instead of unicode)
         # in case mercurial needs to look for the key in binary data.
         # This prevents UnicodeWarning messages.
@@ -126,8 +139,8 @@ class DiffView(View):
             except IndexError:
                 raise BadRevision("from and to parameter are not connected")
             changed, added, removed, copies = \
-                    self.processFork(fromrepo, self.ctx1, torepo, self.ctx2,
-                                     anc_rev)
+                self.processFork(fromrepo, self.ctx1, torepo, self.ctx2,
+                                 anc_rev)
         # split up the copies info into thos that were renames and those that
         # were copied.
         self.moved = {}
@@ -171,8 +184,7 @@ class DiffView(View):
                 # original error
                 raise e
         # ok, new repo
-        repopath = settings.REPOSITORY_BASE + '/' + dbrepo.name
-        otherrepo = repository(_ui(), repopath)
+        otherrepo = repository(_ui(), dbrepo.local_path())
         return otherrepo.changectx(str(rev)), otherrepo, dbrepo
 
     def processFork(self, fromrepo, ctx1, torepo, ctx2, anc_rev):
@@ -203,10 +215,9 @@ class DiffView(View):
             try:
                 added.remove(f)
                 # this file moved from ctx1 to ct2, adjust copies
-                if (f in more_reverse and
-                    f in first_copies):
+                if f in more_reverse and f in first_copies:
                     if more_reverse[f] == first_copies[f]:
-                        #file moving back and forth, check manifests below
+                        # file moving back and forth, check manifests below
                         check_manifests.add(first_copies[f])
             except ValueError:
                 removed.append(f)
@@ -280,7 +291,7 @@ class DiffView(View):
             if action == 'delete':
                 lines.append({
                   'class': 'removed',
-                  'oldval': [{'value':a_entities[a_map[item_or_pair]].val}],
+                  'oldval': [{'value': a_entities[a_map[item_or_pair]].val}],
                   'newval': '',
                   'entity': item_or_pair
                 })

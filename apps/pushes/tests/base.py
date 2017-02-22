@@ -7,6 +7,7 @@ import os
 import shutil
 import tempfile
 from django.conf import settings
+from django.test import override_settings
 from mercurial.ui import ui as hg_ui
 from elmo.test import TestCase
 from life.models import Repository
@@ -21,21 +22,18 @@ class mock_ui(hg_ui):
         pass
 
 
+@override_settings(REPOSITORY_BASE=tempfile.mkdtemp())
 class RepoTestBase(TestCase):
-
     def setUp(self):
         super(RepoTestBase, self).setUp()
-        self._old_repository_base = getattr(settings, 'REPOSITORY_BASE', None)
-        self._base = settings.REPOSITORY_BASE = tempfile.mkdtemp()
+        self._base = settings.REPOSITORY_BASE
 
     def tearDown(self):
+        if os.path.isdir(settings.REPOSITORY_BASE):
+            shutil.rmtree(settings.REPOSITORY_BASE)
         super(RepoTestBase, self).tearDown()
-        if os.path.isdir(self._base):
-            shutil.rmtree(self._base)
-        if self._old_repository_base is not None:
-            settings.REPOSITORY_BASE = self._old_repository_base
 
-    def dbrepo(self, name=None, changesets_from=None,
+    def dbrepo(self, name=None, changesets_from=None, revrange=None,
                urlpattern='http://localhost:8001/%s/'):
         if name is None:
             name = self.repo_name
@@ -45,7 +43,9 @@ class RepoTestBase(TestCase):
         )
         if changesets_from is None:
             return repo
-        for rev in changesets_from:
-            get_or_create_changeset(repo, changesets_from,
-                                    changesets_from[rev].hex())
+        if revrange is None:
+            revrange = 'head()'
+        for rev in changesets_from.log(revrange=revrange):
+            ctx = changesets_from[rev]
+            get_or_create_changeset(repo, changesets_from, ctx)
         return repo

@@ -6,6 +6,12 @@ import os
 import sys
 import site
 
+# to use hglib, we need access to hg, which is in sys.prefix/bin
+# in virtualenvs. Prefix our PATH with that.
+# Similar to activate_this.py, too.
+old_os_path = os.environ.get('PATH', '')
+os.environ['PATH'] = os.path.join(sys.prefix, 'bin') + os.pathsep + old_os_path
+
 wsgidir = os.path.dirname(__file__)
 path = lambda *a: os.path.join(wsgidir, *a)
 prev_sys_path = list(sys.path)

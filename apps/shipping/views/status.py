@@ -11,8 +11,9 @@ import re
 
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.conf import settings
+from django.core.exceptions import SuspiciousOperation
 from django.views.generic import View
-from life.models import Changeset, Locale, Push
+from life.models import Repository, Changeset, Locale, Push
 from l10nstats.models import Run, ProgressPosition
 from shipping.api import accepted_signoffs, flags4appversions
 from shipping.models import Action, Signoff, AppVersion
@@ -115,26 +116,32 @@ class JSONChangesets(SignoffDataView):
             plat, prop = k.split('_')[1:3]
             multis[plat][prop] = v
         extra_plats = defaultdict(list)
-        try:
-            from mercurial.hg import repository
-            from mercurial.ui import ui as _ui
-            _ui  # silence pyflakes
-        except:
-            _ui = None
-        if _ui is not None:
-            for plat in sorted(multis.keys()):
-                try:
-                    props = multis[plat]
-                    path = os.path.join(settings.REPOSITORY_BASE,
-                                        props['repo'])
-                    repo = repository(_ui(), path)
-                    ctx = repo[str(props['rev'])]
-                    fctx = ctx.filectx(str(props['path']))
-                    locales = fctx.data().split()
-                    for loc in locales:
-                        extra_plats[loc].append(plat)
-                except:
-                    pass
+        import hglib
+        for plat in sorted(multis.keys()):
+            props = multis[plat]
+            dbrepo = Repository.objects.get(name=props['repo'])
+            path = os.path.join(settings.REPOSITORY_BASE,
+                                dbrepo.local_path())
+            try:
+                repo = hglib.open(path)
+            except:
+                raise SuspiciousOperation("Repo %s doesn't exist" %
+                                          str(props['repo']))
+            try:
+                rev = str(props['rev'])
+                if rev in ('default', 'tip'):
+                    # let's not rely on the repo to have this right
+                    rev = (Changeset.objects
+                           .filter(repositories=dbrepo)
+                           .filter(branch=1)  # default branch
+                           .order_by('-pk')
+                           .values_list('revision', flat=True)[0])
+                locales = repo.cat(files=['path:'+str(props['path'])],
+                                   rev=rev).split()
+            finally:
+                repo.close()
+            for loc in locales:
+                extra_plats[loc].append(plat)
 
         tmpl = '''  "%(loc)s": {
     "revision": "%(rev)s",

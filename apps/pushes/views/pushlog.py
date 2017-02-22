@@ -6,7 +6,6 @@
 '''
 from __future__ import absolute_import
 
-from itertools import cycle
 from datetime import datetime
 import operator
 from time import mktime
