@@ -10,20 +10,14 @@ as the repositories are related.
 from __future__ import absolute_import
 
 from difflib import SequenceMatcher
-import logging
 
 from django.shortcuts import render
-from django.conf import settings
-from django.db.models import Max
 from django import http
 from django.views.generic.base import View
 
 from life.models import Repository, Changeset
 
-from mercurial.ui import ui as _ui
-from mercurial.hg import repository
-from mercurial.copies import pathcopies, _chain  # HG INTERNAL
-from mercurial.error import RepoLookupError
+import hglib
 
 from compare_locales.parser import getParser
 from compare_locales.compare import AddRemove, Tree as DataTree
@@ -41,6 +35,10 @@ class DiffView(View):
         return content.replace('\r\n', '\n').replace('\r', '\n')
 
     def get(self, request):
+        '''Handle GET requests'''
+        # The code validates the input, opens up an hglib client in a
+        # context, and then goes through .status() and .cat() to
+        # create a diff.
         if not request.GET.get('repo'):
             return http.HttpResponseBadRequest("Missing 'repo' parameter")
         reponame = request.GET['repo']
@@ -52,31 +50,33 @@ class DiffView(View):
             return http.HttpResponseBadRequest("Missing 'from' parameter")
         if not request.GET.get('to'):
             return http.HttpResponseBadRequest("Missing 'to' parameter")
-        try:
-            paths = self.contextsAndPaths(request.GET['from'],
-                                          request.GET['to'])
-        except BadRevision as e:
-            return http.HttpResponseBadRequest(e.args[0])
-        diffs = DataTree(dict)
-        for path, action in paths:
-            lines = self.diffLines(path, action)
-            v = {'path': path,
-                 'renamed': self.moved.get(path),
-                 'copied': self.copied.get(path)}
-            if lines is None:
-                v.update({
-                    'isFile': True,
-                    'class': action,
-                    'rev': ((action == 'removed') and request.GET['from']
-                            or request.GET['to'])
-                })
-            else:
-                container_class = lines and 'file' or 'empty-diff'
-                v.update({
-                    'class': container_class,
-                    'lines': lines
-                })
-            diffs[path].update(v)
+        # make sure we have the client open, and close it when done.
+        with self.client:
+            try:
+                paths = self.paths4revs(request.GET['from'],
+                                        request.GET['to'])
+            except BadRevision as e:
+                return http.HttpResponseBadRequest(e.args[0])
+            diffs = DataTree(dict)
+            for path, action in paths:
+                lines = self.diffLines(path, action)
+                v = {'path': path,
+                     'renamed': self.moved.get(path),
+                     'copied': self.copied.get(path)}
+                if lines is None:
+                    v.update({
+                        'isFile': True,
+                        'class': action,
+                        'rev': ((action == 'removed') and request.GET['from']
+                                or request.GET['to'])
+                    })
+                else:
+                    container_class = lines and 'file' or 'empty-diff'
+                    v.update({
+                        'class': container_class,
+                        'lines': lines
+                    })
+                diffs[path].update(v)
         diffs = diffs.toJSON().get('children', [])
         return render(request, 'pushes/diff.html', {
                         'given_title': request.GET.get('title', None),
@@ -88,44 +88,40 @@ class DiffView(View):
                       })
 
     def getrepo(self, reponame):
+        '''Set elmo db object and hglib client for given repo name'''
         self.repo = Repository.objects.get(name=reponame)
+        self.client = hglib.open(self.repo.local_path())
 
-    def contextsAndPaths(self, _from, _to):
-        # if we get 'default' or 'tip' as revision, retrieve that
-        # from the db, so that we don't rely on our local clones
-        # having the same data as upstream for unified repos
-        if _from in ('default', 'tip'):
-            _from = (Changeset.objects
-                     .filter(repositories=self.repo)
-                     .filter(branch=1)  # default branch
-                     .order_by('-pk')
-                     .values_list('revision', flat=True)[0])
-        if _to in ('default', 'tip'):
-            _to = (Changeset.objects
-                  .filter(repositories=self.repo)
-                  .filter(branch=1)  # default branch
-                  .order_by('-pk')
-                  .values_list('revision', flat=True)[0])
-        ui = _ui()
-        repo = repository(ui, self.repo.local_path())
-        # Convert the 'from' and 'to' to strings (instead of unicode)
-        # in case mercurial needs to look for the key in binary data.
-        # This prevents UnicodeWarning messages.
+    def paths4revs(self, _from, _to):
+        '''Validate that the passed in revisions are valid, and computes
+        the affected paths and their status.
+        '''
         try:
-            self.ctx1, fromrepo, dbfrom = self.contextAndRepo(_from, repo)
-        except RepoLookupError:
+            self.rev1 = self.real_rev(_from)
+        except KeyError:
             raise BadRevision("Unrecognized 'from' parameter")
         try:
-            self.ctx2, torepo, dbto = self.contextAndRepo(_to, repo)
-        except RepoLookupError:
+            self.rev2 = self.real_rev(_to)
+        except KeyError:
             raise BadRevision("Unrecognized 'to' parameter")
-        if fromrepo == torepo:
-            copies = pathcopies(self.ctx1, self.ctx2)
-            match = None  # maybe get something from l10n.ini and cmdutil
-            changed, added, removed = repo.status(self.ctx1, self.ctx2,
-                                                  match=match)[:3]
-        else:
-            raise BadRevision("from and to parameter are not connected")
+        changed = []
+        added = []
+        removed = []
+        copies = {}
+        for code, path in self.client.status(rev=[self.rev1, self.rev2],
+                                             copies=True):
+            if code == 'M':
+                changed.append(path)
+            elif code == 'A':
+                added.append(path)
+            elif code == ' ':
+                # last added file was copied
+                copies[added[-1]] = path
+            elif code == 'R':
+                removed.append(path)
+            else:
+                raise RuntimeError('status code %s unexpected for %s' %
+                                   (code, path))
 
         # split up the copies info into thos that were renames and those that
         # were copied.
@@ -146,34 +142,28 @@ class DiffView(View):
                      or 'added') for f in added])
         return paths
 
-    def contextAndRepo(self, rev, repo):
-        '''Get a hg changectx for the given rev, preferably in the given repo.
+    def real_rev(self, rev):
+        '''Validate that the given revision exists in our unified repo.
+        Resolve 'default' and 'tip' if passed to the latest 'default'
+        changeset in our given db repo.
         '''
-        try:
-            # Convert the 'from' and 'to' to strings (instead of unicode)
-            # in case mercurial needs to look for the key in binary data.
-            # This prevents UnicodeWarning messages.
-            ctx = repo.changectx(str(rev))
-            return ctx, repo, self.repo
-        except RepoLookupError as e:
-            # the favored repo doesn't have a changeset, look for an
-            # active repo that does.
-            try:
-                dbrepo = (
-                    Repository.objects
-                    .filter(changesets__revision__startswith=rev)
-                    .annotate(last_changeset=Max('changesets'))
-                    .order_by('-last_changeset')
-                    )[0]
-            except IndexError:
-                # can't find the changeset in other repos, raise the
-                # original error
-                raise e
-        # ok, new repo
-        otherrepo = repository(_ui(), dbrepo.local_path())
-        return otherrepo.changectx(str(rev)), otherrepo, dbrepo
+        # if we get 'default' or 'tip' as revision, retrieve that
+        # from the db, so that we don't rely on our local clones
+        # having the same data as upstream for unified repos
+        if rev in ('default', 'tip'):
+            rev = (Changeset.objects
+                   .filter(repositories=self.repo)
+                   .filter(branch=1)  # default branch
+                   .order_by('-pk')
+                   .values_list('revision', flat=True)[0])
+        # Convert the 'from' and 'to' to strings (instead of unicode)
+        # in case mercurial needs to look for the key in binary data.
+        # This prevents UnicodeWarning messages.
+        ctx = self.client[str(rev)]
+        return ctx.node()
 
     def diffLines(self, path, action):
+        '''The actual l10n-aware diff for a particular file.'''
         lines = []
         try:
             p = getParser(path)
@@ -186,7 +176,8 @@ class DiffView(View):
             realpath = (action == 'moved' and self.moved[path] or
                         action == 'copied' and self.copied[path] or
                         path)
-            data = self.ctx1.filectx(realpath).data()
+            data = self.client.cat([self.client.pathto(realpath)],
+                                   rev=self.rev1)
             data = self._universal_newlines(data)
             try:
                 p.readContents(data)
@@ -199,7 +190,8 @@ class DiffView(View):
         if action == 'removed':
             c_entities, c_map = [], {}
         else:
-            data = self.ctx2.filectx(path).data()
+            data = self.client.cat([self.client.pathto(path)],
+                                   rev=self.rev2)
             data = self._universal_newlines(data)
             try:
                 p.readContents(data)

@@ -5,17 +5,14 @@ from __future__ import absolute_import
 
 import re
 import os
-import logging
 import codecs
 import base64
 from nose.tools import eq_, ok_
 from django.core.urlresolvers import reverse
-from django.conf import settings
 import hglib
 
 from life.models import Repository
 from .base import RepoTestBase
-from pushes.views.diff import DiffView, BadRevision
 
 # mercurial doesn't take unicode strings, trigger errors
 import warnings
@@ -681,50 +678,6 @@ class DiffTestCase(RepoTestBase):
         ok_(re.findall('>\s*Cruel\s*<', html_diff))
         ok_(re.findall('>\s*World\s*<', html_diff))
 
-    def test_diff_unrelated_repos(self):
-        """Test for failure to diff unrelated repos"""
-        one = os.path.join(settings.REPOSITORY_BASE, 'one')
-        other = os.path.join(settings.REPOSITORY_BASE, 'other')
-        hgone = hglib.init(one)
-        hgone.open()
-        (open(hgone.pathto('file.dtd'), 'w')
-         .write('''
-          <!ENTITY ent "val">
-        '''))
-        hgone.addremove()
-        hgone.commit(user="Jane Doe <jdoe@foo.tld",
-                     message="initial commit")
-        assert hgone[0]  # 1 commit
-        rev_from = hgone['tip'].node()
-
-        # different commit on other
-        hgother = hglib.init(other).open()
-        (open(hgother.pathto('file.dtd'), 'w')
-         .write('''
-         <!ENTITY aunt "otherval">
-         '''))
-        hgother.addremove()
-        hgother.commit(user="John Doe <jodo@foo.tld",
-                       message="a different commit on other")
-        rev_to = hgother['tip'].node()
-
-        self.dbrepo(name='one', changesets_from=hgone)
-        self.dbrepo(name='other', changesets_from=hgother)
-        # unit test part
-        v = DiffView()
-        v.getrepo('one')
-        with self.assertRaises(BadRevision) as badrev:
-            v.contextsAndPaths(rev_from, rev_to)
-        eq_(badrev.exception.args,
-            ('from and to parameter are not connected',))
-        # integration test part, failure to load
-        url = reverse('pushes:diff')
-        # right now, we can't diff between repos, this might change!
-        response = self.client.get(url, {'repo': 'one',
-                                         'from': rev_from[:12],
-                                         'to': rev_to[:12]})
-        eq_(response.status_code, 400)
-
     def test_binary_file_edited(self):
         """Modify a binary file"""
         hgrepo = hglib.init(self.repo).open()
@@ -920,8 +873,7 @@ class DiffTestCase(RepoTestBase):
             '''))
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="Second commit")
-        rev1 = hgrepo[1].node()
-        dbrepo = self.dbrepo(changesets_from=hgrepo)
+        self.dbrepo(changesets_from=hgrepo)
         hgrepo.close()
 
         url = reverse('pushes:diff')
