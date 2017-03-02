@@ -125,22 +125,8 @@ class DiffView(View):
             changed, added, removed = repo.status(self.ctx1, self.ctx2,
                                                   match=match)[:3]
         else:
-            # find descent ancestor for ctx1 and ctx2
-            try:
-                anc_rev = (Changeset.objects
-                           .exclude(id=1)  # exclude rev 0000
-                           .filter(repositories=dbfrom)
-                           .filter(repositories=dbto)
-                           .filter(branch=1)
-                           .order_by('-pk')
-                           .values_list('revision', flat=True))[0]
-                # mercurial doesn't like unicode
-                anc_rev = str(anc_rev)
-            except IndexError:
-                raise BadRevision("from and to parameter are not connected")
-            changed, added, removed, copies = \
-                self.processFork(fromrepo, self.ctx1, torepo, self.ctx2,
-                                 anc_rev)
+            raise BadRevision("from and to parameter are not connected")
+
         # split up the copies info into thos that were renames and those that
         # were copied.
         self.moved = {}
@@ -186,66 +172,6 @@ class DiffView(View):
         # ok, new repo
         otherrepo = repository(_ui(), dbrepo.local_path())
         return otherrepo.changectx(str(rev)), otherrepo, dbrepo
-
-    def processFork(self, fromrepo, ctx1, torepo, ctx2, anc_rev):
-        # piece together changed, removed, added, and copies
-        match = None  # keep in sync with match above
-        ctx3 = fromrepo.changectx(anc_rev)
-        first_copies = pathcopies(ctx1, ctx3)
-        changed, added, removed = fromrepo.status(ctx1, ctx3,
-                                                  match=match)[:3]
-        logging.debug('changed, added, removed, copies:\n %r %r %r %r',
-                      changed, added, removed, first_copies)
-        ctx3 = torepo.changectx(anc_rev)
-        more_copies = pathcopies(ctx3, ctx2)
-        more_reverse = dict((v, k) for k, v in more_copies.iteritems())
-        more_changed, more_added, more_removed = torepo.status(ctx3, ctx2,
-                                                               match=match)[:3]
-        logging.debug('more_changed, added, removed, copies:\n %r %r %r %r',
-                      more_changed, more_added, more_removed, more_copies)
-        copies = _chain(ctx1, ctx2, first_copies, more_copies)  # HG INTERNAL
-        # the second step removed a file, strip it from copies, changed
-        # if it's in added, strip, otherwise add to removed
-        check_manifests = set()  # moved back and forth, check manifests
-        for f in more_removed:
-            try:
-                changed.remove(f)
-            except ValueError:
-                pass
-            try:
-                added.remove(f)
-                # this file moved from ctx1 to ct2, adjust copies
-                if f in more_reverse and f in first_copies:
-                    if more_reverse[f] == first_copies[f]:
-                        # file moving back and forth, check manifests below
-                        check_manifests.add(first_copies[f])
-            except ValueError:
-                removed.append(f)
-        # the second step added a file
-        # strip it from removed, or add it to added
-        for f in more_added:
-            try:
-                removed.remove(f)
-            except ValueError:
-                added.append(f)
-        # see if a change was reverted, both changed,
-        # manifests in to and from match
-        m1 = m2 = None
-        changed = set(changed)
-        # only look at more_changed files we didn't add
-        more_changed = set(more_changed) - set(added)
-        both_changed = (changed & more_changed) | check_manifests
-        # changed may be anything changed first, second, or both
-        changed |= more_changed | check_manifests
-        for tp in both_changed:
-            fp = copies.get(tp, tp)
-            if m1 is None:
-                m1 = ctx1.manifest()
-                m2 = ctx2.manifest()
-            if m1[fp] == m2[tp]:
-                changed.remove(tp)
-        return (sorted(changed), sorted(set(added)), sorted(set(removed)),
-                copies)
 
     def diffLines(self, path, action):
         lines = []
