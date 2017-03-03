@@ -26,6 +26,13 @@
   text-decoration: line-through;
   color: grey;
 }
+.next-marker {
+  float: right;
+  margin-right: 1ex;
+}
+.no-underline:hover, .no-underline:focus, .no-underline:active {
+  text-decoration: none;
+}
 #stats {
   cell-padding:0px;
   border-spacing:0px;

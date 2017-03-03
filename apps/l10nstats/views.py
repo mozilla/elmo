@@ -282,6 +282,14 @@ class JSONAdaptor(object):
         return self.fragment
 
 
+class Counter:
+    count = 0
+
+    def increment(self):
+        self.count += 1
+        return str(self.count)
+
+
 def compare(request):
     """HTML pretty-fied output of compare-locales.
     """
@@ -332,4 +340,5 @@ def compare(request):
                     'run': run,
                     'nodes': nodes,
                     'widths': widths,
+                    'counter': Counter(),
                   })
