@@ -8,18 +8,9 @@ import shutil
 import tempfile
 from django.conf import settings
 from django.test import override_settings
-from mercurial.ui import ui as hg_ui
 from elmo.test import TestCase
 from life.models import Repository
 from ..utils import get_or_create_changeset
-
-
-class mock_ui(hg_ui):
-    def write(self, *msg, **opts):
-        pass
-
-    def warn(self, *msg, **opts):
-        pass
 
 
 @override_settings(REPOSITORY_BASE=tempfile.mkdtemp())
