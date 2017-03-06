@@ -75,7 +75,7 @@ $(document).ready(function() {
       autoOpen: false,
       width: 600,
       minWidth: 300,
-      title: 'Sign-off'
+      title: 'New Sign-off'
     });
 
     $('#cancel_signoff').dialog({

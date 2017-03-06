@@ -15,6 +15,11 @@ Comparison for {{ run.tree.code }}-{{run.locale.code }} ({{ run.build.buildnumbe
 <link rel="stylesheet" href="{% static "l10nstats/css/compare.css" %}" type="text/css">
 {% endcompress %}
 {% endblock %}
+
+{% block javascript_matter %}
+<script src="{% static "l10nstats/js/compare.js" %}"></script>
+{% endblock %}
+
 {% block content %}
 <h2>Comparison for {{ run.tree.code }}-{{ run.locale.code }}</h2>
 {% if run.build %}
@@ -43,6 +48,9 @@ Comparison for {{ run.tree.code }}-{{run.locale.code }} ({{ run.build.buildnumbe
 {% endif %}
 </p>
 {% endif %}
+{% if run.warnings or run.errors %}
+{% if run.errors %}{{ run.errors }} error{{ run.errors|pluralize }}{% endif %}{% if run.warnings and run.errors %} and {% endif %}{% if run.warnings %}{{ run.warnings }} warning{{ run.warnings|pluralize }}{% endif %}, <a href="#issue1">jump to the first &darr;</a>.
+{% endif %}
 </div>
 
 
@@ -70,7 +78,15 @@ Comparison for {{ run.tree.code }}-{{run.locale.code }} ({{ run.build.buildnumbe
    </div>
   {% if node.entities or node.errors %}
    <div class="diff">
-     {% for e in node.entities %}<div class="{{ e.class }}">{{ e.key }}</div>
+     {% for e in node.entities %}
+     {% if e.class == "error" or e.class == "warning" %}
+     {% with this_c=counter.increment %}
+     <a class="next-marker no-underline" href="#issue{{ this_c|add:"1" }}">&darr;</a>
+     <div id="issue{{ this_c }}" class="{{ e.class }}">{{ e.key }}</div>
+     {% endwith %}
+     {% else %}
+     <div class="{{ e.class }}">{{ e.key }}</div>
+     {% endif %}
      {% endfor %}
    </div>
   {% else %}

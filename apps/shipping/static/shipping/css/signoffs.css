@@ -53,6 +53,9 @@
     border: solid black 2px;
     border-radius: .5em;
 }
+.accept_signoff {
+    padding-bottom: .5em;
+}
 .so_what {
     font-size: smaller;
     display: inline-block;
