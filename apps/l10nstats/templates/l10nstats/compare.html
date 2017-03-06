@@ -15,6 +15,11 @@ Comparison for {{ run.tree.code }}-{{run.locale.code }} ({{ run.build.buildnumbe
 <link rel="stylesheet" href="{% static "l10nstats/css/compare.css" %}" type="text/css">
 {% endcompress %}
 {% endblock %}
+
+{% block javascript_matter %}
+<script src="{% static "l10nstats/js/compare.js" %}"></script>
+{% endblock %}
+
 {% block content %}
 <h2>Comparison for {{ run.tree.code }}-{{ run.locale.code }}</h2>
 {% if run.build %}
