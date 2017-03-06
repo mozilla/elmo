@@ -14,6 +14,9 @@ div.thumbnail {
 .failure {
     background-color: red;
 }
+.locale_cell, .tree_cell {
+    white-space: nowrap;
+}
 .tree_cell.success {
     background-color: rgba(0, 128, 0, 0.5);
 }
