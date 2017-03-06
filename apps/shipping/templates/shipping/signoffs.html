@@ -124,7 +124,13 @@ looks good to <a href="#{{suggested_signoff}}">sign off on</a>.{% endif %}
   <input type="hidden" name="push" value="">
   <input type="hidden" name="run" value="">
   <div id="signoff_desc"></div>
-  <input type="submit" value="Sign-off" name="submit">
+{% if perms.shipping.review_signoff %}
+  <div class="accept_signoff">
+  <input type='checkbox' checked name='accepted' id='accepted'>
+  <label for='accepted'>Sign off and accept</label>
+  </div>
+{% endif %}
+  <input type="submit" value="Sign off" name="submit">
   </form>
 </div>
 {% endif %}

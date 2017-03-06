@@ -237,7 +237,7 @@ def teamsnippet(loc, team_locales):
                     .filter(id__in=flags.values(),
                             flag__in=interesting_flags)
                     .select_related('signoff__push')
-                    .order_by('when'))
+                    .order_by('when', 'pk'))
                 # only keep a rejected sign-off it's the last
                 if (Action.REJECTED in flags and
                     actions[-1].flag != Action.REJECTED):

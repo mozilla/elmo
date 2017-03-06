@@ -255,7 +255,7 @@ class SignoffView(TemplateView):
         for a in (Action.objects
                   .filter(signoff__push__in=_p,
                           signoff__appversion=appver)
-                  .order_by('-when')
+                  .order_by('-when', '-pk')
                   .select_related('signoff')):
             if a.signoff_id in handled_signoffs:
                 continue
@@ -554,6 +554,10 @@ def add_signoff(request, locale_code, app_code):
             so = Signoff.objects.create(push=push, appversion=appver,
                                         author=request.user, locale=lang)
             so.action_set.create(flag=Action.PENDING, author=request.user)
+            if request.user.has_perm("shipping.review_signoff"):
+                if request.POST.get('accepted') == 'on':
+                    so.action_set.create(flag=Action.ACCEPTED,
+                                         author=request.user)
         except Exception as e:
             print(e)
             return _redirect
