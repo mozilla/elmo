@@ -109,12 +109,10 @@ class RunElement(dict):
 
 def teamsnippet(loc, team_locales):
     locs = Locale.objects.filter(pk__in=[loc.pk] + list(team_locales))
-    runs = sorted(
+    runs = list(
         (Run.objects
          .filter(locale__in=locs, active__isnull=False)
-         .select_related('tree', 'locale')),
-        key=lambda r: (r.tree.code,
-                       '' if r.locale.code == loc.code else r.locale.code)
+         .select_related('tree', 'locale'))
     )
 
     # this locale isn't active in our trees yet
@@ -160,9 +158,17 @@ def teamsnippet(loc, team_locales):
         avt = tree.id in _treeid_to_avt and _treeid_to_avt[tree.id]
         return avt and avt.appversion or None
 
+    def tree_to_version(tree):
+        av = tree_to_appversion(tree)
+        return av and av.version or None
+
     def tree_to_application(tree):
         av = tree_to_appversion(tree)
         return av and av.app or None
+
+    runs.sort(
+        key=lambda r: (tree_to_version(r.tree), r.tree.code,
+                       '' if r.locale.code == loc.code else r.locale.code))
 
     # offer all revisions to sign-off.
     # in api.annotated_pushes, we only highlight the latest run if it's green
