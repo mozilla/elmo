@@ -72,5 +72,5 @@ def user_json(request):
 def logout(request, redirect_field_name=REDIRECT_FIELD_NAME):
     from django.contrib.auth import logout
     logout(request)
-    redirect_to = request.REQUEST.get(redirect_field_name, '')
+    redirect_to = request.GET.get(redirect_field_name, '')
     return redirect(redirect_to or '/')

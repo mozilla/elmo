@@ -31,7 +31,7 @@ class SignoffFilterForm(forms.Form):
 
 class SignoffsPaginationForm(forms.Form):
     push_date = forms.DateTimeField(
-        input_formats=forms.DateTimeField.input_formats + (
+        input_formats=forms.DateTimeField.input_formats + [
             '%Y-%m-%dT%H:%M:%S',  # isoformat
-        )
+        ]
     )
