@@ -30,10 +30,14 @@
             <h3 id="{{ application.code }}">{{ application.name }} <a href="#{{ application.code }}" class="permalink">#</a></h3>
           </td>
       {% endif %}
-          <td class="treename {% cycle 'odd-td' 'even-td' as runcycle %}">
-              {{ run.tree.code }}
-              {% ifnotequal run.locale_id locale.id %}
-                <small class="locale-team">({{ run.locale.code }})</small>
+          <td class="tree-or-av {% cycle 'odd-td' 'even-td' as runcycle %}">
+              {% if run.appversion %}
+              <span class="treename">{{ run.appversion.version }}</span> - {{ run.tree.code }}
+              {% else %}
+              <span class="treename">{{ run.tree.code }}</span>
+              {% endif %}
+              {% ifnotequal run.locale.id context.locale.id %}
+                <span class="locale-team">({{ run.locale.code }})</span>
               {% endifnotequal %}
           </td>
           <td class="treestatus {{ runcycle }}">
