@@ -47,7 +47,7 @@ class Tag(models.Model):
 class Change(models.Model):
     """Model for buildbot.changes.changes.Change"""
     number = models.PositiveIntegerField()
-    master = models.ForeignKey(Master)
+    master = models.ForeignKey(Master, on_delete=models.CASCADE)
     branch = models.CharField(max_length=100, null=True, blank=True)
     revision = models.CharField(max_length=50, null=True, blank=True)
     who = models.CharField(max_length=100, null=True, blank=True,
@@ -77,9 +77,11 @@ class SourceStamp(models.Model):
 
 
 class NumberedChange(models.Model):
-    change = models.ForeignKey(Change, related_name='numbered_changes')
+    change = models.ForeignKey(Change, related_name='numbered_changes',
+                               on_delete=models.CASCADE)
     sourcestamp = models.ForeignKey(SourceStamp,
-                                    related_name='numbered_changes')
+                                    related_name='numbered_changes',
+                                    on_delete=models.CASCADE)
     number = models.IntegerField(db_index=True)
 
 
@@ -113,7 +115,8 @@ class Property(models.Model):
 class Builder(models.Model):
     """Model for buildbot.status.builder.BuilderStatus"""
     name = models.CharField(max_length=50, unique=True, db_index=True)
-    master = models.ForeignKey(Master, related_name='builders')
+    master = models.ForeignKey(Master, related_name='builders',
+                               on_delete=models.CASCADE)
     category = models.CharField(max_length=30, null=True, blank=True,
                                 db_index=True)
     bigState = models.CharField(max_length=30, null=True, blank=True)
@@ -127,13 +130,16 @@ class Build(models.Model):
     """
     buildnumber = models.IntegerField(null=True, db_index=True)
     properties = models.ManyToManyField(Property, related_name='builds')
-    builder = models.ForeignKey(Builder, related_name='builds')
-    slave = models.ForeignKey(Slave, null=True, blank=True)
+    builder = models.ForeignKey(Builder, related_name='builds',
+                                on_delete=models.CASCADE)
+    slave = models.ForeignKey(Slave, null=True, blank=True,
+                              on_delete=models.SET_NULL)
     starttime = models.DateTimeField(null=True, blank=True)
     endtime = models.DateTimeField(null=True, blank=True)
     result = models.SmallIntegerField(null=True, blank=True)
     reason = models.CharField(max_length=50, null=True, blank=True)
     sourcestamp = models.ForeignKey(SourceStamp, null=True,
+                                    on_delete=models.SET_NULL,
                                     related_name='builds')
 
     def setProperty(self, name, value, source):
@@ -196,13 +202,15 @@ class Step(models.Model):
     result = models.SmallIntegerField(null=True, blank=True)
     starttime = models.DateTimeField(null=True, blank=True)
     endtime = models.DateTimeField(null=True, blank=True)
-    build = models.ForeignKey(Build, related_name='steps')
+    build = models.ForeignKey(Build, related_name='steps',
+                              on_delete=models.CASCADE)
 
 
 class URL(models.Model):
     name = models.CharField(max_length=20)
     url = models.URLField()
-    step = models.ForeignKey(Step, related_name='urls')
+    step = models.ForeignKey(Step, related_name='urls',
+                             on_delete=models.CASCADE)
 
 
 class Log(models.Model):
@@ -212,7 +220,8 @@ class Log(models.Model):
     name = models.CharField(max_length=100, null=True, blank=True)
     filename = models.CharField(max_length=200, unique=True,
                                 null=True, blank=True)
-    step = models.ForeignKey(Step, related_name='logs')
+    step = models.ForeignKey(Step, related_name='logs',
+                             on_delete=models.CASCADE)
     isFinished = models.BooleanField(default=False)
     html = models.TextField(null=True, blank=True)
 
@@ -224,7 +233,8 @@ class Log(models.Model):
 
 class BuildRequest(models.Model):
     """Buildrequest status model"""
-    builder = models.ForeignKey(Builder)
+    builder = models.ForeignKey(Builder, on_delete=models.CASCADE)
     submitTime = models.DateTimeField()
     builds = models.ManyToManyField(Build, related_name='requests')
-    sourcestamp = models.ForeignKey(SourceStamp, related_name='requests')
+    sourcestamp = models.ForeignKey(SourceStamp, related_name='requests',
+                                    on_delete=models.CASCADE)

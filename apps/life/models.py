@@ -53,8 +53,10 @@ def invalidate_homepage_index_cache(sender, **kwargs):
 
 
 class TeamLocaleThrough(DurationThrough):
-    team = models.ForeignKey(Locale, related_name='locales_over_time')
-    locale = models.ForeignKey(Locale, related_name='teams_over_time')
+    team = models.ForeignKey(Locale, related_name='locales_over_time',
+                             on_delete=models.CASCADE)
+    locale = models.ForeignKey(Locale, related_name='teams_over_time',
+                               on_delete=models.CASCADE)
 
     class Meta(DurationThrough.DurationMeta):
         unique_together = (DurationThrough.unique + ('team', 'locale'),)
@@ -98,7 +100,8 @@ class Changeset(models.Model):
     user = models.CharField(max_length=200, db_index=True, default='')
     description = models.TextField(null=True, default='')
     files = models.ManyToManyField(File)
-    branch = models.ForeignKey(Branch, default=1, related_name='changesets')
+    branch = models.ForeignKey(Branch, default=1, related_name='changesets',
+                               on_delete=models.CASCADE)
     parents = models.ManyToManyField("self", symmetrical=False,
                                      related_name='_children')
 
@@ -197,8 +200,10 @@ class Repository(models.Model):
     url = models.URLField()
     changesets = models.ManyToManyField(Changeset, related_name='repositories')
     forest = models.ForeignKey(Forest, null=True, blank=True,
+                               on_delete=models.PROTECT,
                                related_name='repositories')
-    locale = models.ForeignKey(Locale, null=True, blank=True)
+    locale = models.ForeignKey(Locale, null=True, blank=True,
+                               on_delete=models.SET_NULL)
     archived = models.BooleanField(default=False)
     fork_of = models.ForeignKey('self', null=True, blank=True, default=None,
                                 on_delete=models.PROTECT,
@@ -266,7 +271,7 @@ class Push(models.Model):
     push_id -- unique id of the push
     """
     objects = PushManager()
-    repository = models.ForeignKey(Repository)
+    repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
     changesets = models.ManyToManyField(Changeset, related_name="pushes")
     user = models.CharField(max_length=200, db_index=True)
     push_date = models.DateTimeField('date of push', db_index=True)
@@ -309,7 +314,7 @@ class Tree(models.Model):
     objects = TreeManager()
     code = models.CharField(max_length=50, unique=True)
     repositories = models.ManyToManyField(Repository)
-    l10n = models.ForeignKey(Forest)
+    l10n = models.ForeignKey(Forest, on_delete=models.PROTECT)
 
     def __unicode__(self):
         return self.code

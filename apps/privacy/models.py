@@ -45,8 +45,10 @@ class Comment(models.Model, CTMixin):
     """Comments on a policy.
     """
     text = models.TextField()
-    policy = models.ForeignKey(Policy, related_name="comments")
-    who = models.ForeignKey(User, related_name="privacy_comments")
+    policy = models.ForeignKey(Policy, related_name="comments",
+                               on_delete=models.CASCADE)
+    who = models.ForeignKey(User, related_name="privacy_comments",
+                            on_delete=models.CASCADE)
 
     def __unicode__(self):
         return strip_tags(self.text)[:20]

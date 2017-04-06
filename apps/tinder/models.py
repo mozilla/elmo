@@ -20,7 +20,7 @@ class WebHead(models.Model):
 
 
 class MasterMap(models.Model):
-    master = models.ForeignKey(Master)
-    webhead = models.ForeignKey(WebHead)
+    master = models.ForeignKey(Master, on_delete=models.CASCADE)
+    webhead = models.ForeignKey(WebHead, on_delete=models.CASCADE)
 
     logmount = models.CharField(max_length=200)
