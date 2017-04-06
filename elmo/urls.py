@@ -8,6 +8,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.contrib import admin
 from django.conf import settings
 from django.http import HttpResponse
+import django.views.static
 from django.views.generic import TemplateView
 
 ## Monkeypatches:
@@ -53,7 +54,7 @@ handler500 = 'homepage.views.handler500'
 # that prints a warning message
 static_url = settings.STATIC_URL.lstrip('/').rstrip('/')
 urlpatterns += [
-    url(r'^%s/(?P<path>.*)$' % static_url, 'django.views.static.serve',
+    url(r'^%s/(?P<path>.*)$' % static_url, django.views.static.serve,
      {'document_root': settings.STATIC_ROOT},
      'static'),
 ]

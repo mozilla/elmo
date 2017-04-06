@@ -6,6 +6,7 @@ from __future__ import absolute_import
 from django.conf.urls import url
 from .views import diff, pushlog
 
+app_name = 'pushes'
 urlpatterns = [
     url(r'^pushes/(?P<repo_name>.+)?$', pushlog.pushlog, name='pushlog'),
     url(r'^diff/$', diff.DiffView.as_view(), name='diff'),

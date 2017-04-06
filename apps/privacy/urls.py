@@ -9,6 +9,7 @@ from __future__ import absolute_import
 from django.conf.urls import url
 from . import views
 
+app_name = 'privacy'
 urlpatterns = [
     url(r'^(?P<id>\d+)?$', views.show_policy, name='show'),
     url(r'^versions$', views.versions, name='versions'),
