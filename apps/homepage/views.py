@@ -30,7 +30,7 @@ def handler500(request):
     # template that uses '{% extends "base.html" %}' which depends on various
     # context variables to be set
     t = loader.get_template('500.html')
-    return HttpResponseServerError(t.render(RequestContext(request)))
+    return HttpResponseServerError(t.render(request=request))
 
 
 def etag_index(request):
