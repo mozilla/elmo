@@ -14,7 +14,7 @@ from .views import status, app, signoff, release
 urlpatterns = [
     url(r'^/?$', views.index, name='select-dashboard'),
     url(r'^/drivers$', views.Drivers.as_view(), name='shipping-drivers'),
-    url(r'^/dashboard/?$', views.dashboard),
+    url(r'^/dashboard/?$', views.dashboard, name='dashboard'),
 ]
 
 urlpatterns += [
@@ -41,10 +41,18 @@ urlpatterns += [
         name='shipping-signoff'),
     url(r'^/signoffs-details/(.*?)/(.*)', signoff.signoff_details,
         name='shipping-signoff_details'),
-    url(r'^/add-signoff/(.*?)/(.*)', signoff.add_signoff),  # POST only
-    url(r'^/review-signoff/(.*?)/(.*)', signoff.review_signoff),  # POST only
-    url(r'^/cancel-signoff/(.*?)/(.*)', signoff.cancel_signoff),  # POST only
-    url(r'^/reopen-signoff/(.*?)/(.*)', signoff.reopen_signoff),  # POST only
+    # POST only
+    url(r'^/add-signoff/(.*?)/(.*)', signoff.add_signoff,
+        name='add-signoff'),
+    # POST only
+    url(r'^/review-signoff/(.*?)/(.*)', signoff.review_signoff,
+        name='review-signoff'),
+    # POST only
+    url(r'^/cancel-signoff/(.*?)/(.*)', signoff.cancel_signoff,
+        name='cancel-signoff'),
+    # POST only
+    url(r'^/reopen-signoff/(.*?)/(.*)', signoff.reopen_signoff,
+        name='reopen-signoff'),
 ]
 
 urlpatterns += [

@@ -152,7 +152,7 @@
        <div data-ex-role="facet" data-ex-expression="union(.action, .new_run)"
          data-ex-missing-label="none"
          data-ex-height="5em" data-ex-facet-label="Action" id="action-facet"></div>
-       <div><a href="{% url 'shipping.views.index' %}?{{ request.GET.urlencode }}">Edit</a> this dashboard.</div>
+       <div><a href="{% url 'select-dashboard' %}?{{ request.GET.urlencode }}">Edit</a> this dashboard.</div>
      </td>
    </tr>
  </table>
