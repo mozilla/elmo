@@ -59,7 +59,7 @@ def login(request):
 @anonymous_csrf
 def user_json(request):
     result = {}
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         if request.user.first_name:
             result['user_name'] = request.user.first_name
         else:
