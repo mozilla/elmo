@@ -26,7 +26,7 @@ urlpatterns = [
     url(r'^builds/', include('tinder.urls')),
     url(r'^source/', include('pushes.urls', namespace='pushes')),
     url(r'^dashboard/', include('l10nstats.urls')),
-    url(r'^shipping', include('shipping.urls')),
+    url(r'^shipping/', include('shipping.urls')),
     url(r'^bugs/', include('bugsy.urls')),
     url(r'^accounts/', include('accounts.urls')),
     url(r'^', include('homepage.urls')),
