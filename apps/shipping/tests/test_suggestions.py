@@ -66,7 +66,7 @@ class DataMixin(object):
             url=forest.url + self.locale.code + '/',
             forest=forest,
             locale=self.locale)
-        repo.changesets = (Changeset.objects
+        repo.changesets.set(Changeset.objects
             .filter(revision__startswith="000000000000"))
         tree = Tree.objects.create(code='fx_' + forest.name, l10n=forest)
         return repo, tree

@@ -85,7 +85,7 @@ class ApiMigrationTest(TestCase):
             self.csnumber += 1
             p = repo.push_set.create(user='jane_doe',
                                      push_date=d)
-            p.changesets = [cs]
+            p.changesets.set([cs])
             p.save()
             so = (Signoff.objects
                   .create(push=p,
