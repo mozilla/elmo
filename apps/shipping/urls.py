@@ -12,7 +12,7 @@ from . import views
 from .views import status, app, signoff, release
 
 urlpatterns = [
-    url(r'^/?$', views.index),
+    url(r'^/?$', views.index, name='select-dashboard'),
     url(r'^/drivers$', views.Drivers.as_view(), name='shipping-drivers'),
     url(r'^/dashboard/?$', views.dashboard),
 ]
