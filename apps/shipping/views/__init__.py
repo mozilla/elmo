@@ -305,9 +305,10 @@ def teamsnippet(loc, team_locales):
                     # let's say so
                     if action.flag == Action.PENDING:
                         run.under_review = True
+    # Sort by appname, make trees without app come last via 'ZZZZZZ'
     applications = sorted(
         ((k, v) for (k, v) in applications.items()),
-        key=lambda t: t[0] and t[0].name or None
+        key=lambda t: t[0] and t[0].name or 'ZZZZZZ'
     )
     other_team_locales = Locale.objects.filter(id__in=team_locales)
 
