@@ -11,17 +11,6 @@ from life.models import Locale, Tree, Changeset
 from mbdb.models import Build
 
 
-class ModuleCount(models.Model):
-    """Abstraction of untranslated strings per module.
-
-    Module is usually something like 'browser' or 'security/manager'
-    """
-    name = models.CharField(max_length=50)
-    count = models.IntegerField()
-
-    def __unicode__(self):
-        return self.name + '(%d)' % self.count
-
 '''
 class Revision(models.Model):
     repository = models.ForeignKey(Repository, related_name='revisions',
@@ -35,14 +24,11 @@ class Revision(models.Model):
 class Run(models.Model):
     """Abstraction for a inspect-locales run.
     """
-    cleanupUnchanged = True
-
     locale = models.ForeignKey(Locale, db_index=True)
     tree = models.ForeignKey(Tree, db_index=True)
     build = models.OneToOneField(Build, null=True, blank=True,
                                  on_delete=models.SET_NULL)
     srctime = models.DateTimeField(db_index=True, null=True, blank=True)
-    unchangedmodules = models.ManyToManyField(ModuleCount, related_name='runs')
     revisions = models.ManyToManyField(Changeset)
     missing = models.IntegerField(default=0)
     missingInFiles = models.IntegerField(default=0)
@@ -77,9 +63,6 @@ class Run(models.Model):
             if previousl:
                 previous.delete()
             Active.objects.create(run=self)
-        if self.cleanupUnchanged:
-            (UnchangedInFile.objects.filter(run__active__isnull=True)
-             .distinct().delete())
 
     # fields and class method to convert a query over runs to a brief text
     dfields = ['errors', 'missing', 'missingInFiles',
@@ -117,18 +100,6 @@ class Run(models.Model):
                 compare = 'green (%d%%)' % d[prefix + 'completion']
                 cls = 'success'
             yield (d, cls, compare)
-
-
-class UnchangedInFile(models.Model):
-    """Abstraction for untranslated count per file.
-    """
-    module = models.CharField(max_length=50, db_index=True)
-    file = models.CharField(max_length=400)
-    count = models.IntegerField(db_index=True)
-    run = models.ForeignKey(Run)
-
-    def __unicode__(self):
-        return "%s/%s: %d" % (self.module, self.file, self.count)
 
 
 class Active(models.Model):
