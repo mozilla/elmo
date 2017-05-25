@@ -83,3 +83,9 @@ td:nth-child(even) {
 .tooltip .hellip {
     display: inline;
 }
+
+.top_locales {
+    stroke: darkgrey;
+    stroke-width: 1.5px;
+    fill: none;
+}

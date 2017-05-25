@@ -18,6 +18,7 @@
 var tree = "{{ tree }}";
 var SHOW_BAD = {{ showBad|yesno:"true,false" }};
 var BOUND = {{ bound }};
+var top_locales = {{ top_locales }};
 
 var LOCALE_DATA = [{% for item in data %}
     {time: new Date({{item.srctime}} * 1000), locales: {{ item.locales|safe }}}{% if not forloop.last %},{% endif %}{% endfor %}
@@ -46,6 +47,7 @@ var DASHBOARD_HISTORY_URL = '{% url "locale-tree-history" %}?tree=' + tree;
     <p><span>Good</span><span class="good"></span></p>
     <p><span>OK-ish</span><span class="shady"></span></p>
     <p><span>Bad</span><span class="bad"></span></p>
+    <p style="display:none"><span>top_locales</span><span class="top_locales"></span></p>
   </div>
 </div>
 
@@ -53,6 +55,7 @@ var DASHBOARD_HISTORY_URL = '{% url "locale-tree-history" %}?tree=' + tree;
 <div class="legend">
   <input type="checkbox" onchange="update({showBad:event.target.checked});" id="showBadField">red area: locales with missing strings<br>
   shaded area: locales with <input type="text" size="3" id="boundField" onchange="update({bound:Number(event.target.value)})"> missing strings<br>
+  line: missing strings of the <input style="width: 3em;" type="number" step="10" min="0" max="100" size="3" id="perctField" onchange="update({top_locales:Number(event.target.value)})"> most complete locales<br>
   green area: good locales
 </div>
 <div id="percentile"></div>

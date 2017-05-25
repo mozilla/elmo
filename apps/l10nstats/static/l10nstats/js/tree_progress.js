@@ -27,6 +27,9 @@ Data.prototype = {
      }
      this._data[to] += 1;
    },
+  value: function(prop, val) {
+    this._data[prop] = val;
+  },
   data: function(date) {
     var v = 0, rv = {}, _d = this._data;
     if (date) rv.date = date;
@@ -49,7 +52,8 @@ var showBad = SHOW_BAD;
 var bound = BOUND;
 var params = {
   bound: bound,
-  showBad: showBad
+  showBad: showBad,
+  top_locales: top_locales
 };
 
 var data, state, data0, X;
@@ -62,6 +66,7 @@ function renderPlot() {
   var _p = {};
   if (!params.showBad) _p.hideBad = true;
   if (params.bound) _p.bound = params.bound;
+  if (params.top_locales) _p.top_locales = params.top_locales;
   var tp = timeplot("#my-timeplot",
                     fullrange,
                     [startdate, enddate],
@@ -73,9 +78,12 @@ function renderPlot() {
   var goodLocalesElt = tooltipElt.querySelector('.good');
   var shadyLocalesElt = tooltipElt.querySelector('.shady');
   var badLocalesElt = tooltipElt.querySelector('.bad');
+  var percElt = tooltipElt.querySelector('.top_locales')
 
   var i = 0, loc;
-  state = new Data(null, ['good', 'shady', 'bad']);
+  var graphlabels = ['good', 'shady', 'bad'];
+  if (_p.top_locales) graphlabels.unshift('top_locales');
+  state = new Data(null, graphlabels);
   var latest = {};
   var _data = {};
   data = [];
@@ -84,15 +92,19 @@ function renderPlot() {
     if (_count > params.bound) return 'bad';
     return 'shady';
   }
+  Object.assign(_data, loc_data[i].locales);
   for (loc in loc_data[i].locales) {
     locales.push(loc);
     latest[loc] = _getState(loc_data[i].locales[loc]);
-    _data[loc] = loc_data[i].locales[loc];
     // no breaks on purpose, to stack data
     state.update(undefined, latest[loc]);
   }
+  if (_p.top_locales) {
+    state.value('top_locales', missing_after_top_locales(_data, _p.top_locales));
+  }
   data.push(state.data(loc_data[i].time));
   for (i = 1; i < loc_data.length; ++i) {
+    Object.assign(_data, loc_data[i].locales);
     for (loc in loc_data[i].locales) {
       _data[loc] = loc_data[i].locales[loc];
       let isGood = _getState(loc_data[i].locales[loc]);
@@ -100,6 +112,9 @@ function renderPlot() {
         state.update(latest[loc], isGood);
         latest[loc] = isGood;
       }
+    }
+    if (_p.top_locales) {
+      state.value('top_locales', missing_after_top_locales(_data, _p.top_locales))
     }
     data.push(state.data(loc_data[i].time));
   }
@@ -134,6 +149,19 @@ function renderPlot() {
         return ['#339900', 'grey', '#990000'][i];
       })
      .attr("d", area);
+  if (_p.top_locales) {
+      tp.y2Domain([
+        0,
+        d3.max(data.map(function(d) { return d.top_locales.missing; })) * 1.1 + 10
+        ]);
+      var percLine = d3.svg.line()
+      .interpolate('step-after')
+        .x(function(d) {return tp.x(d.date)})
+        .y(function(d) {return tp.y2(d.top_locales.missing)});
+      svg.append("path")
+        .attr("class", "top_locales")
+        .attr("d", percLine(data));
+  }
 
   // --> Changing locales logic <-- //
 
@@ -253,6 +281,16 @@ function renderPlot() {
       tp.x.invert(mouseX - whiteBoxOffset),
       tp.x.invert(mouseX + whiteBoxOffset)
     );
+    if (_p.top_locales) {
+      var date = tp.x.invert(mouseX), i = 0;
+      while (data[i] && data[i].date < date) ++i;
+      var datum = data[i-1].top_locales;
+      percElt.innerHTML = `${datum.missing} (<a href="${dashboardHistoryUrl + datum.locale}">${datum.locale}</a>)`;
+      percElt.parentElement.style.display = '';
+    }
+    else {
+      percElt.parentElement.style.display = 'none';
+    }
 
     // Finaly show those locales in the tooltip box.
     if (triagedLocales) {
@@ -297,6 +335,7 @@ function renderPlot() {
   document.getElementById('my-timeplot').addEventListener('click', onClickPlot);
   document.getElementById('boundField').value = params.bound;
   document.getElementById('showBadField').checked = params.showBad;
+  document.getElementById('perctField').value = params.top_locales;
 }
 
 function update(args) {
@@ -308,9 +347,7 @@ function onClickPlot(evt) {
   var t = X.invert(evt.offsetX);
   var d = {};
   for (var i = 0; i < loc_data.length && loc_data[i].time < t; ++i) {
-    for (var loc in loc_data[i].locales) {
-      d[loc] = loc_data[i].locales[loc];
-    }
+    Object.assign(d, loc_data[i].locales);
   }
   paintHistogram(d, evt.controlKey || evt.metaKey);
 }
@@ -472,6 +509,15 @@ function paintHistogram(d, add) {
     }
     td.css("width", Number(_left).toFixed(1) + 'px');
   }
+}
+
+function missing_after_top_locales(current, perc) {
+  if (perc <= 0) {
+    return 0;
+  }
+  var vals = Object.keys(current).map(locale => ({"locale": locale, "missing": current[locale]}));
+  vals.sort((a, b) => a.missing - b.missing);
+  return vals[perc - 1];
 }
 
 renderPlot();

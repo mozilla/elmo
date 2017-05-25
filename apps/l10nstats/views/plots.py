@@ -199,6 +199,10 @@ def tree_progress(request, tree):
         bound = int(request.GET.get('bound', 0))
     except ValueError:
         bound = 0
+    try:
+        top_locales = int(request.GET.get('top_locales', 0))
+    except ValueError:
+        top_locales = 0
     stamps = {}
     stamps['start'] = int(calendar.timegm(starttime.timetuple()))
     stamps['end'] = int(calendar.timegm(endtime.timetuple()))
@@ -209,6 +213,7 @@ def tree_progress(request, tree):
                     'tree': tree.code,
                     'bound': bound,
                     'showBad': 'hideBad' not in request.GET,
+                    'top_locales': top_locales,
                     'startTime': starttime,
                     'endTime': endtime,
                     'stamps': stamps,
