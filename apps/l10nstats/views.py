@@ -22,7 +22,7 @@ from django.db.models import Min, Max
 import json
 import elasticsearch
 
-from l10nstats.models import Active, Run
+from l10nstats.models import Run
 from life.models import Locale, Tree
 import shipping.views
 
@@ -77,13 +77,13 @@ def history_plot(request):
     locale = get_object_or_404(Locale, code=request.GET.get('locale'))
     highlights = defaultdict(dict)
     for param in sorted(
-        (p for p in request.GET.iterkeys() if p.startswith('hl-'))):
-            try:
-                _, i, kind = param.split('-')
-                i = int(i)
-            except:
-                continue
-            highlights[i][kind] = request.GET.get(param)
+            (p for p in request.GET.iterkeys() if p.startswith('hl-'))):
+        try:
+            _, i, kind = param.split('-')
+            i = int(i)
+        except:
+            continue
+        highlights[i][kind] = request.GET.get(param)
     for i, highlight in highlights.items():
         for k in ('s', 'e', 'c'):
             if k not in highlight:
@@ -111,13 +111,13 @@ def history_plot(request):
     except (KeyError, ValueError):
         starttime = endtime - timedelta(days=21)
     try:
-        r = q2.filter(srctime__lt=starttime).order_by('-srctime')[0]
+        run = q2.filter(srctime__lt=starttime).order_by('-srctime')[0]
         runs = [{
             'srctime': starttime,
-            'missing': r.allmissing + r.report,
-            'obsolete': r.obsolete,
-            'unchanged': r.unchanged,
-            'run': r.id
+            'missing': run.allmissing + run.report,
+            'obsolete': run.obsolete,
+            'unchanged': run.unchanged,
+            'run': run.id
             }]
     except IndexError:
         runs = []
@@ -252,11 +252,11 @@ class JSONAdaptor(object):
                 errors = [{'key': e, 'class': 'error'}
                           for e in self.value.get('error', [])]
                 warnings = [{'key': e, 'class': 'warning'}
-                          for e in self.value.get('warning', [])]
+                            for e in self.value.get('warning', [])]
                 entities = \
                     [{'key': e, 'class': 'missing'}
                      for e in self.value.get('missingEntity', [])] + \
-                     [{'key': e, 'class': 'obsolete'}
+                    [{'key': e, 'class': 'obsolete'}
                      for e in self.value.get('obsoleteEntity', [])]
                 entities.sort(key=lambda d: d['key'])
                 self.entities = errors + warnings + entities
@@ -309,7 +309,8 @@ def compare(request):
         else:
             doc = None
     if doc:
-        nodes = list(JSONAdaptor.adaptChildren(doc['details'].get('children', [])))
+        nodes = list(
+            JSONAdaptor.adaptChildren(doc['details'].get('children', [])))
     else:
         nodes = None
 
