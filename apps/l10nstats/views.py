@@ -24,8 +24,6 @@ import elasticsearch
 
 from l10nstats.models import Active, Run
 from life.models import Locale, Tree
-from mbdb.models import Log, Step
-from tinder.views import generateLog, NoLogFile
 import shipping.views
 
 
@@ -297,22 +295,8 @@ def compare(request):
         run = get_object_or_404(Run, id=request.GET.get('run'))
     except ValueError:
         return HttpResponseBadRequest('Invalid ID')
-    # try disk first, then ES
-    jsondata = ''
     doc = None
-    for step in Step.objects.filter(name__startswith='moz_inspectlocales',
-                                    build__run=run):
-        for log in step.logs.all():
-            try:
-                for chunk in generateLog(run.build.builder.master.name,
-                                         log.filename,
-                                         channels=(Log.JSON,)):
-                    jsondata += chunk['data']
-            except NoLogFile:
-                pass
-    if jsondata:
-        doc = json.loads(jsondata)
-    elif hasattr(settings, 'ES_COMPARE_HOST'):
+    if hasattr(settings, 'ES_COMPARE_HOST'):
         es = elasticsearch.Elasticsearch(hosts=[settings.ES_COMPARE_HOST])
         try:
             rv = es.get(index=settings.ES_COMPARE_INDEX,
