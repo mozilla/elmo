@@ -16,9 +16,9 @@ from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.http import (HttpResponse, Http404,
-                         HttpResponsePermanentRedirect,
-                         HttpResponseBadRequest)
+                         HttpResponsePermanentRedirect)
 from django.db.models import Min, Max
+from django.views.generic.base import TemplateView
 import json
 import elasticsearch
 
@@ -288,15 +288,41 @@ class Counter:
         return str(self.count)
 
 
-def compare(request):
+class CompareView(TemplateView):
     """HTML pretty-fied output of compare-locales.
     """
-    try:
-        run = get_object_or_404(Run, id=request.GET.get('run'))
-    except ValueError:
-        return HttpResponseBadRequest('Invalid ID')
-    doc = None
-    if hasattr(settings, 'ES_COMPARE_HOST'):
+    template_name = 'l10nstats/compare.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(CompareView, self).get_context_data(**kwargs)
+        try:
+            run = get_object_or_404(Run, id=self.request.GET.get('run'))
+        except ValueError:
+            raise Http404('Invalid ID')
+        doc = self.get_doc(run)
+        if doc:
+            nodes = list(
+                JSONAdaptor.adaptChildren(doc['details'].get('children', [])))
+        else:
+            nodes = None
+
+        # create table widths for the progress bar
+        widths = {}
+        if run.total:
+            for k in ('changed', 'missing', 'missingInFiles', 'report',
+                      'unchanged'):
+                widths[k] = getattr(run, k) * 300 // run.total
+        context.update({
+            'run': run,
+            'nodes': nodes,
+            'widths': widths,
+            'counter': Counter(),
+        })
+        return context
+
+    def get_doc(self, run):
+        if not hasattr(settings, 'ES_COMPARE_HOST'):
+            return None
         es = elasticsearch.Elasticsearch(hosts=[settings.ES_COMPARE_HOST])
         try:
             rv = es.get(index=settings.ES_COMPARE_INDEX,
@@ -305,25 +331,5 @@ def compare(request):
         except elasticsearch.TransportError:
             rv = {'found': False}
         if rv['found']:
-            doc = rv['_source']
-        else:
-            doc = None
-    if doc:
-        nodes = list(
-            JSONAdaptor.adaptChildren(doc['details'].get('children', [])))
-    else:
-        nodes = None
-
-    # create table widths for the progress bar
-    widths = {}
-    if run.total:
-        for k in ('changed', 'missing', 'missingInFiles', 'report',
-                  'unchanged'):
-            widths[k] = getattr(run, k) * 300 // run.total
-
-    return render(request, 'l10nstats/compare.html', {
-                    'run': run,
-                    'nodes': nodes,
-                    'widths': widths,
-                    'counter': Counter(),
-                  })
+            return rv['_source']
+        return None

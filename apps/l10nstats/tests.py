@@ -10,8 +10,9 @@ from nose.tools import eq_, ok_
 from django.http import QueryDict
 from django.core.urlresolvers import reverse
 from django.utils.safestring import SafeUnicode
+from django.test.client import RequestFactory
 from shipping.tests.test_views import ShippingTestCaseBase
-from life.models import Tree, Locale
+from life.models import Tree, Locale, Forest
 from mbdb.models import Build
 from .models import Run, Active
 from .templatetags.run_filters import showrun
@@ -109,7 +110,7 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
 
         url = reverse('compare-locales')
         response = self.client.get(url, {'run': 'xxx'})
-        eq_(response.status_code, 400)
+        eq_(response.status_code, 404)
 
         # and sane but unknown should be 404
         response = self.client.get(url, {'run': 123})
@@ -219,3 +220,85 @@ class ShowRunTestCase(TestCase):
                        'data-warnings': '0'})
         text = a.text
         ok_('green' in text)
+
+
+doc_v1 = {
+    "_index": "elmo-comparisons",
+    "_type": "comparison",
+    "_id": "729457",
+    "_version": 1,
+    "_source": {
+        "run": 729457,
+        "details": {
+            "children": [
+                ["fr",
+                 {
+                     "children": [
+                         ["dom/chrome/dom/dom.properties",
+                          {
+                              "value": {"missingEntity": [
+                                  "MozAutoGainControlWarning",
+                                  "MozNoiseSuppressionWarning"
+                                  ]}
+                          }],
+                         ["mobile/android/chrome/browser.properties",
+                          {
+                              "value": {"missingEntity": [
+                                  "alertShutdownSanitize"
+                                  ]}
+                          }]
+                          ]
+                 }]
+                 ]
+        }
+    }
+}
+
+
+class TestCompareView(TestCase):
+    def setUp(self):
+        l10n = Forest.objects.create(
+            name='l10n',
+            url='http://localhost:8001/l10n/')
+        tree = Tree.objects.create(code='fx', l10n=l10n)
+        locale = Locale.objects.create(code='de')
+        self.run = Run.objects.create(
+            tree=tree,
+            locale=locale,
+            missing=10,
+            changed=10,
+            total=20,
+            id=doc_v1['_source']['run']
+        )
+
+    def test_compare_view(self):
+
+        class View(l10nstats.views.CompareView):
+            def get_doc(self, run):
+                return doc_v1['_source']
+        self._check_view(View)
+
+    def _check_view(self, View):
+        rf = RequestFactory()
+        r = View.as_view()(rf.get('/foo/', {'run': str(self.run.id)}))
+        context = r.context_data
+        self.assertEqual(len(context['nodes']), 1)
+        node = context['nodes'][0]
+        self.assertEqual(node.path, 'fr')
+        children = list(node)
+        self.assertEqual(len(children), 2)
+        node = children[1]  # just check the second, good enough
+        self.assertEqual(
+            node.fragment,
+            'mobile/android/chrome/browser.properties')
+        self.assertListEqual(
+            node.entities, [
+                {'key': 'alertShutdownSanitize', 'class': 'missing'}
+            ])
+        self.assertDictEqual(context['widths'], {
+            'changed': 150,
+            'missing': 150,
+            'missingInFiles': 0,
+            'report': 0,
+            'unchanged': 0
+        })

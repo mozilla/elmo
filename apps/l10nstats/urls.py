@@ -12,6 +12,6 @@ from . import views
 urlpatterns = [
     url(r'^$', views.index),
     url(r'^history$', views.history_plot, name='locale-tree-history'),
-    url(r'^compare$', views.compare, name='compare-locales'),
+    url(r'^compare$', views.CompareView.as_view(), name='compare-locales'),
     url(r'^tree-status/([^/]+)$', views.tree_progress, name='tree-history'),
 ]
