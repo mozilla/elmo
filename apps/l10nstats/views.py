@@ -280,6 +280,47 @@ class JSONAdaptor(object):
         return self.fragment
 
 
+class JSON2Adaptor(JSONAdaptor):
+    def __init__(self, node, fragment='', base=''):
+        self.fragment = fragment
+        self.base = base
+        self.node = node
+        self.children = isinstance(self.node, dict)
+        if not self.children:
+            self.entities = []
+            for data in self.node:
+                if 'obsoleteFile' in data:
+                    self.fileIs = 'obsolete'
+                elif 'missingFile' in data:
+                    self.fileIs = 'missing'
+                elif 'missingEntity' in data:
+                    self.entities.append({
+                        'key': data['missingEntity'],
+                        'class': 'missing'
+                    })
+                elif 'obsoleteEntity' in data:
+                    self.entities.append({
+                        'key': data['obsoleteEntity'],
+                        'class': 'obsolete'
+                    })
+                else:
+                    # warning or error, just one, but loop regardless
+                    for cls, key in data.items():
+                        self.entities.append({
+                            'key': key,
+                            'class': cls
+                        })
+
+    def __iter__(self):
+        if self.children:
+            if self.base:
+                base = self.base + '/' + self.fragment
+            else:
+                base = self.fragment
+            for fragment, node in sorted(self.node.items()):
+                yield JSON2Adaptor(node, fragment, base)
+
+
 class Counter:
     count = 0
 
@@ -300,9 +341,13 @@ class CompareView(TemplateView):
         except ValueError:
             raise Http404('Invalid ID')
         doc = self.get_doc(run)
-        if doc:
-            nodes = list(
-                JSONAdaptor.adaptChildren(doc['details'].get('children', [])))
+        if doc and 'details' in doc:
+            if isinstance(doc['details'].get('children'), list):
+                nodes = list(
+                    JSONAdaptor.adaptChildren(doc['details']['children']))
+            else:
+                nodes = list(
+                    JSON2Adaptor(doc['details']))
         else:
             nodes = None
 
