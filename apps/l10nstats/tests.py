@@ -255,6 +255,28 @@ doc_v1 = {
 }
 
 
+doc_v2 = {
+    "_index": "elmo-comparisons",
+    "_type": "comparison",
+    "_id": "729457",
+    "_version": 1,
+    "_source": {
+        "run": 729457,
+        "details": {
+            "fr": {
+                "dom/chrome/dom/dom.properties": [
+                    {"missingEntity": "MozNoiseSuppressionWarning"},
+                    {"missingEntity": "MozAutoGainControlWarning"},
+                ],
+                "mobile/android/chrome/browser.properties": [
+                    {"missingEntity": "alertShutdownSanitize"},
+                ]
+            }
+        }
+    }
+}
+
+
 class TestCompareView(TestCase):
     def setUp(self):
         l10n = Forest.objects.create(
@@ -271,11 +293,18 @@ class TestCompareView(TestCase):
             id=doc_v1['_source']['run']
         )
 
-    def test_compare_view(self):
+    def test_compare_view_legacy(self):
 
         class View(l10nstats.views.CompareView):
             def get_doc(self, run):
                 return doc_v1['_source']
+        self._check_view(View)
+
+    def test_compare_view(self):
+
+        class View(l10nstats.views.CompareView):
+            def get_doc(self, run):
+                return doc_v2['_source']
         self._check_view(View)
 
     def _check_view(self, View):
