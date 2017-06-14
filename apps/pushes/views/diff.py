@@ -20,7 +20,7 @@ from life.models import Repository, Changeset
 import hglib
 
 from compare_locales.parser import getParser
-from compare_locales.compare import AddRemove, Tree as DataTree
+from compare_locales.compare import AddRemove, Tree as DataTree, indexof
 
 
 class BadRevision(Exception):
@@ -77,7 +77,7 @@ class DiffView(View):
                         'lines': lines
                     })
                 diffs[path].update(v)
-        diffs = diffs.toJSON().get('children', [])
+        diffs = self.tree_data(diffs)
         return render(request, 'pushes/diff.html', {
                         'given_title': request.GET.get('title', None),
                         'repo': reponame,
@@ -200,29 +200,29 @@ class DiffView(View):
                 # consider doing something like:
                 # logging.warn('Unable to parse %s', path, exc_info=True)
                 return None
-        a_list = sorted(a_map.keys())
-        c_list = sorted(c_map.keys())
-        ar = AddRemove()
+        a_list = sorted(a_map.keys(), key=lambda k: a_map[k])
+        c_list = sorted(c_map.keys(), key=lambda k: c_map[k])
+        ar = AddRemove(key=indexof(c_map))
         ar.set_left(a_list)
         ar.set_right(c_list)
-        for action, item_or_pair in ar:
+        for action, entity in ar:
             if action == 'delete':
                 lines.append({
                   'class': 'removed',
-                  'oldval': [{'value': a_entities[a_map[item_or_pair]].val}],
+                  'oldval': [{'value': a_entities[a_map[entity]].val}],
                   'newval': '',
-                  'entity': item_or_pair
+                  'entity': entity
                 })
             elif action == 'add':
                 lines.append({
                   'class': 'added',
                   'oldval': '',
-                  'newval': [{'value': c_entities[c_map[item_or_pair]].val}],
-                  'entity': item_or_pair
+                  'newval': [{'value': c_entities[c_map[entity]].val}],
+                  'entity': entity
                 })
             else:
-                oldval = a_entities[a_map[item_or_pair[0]]].val
-                newval = c_entities[c_map[item_or_pair[1]]].val
+                oldval = a_entities[a_map[entity]].val
+                newval = c_entities[c_map[entity]].val
                 if oldval == newval:
                     continue
                 sm = SequenceMatcher(None, oldval, newval)
@@ -236,5 +236,19 @@ class DiffView(View):
                 lines.append({'class': 'changed',
                               'oldval': oldhtml,
                               'newval': newhtml,
-                              'entity': item_or_pair[0]})
+                              'entity': entity})
         return lines
+
+    def tree_data(self, tree):
+        nodes = []
+        for segs, subtree in sorted(tree.branches.items()):
+            path = '/'.join(segs)
+            if subtree.value:
+                node = {
+                    'children': [],
+                    'value': subtree.value
+                }
+                nodes.append((path, node))
+            else:
+                nodes.append((path, {'children': self.tree_data(subtree)}))
+        return nodes
