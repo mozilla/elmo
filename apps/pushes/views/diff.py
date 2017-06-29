@@ -19,8 +19,8 @@ from life.models import Repository, Changeset
 
 import hglib
 
-from compare_locales.parser import getParser
-from compare_locales.compare import AddRemove, Tree as DataTree, indexof
+from compare_locales.parser import getParser, FluentEntity
+from compare_locales.compare import AddRemove, Tree as DataTree
 
 
 class BadRevision(Exception):
@@ -200,11 +200,9 @@ class DiffView(View):
                 # consider doing something like:
                 # logging.warn('Unable to parse %s', path, exc_info=True)
                 return None
-        a_list = sorted(a_map.keys(), key=lambda k: a_map[k])
-        c_list = sorted(c_map.keys(), key=lambda k: c_map[k])
-        ar = AddRemove(key=indexof(c_map))
-        ar.set_left(a_list)
-        ar.set_right(c_list)
+        ar = AddRemove()
+        ar.set_left(e.key for e in a_entities)
+        ar.set_right(e.key for e in c_entities)
         for action, entity in ar:
             if action == 'delete':
                 lines.append({
@@ -221,23 +219,71 @@ class DiffView(View):
                   'entity': entity
                 })
             else:
-                oldval = a_entities[a_map[entity]].val
-                newval = c_entities[c_map[entity]].val
-                if oldval == newval:
-                    continue
-                sm = SequenceMatcher(None, oldval, newval)
-                oldhtml = []
-                newhtml = []
-                for op, o1, o2, n1, n2 in sm.get_opcodes():
-                    if o1 != o2:
-                        oldhtml.append({'class': op, 'value': oldval[o1:o2]})
-                    if n1 != n2:
-                        newhtml.append({'class': op, 'value': newval[n1:n2]})
-                lines.append({'class': 'changed',
-                              'oldval': oldhtml,
-                              'newval': newhtml,
-                              'entity': entity})
+                old_entity = a_entities[a_map[entity]]
+                new_entity = c_entities[c_map[entity]]
+                if old_entity.val != new_entity.val:
+                    oldhtml, newhtml = \
+                        self.diff_strings(old_entity.val, new_entity.val)
+                    lines.append({'class': 'changed',
+                                  'oldval': oldhtml,
+                                  'newval': newhtml,
+                                  'entity': entity})
+                if isinstance(old_entity, FluentEntity):
+                    # we're in FTL, compare attributes
+                    # "same, same, but different" to entities
+                    old_attrs = list(old_entity.attributes)
+                    old_attr_map = dict(
+                        (attr.key, i) for i, attr in enumerate(old_attrs))
+                    new_attrs = list(new_entity.attributes)
+                    new_attr_map = dict(
+                        (attr.key, i) for i, attr in enumerate(new_attrs))
+                    attr_ar = AddRemove()
+                    attr_ar.set_left(attr.key for attr in old_attrs)
+                    attr_ar.set_right(attr.key for attr in new_attrs)
+                    for action, attr_name in attr_ar:
+                        if action == 'delete':
+                            lines.append({
+                              'class': 'removed',
+                              'oldval': [
+                                  {'value':
+                                   old_attrs[old_attr_map[attr_name]].val}],
+                              'newval': '',
+                              'entity': entity + '.' + attr_name
+                            })
+                        elif action == 'add':
+                            lines.append({
+                              'class': 'added',
+                              'oldval': '',
+                              'newval': [
+                                  {'value':
+                                   new_attrs[new_attr_map[attr_name]].val}],
+                              'entity': entity + '.' + attr_name
+                            })
+                        else:
+                            old_val = old_attrs[old_attr_map[attr_name]].val
+                            new_val = new_attrs[new_attr_map[attr_name]].val
+                            if old_val != new_val:
+                                oldhtml, newhtml = \
+                                    self.diff_strings(old_val, new_val)
+                                lines.append({'class': 'changed',
+                                              'oldval': oldhtml,
+                                              'newval': newhtml,
+                                              'entity':
+                                                  entity + '.' +
+                                                  attr_name})
+
         return lines
+
+    def diff_strings(self, oldval, newval):
+        sm = SequenceMatcher(None, oldval, newval)
+        oldhtml = []
+        newhtml = []
+        for op, o1, o2, n1, n2 in sm.get_opcodes():
+            if o1 != o2:
+                oldhtml.append({'class': op, 'value': oldval[o1:o2]})
+            if n1 != n2:
+                newhtml.append({'class': op, 'value': newval[n1:n2]})
+        return oldhtml, newhtml
 
     def tree_data(self, tree):
         nodes = []
