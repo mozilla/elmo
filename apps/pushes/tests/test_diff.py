@@ -110,6 +110,49 @@ class DiffTestCase(RepoTestBase):
         ok_('<span class="equal">Cruel</span><span class="insert">le</span>'
             in html_diff)
 
+    def test_fluent_entity_and_attr_modification(self):
+        """Change one file by editing an existing line and attr"""
+        hgrepo = hglib.init(self.repo).open()
+        (open(hgrepo.pathto('file.ftl'), 'w')
+            .write('''
+key1 = My Value
+    .attr = Attrbute
+'''))
+
+        hgrepo.addremove()
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="initial commit")
+        rev0 = hgrepo[0].node()
+        (open(hgrepo.pathto('file.ftl'), 'w')
+            .write('''
+key1 = My New Value
+    .attr = Attribute
+'''))
+        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                      message="Second commit")
+        rev1 = hgrepo[1].node()
+        hgrepo.close()
+
+        Repository.objects.create(
+            name=self.repo_name,
+            url='http://localhost:8001/%s/' % self.repo_name
+        )
+
+        url = reverse('pushes:diff')
+        response = self.client.get(url, {
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': rev1
+        })
+        eq_(response.status_code, 200)
+        html_diff = response.content.split('Changed files:')[1]
+        ok_(re.findall('>\s*file\.ftl\s*<', html_diff))
+        ok_('<tr class="line-changed">' in html_diff)
+        ok_('<span class="equal">My</span><span class="insert"> New</span>'
+            in html_diff)
+        ok_('<span class="equal">Attr</span><span class="insert">i</span>'
+            in html_diff)
+
     def test_file_entity_removal(self):
         """Change one file by removal of a line"""
         hgrepo = hglib.init(self.repo).open()
