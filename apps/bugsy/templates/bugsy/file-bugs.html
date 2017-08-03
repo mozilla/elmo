@@ -19,7 +19,7 @@
 
 {% block javascript_matter %}
 <script>
-var BUG_LINKS_URL = '{% url "bugsy.views.get_bug_links" %}';
+var BUG_LINKS_URL = '{% url "get-bug-links" %}';
 </script>
 <script src="{% static "simile/exhibit/exhibit-api.js" %}?persist=false"></script>
 {% compress js %}

@@ -27,9 +27,9 @@ class Application(models.Model):
 
 
 class AppVersionTreeThrough(DurationThrough):
-    appversion = models.ForeignKey('AppVersion',
+    appversion = models.ForeignKey('AppVersion', on_delete=models.CASCADE,
                                    related_name='trees_over_time')
-    tree = models.ForeignKey(Tree,
+    tree = models.ForeignKey(Tree, on_delete=models.CASCADE,
                              related_name='appvers_over_time')
 
     def __unicode__(self):
@@ -54,7 +54,7 @@ class AppVersion(models.Model):
     """ stores application versions
     """
     objects = AppVersionManager()
-    app = models.ForeignKey(Application)
+    app = models.ForeignKey(Application, on_delete=models.CASCADE)
     version = models.CharField(max_length=10)
     code = models.CharField(max_length=20, blank=True)
     codename = models.CharField(max_length=30, blank=True, null=True)
@@ -79,12 +79,13 @@ class AppVersion(models.Model):
 
 
 class Signoff(models.Model):
-    push = models.ForeignKey(Push)
-    appversion = models.ForeignKey(AppVersion, related_name='signoffs')
-    author = models.ForeignKey(User)
+    push = models.ForeignKey(Push, on_delete=models.CASCADE)
+    appversion = models.ForeignKey(AppVersion, related_name='signoffs',
+                                   on_delete=models.CASCADE)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
     when = models.DateTimeField('signoff timestamp',
                                 default=datetime.datetime.utcnow)
-    locale = models.ForeignKey(Locale)
+    locale = models.ForeignKey(Locale, on_delete=models.CASCADE)
 
     class Meta:
         permissions = (('review_signoff', 'Can review a Sign-off'),)
@@ -121,9 +122,9 @@ class Action(models.Model):
         (CANCELED, 'canceled'),
         (OBSOLETED, 'obsoleted'),
     )
-    signoff = models.ForeignKey(Signoff)
+    signoff = models.ForeignKey(Signoff, on_delete=models.CASCADE)
     flag = models.IntegerField(choices=FLAG_CHOICES)
-    author = models.ForeignKey(User)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
     when = models.DateTimeField('signoff action timestamp',
                                 default=datetime.datetime.utcnow)
     comment = models.TextField(blank=True, null=True)
@@ -148,7 +149,7 @@ class SnapshotManager(models.Manager):
 
 
 class Snapshot(models.Model):
-    signoff = models.ForeignKey(Signoff)
+    signoff = models.ForeignKey(Signoff, on_delete=models.CASCADE)
     test = models.IntegerField(choices=TEST_CHOICES)
     tid = models.IntegerField()
     objects = SnapshotManager()
