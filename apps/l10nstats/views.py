@@ -122,7 +122,7 @@ def history_plot(request):
     except IndexError:
         runs = []
     q2 = q2.filter(srctime__gte=starttime,
-                   srctime__lte=endtime)
+                   srctime__lte=endtime).order_by('srctime')
     runs += [
         {
             'srctime': r.srctime,
