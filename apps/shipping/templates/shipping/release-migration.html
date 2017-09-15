@@ -32,8 +32,8 @@
 {% endfor %}
 </table>
 Migration date (defaults to now): <input type="text" name="migration-date" value="{{migration_date}}"><br>
-{% for l10n in l10ns %}
-<input type="checkbox" value="{{l10n.name}}" name="forest" checked>{{l10n.name}}
+{% for tree_kind in tree_kinds %}
+<input type="checkbox" value="{{tree_kind}}" name="tree_kind" checked>{{tree_kind}}
 {% endfor %}
 <br>
 <input type="submit" value="Submit">

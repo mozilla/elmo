@@ -6,10 +6,10 @@ from __future__ import absolute_import
 import re
 from collections import defaultdict
 from datetime import datetime
+from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.views import generic
 
-from life.models import Forest
 from shipping.models import Application, AppVersion, AppVersionTreeThrough
 
 
@@ -20,11 +20,10 @@ def select_appversions(request):
             .select_related('appversion__app'))
     apps = list(Application.objects.all())
     apps.sort(cmp=lambda r, l: cmp(len(r.code), len(l.code)))
-    l10ns = [avt.tree.l10n for avt in AppVersionTreeThrough.objects
-             .current()
-             .filter(appversion__app__code='fx')
-             .order_by('-appversion')
-             .select_related('tree__l10n')]
+    tree_kinds = set(code.split('_')[1]
+                     for code in AppVersionTreeThrough.objects
+                     .current()
+                     .values_list('tree__code', flat=True))
 
     lastdigits = re.compile('\d+$')
 
@@ -44,7 +43,7 @@ def select_appversions(request):
 
     return render(request, 'shipping/release-migration.html', {
         'appvers': suggested,
-        'l10ns': l10ns,
+        'tree_kinds': sorted(tree_kinds),
         'migration_date': migration_date,
         })
 
@@ -68,22 +67,23 @@ class MigrateAppversions(generic.View):
         app_ids = list(Application.objects
                        .filter(code__in=app_codes)
                        .values_list('id', flat=True))
-        forest_ids = list(Forest.objects
-                          .filter(name__in=request.POST.getlist('forest'))
-                          .values_list('id', flat=True))
-        self.migrateApps(migration_date, app_ids, forest_ids, av_details)
+        tree_kinds = request.POST.getlist('tree_kind')
+        tree_q = Q()
+        for tree_kind in tree_kinds:
+            tree_q = tree_q | Q(tree__code__endswith='_%s' % tree_kind)
+        self.migrateApps(migration_date, app_ids, tree_q, av_details)
         return _redirect
 
-    def migrateApps(self, migration_date, app_ids, forest_ids, av_details):
-        branches4app = self.getBranchData(app_ids, forest_ids)
+    def migrateApps(self, migration_date, app_ids, tree_q, av_details):
+        branches4app = self.getBranchData(app_ids, tree_q)
         for app, branch in branches4app.iteritems():
             self.migrateBranch(migration_date, branch, av_details[app])
 
-    def getBranchData(self, app_ids, forest_ids):
+    def getBranchData(self, app_ids, tree_q):
         avts = (AppVersionTreeThrough.objects
                 .current()
-                .filter(appversion__app__in=app_ids,
-                        tree__l10n__in=forest_ids)
+                .filter(appversion__app__in=app_ids)
+                .filter(tree_q)
                 .select_related('appversion__app', 'tree'))
         branches4app = defaultdict(dict)
         for avt in avts:
