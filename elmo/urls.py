@@ -8,6 +8,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.contrib import admin
 from django.conf import settings
 from django.http import HttpResponse
+import django.views.static
 from django.views.generic import TemplateView
 
 ## Monkeypatches:
@@ -25,7 +26,7 @@ urlpatterns = [
     url(r'^builds/', include('tinder.urls')),
     url(r'^source/', include('pushes.urls', namespace='pushes')),
     url(r'^dashboard/', include('l10nstats.urls')),
-    url(r'^shipping', include('shipping.urls')),
+    url(r'^shipping/', include('shipping.urls')),
     url(r'^bugs/', include('bugsy.urls')),
     url(r'^accounts/', include('accounts.urls')),
     url(r'^', include('homepage.urls')),
@@ -37,7 +38,7 @@ urlpatterns = [
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
     # Uncomment the next line to enable the admin:
-    url(r'^admin/', include(admin.site.urls)),
+    url(r'^admin/', admin.site.urls),
 ]
 
 
@@ -53,7 +54,7 @@ handler500 = 'homepage.views.handler500'
 # that prints a warning message
 static_url = settings.STATIC_URL.lstrip('/').rstrip('/')
 urlpatterns += [
-    url(r'^%s/(?P<path>.*)$' % static_url, 'django.views.static.serve',
+    url(r'^%s/(?P<path>.*)$' % static_url, django.views.static.serve,
      {'document_root': settings.STATIC_ROOT},
      'static'),
 ]

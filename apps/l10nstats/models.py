@@ -24,8 +24,8 @@ class Revision(models.Model):
 class Run(models.Model):
     """Abstraction for a inspect-locales run.
     """
-    locale = models.ForeignKey(Locale, db_index=True)
-    tree = models.ForeignKey(Tree, db_index=True)
+    locale = models.ForeignKey(Locale, db_index=True, on_delete=models.CASCADE)
+    tree = models.ForeignKey(Tree, db_index=True, on_delete=models.CASCADE)
     build = models.OneToOneField(Build, null=True, blank=True,
                                  on_delete=models.SET_NULL)
     srctime = models.DateTimeField(db_index=True, null=True, blank=True)
@@ -102,16 +102,17 @@ class Run(models.Model):
             yield (d, cls, compare)
 
 
+
 class Active(models.Model):
     """Keep track of the currently active Runs.
     """
-    run = models.OneToOneField(Run)
+    run = models.OneToOneField(Run, on_delete=models.CASCADE)
 
 
 class ProgressPosition(models.Model):
     """Position in the background image
     """
-    tree = models.ForeignKey(Tree)
-    locale = models.ForeignKey(Locale)
+    tree = models.ForeignKey(Tree, on_delete=models.CASCADE)
+    locale = models.ForeignKey(Locale, on_delete=models.CASCADE)
     x = models.IntegerField()
     y = models.IntegerField()

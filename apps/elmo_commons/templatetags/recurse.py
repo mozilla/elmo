@@ -16,7 +16,7 @@ templates_stack = []
 
 @register.tag(name="recurse_children")
 def do_recurse(parser, token):
-    nodelist = parser.create_nodelist()
+    nodelist = template.NodeList()
     templates_stack.append(nodelist)
     nodelist += parser.parse(('endrecurse', ))
     templates_stack.pop()

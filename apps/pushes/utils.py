@@ -64,7 +64,7 @@ def get_or_create_changeset(repo, hgrepo, ctx):
     # has an ID
     cs.save()
 
-    cs.parents = list(p_dict.values())
+    cs.parents.set(list(p_dict.values()))
     repo.changesets.add(cs, *(list(p_dict.values())))
     spacefiles = [p for p in ctx.files() if p.endswith(' ')]
     goodfiles = [p for p in ctx.files() if not p.endswith(' ')]
@@ -133,7 +133,7 @@ def handlePushes(repo_id, submits, do_update=False, close_connection=False):
               push_id=data.id, user=data.user,
               push_date=datetime.utcfromtimestamp(data.date)
             )
-            p.changesets = changesets
+            p.changesets.set(changesets)
             p.save()
         repo.save()
     hgrepo.close()

@@ -16,7 +16,7 @@
 {% endblock %}
 {% block javascript_matter %}
 <script>
-var NEW_LOCALE_URL = '{% url "bugsy.views.new_locale_bugs" %}';
+var NEW_LOCALE_URL = '{% url "new-locale-bugs" %}';
 </script>
 {% compress js %}
 <script src="{% static "bugsy/js/new_locale.js" %}"></script>

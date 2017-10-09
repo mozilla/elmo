@@ -25,76 +25,79 @@ class PickledObject(str):
 
 
 class PickledObjectField(models.Field):
-    __metaclass__ = models.SubfieldBase
 
     def __init__(self, *args, **kwargs):
         super(PickledObjectField, self).__init__(*args, **kwargs)
-        # By default, South will make this field an index. MySQL doesn't
-        # accept TEXT fields to be indexed, and will raise an error.
+        # MySQL doesn't accept TEXT fields to be indexed,
+        # and will raise an error.
         # We thus need to force this to *not* be indexed by MySQL.
         self.db_index = False
+
+    def from_db_value(self, value, expression, connection, context):
+        if value is None:
+            return value
+        return pickle.loads(str(value))
 
     def to_python(self, value):
         if value is None:
             return value
-        if isinstance(value, PickledObject):
-            # If the value is a definite pickle; and an error is raised in
-            # de-pickling it should be allowed to propogate.
+        try:
             return pickle.loads(str(value))
-        else:
-            try:
-                return pickle.loads(str(value))
-            except:
-                # If an error was raised, just return the plain value
-                return value
+        except:
+            # If an error was raised, just return the plain value
+            return value
 
-    def get_db_prep_save(self, value, connection):
-        if value is not None and not isinstance(value, PickledObject):
-            if isinstance(value, str):
-                # normalize all strings to unicode, like django does
-                value = unicode(value)
-            value = PickledObject(pickle.dumps(value))
+    def get_prep_value(self, value):
+        value = super(PickledObjectField, self).get_prep_value(value)
+        if value is None:
+            return value
+        if isinstance(value, str):
+            # normalize all strings to unicode, like django does
+            value = unicode(value)
+        value = pickle.dumps(value)
         return value
 
     def get_internal_type(self):
         return 'TextField'
 
-    def get_db_prep_lookup(self, lookup_type, value, connection,
-                           prepared=False):
-        if lookup_type in ['exact', 'isnull']:
-            if lookup_type != 'isnull':
-                value = self.get_db_prep_save(value, connection=connection)
-        elif lookup_type == 'in':
-            value = [self.get_db_prep_save(v, connection=connection)
-                     for v in value]
-        else:
+    def get_prep_lookup(self, lookup_type, value):
+        if lookup_type not in ['exact', 'isnull']:
             raise TypeError('Lookup type %s is not supported.' % lookup_type)
+
         return (super(PickledObjectField, self)
-                .get_db_prep_lookup(lookup_type, value,
-                                    connection=connection, prepared=True))
+                .get_prep_lookup(lookup_type, value))
 
 
 class ListField(models.Field):
-    __metaclass__ = models.SubfieldBase
 
     def __init__(self, *args, **kwargs):
         super(ListField, self).__init__(*args, **kwargs)
-        # By default, South will make this field an index. MySQL doesn't
-        # accept TEXT fields to be indexed, and will raise an error.
+        # MySQL doesn't accept TEXT fields to be indexed,
+        # and will raise an error.
         # We thus need to force this to *not* be indexed by MySQL.
         self.db_index = False
 
+    def from_db_value(self, value, expression, connection, context):
+        if value is None:
+            return value
+        if not value:
+            return []
+        if connection.vendor != 'mysql':
+            value = value.decode('unicode-escape')
+        return value.split('\0')
+
     def to_python(self, value):
-        if value is not None:
-            if not value:
-                return []
-            if hasattr(value, 'split'):
-                if database_engine != 'mysql':
-                    value = value.decode('unicode-escape')
-                return value.split('\0')
+        if value is None:
+            return value
+        if not value:
+            return []
+        if hasattr(value, 'split'):
+            if database_engine != 'mysql':
+                value = value.decode('unicode-escape')
+            return value.split('\0')
         return value
 
-    def get_db_prep_save(self, value, connection):
+    def get_prep_value(self, value):
         if value is not None:
             value = '\0'.join(value)
             if database_engine != 'mysql':
@@ -104,17 +107,7 @@ class ListField(models.Field):
     def get_internal_type(self):
         return 'TextField'
 
-    def get_db_prep_lookup(self, lookup_type, value, connection,
-                           prepared=False):
-        if lookup_type in ['exact']:
-            value = self.get_db_prep_save(value, connection=connection)
-        elif lookup_type == 'isnull':
-            pass
-        elif lookup_type == 'in':
-            value = [self.get_db_prep_save(v, connection=connection)
-                     for v in value]
-        else:
+    def get_prep_lookup(self, lookup_type, value):
+        if lookup_type not in ['exact', 'isnull', 'in']:
             raise TypeError('Lookup type %s is not supported.' % lookup_type)
-        return super(ListField, self).get_db_prep_lookup(lookup_type, value,
-                                                         connection=connection,
-                                                         prepared=True)
+        return super(ListField, self).get_prep_lookup(lookup_type, value)

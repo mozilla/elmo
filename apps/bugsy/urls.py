@@ -12,7 +12,8 @@ from . import views
 urlpatterns = [
     url(r'^$', views.index, name='bugsy'),
     url(r'^new-locale$', views.new_locale),
-    url(r'^new-locale-bugs.json$', views.new_locale_bugs),
+    url(r'^new-locale-bugs.json$', views.new_locale_bugs,
+        name='new-locale-bugs'),
     url(r'^file-bugs$', views.file_bugs, name='file-bugs'),
-    url(r'^bug-links$', views.get_bug_links),
+    url(r'^bug-links$', views.get_bug_links, name='get-bug-links'),
 ]
