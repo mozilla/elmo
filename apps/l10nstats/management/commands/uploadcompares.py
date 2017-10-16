@@ -32,7 +32,7 @@ class Command(LoggingCommand):
         parser.add_argument('--backwards', action='store_true',
                             help='Go back in time')
 
-    def handleWithLogging(self, *args, **options):
+    def handleWithLogging(self, **options):
         if not (hasattr(settings, 'ES_COMPARE_INDEX') and
                 hasattr(settings, 'ES_COMPARE_HOST')):
             raise CommandError('ES_COMPARE_INDEX or ES_COMPARE_HOST'

@@ -29,10 +29,13 @@ class Command(BaseCommand):
     line_fill = (0, 128, 0)
     area_fill = (0, 128, 0, 20)
 
-    def handle(self, *args, **options):
+    def add_arguments(self, parser):
+        parser.add_argument('tree', nargs='*')
+
+    def handle(self, **options):
         q = Q()
-        if args:
-            q = Q(tree__code__in=args)
+        if options['tree']:
+            q = Q(tree__code__in=options['tree'])
         runs = Run.objects.exclude(srctime__isnull=True)
         enddate = runs.aggregate(Max('srctime'))['srctime__max']
         startdate = enddate - timedelta(days=self.days)

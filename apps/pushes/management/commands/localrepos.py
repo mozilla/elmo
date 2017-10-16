@@ -19,7 +19,7 @@ class Command(BaseCommand):
         parser.add_argument('-a', '--all', action='store_true',
                             help='Refresh all repositories')
 
-    def handle(self, *args, **options):
+    def handle(self, **options):
         update = options.get('update', False)
         all = options.get('all', False)
         pull_args = {}

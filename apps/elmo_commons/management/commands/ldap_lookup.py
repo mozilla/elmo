@@ -30,10 +30,12 @@ LDAP_IGNORE_ATTRIBUTES = (
 
 class Command(BaseCommand):
     help = 'Look up users in LDAP'
-    args = 'mailaddress'
 
-    def handle(self, *args, **options):
-        mail = args[0]
+    def add_arguments(self, parser):
+        parser.add_argument('mailaddress')
+
+    def handle(self, **options):
+        mail = options['mailaddress']
 
         def show(key, value):
             if (isinstance(value, list) and value

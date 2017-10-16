@@ -23,7 +23,7 @@ class Command(BaseCommand):
 
     help = 'Clean up build data with no impact on elmo'
 
-    def handle(self, *args, **options):
+    def handle(self, **options):
         # We might have race conditions with data that hasn't yet generated
         # builds that matter. Reduce the risk by only running on
         # idle builders, and limiting all queries to the data we have at
