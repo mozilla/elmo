@@ -94,6 +94,7 @@ tr.separator td {
 }
 
 .trees .treestatus .obsolete,
+.trees .treestatus .warnings-text,
 .trees .treestatus .reported {
     color: #ff6c00;
 }

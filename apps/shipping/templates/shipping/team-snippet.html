@@ -46,6 +46,11 @@
                       {{ run.errors }} errors
                   </a>
               {% endif %}
+              {% if run.warnings %}
+                  <a href="{% url 'compare-locales' %}?run={{ run.id }}" class="warnings-text">
+                      {{ run.warnings }} warnings
+                  </a>
+              {% endif %}
               {% if run.allmissing %}
                   <a href="{% url 'compare-locales' %}?run={{ run.id }}" class="error">
                       {{ run.allmissing }} missing
