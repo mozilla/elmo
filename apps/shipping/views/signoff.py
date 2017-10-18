@@ -54,8 +54,7 @@ class SignoffView(TemplateView):
 
     def get_context_data(self, lang, appver):
         # which pushes to show
-        real_av, flags = (flags4appversions([appver],
-            locales=[lang.id])
+        real_av, flags = (flags4appversions([appver], locales=[lang.id])
                           .get(appver, {})
                           .get(lang.code, [None, {}]))
         actions = list(Action.objects.filter(id__in=flags.values())
@@ -63,7 +62,7 @@ class SignoffView(TemplateView):
 
         # get current status of signoffs
         push4action = dict((a.id, a.signoff.push)
-            for a in actions)
+                           for a in actions)
         pending = push4action.get(flags.get(Action.PENDING))
         rejected = push4action.get(flags.get(Action.REJECTED))
         accepted = push4action.get(flags.get(Action.ACCEPTED))
@@ -224,7 +223,8 @@ class SignoffView(TemplateView):
                 except IndexError:
                     cutoff = None
                 if cutoff:
-                    cutoff_q = pushes_q.filter(push_date__gte=cutoff).distinct()
+                    cutoff_q = \
+                        pushes_q.filter(push_date__gte=cutoff).distinct()
                     if cutoff_q.count() > count:
                         pushes_q = cutoff_q
                     else:
@@ -307,7 +307,7 @@ class SignoffView(TemplateView):
                 # shipping.views.teamsnippet
                 if suggested_signoff is None:
                     if (not p['signoffs'] and
-                        _r.allmissing == 0 and _r.errors == 0):
+                            _r.allmissing == 0 and _r.errors == 0):
                         # source checks are good, suggest
                         suggested_signoff = p['id']
                     else:
@@ -538,9 +538,10 @@ def add_signoff(request, locale_code, app_code):
                 try:
                     run = runs.get(id=runid)
                 except Run.DoesNotExist:
-                    run = runs.order_by('-build__id')[0]
+                    run = runs.order_by('-srctime')[0]
             except:
                 run = None
+            run  # noqa, decide on what to do when we decide about Snapshot
             so = Signoff.objects.create(push=push, appversion=appver,
                                         author=request.user, locale=lang)
             so.action_set.create(flag=Action.PENDING, author=request.user)
