@@ -54,8 +54,7 @@ class SignoffView(TemplateView):
 
     def get_context_data(self, lang, appver):
         # which pushes to show
-        real_av, flags = (flags4appversions([appver],
-            locales=[lang.id])
+        real_av, flags = (flags4appversions([appver], locales=[lang.id])
                           .get(appver, {})
                           .get(lang.code, [None, {}]))
         actions = list(Action.objects.filter(id__in=flags.values())
@@ -63,7 +62,7 @@ class SignoffView(TemplateView):
 
         # get current status of signoffs
         push4action = dict((a.id, a.signoff.push)
-            for a in actions)
+                           for a in actions)
         pending = push4action.get(flags.get(Action.PENDING))
         rejected = push4action.get(flags.get(Action.REJECTED))
         accepted = push4action.get(flags.get(Action.ACCEPTED))
@@ -126,35 +125,22 @@ class SignoffView(TemplateView):
         pushes_q = (Push.objects
                     .filter(changesets__branch__id=1)
                     .order_by('-push_date'))
-        # Find the repos via trees_over_time
-        forest4times = dict()
-        tree4forest = dict()
-        treename4forest = dict()
-        for (_s, _e, _t, _tc, _f) in (appver.trees_over_time
-                                 .values_list('start',
-                                              'end',
-                                              'tree',
-                                              'tree__code',
-                                              'tree__l10n')):
-            forest4times[(_s, _e)] = _f
-            tree4forest[_f] = _t
-            treename4forest[_f] = _tc
-
+        avts = list(appver.trees_over_time.select_related('tree__l10n'))
         repo4forest = dict(Repository.objects
-                           .filter(forest__in=forest4times.values(),
+                           .filter(forest__in=[avt.tree.l10n for avt in avts],
                                    locale=lang)
                            .values_list('forest', 'id'))
         repoquery = None
-        for (_s, _e), _f in forest4times.iteritems():
-            if _f not in repo4forest:
+        for avt in avts:
+            if avt.tree.l10n_id not in repo4forest:
                 # we don't have a repo for this locale in this forest
                 # that's OK, continue
                 continue
-            qd = {'repository': repo4forest[_f]}
-            if _s is not None:
-                qd['push_date__gte'] = _s
-            if _e is not None:
-                qd['push_date__lte'] = _e
+            qd = {'repository': repo4forest[avt.tree.l10n_id]}
+            if avt.start is not None:
+                qd['push_date__gte'] = avt.start
+            if avt.end is not None:
+                qd['push_date__lte'] = avt.end
             if repoquery is not None:
                 repoquery = repoquery | Q(**qd)
             else:
@@ -237,7 +223,8 @@ class SignoffView(TemplateView):
                 except IndexError:
                     cutoff = None
                 if cutoff:
-                    cutoff_q = pushes_q.filter(push_date__gte=cutoff).distinct()
+                    cutoff_q = \
+                        pushes_q.filter(push_date__gte=cutoff).distinct()
                     if cutoff_q.count() > count:
                         pushes_q = cutoff_q
                     else:
@@ -267,26 +254,29 @@ class SignoffView(TemplateView):
 
         # get latest runs for our changesets,
         # but restrict to the times that actually had the tree active
-        cs4f = defaultdict(dict)
-        for f, p, cs in pcs.values_list('push__repository__forest',
-                                        'push',
-                                        'changeset'):
-            cs4f[f][cs] = p
-        times4forest = dict((v, k) for k, v in forest4times.iteritems())
         run4push = dict()
-        for f, changes in cs4f.iteritems():
-            rrs = (Run.revisions.through.objects
-                   .order_by('changeset', 'run')
-                   .filter(run__tree=tree4forest[f],
-                           run__locale=lang,
-                           changeset__in=changes.keys()))
-            _s, _e = times4forest[f]
-            if _s is not None:
-                rrs = rrs.filter(run__srctime__gte=_s)
-            if _e is not None:
-                rrs = rrs.filter(run__srctime__lte=_e)
-            for runrev in rrs.select_related('run'):
-                run4push[changes[runrev.changeset_id]] = runrev.run
+        for avt in avts:
+            rr = Run.revisions.through.objects.filter(run__tree=avt.tree)
+            rr = rr.filter(changeset__pushes__in=_p)
+            if avt.start:
+                rr = rr.filter(
+                    run__srctime__gte=avt.start
+                )
+            if avt.end:
+                rr = rr.filter(
+                    run__srctime__lte=avt.end
+                )
+            # Get all runs for the pushes in this AVT, aggregate
+            # over time by push
+            # Sadly, can't rely on Max('run'), as runs don't need to
+            # be chronologically ordered in the db.
+            run4push_tree = dict(
+                rr.order_by('run__srctime', 'run')
+                .values_list('changeset__pushes', 'run'))
+            run4id = dict(
+                (r.id, r)
+                for r in Run.objects.filter(id__in=run4push_tree.values()))
+            run4push.update((p, run4id[r]) for p, r in run4push_tree.items())
 
         # merge data back into pushes list
         suggested_signoff = None
@@ -317,7 +307,7 @@ class SignoffView(TemplateView):
                 # shipping.views.teamsnippet
                 if suggested_signoff is None:
                     if (not p['signoffs'] and
-                        _r.allmissing == 0 and _r.errors == 0):
+                            _r.allmissing == 0 and _r.errors == 0):
                         # source checks are good, suggest
                         suggested_signoff = p['id']
                     else:
@@ -548,9 +538,10 @@ def add_signoff(request, locale_code, app_code):
                 try:
                     run = runs.get(id=runid)
                 except Run.DoesNotExist:
-                    run = runs.order_by('-build__id')[0]
+                    run = runs.order_by('-srctime')[0]
             except:
                 run = None
+            run  # noqa, decide on what to do when we decide about Snapshot
             so = Signoff.objects.create(push=push, appversion=appver,
                                         author=request.user, locale=lang)
             so.action_set.create(flag=Action.PENDING, author=request.user)
