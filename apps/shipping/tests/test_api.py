@@ -11,7 +11,6 @@ from shipping.models import (Signoff, Action, Application, AppVersion,
                              AppVersionTreeThrough)
 from shipping.api import (_actions4appversion, actions4appversions,
                           flags4appversions)
-from nose.tools import eq_, ok_
 from datetime import datetime, timedelta
 
 
@@ -20,14 +19,14 @@ class ApiActionTest(TestCase):
 
     def test_count(self):
         """Test that we have the right amount of Signoffs and Actions"""
-        eq_(Signoff.objects.count(), 5)
-        eq_(Action.objects.count(), 8)
+        self.assertEqual(Signoff.objects.count(), 5)
+        self.assertEqual(Action.objects.count(), 8)
 
     def test_getflags(self):
         """Test that the list returns the right flags."""
         av = AppVersion.objects.get(code="fx1.0")
         flags = flags4appversions([av], locales=range(1, 5))
-        eq_(flags, {av: {
+        self.assertDictEqual(flags, {av: {
             "pl": ["fx1.0", {Action.PENDING: 2}],
             "de": ["fx1.0", {Action.ACCEPTED: 3}],
             "fr": ["fx1.0", {Action.REJECTED: 5}],
@@ -110,18 +109,20 @@ class ApiMigrationTest(TestCase):
     def testEmpty(self):
         locale = Locale.objects.get(code='da')
         repo = self._setup(locale, None, None)
-        eq_(repo.changesets.count(), 1)
-        eq_(_actions4appversion(self.old_av, {locale.id}, None, 100),
+        self.assertEqual(repo.changesets.count(), 1)
+        self.assertTupleEqual(
+            _actions4appversion(self.old_av, {locale.id}, None, 100),
             ({}, {locale.id}))
-        eq_(_actions4appversion(self.new_av, {locale.id}, None, 100),
+        self.assertTupleEqual(
+            _actions4appversion(self.new_av, {locale.id}, None, 100),
             ({}, {locale.id}))
         avs = AppVersion.objects.all()
         flagdata = flags4appversions(avs)
-        ok_(self.old_av in flagdata)
-        ok_(self.new_av in flagdata)
-        eq_(len(flagdata), 2)
-        eq_(flagdata[self.new_av], {})
-        eq_(flagdata[self.old_av], flagdata[self.new_av])
+        self.assertIn(self.old_av, flagdata)
+        self.assertIn(self.new_av, flagdata)
+        self.assertEqual(len(flagdata), 2)
+        self.assertDictEqual(flagdata[self.new_av], {})
+        self.assertDictEqual(flagdata[self.old_av], flagdata[self.new_av])
 
     def testOneOld(self):
         """One locale signed off and accepted on old appversion,
@@ -129,27 +130,32 @@ class ApiMigrationTest(TestCase):
         """
         locale = Locale.objects.get(code='da')
         repo = self._setup(locale, Action.ACCEPTED, None)
-        eq_(repo.changesets.count(), 2)
+        self.assertEqual(repo.changesets.count(), 2)
         flaglocs4av, not_found = _actions4appversion(self.old_av,
                                                      {locale.id},
                                                      None,
                                                      100)
-        eq_(not_found, set())
-        eq_(flaglocs4av.keys(), [locale.id])
+        self.assertEqual(not_found, set())
+        self.assertListEqual(flaglocs4av.keys(), [locale.id])
         flag, action_id = flaglocs4av[locale.id].items()[0]
-        eq_(flag, Action.ACCEPTED)
-        eq_(Signoff.objects.get(action=action_id).locale_id, locale.id)
-        eq_(_actions4appversion(self.new_av, {locale.id}, None, 100),
+        self.assertEqual(flag, Action.ACCEPTED)
+        self.assertEqual(
+            Signoff.objects.get(action=action_id).locale_id,
+            locale.id)
+        self.assertTupleEqual(
+            _actions4appversion(self.new_av, {locale.id}, None, 100),
             ({}, {locale.id}))
         avs = AppVersion.objects.all()
         flagdata = flags4appversions(avs)
-        ok_(self.old_av in flagdata)
-        ok_(self.new_av in flagdata)
-        eq_(len(flagdata), 2)
-        eq_(flagdata[self.new_av], {'da':
-            ['fx1.0', {Action.ACCEPTED: self.actions[1].id}]
-            })
-        eq_(flagdata[self.old_av], flagdata[self.new_av])
+        self.assertIn(self.old_av, flagdata)
+        self.assertIn(self.new_av, flagdata)
+        self.assertEqual(len(flagdata), 2)
+        self.assertDictEqual(
+            flagdata[self.new_av],
+            {'da':
+                ['fx1.0', {Action.ACCEPTED: self.actions[1].id}]
+             })
+        self.assertDictEqual(flagdata[self.old_av], flagdata[self.new_av])
 
     def testOneOldOneNewByActionDate(self):
         """One locale signed off and accepted on old appversion,
@@ -157,7 +163,7 @@ class ApiMigrationTest(TestCase):
         """
         locale = Locale.objects.get(code='da')
         repo = self._setup(locale, Action.ACCEPTED, Action.ACCEPTED)
-        eq_(repo.changesets.count(), 3)
+        self.assertEqual(repo.changesets.count(), 3)
         flaglocs4av, __ = _actions4appversion(
             self.old_av,
             {locale.id},
@@ -166,7 +172,7 @@ class ApiMigrationTest(TestCase):
         )
         actions = flaglocs4av[locale.id]
         action = Action.objects.get(pk=actions.values()[0])
-        eq_(action.flag, Action.ACCEPTED)
+        self.assertEqual(action.flag, Action.ACCEPTED)
 
         flaglocs4av, __ = _actions4appversion(
             self.old_av,
@@ -177,7 +183,7 @@ class ApiMigrationTest(TestCase):
         )
         actions = flaglocs4av[locale.id]
         action = Action.objects.get(pk=actions.values()[0])
-        eq_(action.flag, Action.PENDING)
+        self.assertEqual(action.flag, Action.PENDING)
 
         flaglocs4av, __ = _actions4appversion(
             self.old_av,
@@ -188,7 +194,7 @@ class ApiMigrationTest(TestCase):
         )
         actions = flaglocs4av[locale.id]
         action = Action.objects.get(pk=actions.values()[0])
-        eq_(action.flag, Action.ACCEPTED)
+        self.assertEqual(action.flag, Action.ACCEPTED)
 
     def testOneNew(self):
         """One accepted signoff on the new appversion, none on the old.
@@ -196,124 +202,137 @@ class ApiMigrationTest(TestCase):
         """
         locale = Locale.objects.get(code='da')
         repo = self._setup(locale, None, Action.ACCEPTED)
-        eq_(repo.changesets.count(), 2)
-        eq_(_actions4appversion(self.old_av, {locale.id}, None, 100),
+        self.assertEqual(repo.changesets.count(), 2)
+        self.assertTupleEqual(
+            _actions4appversion(self.old_av, {locale.id}, None, 100),
             ({}, {locale.id}))
         a4av, not_found = _actions4appversion(self.new_av,
                                               {locale.id}, None, 100)
-        eq_(not_found, set())
-        eq_(a4av.keys(), [locale.id])
+        self.assertEqual(not_found, set())
+        self.assertListEqual(a4av.keys(), [locale.id])
         flag, action_id = a4av[locale.id].items()[0]
-        eq_(flag, Action.ACCEPTED)
-        eq_(Signoff.objects.get(action=action_id).locale_id, locale.id)
+        self.assertEqual(flag, Action.ACCEPTED)
+        self.assertEqual(
+            Signoff.objects.get(action=action_id).locale_id,
+            locale.id)
         avs = AppVersion.objects.all()
         flagdata = flags4appversions(avs)
-        ok_(self.old_av in flagdata)
-        ok_(self.new_av in flagdata)
-        eq_(len(flagdata), 2)
-        eq_(flagdata[self.new_av], {'da':
-            ['fx1.1', {Action.ACCEPTED: self.actions[1].id}]})
-        eq_(flagdata[self.old_av], {})
+        self.assertIn(self.old_av, flagdata)
+        self.assertIn(self.new_av, flagdata)
+        self.assertEqual(len(flagdata), 2)
+        self.assertDictEqual(
+            flagdata[self.new_av],
+            {'da':
+                ['fx1.1', {Action.ACCEPTED: self.actions[1].id}]})
+        self.assertDictEqual(flagdata[self.old_av], {})
 
     def testOneOldAndNew(self):
         locale = Locale.objects.get(code='da')
         repo = self._setup(locale, Action.ACCEPTED, Action.ACCEPTED)
-        eq_(repo.changesets.count(), 3)
+        self.assertEqual(repo.changesets.count(), 3)
         avs = AppVersion.objects.all()
         flagdata = flags4appversions(avs)
-        ok_(self.old_av in flagdata)
-        ok_(self.new_av in flagdata)
-        eq_(len(flagdata), 2)
-        eq_(flagdata[self.new_av], {'da':
-            ['fx1.1', {Action.ACCEPTED: self.actions[3].id}]
-            })
-        eq_(flagdata[self.old_av], {'da':
-            ['fx1.0', {Action.ACCEPTED: self.actions[1].id}]
-            })
+        self.assertIn(self.old_av, flagdata)
+        self.assertIn(self.new_av, flagdata)
+        self.assertEqual(len(flagdata), 2)
+        self.assertDictEqual(
+            flagdata[self.new_av],
+            {'da':
+                ['fx1.1', {Action.ACCEPTED: self.actions[3].id}]
+             })
+        self.assertDictEqual(
+            flagdata[self.old_av],
+            {'da':
+                ['fx1.0', {Action.ACCEPTED: self.actions[1].id}]
+             })
 
     def testOneOldAndOtherNew(self):
         da = Locale.objects.get(code='da')
         de = Locale.objects.get(code='de')
         repo = self._setup(da, Action.ACCEPTED, None)
-        eq_(repo.changesets.count(), 2)
+        self.assertEqual(repo.changesets.count(), 2)
         repo = self._setup(de, None, Action.ACCEPTED)
-        eq_(repo.changesets.count(), 2)
+        self.assertEqual(repo.changesets.count(), 2)
         a4av, not_found = _actions4appversion(self.old_av,
                                               {da.id, de.id}, None, 100)
-        eq_(not_found, {de.id})
-        eq_(a4av.keys(), [da.id])
+        self.assertSetEqual(not_found, {de.id})
+        self.assertListEqual(a4av.keys(), [da.id])
         flag, action_id = a4av[da.id].items()[0]
-        eq_(flag, Action.ACCEPTED)
+        self.assertEqual(flag, Action.ACCEPTED)
         a4av, not_found = _actions4appversion(self.new_av,
                                               {da.id, de.id}, None, 100)
-        eq_(not_found, {da.id})
-        eq_(a4av.keys(), [de.id])
+        self.assertSetEqual(not_found, {da.id})
+        self.assertListEqual(a4av.keys(), [de.id])
         flag, action_id = a4av[de.id].items()[0]
-        eq_(flag, Action.ACCEPTED)
+        self.assertEqual(flag, Action.ACCEPTED)
         a4av, not_found = _actions4appversion(self.old_av,
                                               {da.id, de.id}, None, 100)
-        eq_(not_found, {de.id})
-        eq_(a4av.keys(), [da.id])
+        self.assertSetEqual(not_found, {de.id})
+        self.assertListEqual(a4av.keys(), [da.id])
         flag, action_id = a4av[da.id].items()[0]
-        eq_(flag, Action.ACCEPTED)
+        self.assertEqual(flag, Action.ACCEPTED)
         a4avs = actions4appversions(appversions=[self.new_av],
                                     locales=[da.id, de.id])
-        eq_(len(a4avs), 2)
-        ok_(self.old_av in a4avs)
-        ok_(self.new_av in a4avs)
+        self.assertEqual(len(a4avs), 2)
+        self.assertIn(self.old_av, a4avs)
+        self.assertIn(self.new_av, a4avs)
         a4av = a4avs[self.new_av]
-        eq_(len(a4av), 1)
+        self.assertEqual(len(a4av), 1)
         a4av = a4avs[self.old_av]
-        eq_(len(a4av), 1)
+        self.assertEqual(len(a4av), 1)
         avs = AppVersion.objects.all()
         flagdata = flags4appversions(avs)
-        ok_(self.old_av in flagdata)
-        ok_(self.new_av in flagdata)
-        eq_(len(flagdata), 2)
-        eq_(flagdata[self.new_av], {
+        self.assertIn(self.old_av, flagdata)
+        self.assertIn(self.new_av, flagdata)
+        self.assertEqual(len(flagdata), 2)
+        self.assertDictEqual(flagdata[self.new_av], {
             'da': ['fx1.0', {Action.ACCEPTED: self.actions[1].id}],
             'de': ['fx1.1', {Action.ACCEPTED: self.actions[3].id}]
             })
-        eq_(flagdata[self.old_av], {
+        self.assertDictEqual(flagdata[self.old_av], {
             'da': ['fx1.0', {Action.ACCEPTED: self.actions[1].id}]
             })
 
     def testOneOldObsoleted(self):
         locale = Locale.objects.get(code='da')
         repo = self._setup(locale, Action.OBSOLETED, None)
-        eq_(repo.changesets.count(), 2)
+        self.assertEqual(repo.changesets.count(), 2)
         avs = AppVersion.objects.all()
         flagdata = flags4appversions(avs)
-        ok_(self.old_av in flagdata)
-        ok_(self.new_av in flagdata)
-        eq_(len(flagdata), 2)
-        eq_(flagdata[self.new_av], {})
-        eq_(flagdata[self.old_av], {})
+        self.assertIn(self.old_av, flagdata)
+        self.assertIn(self.new_av, flagdata)
+        self.assertEqual(len(flagdata), 2)
+        self.assertDictEqual(flagdata[self.new_av], {})
+        self.assertDictEqual(flagdata[self.old_av], {})
 
     def testOneOldObsoletedAndNew(self):
         locale = Locale.objects.get(code='da')
         repo = self._setup(locale, Action.OBSOLETED, Action.ACCEPTED)
-        eq_(repo.changesets.count(), 3)
+        self.assertEqual(repo.changesets.count(), 3)
         avs = AppVersion.objects.all()
         flagdata = flags4appversions(avs)
-        ok_(self.old_av in flagdata)
-        ok_(self.new_av in flagdata)
-        eq_(len(flagdata), 2)
-        eq_(flagdata[self.new_av], {'da':
-            ['fx1.1', {Action.ACCEPTED: self.actions[3].id}]
-            })
-        eq_(flagdata[self.old_av], {})
+        self.assertIn(self.old_av, flagdata)
+        self.assertIn(self.new_av, flagdata)
+        self.assertEqual(len(flagdata), 2)
+        self.assertDictEqual(
+            flagdata[self.new_av],
+            {'da':
+                ['fx1.1', {Action.ACCEPTED: self.actions[3].id}]
+             })
+        self.assertDictEqual(flagdata[self.old_av], {})
 
     def testOneOldAndNewObsoleted(self):
         locale = Locale.objects.get(code='da')
         repo = self._setup(locale, Action.ACCEPTED, Action.OBSOLETED)
-        eq_(repo.changesets.count(), 3)
+        self.assertEqual(repo.changesets.count(), 3)
         avs = AppVersion.objects.all()
         flagdata = flags4appversions(avs)
-        ok_(self.old_av in flagdata)
-        ok_(self.new_av in flagdata)
-        eq_(len(flagdata), 2)
-        eq_(flagdata[self.new_av], {})
-        eq_(flagdata[self.old_av], {'da':
-            ['fx1.0', {Action.ACCEPTED: self.actions[1].id}]
-            })
+        self.assertIn(self.old_av, flagdata)
+        self.assertIn(self.new_av, flagdata)
+        self.assertEqual(len(flagdata), 2)
+        self.assertDictEqual(flagdata[self.new_av], {})
+        self.assertDictEqual(
+            flagdata[self.old_av],
+            {'da':
+                ['fx1.0', {Action.ACCEPTED: self.actions[1].id}]
+             })

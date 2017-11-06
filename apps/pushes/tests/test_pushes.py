@@ -6,7 +6,6 @@ from __future__ import absolute_import
 import os
 import datetime
 import time
-from nose.tools import eq_
 from elmo.test import TestCase
 from django.core.urlresolvers import reverse
 import hglib
@@ -23,7 +22,7 @@ class PushesTestCase(TestCase, EmbedsTestCaseMixin):
         """basic test rendering the pushlog"""
         url = reverse('pushes:pushlog')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response.content)
         # like I said, a very basic test
 

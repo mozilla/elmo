@@ -7,7 +7,6 @@ import re
 import os
 import codecs
 import base64
-from nose.tools import eq_, ok_
 from django.core.urlresolvers import reverse
 import hglib
 
@@ -61,13 +60,13 @@ class DiffTestCase(RepoTestBase):
           'from': rev0,
           'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
-        ok_(re.findall('>\s*file\.dtd\s*<', html_diff))
-        ok_('<tr class="line-added">' in html_diff)
-        ok_(re.findall('>\s*key3\s*<', html_diff))
-        ok_(re.findall('>\s*World\s*<', html_diff))
-        ok_(not re.findall('>\s*Cruel\s*<', html_diff))
+        self.assertTrue(re.findall('>\s*file\.dtd\s*<', html_diff))
+        self.assertIn('<tr class="line-added">', html_diff)
+        self.assertTrue(re.findall('>\s*key3\s*<', html_diff))
+        self.assertTrue(re.findall('>\s*World\s*<', html_diff))
+        self.assertFalse(re.findall('>\s*Cruel\s*<', html_diff))
 
     def test_file_entity_modification(self):
         """Change one file by editing an existing line"""
@@ -103,12 +102,13 @@ class DiffTestCase(RepoTestBase):
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
-        ok_(re.findall('>\s*file\.dtd\s*<', html_diff))
-        ok_('<tr class="line-changed">' in html_diff)
-        ok_('<span class="equal">Cruel</span><span class="insert">le</span>'
-            in html_diff)
+        self.assertTrue(re.findall('>\s*file\.dtd\s*<', html_diff))
+        self.assertIn('<tr class="line-changed">', html_diff)
+        self.assertIn(
+            '<span class="equal">Cruel</span><span class="insert">le</span>',
+            html_diff)
 
     def test_fluent_entity_and_attr_modification(self):
         """Change one file by editing an existing line and attr"""
@@ -144,14 +144,16 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
-        ok_(re.findall('>\s*file\.ftl\s*<', html_diff))
-        ok_('<tr class="line-changed">' in html_diff)
-        ok_('<span class="equal">My</span><span class="insert"> New</span>'
-            in html_diff)
-        ok_('<span class="equal">Attr</span><span class="insert">i</span>'
-            in html_diff)
+        self.assertTrue(re.findall('>\s*file\.ftl\s*<', html_diff))
+        self.assertIn('<tr class="line-changed">', html_diff)
+        self.assertIn(
+            '<span class="equal">My</span><span class="insert"> New</span>',
+            html_diff)
+        self.assertIn(
+            '<span class="equal">Attr</span><span class="insert">i</span>',
+            html_diff)
 
     def test_file_entity_removal(self):
         """Change one file by removal of a line"""
@@ -186,12 +188,12 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
-        ok_(re.findall('>\s*file\.dtd\s*<', html_diff))
-        ok_('<tr class="line-removed">' in html_diff)
-        ok_(re.findall('>\s*key2\s*<', html_diff))
-        ok_(re.findall('>\s*Cruel\s*<', html_diff))
+        self.assertTrue(re.findall('>\s*file\.dtd\s*<', html_diff))
+        self.assertIn('<tr class="line-removed">', html_diff)
+        self.assertTrue(re.findall('>\s*key2\s*<', html_diff))
+        self.assertTrue(re.findall('>\s*Cruel\s*<', html_diff))
 
     def test_new_file(self):
         """Change by adding a new second file"""
@@ -227,13 +229,13 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
-        ok_(re.findall('>\s*file2\.dtd\s*<', html_diff))
-        ok_('<tr class="line-added">' in html_diff)
-        ok_(re.findall('>\s*key9\s*<', html_diff))
-        ok_(re.findall('>\s*Monde\s*<', html_diff))
-        ok_(not re.findall('>\s*Hello\s*<', html_diff))
+        self.assertTrue(re.findall('>\s*file2\.dtd\s*<', html_diff))
+        self.assertIn('<tr class="line-added">', html_diff)
+        self.assertTrue(re.findall('>\s*key9\s*<', html_diff))
+        self.assertTrue(re.findall('>\s*Monde\s*<', html_diff))
+        self.assertFalse(re.findall('>\s*Hello\s*<', html_diff))
 
     def test_remove_file(self):
         """Change by removing a file, with parser"""
@@ -265,15 +267,15 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
-        ok_(re.findall('>\s*file\.dtd\s*<', html_diff))
+        self.assertTrue(re.findall('>\s*file\.dtd\s*<', html_diff))
         # 2 entities with 2 rows each
-        eq_(html_diff.count('<tr class="line-removed">'), 4)
-        ok_(re.findall('>\s*key1\s*<', html_diff))
-        ok_(re.findall('>\s*Hello\s*<', html_diff))
-        ok_(re.findall('>\s*key2\s*<', html_diff))
-        ok_(re.findall('>\s*Cruel\s*<', html_diff))
+        self.assertEqual(html_diff.count('<tr class="line-removed">'), 4)
+        self.assertTrue(re.findall('>\s*key1\s*<', html_diff))
+        self.assertTrue(re.findall('>\s*Hello\s*<', html_diff))
+        self.assertTrue(re.findall('>\s*key2\s*<', html_diff))
+        self.assertTrue(re.findall('>\s*Cruel\s*<', html_diff))
 
     def test_remove_file_no_parser(self):
         """Change by removing a file, without parser"""
@@ -303,16 +305,16 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
-        ok_(re.findall('>\s*file\.txt\s*<', html_diff))
+        self.assertTrue(re.findall('>\s*file\.txt\s*<', html_diff))
         # 1 removed file
-        eq_(html_diff.count('<div class="diff file-removed">'), 1)
+        self.assertEqual(html_diff.count('<div class="diff file-removed">'), 1)
         # also, expect a link to the old revision of the file
         change_ref = 'href="%sfile/%s/file.txt"' % (repo_url, rev0)
-        ok_(change_ref in html_diff)
-        ok_(not re.findall('>\s*line 1\s*<', html_diff))
-        ok_(not re.findall('>\s*line 2\s*<', html_diff))
+        self.assertIn(change_ref, html_diff)
+        self.assertFalse(re.findall('>\s*line 1\s*<', html_diff))
+        self.assertFalse(re.findall('>\s*line 2\s*<', html_diff))
 
     def test_file_only_renamed(self):
         """Change by doing a rename without any content editing"""
@@ -345,11 +347,11 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
-        ok_('renamed from file.dtd' in re.sub('<.*?>', '', html_diff))
-        ok_(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
-        ok_(not re.findall('>\s*Hello\s*<', html_diff))
+        self.assertIn('renamed from file.dtd', re.sub('<.*?>', '', html_diff))
+        self.assertTrue(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
+        self.assertFalse(re.findall('>\s*Hello\s*<', html_diff))
 
     def test_file_only_renamed_no_parser(self):
         """Change by doing a rename of a file without parser"""
@@ -379,11 +381,11 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
-        ok_('renamed from file.txt' in re.sub('<.*?>', '', html_diff))
-        ok_(re.findall('>\s*newnamefile\.txt\s*<', html_diff))
-        ok_(not re.findall('>\s*line 1\s*<', html_diff))
+        self.assertIn('renamed from file.txt', re.sub('<.*?>', '', html_diff))
+        self.assertTrue(re.findall('>\s*newnamefile\.txt\s*<', html_diff))
+        self.assertFalse(re.findall('>\s*line 1\s*<', html_diff))
 
     def test_file_renamed_and_edited(self):
         """Change by doing a rename with content editing"""
@@ -422,13 +424,13 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
-        ok_('renamed from file.dtd' in re.sub('<.*?>', '', html_diff))
-        ok_(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
-        ok_(not re.findall('>\s*Hello\s*<', html_diff))
-        ok_(not re.findall('>\s*Cruel\s*<', html_diff))
-        ok_(re.findall('>\s*World\s*<', html_diff))
+        self.assertIn('renamed from file.dtd', re.sub('<.*?>', '', html_diff))
+        self.assertTrue(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
+        self.assertFalse(re.findall('>\s*Hello\s*<', html_diff))
+        self.assertFalse(re.findall('>\s*Cruel\s*<', html_diff))
+        self.assertTrue(re.findall('>\s*World\s*<', html_diff))
 
     def test_file_renamed_and_edited_broken(self):
         """Change by doing a rename with bad content editing"""
@@ -467,13 +469,13 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = (response.content
                      .split('Changed files:')[1]
                      .split('page_footer')[0])
         html_diff = unicode(html_diff, 'utf-8')
-        ok_(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
-        ok_('Cannot parse file' in html_diff)
+        self.assertTrue(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
+        self.assertIn('Cannot parse file', html_diff)
 
     def test_file_renamed_and_edited_original_broken(self):
         """Change by doing a rename on a previously broken file"""
@@ -511,15 +513,15 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = (response.content
                      .split('Changed files:')[1]
                      .split('page_footer')[0])
         html_diff = unicode(html_diff, 'utf-8')
-        ok_(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
-        ok_('Cannot parse file' in html_diff)
-        eq_(html_diff.count('Cannot parse file'), 1)
-        ok_('renamed from file.dtd' in re.sub('<.*?>', '', html_diff))
+        self.assertTrue(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
+        self.assertIn('Cannot parse file', html_diff)
+        self.assertEqual(html_diff.count('Cannot parse file'), 1)
+        self.assertIn('renamed from file.dtd', re.sub('<.*?>', '', html_diff))
 
     def test_file_copied_and_edited_original_broken(self):
         """Change by copying a broken file"""
@@ -557,14 +559,14 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = (response.content
                      .split('Changed files:')[1]
                      .split('page_footer')[0])
         html_diff = unicode(html_diff, 'utf-8')
-        ok_(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
-        ok_('Cannot parse file' in html_diff)
-        eq_(html_diff.count('Cannot parse file'), 1)
+        self.assertTrue(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
+        self.assertIn('Cannot parse file', html_diff)
+        self.assertEqual(html_diff.count('Cannot parse file'), 1)
 
     def test_error_handling(self):
         """Test various bad request parameters to the diff_app
@@ -573,9 +575,9 @@ key1 = My New Value
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {})
-        eq_(response.status_code, 400)
+        self.assertEqual(response.status_code, 400)
         response = self.client.get(url, {'repo': 'junk'})
-        eq_(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
         (open(hgrepo.pathto('file.dtd'), 'w')
             .write('''
@@ -596,14 +598,14 @@ key1 = My New Value
 
         # missing 'from' and 'to'
         response = self.client.get(url, {'repo': self.repo_name})
-        eq_(response.status_code, 400)
+        self.assertEqual(response.status_code, 400)
 
         # missing 'to'
         response = self.client.get(url, {
             'repo': self.repo_name,
             'from': rev0
         })
-        eq_(response.status_code, 400)
+        self.assertEqual(response.status_code, 400)
 
     def test_file_only_copied(self):
         """Change by copying a file with no content editing"""
@@ -635,12 +637,12 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
-        ok_('copied from file.dtd' in re.sub('<.*?>', '', html_diff))
-        ok_(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
-        ok_(not re.findall('>\s*Hello\s*<', html_diff))
-        ok_(not re.findall('>\s*Cruel\s*<', html_diff))
+        self.assertIn('copied from file.dtd', re.sub('<.*?>', '', html_diff))
+        self.assertTrue(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
+        self.assertFalse(re.findall('>\s*Hello\s*<', html_diff))
+        self.assertFalse(re.findall('>\s*Cruel\s*<', html_diff))
 
     def test_file_only_copied_no_parser(self):
         """Change by copying a file without parser"""
@@ -670,12 +672,12 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
-        ok_('copied from file.txt' in re.sub('<.*?>', '', html_diff))
-        ok_(re.findall('>\s*newnamefile\.txt\s*<', html_diff))
-        ok_(not re.findall('>\s*line 1\s*<', html_diff))
-        ok_(not re.findall('>\s*line 2\s*<', html_diff))
+        self.assertIn('copied from file.txt', re.sub('<.*?>', '', html_diff))
+        self.assertTrue(re.findall('>\s*newnamefile\.txt\s*<', html_diff))
+        self.assertFalse(re.findall('>\s*line 1\s*<', html_diff))
+        self.assertFalse(re.findall('>\s*line 2\s*<', html_diff))
 
     def test_file_copied_and_edited(self):
         """Change by copying a file and then content editing"""
@@ -713,13 +715,13 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
-        ok_('copied from file.dtd' in re.sub('<.*?>', '', html_diff))
-        ok_(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
-        ok_(not re.findall('>\s*Hello\s*<', html_diff))
-        ok_(re.findall('>\s*Cruel\s*<', html_diff))
-        ok_(re.findall('>\s*World\s*<', html_diff))
+        self.assertIn('copied from file.dtd', re.sub('<.*?>', '', html_diff))
+        self.assertTrue(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
+        self.assertFalse(re.findall('>\s*Hello\s*<', html_diff))
+        self.assertTrue(re.findall('>\s*Cruel\s*<', html_diff))
+        self.assertTrue(re.findall('>\s*World\s*<', html_diff))
 
     def test_binary_file_edited(self):
         """Modify a binary file"""
@@ -757,12 +759,12 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
-        ok_('Cannot parse file' in html_diff)
+        self.assertIn('Cannot parse file', html_diff)
         # also, expect a link to this file
         change_ref = 'href="%sfile/%s/file.png"' % (repo_url, rev1)
-        ok_(change_ref in html_diff)
+        self.assertIn(change_ref, html_diff)
 
     def test_broken_encoding_file_add(self):
         """Change by editing an already broken file"""
@@ -797,12 +799,12 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
-        ok_('Cannot parse file' in html_diff)
+        self.assertIn('Cannot parse file', html_diff)
         # also, expect a link to this file
         change_url = repo_url + 'file/%s/file.dtd' % rev1
-        ok_('href="%s"' % change_url in html_diff)
+        self.assertIn('href="%s"' % change_url, html_diff)
 
     def test_file_edited_broken_encoding(self):
         """Change by editing a good with a broken edit"""
@@ -837,12 +839,12 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         html_diff = response.content.split('Changed files:')[1]
-        ok_('Cannot parse file' in html_diff)
+        self.assertIn('Cannot parse file', html_diff)
         # also, expect a link to this file
         change_url = repo_url + 'file/%s/file.dtd' % rev1
-        ok_('href="%s"' % change_url in html_diff)
+        self.assertIn('href="%s"' % change_url, html_diff)
 
     def test_bogus_repo_hashes(self):
         """test to satisfy
@@ -881,21 +883,21 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
         response = self.client.get(url, {
             'repo': self.repo_name,
             'from': 'xxx',
             'to': rev1
         })
-        eq_(response.status_code, 400)
+        self.assertEqual(response.status_code, 400)
 
         response = self.client.get(url, {
             'repo': self.repo_name,
             'from': rev0,
             'to': 'xxx'
         })
-        eq_(response.status_code, 400)
+        self.assertEqual(response.status_code, 400)
 
     def test_default_and_tip(self):
         """Test default and tip as from and to revision"""
@@ -927,7 +929,7 @@ key1 = My New Value
             'from': rev0,
             'to': 'default'
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertIn('line-removed', response.content)
         self.assertNotIn('line-added', response.content)
 
@@ -936,7 +938,7 @@ key1 = My New Value
             'from': rev0,
             'to': 'tip'
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertIn('line-removed', response.content)
         self.assertNotIn('line-added', response.content)
 
@@ -946,7 +948,7 @@ key1 = My New Value
             'from': 'default',
             'to': rev0
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertIn('line-added', response.content)
         self.assertNotIn('line-removed', response.content)
 
@@ -955,7 +957,7 @@ key1 = My New Value
             'from': 'tip',
             'to': rev0
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertIn('line-added', response.content)
         self.assertNotIn('line-removed', response.content)
 
@@ -993,7 +995,7 @@ key1 = My New Value
             'from': rev0,
             'to': rev1
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertIn('line-removed', response.content)
         self.assertNotIn('line-added', response.content)
 
@@ -1040,6 +1042,6 @@ key1 = My New Value
             'from': rev1,
             'to': rev2
         })
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertIn('line-removed', response.content)
         self.assertIn('line-added', response.content)

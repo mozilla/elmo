@@ -4,7 +4,6 @@
 from __future__ import absolute_import
 
 import datetime
-from nose.tools import eq_, ok_
 from django.test import TestCase
 from shipping.forms import SignoffFilterForm
 from life.models import Tree, Forest
@@ -41,48 +40,49 @@ class FormTests(TestCase):
 
     def test_signoff_filter_form(self):
         form = SignoffFilterForm({})
-        ok_(not form.is_valid())
+        self.assertFalse(form.is_valid())
 
         form = SignoffFilterForm({
           'av': '',
           'up_until': '',
         })
-        ok_(not form.is_valid())
+        self.assertFalse(form.is_valid())
 
         # check a couple of recognized recognized up_until values
         form = SignoffFilterForm({
           'up_until': '2012-08-17 14:50:00',
         })
-        ok_(not form.is_valid())
+        self.assertFalse(form.is_valid())
 
-        eq_(form.cleaned_data['up_until'],
+        self.assertEqual(
+            form.cleaned_data['up_until'],
             datetime.datetime(2012, 8, 17, 14, 50, 0))
 
         # not a valid date
         form = SignoffFilterForm({
           'up_until': '2012-02-32 14:50:00',
         })
-        ok_(not form.is_valid())
-        ok_(form.errors)
-        ok_('up_until' in form.errors)
+        self.assertFalse(form.is_valid())
+        self.assertTrue(form.errors)
+        self.assertIn('up_until', form.errors)
 
         # try passing an AppVersion
         # ...left blank
         form = SignoffFilterForm({
           'av': '',
         })
-        ok_(not form.is_valid())
+        self.assertFalse(form.is_valid())
 
         # ...that doesn't exist
         form = SignoffFilterForm({
           'av': 'xxx',
         })
-        ok_(not form.is_valid())
-        ok_(form.errors)
-        ok_('av' in form.errors)
+        self.assertFalse(form.is_valid())
+        self.assertTrue(form.errors)
+        self.assertIn('av', form.errors)
 
         # ...that does exist
         form = SignoffFilterForm({
           'av': self.appver.code,
         })
-        ok_(form.is_valid())
+        self.assertTrue(form.is_valid())
