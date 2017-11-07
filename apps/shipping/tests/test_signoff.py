@@ -5,7 +5,7 @@ from __future__ import absolute_import
 
 import datetime
 from django.core.urlresolvers import reverse
-from django.test import TestCase
+from elmo.test import TestCase
 from django.contrib.auth.models import User, Permission
 import json
 from elmo_commons.tests.mixins import EmbedsTestCaseMixin

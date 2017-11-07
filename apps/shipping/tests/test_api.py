@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
 
-from django.test import TestCase
+from elmo.test import TestCase
 from django.contrib.auth.models import User
 from life.models import Tree, Forest, Locale
 from l10nstats.models import Run

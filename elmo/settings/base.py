@@ -5,9 +5,8 @@
 # Django settings file for a project based on the playdoh template.
 from __future__ import absolute_import
 
-from funfactory.settings_base import (
+from funfactory.manage import (
     path,
-    BASE_PASSWORD_HASHERS,
     ROOT,
 )
 import os.path
@@ -15,8 +14,7 @@ import os.path
 from django.utils.functional import lazy
 
 ROOT_URLCONF = 'elmo.urls'
-TEST_RUNNER = 'elmo.test.TestSuiteRunner'
-NOSE_PLUGINS = ['elmo.nose.NoseAppsPlugin']
+TEST_RUNNER = 'elmo.test.TestRunner'
 
 DEBUG = TEMPLATE_DEBUG = False
 
@@ -131,19 +129,7 @@ INSTALLED_APPS = (
     'shipping',
     'bugsy',
     'elmo_commons',
-
-    # django-nose has to be last
-    'django_nose',
 )
-
-## Auth
-PWD_ALGORITHM = 'bcrypt'
-HMAC_KEYS = {
-    '2012-10-23': 'something',
-}
-
-from django_sha2 import get_password_hashers
-PASSWORD_HASHERS = get_password_hashers(BASE_PASSWORD_HASHERS, HMAC_KEYS)
 
 SESSION_COOKIE_SECURE = True
 

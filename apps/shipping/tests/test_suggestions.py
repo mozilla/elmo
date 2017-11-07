@@ -5,7 +5,7 @@
 from collections import defaultdict
 import datetime
 import itertools
-from django.test import TestCase
+from elmo.test import TestCase
 from django.contrib.auth.models import User
 from shipping.models import (
     AppVersion,

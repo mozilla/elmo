@@ -7,7 +7,7 @@ import os
 from mock import Mock
 import ldap
 
-from django.test import TestCase
+from elmo.test import TestCase
 from django.conf import settings
 from django.contrib.auth.models import User, Group
 

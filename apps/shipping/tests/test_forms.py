@@ -4,7 +4,7 @@
 from __future__ import absolute_import
 
 import datetime
-from django.test import TestCase
+from elmo.test import TestCase
 from shipping.forms import SignoffFilterForm
 from life.models import Tree, Forest
 from shipping.models import AppVersion, Application
