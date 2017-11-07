@@ -6,7 +6,7 @@ before_install:
     - git submodule update --init --recursive
 install:
     - pip install -U pip
-    - pip install -r requirements/dev.txt
+    - pip install -r requirements/env.txt
 before_script:
     #- cp elmo/settings/ldap_settings.py-dist elmo/settings/ldap_settings.py
     - cp elmo/settings/travis-local.py elmo/settings/local.py
