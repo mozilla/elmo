@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
 
+import os
 from django.test import TestCase as OrigTestCase
 from django.test import override_settings
 from django.test.runner import DiscoverRunner
@@ -19,13 +20,22 @@ class TestRunner(DiscoverRunner):
             extra_tests=extra_tests,
             **kwargs)
 
+
+def env(suffix, default):
+    key = 'ELMO_TEST_' + suffix
+    if key not in os.environ:
+        return default
+    val =  os.environ[key].lower()
+    return val in ['1', 'true']
+
+
 @override_settings(
     L10N_FEED_URL='''<?xml version="1.0"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 </feed>
 ''',
-    COMPRESS_ENABLED=True,
-    COMPRESS_OFFLINE=False,
+    COMPRESS_ENABLED=env('COMPRESS_ENABLED', True),
+    COMPRESS_OFFLINE=env('COMPRESS_OFFLINE', False),
 )
 class TestCase(OrigTestCase):
     pass
