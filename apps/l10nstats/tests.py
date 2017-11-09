@@ -6,7 +6,6 @@ from __future__ import absolute_import
 import datetime
 from urlparse import urlparse
 from elmo.test import TestCase
-from nose.tools import eq_, ok_
 from django.http import QueryDict
 from django.core.urlresolvers import reverse
 from django.utils.safestring import SafeUnicode
@@ -47,7 +46,7 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
         appver, tree = self._create_appver_tree()
         url = reverse('locale-tree-history')
         response = self.client.get(url)
-        eq_(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
         locale, __ = Locale.objects.get_or_create(
           code='en-US',
           name='English',
@@ -55,11 +54,11 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
         data = {'tree': tree.code, 'locale': locale.code}
         # good locale, good tree, but not building
         response = self.client.get(url, data)
-        eq_(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
         # good locale, good tree, and building, 200
         self._create_active_run()
         response = self.client.get(url, data)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response.content)
 
     def test_tree_status_static_files(self):
@@ -69,17 +68,17 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
 
         url = reverse('tree-history', args=['XXX'])
         response = self.client.get(url)
-        eq_(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
         # _create_appver_tree() creates a mock tree
         url = reverse('tree-history', args=[tree.code])
         response = self.client.get(url)
-        eq_(response.status_code, 200)
-        ok_('no statistics for %s' % tree.code in response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('no statistics for %s' % tree.code, response.content)
 
         self._create_active_run()
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
         self.assert_all_embeds(response.content)
 
@@ -88,18 +87,20 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
         url = reverse(l10nstats.views.index)
         response = self.client.get(url)
 
-        eq_(response.status_code, 301)
-        ok_(reverse(shipping.views.index) in
-             urlparse(response['location']).path)
+        self.assertEqual(response.status_code, 301)
+        self.assertIn(
+            reverse(shipping.views.index),
+            urlparse(response['location']).path)
 
         # now try it with a query string as well
         response = self.client.get(url, {'av': 'fx 1.0'})
-        eq_(response.status_code, 301)
+        self.assertEqual(response.status_code, 301)
 
         qd = QueryDict(urlparse(response['location']).query)
-        eq_(qd['av'], 'fx 1.0')
-        ok_(reverse(shipping.views.index) in
-             urlparse(response['location']).path)
+        self.assertEqual(qd['av'], 'fx 1.0')
+        self.assertIn(
+            reverse(shipping.views.index),
+            urlparse(response['location']).path)
 
     def test_compare_with_invalid_id(self):
         """trying to run a compare with an invalid Run ID shouldn't cause a 500
@@ -110,11 +111,11 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
 
         url = reverse('compare-locales')
         response = self.client.get(url, {'run': 'xxx'})
-        eq_(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
         # and sane but unknown should be 404
         response = self.client.get(url, {'run': 123})
-        eq_(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
 
 class ShowRunTestCase(TestCase):
@@ -123,103 +124,109 @@ class ShowRunTestCase(TestCase):
         r = Run(errors=3)
         r.id = 1
         rv = showrun(r)
-        ok_(isinstance(rv, SafeUnicode))
+        self.assertIsInstance(rv, SafeUnicode)
         frag = parseFragment(rv)
         childNodes = list(frag)
-        eq_(len(childNodes), 1)
+        self.assertEqual(len(childNodes), 1)
         a = childNodes[0]
-        eq_(a.attrib, {'data-errors': '3',
+        self.assertDictEqual(
+            a.attrib, {'data-errors': '3',
                        'data-total': '0',
                        'data-missing': '0',
                        'href': '/dashboard/compare?run=1',
                        'data-warnings': '0'})
         text = a.text
-        ok_('3' in text and 'error' in text)
+        self.assertTrue('3' in text and 'error' in text)
 
     def test_missing(self):
         r = Run(missing=3)
         r.id = 1
         rv = showrun(r)
-        ok_(isinstance(rv, SafeUnicode))
+        self.assertIsInstance(rv, SafeUnicode)
         frag = parseFragment(rv)
         childNodes = list(frag)
-        eq_(len(childNodes), 1)
+        self.assertEqual(len(childNodes), 1)
         a = childNodes[0]
-        eq_(a.attrib, {'data-errors': '0',
+        self.assertDictEqual(
+            a.attrib, {'data-errors': '0',
                        'data-total': '0',
                        'data-missing': '3',
                        'href': '/dashboard/compare?run=1',
                        'data-warnings': '0'})
         text = a.text
-        ok_('3' in text and 'missing' in text)
+        self.assertTrue('3' in text and 'missing' in text)
 
     def test_missingInFiles(self):
         r = Run(missingInFiles=3)
         r.id = 1
         rv = showrun(r)
-        ok_(isinstance(rv, SafeUnicode))
+        self.assertIsInstance(rv, SafeUnicode)
         frag = parseFragment(rv)
         childNodes = list(frag)
-        eq_(len(childNodes), 1)
+        self.assertEqual(len(childNodes), 1)
         a = childNodes[0]
-        eq_(a.attrib, {'data-errors': '0',
+        self.assertDictEqual(
+            a.attrib, {'data-errors': '0',
                        'data-total': '0',
                        'data-missing': '3',
                        'href': '/dashboard/compare?run=1',
                        'data-warnings': '0'})
         text = a.text
-        ok_('3' in text and 'missing' in text)
+        self.assertTrue('3' in text and 'missing' in text)
 
     def test_warnings(self):
         r = Run(warnings=3)
         r.id = 1
         rv = showrun(r)
-        ok_(isinstance(rv, SafeUnicode))
+        self.assertIsInstance(rv, SafeUnicode)
         frag = parseFragment(rv)
         childNodes = list(frag)
-        eq_(len(childNodes), 1)
+        self.assertEqual(len(childNodes), 1)
         a = childNodes[0]
-        eq_(a.attrib, {'data-errors': '0',
+        self.assertDictEqual(
+            a.attrib, {'data-errors': '0',
                        'data-total': '0',
                        'data-missing': '0',
                        'href': '/dashboard/compare?run=1',
                        'data-warnings': '3'})
         text = a.text
-        ok_('3' in text and 'warning' in text)
+        self.assertTrue('3' in text and 'warning' in text)
 
     def test_obsolete(self):
         r = Run(obsolete=3)
         r.id = 1
         rv = showrun(r)
-        ok_(isinstance(rv, SafeUnicode))
+        self.assertIsInstance(rv, SafeUnicode)
         frag = parseFragment(rv)
         childNodes = list(frag)
-        eq_(len(childNodes), 1)
+        self.assertEqual(len(childNodes), 1)
         a = childNodes[0]
-        eq_(a.attrib, {'data-errors': '0',
+        self.assertDictEqual(
+            a.attrib, {'data-errors': '0',
                        'data-total': '0',
                        'data-missing': '0',
                        'href': '/dashboard/compare?run=1',
                        'data-warnings': '0'})
         text = a.text
-        ok_('3' in text and 'obsolete' in text)
+        self.assertTrue('3' in text and 'obsolete' in text)
 
     def test_green(self):
         r = Run()
         r.id = 1
         rv = showrun(r)
-        ok_(isinstance(rv, SafeUnicode))
+        self.assertIsInstance(rv, SafeUnicode)
         frag = parseFragment(rv)
         childNodes = list(frag)
-        eq_(len(childNodes), 1)
+        self.assertEqual(len(childNodes), 1)
         a = childNodes[0]
-        eq_(a.attrib, {'data-errors': '0',
+        self.assertDictEqual(
+            a.attrib, {'data-errors': '0',
                        'data-total': '0',
                        'data-missing': '0',
                        'href': '/dashboard/compare?run=1',
                        'data-warnings': '0'})
         text = a.text
-        ok_('green' in text)
+        self.assertIn('green', text)
 
 
 doc_v1 = {

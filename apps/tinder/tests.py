@@ -9,7 +9,6 @@ from __future__ import absolute_import
 import os
 import datetime
 from tempfile import gettempdir
-from nose.tools import eq_, ok_
 from elmo.test import TestCase
 from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from django.core.urlresolvers import reverse
@@ -52,7 +51,7 @@ class WaterfallStarted(TestCase):
     def testHtml(self):
         url = reverse(tinder.views.waterfall)
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
 
 class WaterfallParallel(TestCase):
@@ -66,7 +65,7 @@ class WaterfallParallel(TestCase):
         '''Testing parallel builds in _waterfall'''
         url = reverse(tinder.views.waterfall)
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
 
 class FullBuilds(TestCase):
@@ -235,7 +234,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         # test that it works with no builds
         props = ('gender', 'age')
         result = pmap(props, [])
-        eq_(result, {})
+        self.assertEqual(result, {})
 
         ss = SourceStamp.objects.all()[0]
         builder = Builder.objects.all()[0]
@@ -268,26 +267,28 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
 
         props = ('gender', 'age')
         result = pmap(props, [build1.id, build2.id])
-        ok_(isinstance(result, dict))
+        self.assertIsInstance(result, dict)
 
         # since we fed build1.id and build2.id expect these to be the keys
-        eq_(sorted(result.keys()), sorted((build1.id, build2.id)))
+        self.assertListEqual(
+            sorted(result.keys()),
+            sorted((build1.id, build2.id)))
         # for build1 we attached the first property (name)
-        eq_(result[build1.id], {u'gender': u'male'})
+        self.assertDictEqual(result[build1.id], {u'gender': u'male'})
         # for build2 we attached the second property and the third
         # but the third is ignored as per the second argument to pmap()
-        eq_(result[build2.id], {u'age': 31})
+        self.assertDictEqual(result[build2.id], {u'age': 31})
 
         result = pmap(('age',), [build1.id])
-        eq_(result, {})
+        self.assertDictEqual(result, {})
 
         result = pmap(('gender',), [build2.id])
-        eq_(result, {})
+        self.assertDictEqual(result, {})
 
         build2.properties.add(prop1)
         result = pmap(('gender',), [build2.id])
-        eq_(result.keys(), [build2.id])
-        eq_(result[build2.id], {u'gender': u'male'})
+        self.assertListEqual(result.keys(), [build2.id])
+        self.assertDictEqual(result[build2.id], {u'gender': u'male'})
 
     def test_showlog(self):
         """Test that showlog shows headers, stdout, stderr,
@@ -312,10 +313,16 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         content = response.content
         content = content.split('</header>')[1].split('</footer')[0]
 
-        ok_('<span class="pre header">header content\n</span>' in content)
-        ok_('<span class="pre stdout">stdout content\n</span>' in content)
-        ok_('<span class="pre stderr">stderr content\n</span>' in content)
-        ok_('json' not in content)
+        self.assertIn(
+            '<span class="pre header">header content\n</span>',
+            content)
+        self.assertIn(
+            '<span class="pre stdout">stdout content\n</span>',
+            content)
+        self.assertIn(
+            '<span class="pre stderr">stderr content\n</span>',
+            content)
+        self.assertNotIn('json', content)
 
     def test_showlog_invalid_master(self):
         build = Build.objects.all()[0]
@@ -352,12 +359,12 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         content = response.content
         content = content.split('</header>')[1].split('</footer')[0]
 
-        ok_(htmlcontent in content)
+        self.assertIn(htmlcontent, content)
 
     def test_render_tbpl(self):
         url = reverse(tinder.views.tbpl)
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response)
 
     def test_render_showbuild(self):
@@ -366,7 +373,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         url = reverse('tinder-showbuild',
                       args=[builder.name, build.buildnumber])
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response)
 
     def test_render_showbuild_bad_buildername(self):
@@ -374,7 +381,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         url = reverse('tinder-showbuild',
                       args=['junkjunk', build.buildnumber])
         response = self.client.get(url)
-        eq_(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
     def test_render_showbuild_bad_buildnumber(self):
         build, = Build.objects.all()[:1]
@@ -382,19 +389,19 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         url = reverse('tinder-showbuild',
                       args=[builder.name, 666])
         response = self.client.get(url)
-        eq_(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
     def test_render_builds_for_change(self):
         url = reverse(tinder.views.builds_for_change)
         response = self.client.get(url)
-        eq_(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
         change, = Change.objects.all()[:1]
         response = self.client.get(url, {'change': change.number})
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
         feed_url = reverse('BuildsForChangeFeed', args=(change.number,))
-        ok_(feed_url in response.content)
+        self.assertIn(feed_url, response.content)
 
 
 SAMPLE_BUILD_LOG_PAYLOAD = '''16:2header content

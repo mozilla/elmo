@@ -12,7 +12,6 @@ from django.core.cache import cache
 from django.conf import settings
 from django.test import override_settings
 from django.test.client import RequestFactory
-from nose.tools import eq_, ok_
 from life.models import Locale, TeamLocaleThrough
 from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 import urlparse
@@ -25,7 +24,7 @@ def _local_feed_url(filename):
 
 # side-step whatever authentication backend has been set up otherwise
 # we might end up trying to go online for some sort of LDAP lookup
-@override_settings(AUTHENTICATION_BACKENDS = (
+@override_settings(AUTHENTICATION_BACKENDS=(
     'django.contrib.auth.backends.ModelBackend',
 ))
 class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
@@ -65,8 +64,8 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         except NameError:
             # do this inside a frame that has a sys.exc_info()
             response = handler500(fake_request)
-            eq_(response.status_code, 500)
-            ok_('Oops' in response.content)
+            self.assertEqual(response.status_code, 500)
+            self.assertIn('Oops', response.content)
 
     # SESSION_COOKIE_SECURE has to be True for tests to work.
     # The reason this might be switched off is if you have set it to False
@@ -76,12 +75,13 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         """secure session cookies should always be 'secure' and 'httponly'"""
         url = reverse('login')
         # run it as a mocked AJAX request because that's how elmo does it
-        response = self.client.post(url,
-          {'username': 'peterbe',
-           'password': 'secret'},
-          **{'X-Requested-With': 'XMLHttpRequest'})
-        eq_(response.status_code, 200)
-        ok_('class="error' in response.content)
+        response = self.client.post(
+            url,
+            {'username': 'peterbe',
+             'password': 'secret'},
+            **{'X-Requested-With': 'XMLHttpRequest'})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('class="error', response.content)
 
         from django.contrib.auth.models import User
         user = User.objects.create(username='peterbe',
@@ -89,37 +89,38 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         user.set_password('secret')
         user.save()
 
-        response = self.client.post(url,
-          {'username': 'peterbe',
-           'password': 'secret',
-           'next': '/foo'},
-          **{'X-Requested-With': 'XMLHttpRequest'})
+        response = self.client.post(
+            url,
+            {'username': 'peterbe',
+             'password': 'secret',
+             'next': '/foo'},
+            **{'X-Requested-With': 'XMLHttpRequest'})
         # even though it's
-        eq_(response.status_code, 302)
-        ok_(response['Location'].endswith('/foo'))
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response['Location'].endswith('/foo'))
 
         # if this fails it's because settings.SESSION_COOKIE_SECURE
         # isn't true
         assert settings.SESSION_COOKIE_SECURE
-        ok_(self.client.cookies['sessionid']['secure'])
+        self.assertTrue(self.client.cookies['sessionid']['secure'])
 
         # if this fails it's because settings.SESSION_COOKIE_HTTPONLY
         # isn't true
         assert settings.SESSION_COOKIE_HTTPONLY
-        ok_(self.client.cookies['sessionid']['httponly'])
+        self.assertTrue(self.client.cookies['sessionid']['httponly'])
 
         # should now be logged in
         url = reverse('user-json')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         # "Hi Peter" or something like that
-        ok_('Peter' in response.content)
+        self.assertIn('Peter', response.content)
 
     def test_index_page(self):
         """load the current homepage index view"""
         url = reverse('homepage')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response.content)
 
     @override_settings(L10N_FEED_URL=_local_feed_url('test_rss20.xml'))
@@ -131,7 +132,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
             response = self.client.get(url)
         finally:
             cache.clear()
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
         content = response.content
         if isinstance(content, str):
@@ -148,12 +149,12 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         # because the titles are truncated in the template
         # we need to do the same here
         from django.template.defaultfilters import truncatewords
-        ok_(truncatewords(first['title'], 8) in content)
-        ok_('href="%s"' % first['link'] in content)
+        self.assertIn(truncatewords(first['title'], 8), content)
+        self.assertIn('href="%s"' % first['link'], content)
 
         second = parsed.entries[1]
-        ok_(truncatewords(second['title'], 8) in content)
-        ok_('href="%s"' % second['link'] in content)
+        self.assertIn(truncatewords(second['title'], 8), content)
+        self.assertIn('href="%s"' % second['link'], content)
 
     def test_teams_page(self):
         """check that the teams page renders correctly"""
@@ -176,7 +177,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
 
         url = reverse('teams')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response.content)
         content = response.content.split('id="teams"')[1]
         content = content.split('<footer')[0]
@@ -184,15 +185,16 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         url_fr = reverse('l10n-team', args=['fr'])
         url_sv = reverse('l10n-team', args=['sv-SE'])
         url_br = reverse('l10n-team', args=['br-BR'])
-        ok_(url_fr in content)
-        ok_(url_sv in content)
-        ok_(url_br in content)
+        self.assertIn(url_fr, content)
+        self.assertIn(url_sv, content)
+        self.assertIn(url_br, content)
         url_en = reverse('l10n-team', args=['en-US'])
-        ok_(url_en not in content)
-        ok_(-1 < content.find('br-BR')
+        self.assertNotIn(url_en, content)
+        self.assertTrue(
+            -1 < content.find('br-BR')
                < content.find('French')
                < content.find('Swedish'))
-        ok_('en-US' not in content)
+        self.assertNotIn('en-US', content)
 
     def test_teams_page_with_team_locales_hidden(self):
         """locales that are owned by another team
@@ -212,37 +214,37 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
 
         url = reverse('teams')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         content = response.content.split('id="teams"')[1]
         content = content.split('<footer')[0]
 
         url_sr = reverse('l10n-team', args=['sr'])
         url_sr_latn = reverse('l10n-team', args=['sr-Latn'])
-        ok_(url_sr in content)
-        ok_(url_sr_latn not in content)
+        self.assertIn(url_sr, content)
+        self.assertNotIn(url_sr_latn, content)
 
         today = datetime.datetime.utcnow()
         tomorrow = today + datetime.timedelta(days=1)
         team_locale.start = tomorrow
         team_locale.save()
         response = self.client.get(url)
-        ok_(url_sr in response.content)
-        ok_(url_sr_latn in response.content)
+        self.assertIn(url_sr, response.content)
+        self.assertIn(url_sr_latn, response.content)
 
         yesterday = today - datetime.timedelta(days=1)
         team_locale.start = None
         team_locale.end = yesterday
         team_locale.save()
         response = self.client.get(url)
-        ok_(url_sr in response.content)
-        ok_(url_sr_latn in response.content)
+        self.assertIn(url_sr, response.content)
+        self.assertIn(url_sr_latn, response.content)
 
         team_locale.start = yesterday
         team_locale.end = tomorrow
         team_locale.save()
         response = self.client.get(url)
-        ok_(url_sr in response.content)
-        ok_(url_sr_latn not in response.content)
+        self.assertIn(url_sr, response.content)
+        self.assertNotIn(url_sr_latn, response.content)
 
     def test_team_page_with_owning_team(self):
         """Trying to reach a locale owned by another team should redirect. """
@@ -271,14 +273,14 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         team_locale.start = tomorrow
         team_locale.save()
         response = self.client.get(url_sr_latn)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
         yesterday = today - datetime.timedelta(days=1)
         team_locale.start = None
         team_locale.end = yesterday
         team_locale.save()
         response = self.client.get(url_sr_latn)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
         team_locale.start = yesterday
         team_locale.end = tomorrow
@@ -295,27 +297,28 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         url = reverse('l10n-team', args=['xxx'])
         response = self.client.get(url)
         # XXX would love for this to be a 404 instead (peterbe)
-        eq_(response.status_code, 302)
+        self.assertEqual(response.status_code, 302)
         url = reverse('l10n-team', args=['sv-SE'])
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response.content)
-        ok_('Swedish' in response.content)
+        self.assertIn('Swedish', response.content)
         # it should also say "Swedish" in the <h1>
         h1_text = re.findall('<h1[^>]*>(.*?)</h1>',
                              response.content,
                              re.M | re.DOTALL)[0]
-        ok_('Swedish' in h1_text)
+        self.assertIn('Swedish', h1_text)
 
     def test_pushes_redirect(self):
         """test if the old /pushes url redirects to /source/pushes"""
         old_response = self.client.get('/pushes/repo?path=query')
-        eq_(old_response.status_code, 301)
+        self.assertEqual(old_response.status_code, 301)
         target_url = reverse('pushes:pushlog',
                              kwargs={'repo_name': 'repo'})
         new_response = self.client.get(target_url, {'path': 'query'})
-        eq_(new_response.status_code, 200)
-        eq_(urlparse.urlparse(old_response['Location'])[2:],
+        self.assertEqual(new_response.status_code, 200)
+        self.assertEqual(
+            urlparse.urlparse(old_response['Location'])[2:],
             ('/source/pushes/repo', '', 'path=query', ''))
 
     def test_diff_redirect(self):
@@ -323,13 +326,14 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         diff_url = ('/shipping/diff?to=62f87d2952f4&from=fc700f4da954' +
                     '&tree=fx_beta&repo=some_repo&url=&locale=')
         old_response = self.client.get(diff_url)
-        eq_(old_response.status_code, 301)
+        self.assertEqual(old_response.status_code, 301)
         target_url = reverse('pushes:diff')
         # not testing response, as we don't have a repo to back this up
         opath, oparam, oquery, ohash = \
             urlparse.urlparse(old_response['Location'])[2:]
-        eq_((opath, oparam), urlparse.urlparse(target_url)[2:4])
-        eq_(urlparse.parse_qs(oquery),
+        self.assertEqual((opath, oparam), urlparse.urlparse(target_url)[2:4])
+        self.assertEqual(
+            urlparse.parse_qs(oquery),
             {
                 'to': ['62f87d2952f4'],
                 'from': ['fc700f4da954'],
@@ -351,13 +355,13 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         response = self.client.get(url)
         assert response['ETag']
         etag_second = response['ETag']
-        eq_(etag_first, etag_second)
+        self.assertEqual(etag_first, etag_second)
 
         # Edit an existing locale
         arabic.name = arabic.name.upper()
         arabic.save()
 
         response = self.client.get(url)
-        assert response['ETag']
+        self.assertTrue(response['ETag'])
         etag_third = response['ETag']
         self.assertNotEqual(etag_second, etag_third)

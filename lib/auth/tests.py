@@ -5,17 +5,16 @@
 import os
 
 from mock import Mock
-from nose.tools import eq_, ok_
 import ldap
 
-from django.test import TestCase
+from elmo.test import TestCase
 from django.conf import settings
 from django.contrib.auth.models import User, Group
 
 # lib.auth.backends expects the LDAP_* to be set up
 # fake that so we can import MozLdapBackend
 settings.LDAP_HOST = settings.LDAP_DN = settings.LDAP_PASSWORD = 'test'
-from lib.auth.backends import MozLdapBackend
+from lib.auth.backends import MozLdapBackend  # noqa: E402
 
 
 class BreakingMozLdapBackend(MozLdapBackend):
@@ -83,15 +82,15 @@ class LDAPAuthTestCase(TestCase):
         user.save()
 
         backend = MozLdapBackend()
-        eq_(backend.authenticate('foo@mozilla.com', 'secret'),
+        self.assertEqual(backend.authenticate('foo@mozilla.com', 'secret'),
                          user)
-        eq_(backend.authenticate('foo', 'secret'), user)
-        eq_(backend.authenticate('foo', 'JUNK'), None)
+        self.assertEqual(backend.authenticate('foo', 'secret'), user)
+        self.assertEqual(backend.authenticate('foo', 'JUNK'), None)
 
     def test_backend_cert_file(self):
         backend = MozLdapBackend()
-        ok_(backend.certfile)
-        ok_(os.path.isfile(os.path.abspath(backend.certfile)))
+        self.assertTrue(backend.certfile)
+        self.assertTrue(os.path.isfile(os.path.abspath(backend.certfile)))
 
     def test_authenticate_with_ldap_new_user(self):
         assert not User.objects.all().exists()
@@ -106,13 +105,13 @@ class LDAPAuthTestCase(TestCase):
         backend = MozLdapBackend()
 
         user = backend.authenticate('foo', 'secret')
-        ok_(user)
-        ok_(User.objects.get(username='foo'))
+        self.assertTrue(user)
+        self.assertTrue(User.objects.get(username='foo'))
         user = User.objects.get(first_name=u'Pet\xe3r')
-        eq_(user.last_name, u'Bengtss\xa2n')
-        ok_(not user.has_usable_password())
-        ok_(not user.check_password('secret'))
-        ok_(user.groups.filter(name='Localizers').exists())
+        self.assertEqual(user.last_name, u'Bengtss\xa2n')
+        self.assertFalse(user.has_usable_password())
+        self.assertFalse(user.check_password('secret'))
+        self.assertTrue(user.groups.filter(name='Localizers').exists())
 
     def test_authenticate_with_ldap_new_user_with_long_email(self):
         assert not User.objects.all().exists()
@@ -138,13 +137,13 @@ class LDAPAuthTestCase(TestCase):
         backend = MozLdapBackend()
 
         user = backend.authenticate(long_email, 'secret')
-        ok_(user)
-        ok_(User.objects.get(email=long_email))
-        ok_(len(User.objects.get(email=long_email).username) <= 30)
+        self.assertTrue(user)
+        self.assertTrue(User.objects.get(email=long_email))
+        self.assertTrue(len(User.objects.get(email=long_email).username) <= 30)
         user = User.objects.get(first_name=u'Pet\xe3r')
-        eq_(user.last_name, u'Bengtss\xa2n')
-        ok_(not user.has_usable_password())
-        ok_(not user.check_password('secret'))
+        self.assertEqual(user.last_name, u'Bengtss\xa2n')
+        self.assertFalse(user.has_usable_password())
+        self.assertFalse(user.check_password('secret'))
 
     def test_authenticate_with_non_ascii_mail(self):
         assert not User.objects.all().exists()
@@ -170,8 +169,8 @@ class LDAPAuthTestCase(TestCase):
         backend = MozLdapBackend()
 
         user = backend.authenticate(email, 'secret')
-        ok_(user)
-        ok_(User.objects.get(email=email))
+        self.assertTrue(user)
+        self.assertTrue(User.objects.get(email=email))
 
     def test_authenticate_with_non_ascii_password(self):
         assert not User.objects.all().exists()
@@ -197,8 +196,8 @@ class LDAPAuthTestCase(TestCase):
         backend = MozLdapBackend()
 
         user = backend.authenticate(email, u's\xc4cret')
-        ok_(user)
-        ok_(User.objects.get(email=email))
+        self.assertTrue(user)
+        self.assertTrue(User.objects.get(email=email))
 
     def test_authenticate_with_ldap_existing_user(self):
         assert not User.objects.all().exists()
@@ -222,18 +221,18 @@ class LDAPAuthTestCase(TestCase):
         backend = MozLdapBackend()
 
         user = backend.authenticate('foo', 'secret')
-        ok_(user)
+        self.assertTrue(user)
         _first_name = self.fake_user[0][1]['givenName'][0]
-        eq_(user.first_name, unicode(_first_name, 'utf-8'))
+        self.assertEqual(user.first_name, unicode(_first_name, 'utf-8'))
         _last_name = self.fake_user[0][1]['sn'][0]
-        eq_(user.last_name, unicode(_last_name, 'utf-8'))
-        eq_(user.email, self.fake_user[0][1]['mail'][0])
+        self.assertEqual(user.last_name, unicode(_last_name, 'utf-8'))
+        self.assertEqual(user.email, self.fake_user[0][1]['mail'][0])
 
         user_saved = User.objects.get(username='foo')
-        eq_(user_saved.first_name, user.first_name)
-        eq_(user_saved.last_name, user.last_name)
+        self.assertEqual(user_saved.first_name, user.first_name)
+        self.assertEqual(user_saved.last_name, user.last_name)
 
-        ok_(user_saved.groups.filter(name='Localizers').exists())
+        self.assertTrue(user_saved.groups.filter(name='Localizers').exists())
 
     def test_authenticate_with_ldap_wrong_password(self):
         ldap.initialize = Mock(return_value=MockLDAP({
@@ -244,7 +243,7 @@ class LDAPAuthTestCase(TestCase):
         }))
         backend = MozLdapBackend()
         user = backend.authenticate('foo', 'secret')
-        eq_(user, None)
+        self.assertIsNone(user)
 
     def test_authenticate_with_ldap_wrong_username(self):
         ldap.initialize = Mock(return_value=MockLDAP({
@@ -255,7 +254,7 @@ class LDAPAuthTestCase(TestCase):
         }))
         backend = MozLdapBackend()
         user = backend.authenticate('foo', 'secret')
-        eq_(user, None)
+        self.assertIsNone(user)
 
     def test_authentication_ldap_username_not_recognized(self):
         ldap.initialize = Mock(return_value=MockLDAP({
@@ -266,7 +265,7 @@ class LDAPAuthTestCase(TestCase):
         }))
         backend = MozLdapBackend()
         user = backend.authenticate('foo', 'secret')
-        ok_(not user)
+        self.assertFalse(user)
 
     def test_ldap_server_down_error(self):
         ldap.initialize = Mock(return_value=MockLDAP({
@@ -288,8 +287,9 @@ class LDAPAuthTestCase(TestCase):
             settings.AUTHENTICATION_BACKENDS = (
               'lib.auth.tests.BreakingMozLdapBackend',
             )
-            response = self.client.post(url,
-                                     {'username': 'foo', 'password': 'secret'})
+            response = self.client.post(
+                url,
+                {'username': 'foo', 'password': 'secret'})
             self.assertEqual(response.status_code, 503)
             self.assertEqual(response.content, 'Service Unavailable')
         finally:
@@ -318,8 +318,8 @@ class LDAPAuthTestCase(TestCase):
 
         user = backend.authenticate('foo', 'secret')
         assert user == User.objects.get()
-        ok_(user.groups.filter(name='Localizers').exists())
-        ok_(user.groups.filter(name='build').exists())
+        self.assertTrue(user.groups.filter(name='Localizers').exists())
+        self.assertTrue(user.groups.filter(name='build').exists())
 
         new_groups = [
           ('cn=buildteam,ou=groups,dc=mozilla',
@@ -332,8 +332,8 @@ class LDAPAuthTestCase(TestCase):
 
         user = backend.authenticate('foo', 'secret')
         assert user == User.objects.get()
-        ok_(not user.groups.filter(name='Localizers').exists())
-        ok_(user.groups.filter(name='build').exists())
+        self.assertFalse(user.groups.filter(name='Localizers').exists())
+        self.assertTrue(user.groups.filter(name='build').exists())
 
         # Now reverse it
         new_new_groups = [
@@ -347,5 +347,5 @@ class LDAPAuthTestCase(TestCase):
 
         user = backend.authenticate('foo', 'secret')
         assert user == User.objects.get()
-        ok_(user.groups.filter(name='Localizers').exists())
-        ok_(not user.groups.filter(name='build').exists())
+        self.assertTrue(user.groups.filter(name='Localizers').exists())
+        self.assertFalse(user.groups.filter(name='build').exists())

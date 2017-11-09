@@ -13,7 +13,6 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.template import engines
 from django.test import override_settings
-from nose.tools import eq_, ok_
 
 
 @override_settings(
@@ -38,37 +37,37 @@ class AccountsTestCase(TestCase):
 
         # first get the password wrong
         response = self.client.post(url, dict(data, password='WRONG!'))
-        ok_(response.status_code, 200)
-        ok_('Please enter a correct' in response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Please enter a correct', response.content)
 
         response = self.client.post(url, data)
-        ok_(response.status_code, 302)
+        self.assertEqual(response.status_code, 302)
         url = reverse('user-json')
         response = self.client.get(url)
-        ok_(response.status_code, 200)
-        eq_(response['Content-Type'], 'application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/json')
         data = json.loads(response.content)
-        eq_(data['user_name'], 'Looong')
+        self.assertEqual(data['user_name'], 'Looong')
 
     def test_login_form_allows_long_username(self):
         url = '/'
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         input_regex = re.compile('<input ([^>]+)>', re.M)
         for input_ in input_regex.findall(response.content):
             for name in re.findall('name="(.*?)"', input_):
                 if name == 'username':
                     maxlength = re.findall('maxlength="(\d+)"', input_)[0]
-                    ok_(maxlength.isdigit())
-                    ok_(int(maxlength) > 30)
+                    self.assertTrue(maxlength.isdigit())
+                    self.assertTrue(int(maxlength) > 30)
 
     def test_user_json(self):
         url = reverse('user-json')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
-        ok_(data['csrf_token'])
-        ok_(data['csrf_token'] != 'NOTPROVIDED')
+        self.assertTrue(data['csrf_token'])
+        self.assertNotEqual(data['csrf_token'], 'NOTPROVIDED')
 
         token_key = response.cookies['anoncsrf'].value
         # before we can pick up from the cache we need to know
@@ -77,8 +76,8 @@ class AccountsTestCase(TestCase):
         # session_csrf hashes the combined key to normalize its potential
         # max length
         cache_key = prep_key(token_key)
-        eq_(cache.get(cache_key), data['csrf_token'])
-        ok_('user_name' not in data)
+        self.assertEqual(cache.get(cache_key), data['csrf_token'])
+        self.assertNotIn('user_name', data)
 
         user = User.objects.create_user(
           'something_short',
@@ -90,19 +89,19 @@ class AccountsTestCase(TestCase):
                                  password='secret')
 
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
-        eq_(data['user_name'], user.username)
-        ok_('csrf_token' not in data)
+        self.assertEqual(data['user_name'], user.username)
+        self.assertNotIn('csrf_token', data)
 
         user.first_name = "Peter"
         user.last_name = "Bengtsson"
         user.save()
 
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
-        eq_(data['user_name'], "Peter")
+        self.assertEqual(data['user_name'], "Peter")
 
     def test_logout(self):
         url = reverse('logout')
@@ -116,13 +115,13 @@ class AccountsTestCase(TestCase):
                                  password='secret')
 
         response = self.client.get(url)  # note: it's GET
-        eq_(response.status_code, 302)
+        self.assertEqual(response.status_code, 302)
         path = urlparse(response['Location']).path
-        eq_(path, '/')
+        self.assertEqual(path, '/')
 
         response = self.client.get(reverse('user-json'))
         data = json.loads(response.content)
-        ok_('user_name' not in data)
+        self.assertNotIn('user_name', data)
 
     def test_logout_with_next_url(self):
         url = reverse('logout')
@@ -135,12 +134,10 @@ class AccountsTestCase(TestCase):
         assert self.client.login(username=user.username,
                                  password='secret')
         from django.contrib.auth.views import REDIRECT_FIELD_NAME
-        response = self.client.get(url,
-          {REDIRECT_FIELD_NAME: '/foo/bar'}
-        )
-        eq_(response.status_code, 302)
+        response = self.client.get(url, {REDIRECT_FIELD_NAME: '/foo/bar'})
+        self.assertEqual(response.status_code, 302)
         path = urlparse(response['Location']).path
-        eq_(path, '/foo/bar')
+        self.assertEqual(path, '/foo/bar')
 
     def test_ajax_login(self):
         url = reverse('login')
@@ -153,28 +150,28 @@ class AccountsTestCase(TestCase):
         user.save()
         response = self.client.post(url, {'username': user.username,
                                           'password': 'wrong'})
-        eq_(response.status_code, 200)
-        ok_('error' in response.content)
-        ok_('value="%s"' % user.username in response.content)
-        ok_('text/html' in response['Content-Type'])
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('error', response.content)
+        self.assertIn('value="%s"' % user.username, response.content)
+        self.assertIn('text/html', response['Content-Type'])
 
         # if the password is wrong it doesn't matter if it's an AJAX request
         response = self.client.post(url, {'username': user.username,
                                           'password': 'wrong'},
                                     HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        eq_(response.status_code, 200)
-        ok_('error' in response.content)
-        ok_('value="%s"' % user.username in response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('error', response.content)
+        self.assertIn('value="%s"' % user.username, response.content)
 
         # but get it right and as AJAX and you get JSON back
         response = self.client.post(url, {'username': user.username,
                                           'password': 'secret'},
                                     HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
-        eq_(data['user_name'], user.username)
-        ok_('application/json' in response['Content-Type'])
-        ok_('private' in response['Cache-Control'])
+        self.assertEqual(data['user_name'], user.username)
+        self.assertIn('application/json', response['Content-Type'])
+        self.assertIn('private', response['Cache-Control'])
 
         user.first_name = "Peter"
         user.last_name = "Bengtsson"
@@ -182,9 +179,9 @@ class AccountsTestCase(TestCase):
         response = self.client.post(url, {'username': user.username,
                                           'password': 'secret'},
                                     HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
-        eq_(data['user_name'], "Peter")
+        self.assertEqual(data['user_name'], "Peter")
 
     def test_django_session_csrf(self):
         """test that we're correctly using session CSRF tokens
@@ -194,26 +191,33 @@ class AccountsTestCase(TestCase):
         for engine in engines.all():
             # ensure that session_csrf comes after django.template...
             processors = engine.engine.template_context_processors
-            eq_(processors.count(django.template.context_processors.csrf), 1)
-            eq_(processors.count(session_csrf.context_processor), 1)
-            ok_(processors.index(django.template.context_processors.csrf) <
+            self.assertEqual(
+                processors.count(django.template.context_processors.csrf),
+                1)
+            self.assertEqual(
+                processors.count(session_csrf.context_processor),
+                1)
+            self.assertLess(
+                processors.index(django.template.context_processors.csrf),
                 processors.index(session_csrf.context_processor),
                 msg='sessions_csrf needs to be after django default')
 
-        ok_('session_csrf.CsrfMiddleware' in settings.MIDDLEWARE_CLASSES)
-        ok_('django.middleware.csrf.CsrfViewMiddleware'
-            not in settings.MIDDLEWARE_CLASSES)
+        self.assertIn(
+            'session_csrf.CsrfMiddleware',
+            settings.MIDDLEWARE_CLASSES)
+        self.assertNotIn(
+            'django.middleware.csrf.CsrfViewMiddleware',
+            settings.MIDDLEWARE_CLASSES)
 
-        ok_('session_csrf' in settings.INSTALLED_APPS)
+        self.assertIn('session_csrf', settings.INSTALLED_APPS)
         # funfactory initiates an important monkeypatch which we need
-        ok_('funfactory' in settings.INSTALLED_APPS)
+        self.assertIn('funfactory', settings.INSTALLED_APPS)
 
         login_url = reverse('user-json')
 
-        cookies_before = self.client.cookies
         assert not self.client.cookies
         response = self.client.get(login_url)
-        ok_(self.client.cookies['anoncsrf'])
+        self.assertTrue(self.client.cookies['anoncsrf'])
 
         admin = User.objects.create(
           username='admin',
@@ -226,7 +230,8 @@ class AccountsTestCase(TestCase):
         # any page with a POST form will do
         url = reverse('privacy:add')
         response = self.client.get(url)
-        ok_('href="/#login"' in response.content)
+        self.assertIn('href="/#login"', response.content)
         assert self.client.login(username='admin', password='secret')
         response = self.client.get(url)
-        ok_(re.findall('name=[\'"]csrfmiddlewaretoken[\'"]', response.content))
+        self.assertTrue(
+            re.findall('name=[\'"]csrfmiddlewaretoken[\'"]', response.content))
