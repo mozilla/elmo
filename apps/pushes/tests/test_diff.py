@@ -11,7 +11,8 @@ from django.core.urlresolvers import reverse
 import hglib
 
 from life.models import Repository
-from .base import RepoTestBase
+from .base import RepoTestBase, TestCase
+from pushes.views.diff import DiffView
 
 # mercurial doesn't take unicode strings, trigger errors
 import warnings
@@ -108,51 +109,6 @@ class DiffTestCase(RepoTestBase):
         self.assertIn('<tr class="line-changed">', html_diff)
         self.assertIn(
             '<span class="equal">Cruel</span><span class="insert">le</span>',
-            html_diff)
-
-    def test_fluent_entity_and_attr_modification(self):
-        """Change one file by editing an existing line and attr"""
-        hgrepo = hglib.init(self.repo).open()
-        (open(hgrepo.pathto('file.ftl'), 'w')
-            .write('''
-key1 = My Value
-    .attr = Attrbute
-'''))
-
-        hgrepo.addremove()
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="initial commit")
-        rev0 = hgrepo[0].node()
-        (open(hgrepo.pathto('file.ftl'), 'w')
-            .write('''
-key1 = My New Value
-    .attr = Attribute
-'''))
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="Second commit")
-        rev1 = hgrepo[1].node()
-        hgrepo.close()
-
-        Repository.objects.create(
-            name=self.repo_name,
-            url='http://localhost:8001/%s/' % self.repo_name
-        )
-
-        url = reverse('pushes:diff')
-        response = self.client.get(url, {
-            'repo': self.repo_name,
-            'from': rev0,
-            'to': rev1
-        })
-        self.assertEqual(response.status_code, 200)
-        html_diff = response.content.split('Changed files:')[1]
-        self.assertTrue(re.findall('>\s*file\.ftl\s*<', html_diff))
-        self.assertIn('<tr class="line-changed">', html_diff)
-        self.assertIn(
-            '<span class="equal">My</span><span class="insert"> New</span>',
-            html_diff)
-        self.assertIn(
-            '<span class="equal">Attr</span><span class="insert">i</span>',
             html_diff)
 
     def test_file_entity_removal(self):
@@ -1045,3 +1001,146 @@ key1 = My New Value
         self.assertEqual(response.status_code, 200)
         self.assertIn('line-removed', response.content)
         self.assertIn('line-added', response.content)
+
+
+class ValuedDiffView(DiffView):
+    '''Subclass to return a given list of contents.
+    This utilizes the fact that keyword arguments in the default
+    View constructor get set as attrs.'''
+    def content(self, path, rev):
+        if rev == self.rev1:
+            return self.content1
+        return self.content2
+
+
+class TestDiffLines(TestCase):
+    '''Unit test DiffView.diffLines'''
+
+    def test_add_fluent(self):
+        view = ValuedDiffView(
+            rev1='a',
+            rev2='b',
+            content1=b'',
+            content2=b'''key1 = My Value
+    .attr = Attrbute
+''',
+        )
+        lines = view.diffLines('file.ftl', 'added')
+        self.assertEqual(len(lines), 1)
+        val_line, = lines
+        self.assertEqual(val_line['entity'], 'key1')
+        self.assertEqual(val_line['class'], 'added')
+        self.assertListEqual(
+            [d['value'] for d in val_line['oldval']],
+            [])
+        self.assertListEqual(
+            [d['class'] for d in val_line['oldval']],
+            [])
+        self.assertListEqual(
+            [d['value'] for d in val_line['newval']],
+            [u'My Value'])
+        self.assertNotIn('class', val_line['newval'][0])
+
+    def test_modify_fluent(self):
+        view = ValuedDiffView(
+            rev1='a',
+            rev2='b',
+            content1=b'''key1 = My Value
+    .attr = Attrbute
+''',
+            content2=b'''key1 = My New Value
+    .attr = Attribute
+''',
+        )
+        lines = view.diffLines('file.ftl', 'changed')
+        self.assertEqual(len(lines), 2)
+        val_line, attr_line = lines
+        self.assertEqual(val_line['entity'], 'key1')
+        self.assertEqual(val_line['class'], 'changed')
+        self.assertListEqual(
+            [d['value'] for d in val_line['oldval']],
+            [u'My', u' Value'])
+        self.assertListEqual(
+            [d['class'] for d in val_line['oldval']],
+            [u'equal', u'equal'])
+        self.assertListEqual(
+            [d['value'] for d in val_line['newval']],
+            [u'My', u' New', u' Value'])
+        self.assertListEqual(
+            [d['class'] for d in val_line['newval']],
+            [u'equal', u'insert', u'equal'])
+        self.assertEqual(attr_line['entity'], 'key1.attr')
+        self.assertEqual(attr_line['class'], 'changed')
+        self.assertListEqual(
+            [d['value'] for d in attr_line['oldval']],
+            [u'Attr', u'bute'])
+        self.assertListEqual(
+            [d['class'] for d in attr_line['oldval']],
+            [u'equal', u'equal'])
+        self.assertListEqual(
+            [d['value'] for d in attr_line['newval']],
+            [u'Attr', u'i', u'bute'])
+        self.assertListEqual(
+            [d['class'] for d in attr_line['newval']],
+            [u'equal', u'insert', u'equal'])
+
+    def test_copied_fluent(self):
+        view = ValuedDiffView(
+            rev1='a',
+            rev2='b',
+            content1=b'''key1 = Old Value
+''',
+            content2=b'''key1 = New Value
+''',
+            copied={'file.ftl': 'orig.ftl'},
+        )
+        lines = view.diffLines('file.ftl', 'copied')
+        self.assertListEqual(
+            lines,
+            [{'class': 'changed',
+              'entity': u'key1',
+              'newval': [{'class': 'replace', 'value': u'New'},
+                         {'class': 'equal', 'value': u' Value'}],
+              'oldval': [{'class': 'replace', 'value': u'Old'},
+                         {'class': 'equal', 'value': u' Value'}]}]
+            )
+
+    def test_moved_fluent(self):
+        view = ValuedDiffView(
+            rev1='a',
+            rev2='b',
+            content1=b'''key1 = Old Value
+''',
+            content2=b'''key1 = New Value
+''',
+            moved={'file.ftl': 'orig.ftl'},
+        )
+        lines = view.diffLines('file.ftl', 'moved')
+        self.assertListEqual(
+            lines,
+            [{'class': 'changed',
+              'entity': u'key1',
+              'newval': [{'class': 'replace', 'value': u'New'},
+                         {'class': 'equal', 'value': u' Value'}],
+              'oldval': [{'class': 'replace', 'value': u'Old'},
+                         {'class': 'equal', 'value': u' Value'}]}]
+            )
+
+    def test_removed_fluent(self):
+        view = ValuedDiffView(
+            rev1='a',
+            rev2='b',
+            content1=b'''key1 = Old Value
+''',
+            content2=b'''key1 = New Value
+''',
+            moved={'file.ftl': 'orig.ftl'},
+        )
+        lines = view.diffLines('file.ftl', 'removed')
+        self.assertListEqual(
+            lines,
+            [{'class': 'removed',
+              'entity': u'key1',
+              'newval': '',
+              'oldval': [{'value': u'Old Value'}]}]
+            )

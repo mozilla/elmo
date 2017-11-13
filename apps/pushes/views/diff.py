@@ -28,7 +28,18 @@ class BadRevision(Exception):
     pass
 
 
+class constdict(dict):
+    '''Subclass dict to not allow modifications'''
+
+    def __setitem__(self, key, value):
+        raise NotImplementedError
+
+
 class DiffView(View):
+    # empty class default for tests
+    # overwrite with mutable instance members if you need non-empty values
+    moved = copied = constdict()
+    rev1 = rev2 = None
 
     def _universal_newlines(self, content):
         "CompareLocales reads files with universal newlines, fake that"
@@ -176,11 +187,9 @@ class DiffView(View):
             realpath = (action == 'moved' and self.moved[path] or
                         action == 'copied' and self.copied[path] or
                         path)
-            data = self.client.cat([self.client.pathto(realpath)],
-                                   rev=self.rev1)
-            data = self._universal_newlines(data)
+            content = self.content(realpath, self.rev1)
             try:
-                p.readContents(data)
+                p.readContents(content)
                 a_entities, a_map = p.parse()
             except:
                 # consider doing something like:
@@ -190,11 +199,9 @@ class DiffView(View):
         if action == 'removed':
             c_entities, c_map = [], {}
         else:
-            data = self.client.cat([self.client.pathto(path)],
-                                   rev=self.rev2)
-            data = self._universal_newlines(data)
+            content = self.content(path, self.rev2)
             try:
-                p.readContents(data)
+                p.readContents(content)
                 c_entities, c_map = p.parse()
             except:
                 # consider doing something like:
@@ -273,6 +280,11 @@ class DiffView(View):
                                                   attr_name})
 
         return lines
+
+    def content(self, path, rev):
+        content = self.client.cat([self.client.pathto(path)], rev=rev)
+        content = self._universal_newlines(content)
+        return content
 
     def diff_strings(self, oldval, newval):
         sm = SequenceMatcher(None, oldval, newval)
