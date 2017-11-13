@@ -1026,8 +1026,8 @@ class TestDiffLines(TestCase):
 ''',
         )
         lines = view.diffLines('file.ftl', 'added')
-        self.assertEqual(len(lines), 1)
-        val_line, = lines
+        self.assertEqual(len(lines), 2)
+        val_line, attr_line = lines
         self.assertEqual(val_line['entity'], 'key1')
         self.assertEqual(val_line['class'], 'added')
         self.assertListEqual(
@@ -1040,6 +1040,18 @@ class TestDiffLines(TestCase):
             [d['value'] for d in val_line['newval']],
             [u'My Value'])
         self.assertNotIn('class', val_line['newval'][0])
+        self.assertEqual(attr_line['entity'], 'key1.attr')
+        self.assertEqual(attr_line['class'], 'added')
+        self.assertListEqual(
+            [d['value'] for d in attr_line['oldval']],
+            [])
+        self.assertListEqual(
+            [d['class'] for d in attr_line['oldval']],
+            [])
+        self.assertListEqual(
+            [d['value'] for d in attr_line['newval']],
+            [u'Attrbute'])
+        self.assertNotIn('class', attr_line['newval'][0])
 
     def test_modify_fluent(self):
         view = ValuedDiffView(
