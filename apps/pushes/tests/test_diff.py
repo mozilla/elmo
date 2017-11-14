@@ -388,142 +388,6 @@ class DiffTestCase(RepoTestBase):
         self.assertFalse(re.findall('>\s*Cruel\s*<', html_diff))
         self.assertTrue(re.findall('>\s*World\s*<', html_diff))
 
-    def test_file_renamed_and_edited_broken(self):
-        """Change by doing a rename with bad content editing"""
-        hgrepo = hglib.init(self.repo).open()
-        (open(hgrepo.pathto('file.dtd'), 'w')
-            .write('''
-            <!ENTITY key1 "Hello">
-            <!ENTITY key2 "Cruel">
-            '''))
-
-        hgrepo.addremove()
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="initial commit")
-        rev0 = hgrepo[0].node()
-        hgrepo.move(hgrepo.pathto('file.dtd'),
-                    hgrepo.pathto('newnamefile.dtd'))
-        (codecs.open(hgrepo.pathto('newnamefile.dtd'), 'w', 'latin1')
-            .write(u'''
-            <!ENTITY key1 "Hell\xe2">
-            <!ENTITY key2 "Cruel">
-            <!ENTITY key3 "W\ex3rld">
-            '''))
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="Second commit")
-        rev1 = hgrepo[1].node()
-        hgrepo.close()
-
-        Repository.objects.create(
-            name=self.repo_name,
-            url='http://localhost:8001/%s/' % self.repo_name
-        )
-
-        url = reverse('pushes:diff')
-        response = self.client.get(url, {
-            'repo': self.repo_name,
-            'from': rev0,
-            'to': rev1
-        })
-        self.assertEqual(response.status_code, 200)
-        html_diff = (response.content
-                     .split('Changed files:')[1]
-                     .split('page_footer')[0])
-        html_diff = unicode(html_diff, 'utf-8')
-        self.assertTrue(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
-        self.assertIn('Cannot parse file', html_diff)
-
-    def test_file_renamed_and_edited_original_broken(self):
-        """Change by doing a rename on a previously broken file"""
-        hgrepo = hglib.init(self.repo).open()
-        (codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1')
-            .write(u'''
-            <!ENTITY key1 "Hell\xe3">
-            <!ENTITY key2 "Cruel">
-            '''))
-
-        hgrepo.addremove()
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="initial commit")
-        rev0 = hgrepo[0].node()
-        hgrepo.move(hgrepo.pathto('file.dtd'),
-                    hgrepo.pathto('newnamefile.dtd'))
-        (open(hgrepo.pathto('newnamefile.dtd'), 'w')
-            .write('''
-            <!ENTITY key1 "Hello">
-            <!ENTITY key2 "World">
-            '''))
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="Second commit")
-        rev1 = hgrepo[1].node()
-        hgrepo.close()
-
-        Repository.objects.create(
-            name=self.repo_name,
-            url='http://localhost:8001/%s/' % self.repo_name
-        )
-
-        url = reverse('pushes:diff')
-        response = self.client.get(url, {
-            'repo': self.repo_name,
-            'from': rev0,
-            'to': rev1
-        })
-        self.assertEqual(response.status_code, 200)
-        html_diff = (response.content
-                     .split('Changed files:')[1]
-                     .split('page_footer')[0])
-        html_diff = unicode(html_diff, 'utf-8')
-        self.assertTrue(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
-        self.assertIn('Cannot parse file', html_diff)
-        self.assertEqual(html_diff.count('Cannot parse file'), 1)
-        self.assertIn('renamed from file.dtd', re.sub('<.*?>', '', html_diff))
-
-    def test_file_copied_and_edited_original_broken(self):
-        """Change by copying a broken file"""
-        hgrepo = hglib.init(self.repo).open()
-        (codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1')
-            .write(u'''
-            <!ENTITY key1 "Hell\xe3">
-            <!ENTITY key2 "Cruel">
-            '''))
-
-        hgrepo.addremove()
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="initial commit")
-        rev0 = hgrepo[0].node()
-        hgrepo.copy(hgrepo.pathto('file.dtd'),
-                    hgrepo.pathto('newnamefile.dtd'))
-        (open(hgrepo.pathto('newnamefile.dtd'), 'w')
-            .write('''
-            <!ENTITY key1 "Hello">
-            <!ENTITY key2 "World">
-            '''))
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="Second commit")
-        rev1 = hgrepo[1].node()
-        hgrepo.close()
-
-        Repository.objects.create(
-            name=self.repo_name,
-            url='http://localhost:8001/%s/' % self.repo_name
-        )
-
-        url = reverse('pushes:diff')
-        response = self.client.get(url, {
-            'repo': self.repo_name,
-            'from': rev0,
-            'to': rev1
-        })
-        self.assertEqual(response.status_code, 200)
-        html_diff = (response.content
-                     .split('Changed files:')[1]
-                     .split('page_footer')[0])
-        html_diff = unicode(html_diff, 'utf-8')
-        self.assertTrue(re.findall('>\s*newnamefile\.dtd\s*<', html_diff))
-        self.assertIn('Cannot parse file', html_diff)
-        self.assertEqual(html_diff.count('Cannot parse file'), 1)
-
     def test_error_handling(self):
         """Test various bad request parameters to the diff_app
         and assure that it responds with the right error codes."""
@@ -721,86 +585,6 @@ class DiffTestCase(RepoTestBase):
         # also, expect a link to this file
         change_ref = 'href="%sfile/%s/file.png"' % (repo_url, rev1)
         self.assertIn(change_ref, html_diff)
-
-    def test_broken_encoding_file_add(self):
-        """Change by editing an already broken file"""
-        hgrepo = hglib.init(self.repo).open()
-
-        # do this to trigger an exception on Mozilla.Parser.readContents
-        _content = u'<!ENTITY key1 "Hell\xe3">\n'
-        (codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1')
-               .write(_content))
-
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="initial commit",
-                      addremove=True)
-        rev0 = hgrepo[0].node()
-
-        (open(hgrepo.pathto('file.dtd'), 'w')
-            .write(u'<!ENTITY key1 "Hello">\n'))
-
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="Second commit")
-        rev1 = hgrepo[1].node()
-
-        repo_url = 'http://localhost:8001/' + self.repo_name + '/'
-        Repository.objects.create(
-            name=self.repo_name,
-            url=repo_url
-        )
-
-        url = reverse('pushes:diff')
-        response = self.client.get(url, {
-            'repo': self.repo_name,
-            'from': rev0,
-            'to': rev1
-        })
-        self.assertEqual(response.status_code, 200)
-        html_diff = response.content.split('Changed files:')[1]
-        self.assertIn('Cannot parse file', html_diff)
-        # also, expect a link to this file
-        change_url = repo_url + 'file/%s/file.dtd' % rev1
-        self.assertIn('href="%s"' % change_url, html_diff)
-
-    def test_file_edited_broken_encoding(self):
-        """Change by editing a good with a broken edit"""
-        hgrepo = hglib.init(self.repo).open()
-
-        (open(hgrepo.pathto('file.dtd'), 'w')
-            .write(u'<!ENTITY key1 "Hello">\n'))
-
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="initial commit",
-                      addremove=True)
-        rev0 = hgrepo[0].node()
-
-        # do this to trigger an exception on Mozilla.Parser.readContents
-        _content = u'<!ENTITY key1 "Hell\xe3">\n'
-        (codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1')
-            .write(_content))
-
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="Second commit")
-        rev1 = hgrepo[1].node()
-
-        repo_url = 'http://localhost:8001/' + self.repo_name + '/'
-        Repository.objects.create(
-            name=self.repo_name,
-            url=repo_url
-        )
-
-        url = reverse('pushes:diff')
-        response = self.client.get(url, {
-            'repo': self.repo_name,
-            'from': rev0,
-            'to': rev1
-        })
-        self.assertEqual(response.status_code, 200)
-        html_diff = response.content.split('Changed files:')[1]
-        self.assertIn('Cannot parse file', html_diff)
-        # also, expect a link to this file
-        change_url = repo_url + 'file/%s/file.dtd' % rev1
-        self.assertIn('href="%s"' % change_url, html_diff)
 
     def test_bogus_repo_hashes(self):
         """test to satisfy
@@ -1015,6 +799,26 @@ class ValuedDiffView(DiffView):
 
 class TestDiffLines(TestCase):
     '''Unit test DiffView.diffLines'''
+
+    def test_broken_old_encoding(self):
+        view = ValuedDiffView(
+            rev1='a',
+            rev2='b',
+            content1=u'key1 = Hell\xe3'.encode('latin-1'),
+            content2=b'key1 = My Value\n',
+        )
+        lines = view.diffLines('file.ftl', 'changed')
+        self.assertIsNone(lines)
+
+    def test_broken_new_encoding(self):
+        view = ValuedDiffView(
+            rev1='a',
+            rev2='b',
+            content1=b'key1 = My Value\n',
+            content2=u'key1 = Hell\xe3'.encode('latin-1'),
+        )
+        lines = view.diffLines('file.ftl', 'changed')
+        self.assertIsNone(lines)
 
     def test_add_fluent(self):
         view = ValuedDiffView(
