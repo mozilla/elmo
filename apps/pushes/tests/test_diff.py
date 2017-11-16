@@ -4,7 +4,6 @@
 from __future__ import absolute_import
 
 import re
-import os
 import codecs
 import base64
 from django.core.urlresolvers import reverse
@@ -21,10 +20,7 @@ warnings.filterwarnings('error', category=UnicodeWarning)
 
 class DiffTestCase(RepoTestBase):
 
-    def setUp(self):
-        super(DiffTestCase, self).setUp()
-        self.repo_name = 'mozilla-central'
-        self.repo = os.path.join(self._base, self.repo_name)
+    repo_name = 'mozilla-central'
 
     def test_file_entity_addition(self):
         """Change one file by adding a new line to it"""
