@@ -11,7 +11,7 @@ import hglib
 
 from life.models import Repository
 from .base import RepoTestBase, TestCase
-from pushes.views.diff import DiffView
+from pushes.views.diff import DiffView, BadRevision
 
 # mercurial doesn't take unicode strings, trigger errors
 import warnings
@@ -781,6 +781,129 @@ class DiffTestCase(RepoTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('line-removed', response.content)
         self.assertIn('line-added', response.content)
+
+
+class TestPaths4Revs(RepoTestBase):
+
+    repo_name = 'mozilla-central'
+
+    def setUp(self):
+        super(TestPaths4Revs, self).setUp()
+        hgrepo = hglib.init(self.repo).open()
+        # Initial commit, r=0
+        with open(hgrepo.pathto('README'), 'w') as f:
+            f.write('Initial commit')
+        hgrepo.commit(user='Jane Doe <jdoe@foo.tld>',
+                      message='Initial commit', addremove=True)
+        # Add l10n file, r=1
+        with open(hgrepo.pathto('f.ftl'), 'w') as f:
+            f.write('message = text\n')
+        hgrepo.commit(user='Jane Doe <jdoe@foo.tld>',
+                      message='Adding file', addremove=True)
+        # modify l10n file, r=2
+        with open(hgrepo.pathto('f.ftl'), 'w') as f:
+            f.write('message = othertext\n')
+        hgrepo.commit(user='Jane Doe <jdoe@foo.tld>',
+                      message='Modifying file', addremove=True)
+        # copy and edit, r=3
+        hgrepo.copy(hgrepo.pathto('f.ftl'), hgrepo.pathto('copied.ftl'))
+        with open(hgrepo.pathto('copied.ftl'), 'w') as f:
+            f.write('message = text\nnew_message = words\n')
+        hgrepo.commit(user='Jane Doe <jdoe@foo.tld>',
+                      message='Copying file', addremove=True)
+        # move and edit, r=4
+        hgrepo.move(hgrepo.pathto('f.ftl'), hgrepo.pathto('moved.ftl'))
+        with open(hgrepo.pathto('moved.ftl'), 'w') as f:
+            f.write('different = text\n')
+        hgrepo.commit(user='Jane Doe <jdoe@foo.tld>',
+                      message='Moving file', addremove=True)
+        # remove, r=5
+        hgrepo.remove([hgrepo.pathto('copied.ftl')])
+        hgrepo.commit(user='Jane Doe <jdoe@foo.tld>',
+                      message='Removing file', addremove=True)
+
+    def test_repo_interactions(self):
+        '''Let's just use a single test method for all our hg interactions,
+        to reuse the hg repo fixture.
+        '''
+        dbrepo = self.dbrepo(changesets_from=hglib.open(self.repo))
+        view = DiffView()
+        view.getrepo(dbrepo.name)
+        # add
+        paths = view.paths4revs('0', '1')
+        self.assertListEqual(
+            paths,
+            [('f.ftl', 'added')])
+        self.assertDictEqual(view.moved, {})
+        self.assertDictEqual(view.copied, {})
+        # modified
+        paths = view.paths4revs('1', '2')
+        self.assertListEqual(
+            paths,
+            [('f.ftl', 'changed')])
+        self.assertDictEqual(view.moved, {})
+        self.assertDictEqual(view.copied, {})
+        # copy
+        paths = view.paths4revs('2', '3')
+        self.assertListEqual(
+            paths,
+            [('copied.ftl', 'copied')])
+        self.assertDictEqual(view.moved, {})
+        self.assertDictEqual(
+            view.copied,
+            {'copied.ftl': 'f.ftl'})
+        # move
+        paths = view.paths4revs('3', '4')
+        self.assertListEqual(
+            paths,
+            [('moved.ftl', 'moved')])
+        self.assertDictEqual(
+            view.moved,
+            {'moved.ftl': 'f.ftl'})
+        self.assertDictEqual(view.copied, {})
+        # remove
+        paths = view.paths4revs('4', '5')
+        self.assertListEqual(
+            paths,
+            [('copied.ftl', 'removed')])
+        self.assertDictEqual(view.moved, {})
+        self.assertDictEqual(view.copied, {})
+
+        # test tip and default (tip is default, not tip, really)
+        self.assertEqual(view.real_rev('5'), view.real_rev('tip'))
+        self.assertEqual(view.real_rev('5'), view.real_rev('default'))
+
+        # test fork, just one of the code paths
+        fork = self.dbrepo(name='fork')
+        fork.fork_of = dbrepo
+        fork.save()
+        view.getrepo(fork.name)
+        paths = view.paths4revs('0', '1')
+        self.assertListEqual(
+            paths,
+            [('f.ftl', 'added')])
+        self.assertDictEqual(view.moved, {})
+        self.assertDictEqual(view.copied, {})
+
+        # test revision lookup errors
+        with self.assertRaises(BadRevision) as bad_rev_cm:
+            view.paths4revs('iiii', '0')
+        self.assertEqual(
+            bad_rev_cm.exception.message,
+            "Unrecognized 'from' parameter")
+        with self.assertRaises(BadRevision) as bad_rev_cm:
+            view.paths4revs('0', 'jjjj')
+        self.assertEqual(
+            bad_rev_cm.exception.message,
+            "Unrecognized 'to' parameter")
+
+        # test content retrieval from hg
+        self.assertEqual(
+            view.content('f.ftl', '1'),
+            b'message = text\n')
+        self.assertEqual(
+            view.content('f.ftl', '2'),
+            b'message = othertext\n')
 
 
 class ValuedDiffView(DiffView):
