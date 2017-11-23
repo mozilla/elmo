@@ -1079,3 +1079,37 @@ class TestDiffLines(TestCase):
               'newval': '',
               'oldval': [{'value': u'Old Value'}]}]
             )
+
+    def test_moved_to_fluent(self):
+        view = ValuedDiffView(
+            rev1='a',
+            rev2='b',
+            content1=b'''key1 = Old Value
+''',
+            content2=b'''key1 = New Value
+''',
+            moved={'file.ftl': 'orig.foo'},
+        )
+        lines = view.diffLines('file.ftl', 'moved')
+        self.assertListEqual(
+            lines,
+            [{'class': 'changed',
+              'entity': u'key1',
+              'newval': [{'class': 'replace', 'value': u'New'},
+                         {'class': 'equal', 'value': u' Value'}],
+              'oldval': [{'class': 'replace', 'value': u'Old'},
+                         {'class': 'equal', 'value': u' Value'}]}]
+            )
+
+    def test_moved_to_non_fluent(self):
+        view = ValuedDiffView(
+            rev1='a',
+            rev2='b',
+            content1=b'''key1 = Old Value
+''',
+            content2=b'''key1 = New Value
+''',
+            moved={'file.foo': 'orig.ftl'},
+        )
+        lines = view.diffLines('file.foo', 'moved')
+        self.assertIsNone(lines)
