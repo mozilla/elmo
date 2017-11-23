@@ -11,7 +11,7 @@ import hglib
 
 from life.models import Repository
 from .base import RepoTestBase, TestCase
-from pushes.views.diff import DiffView, BadRevision
+from pushes.views.diff import DataTree, DiffView, BadRevision
 
 # mercurial doesn't take unicode strings, trigger errors
 import warnings
@@ -1113,3 +1113,43 @@ class TestDiffLines(TestCase):
         )
         lines = view.diffLines('file.foo', 'moved')
         self.assertIsNone(lines)
+
+
+class TestTreeData(TestCase):
+
+    def test_single(self):
+        tree = DataTree(dict)
+        tree['single/leaf'].update({'class': 'good'})
+        view = DiffView()
+        self.assertListEqual(
+            view.tree_data(tree),
+            [
+                ('single/leaf', {'children': [], 'value': {'class': 'good'}}),
+            ])
+
+    def test_two_distinct(self):
+        tree = DataTree(dict)
+        tree['single/leaf'].update({'class': 'good'})
+        tree['other/trunk'].update({'class': 'better'})
+        view = DiffView()
+        self.assertListEqual(
+            view.tree_data(tree),
+            [
+                ('other/trunk', {'children': [],
+                                 'value': {'class': 'better'}}),
+                ('single/leaf', {'children': [], 'value': {'class': 'good'}}),
+            ])
+
+    def test_two_merge(self):
+        tree = DataTree(dict)
+        tree['single/leaf'].update({'class': 'good'})
+        tree['single/trunk'].update({'class': 'better'})
+        view = DiffView()
+        self.assertListEqual(
+            view.tree_data(tree),
+            [
+                ('single', {'children': [
+                    ('leaf', {'children': [], 'value': {'class': 'good'}}),
+                    ('trunk', {'children': [], 'value': {'class': 'better'}}),
+                    ]}),
+            ])
