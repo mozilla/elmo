@@ -198,7 +198,7 @@ class DiffView(View):
             content = self.content(realpath, self.rev1)
             try:
                 old_translations.update(self.parse(p, content))
-            except:
+            except Exception:
                 # consider doing something like:
                 # logging.warn('Unable to parse %s', path, exc_info=True)
                 return None
@@ -208,7 +208,7 @@ class DiffView(View):
             content = self.content(path, self.rev2)
             try:
                 new_translations.update(self.parse(p, content))
-            except:
+            except Exception:
                 # consider doing something like:
                 # logging.warn('Unable to parse %s', path, exc_info=True)
                 return None
