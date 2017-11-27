@@ -13,7 +13,6 @@ import urllib2
 import hglib
 
 from life.models import Repository, Push, Changeset, Branch, File
-from django.conf import settings
 from django.db import transaction, connection
 from six.moves import range
 

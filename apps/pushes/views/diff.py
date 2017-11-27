@@ -9,6 +9,7 @@ as the repositories are related.
 """
 from __future__ import absolute_import
 
+from collections import OrderedDict
 from difflib import SequenceMatcher
 
 from django.shortcuts import render
@@ -28,7 +29,18 @@ class BadRevision(Exception):
     pass
 
 
+class constdict(dict):
+    '''Subclass dict to not allow modifications'''
+
+    def __setitem__(self, key, value):
+        raise NotImplementedError
+
+
 class DiffView(View):
+    # empty class default for tests
+    # overwrite with mutable instance members if you need non-empty values
+    moved = copied = constdict()
+    rev1 = rev2 = None
 
     def _universal_newlines(self, content):
         "CompareLocales reads files with universal newlines, fake that"
@@ -163,116 +175,91 @@ class DiffView(View):
         return ctx.node()
 
     def diffLines(self, path, action):
-        '''The actual l10n-aware diff for a particular file.'''
+        '''The actual l10n-aware diff for a particular file.
+
+        If file is not supported by compare-locale, return None.
+        Use compare-locales to compare old and new revision,
+        self.rev1 and rev2.
+        Convert both into an OrderedDict of key to value, and create a
+        inline diff for modified values.
+        For Fluent attributes, concatenate key and attribute name with '.'.
+        That's OK because fluent IDs don't allow '.'.
+        '''
         lines = []
         try:
             p = getParser(path)
         except UserWarning:
             return None
-        if action == 'added':
-            a_entities = []
-            a_map = {}
-        else:
+        old_translations = OrderedDict()
+        if action != 'added':
             realpath = (action == 'moved' and self.moved[path] or
                         action == 'copied' and self.copied[path] or
                         path)
-            data = self.client.cat([self.client.pathto(realpath)],
-                                   rev=self.rev1)
-            data = self._universal_newlines(data)
+            content = self.content(realpath, self.rev1)
             try:
-                p.readContents(data)
-                a_entities, a_map = p.parse()
-            except:
+                old_translations.update(self.parse(p, content))
+            except Exception:
                 # consider doing something like:
                 # logging.warn('Unable to parse %s', path, exc_info=True)
                 return None
 
-        if action == 'removed':
-            c_entities, c_map = [], {}
-        else:
-            data = self.client.cat([self.client.pathto(path)],
-                                   rev=self.rev2)
-            data = self._universal_newlines(data)
+        new_translations = OrderedDict()
+        if action != 'removed':
+            content = self.content(path, self.rev2)
             try:
-                p.readContents(data)
-                c_entities, c_map = p.parse()
-            except:
+                new_translations.update(self.parse(p, content))
+            except Exception:
                 # consider doing something like:
                 # logging.warn('Unable to parse %s', path, exc_info=True)
                 return None
         ar = AddRemove()
-        ar.set_left(e.key for e in a_entities)
-        ar.set_right(e.key for e in c_entities)
-        for action, entity in ar:
+        ar.set_left(old_translations.keys())
+        ar.set_right(new_translations.keys())
+        for action, key in ar:
             if action == 'delete':
                 lines.append({
                   'class': 'removed',
-                  'oldval': [{'value': a_entities[a_map[entity]].val}],
+                  'oldval': [{'value': old_translations[key]}],
                   'newval': '',
-                  'entity': entity
+                  'entity': key
                 })
             elif action == 'add':
                 lines.append({
                   'class': 'added',
                   'oldval': '',
-                  'newval': [{'value': c_entities[c_map[entity]].val}],
-                  'entity': entity
+                  'newval': [{'value': new_translations[key]}],
+                  'entity': key
                 })
             else:
-                old_entity = a_entities[a_map[entity]]
-                new_entity = c_entities[c_map[entity]]
-                if old_entity.val != new_entity.val:
+                old_value = old_translations[key]
+                new_value = new_translations[key]
+                if old_value != new_value:
                     oldhtml, newhtml = \
-                        self.diff_strings(old_entity.val, new_entity.val)
+                        self.diff_strings(old_value, new_value)
                     lines.append({'class': 'changed',
                                   'oldval': oldhtml,
                                   'newval': newhtml,
-                                  'entity': entity})
-                if isinstance(old_entity, FluentEntity):
-                    # we're in FTL, compare attributes
-                    # "same, same, but different" to entities
-                    old_attrs = list(old_entity.attributes)
-                    old_attr_map = dict(
-                        (attr.key, i) for i, attr in enumerate(old_attrs))
-                    new_attrs = list(new_entity.attributes)
-                    new_attr_map = dict(
-                        (attr.key, i) for i, attr in enumerate(new_attrs))
-                    attr_ar = AddRemove()
-                    attr_ar.set_left(attr.key for attr in old_attrs)
-                    attr_ar.set_right(attr.key for attr in new_attrs)
-                    for action, attr_name in attr_ar:
-                        if action == 'delete':
-                            lines.append({
-                              'class': 'removed',
-                              'oldval': [
-                                  {'value':
-                                   old_attrs[old_attr_map[attr_name]].val}],
-                              'newval': '',
-                              'entity': entity + '.' + attr_name
-                            })
-                        elif action == 'add':
-                            lines.append({
-                              'class': 'added',
-                              'oldval': '',
-                              'newval': [
-                                  {'value':
-                                   new_attrs[new_attr_map[attr_name]].val}],
-                              'entity': entity + '.' + attr_name
-                            })
-                        else:
-                            old_val = old_attrs[old_attr_map[attr_name]].val
-                            new_val = new_attrs[new_attr_map[attr_name]].val
-                            if old_val != new_val:
-                                oldhtml, newhtml = \
-                                    self.diff_strings(old_val, new_val)
-                                lines.append({'class': 'changed',
-                                              'oldval': oldhtml,
-                                              'newval': newhtml,
-                                              'entity':
-                                                  entity + '.' +
-                                                  attr_name})
+                                  'entity': key})
 
         return lines
+
+    def content(self, path, rev):
+        content = self.client.cat([self.client.pathto(path)], rev=rev)
+        content = self._universal_newlines(content)
+        return content
+
+    def parse(self, parser, content):
+        '''Iterate over key-value pairs in compare-locales Entities.
+        For Fluent attributes, yield entity_id.attribute_name as key.
+        '''
+        parser.readContents(content)
+        for entity in parser:
+            yield (entity.key, entity.val)
+            if isinstance(entity, FluentEntity):
+                for fluent_attr in entity.attributes:
+                    yield (
+                        u'{}.{}'.format(entity.key, fluent_attr.key),
+                        fluent_attr.val)
 
     def diff_strings(self, oldval, newval):
         sm = SequenceMatcher(None, oldval, newval)
