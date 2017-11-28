@@ -217,6 +217,8 @@ class DiffView(View):
         ar.set_right(new_translations.keys())
         for action, key in ar:
             if action == 'delete':
+                if old_translations[key] is None:
+                    continue
                 lines.append({
                   'class': 'removed',
                   'oldval': [{'value': old_translations[key]}],
@@ -224,6 +226,8 @@ class DiffView(View):
                   'entity': key
                 })
             elif action == 'add':
+                if new_translations[key] is None:
+                    continue
                 lines.append({
                   'class': 'added',
                   'oldval': '',
