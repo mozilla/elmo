@@ -450,7 +450,44 @@ class TestDiffLines(TestCase):
             [u'Attrbute'])
         self.assertNotIn('class', attr_line['newval'][0])
 
-    def test_modify_fluent(self):
+    def test_modify_fluent_add_val(self):
+        view = ValuedDiffView(
+            rev1='a',
+            rev2='b',
+            content1=b'''key1 = My Value
+''',
+            content2=b'''key1 = My Value
+key2 = Other
+''',
+        )
+        lines = view.diffLines('file.ftl', 'changed')
+        self.assertListEqual(
+            lines,
+            [{'class': 'added',
+              'entity': u'key2',
+              'newval': [{'value': u'Other'}],
+              'oldval': ''}])
+
+    def test_modify_fluent_add_attr(self):
+        view = ValuedDiffView(
+            rev1='a',
+            rev2='b',
+            content1=b'''key1 = My Value
+''',
+            content2=b'''key1 = My Value
+key2
+    .attr = Attr
+''',
+        )
+        lines = view.diffLines('file.ftl', 'changed')
+        self.assertListEqual(
+            lines,
+            [{'class': 'added',
+              'entity': u'key2.attr',
+              'newval': [{'value': u'Attr'}],
+              'oldval': ''}])
+
+    def test_modify_fluent_val_attr(self):
         view = ValuedDiffView(
             rev1='a',
             rev2='b',
@@ -553,6 +590,43 @@ class TestDiffLines(TestCase):
               'newval': '',
               'oldval': [{'value': u'Old Value'}]}]
             )
+
+    def test_modify_fluent_remove_val(self):
+        view = ValuedDiffView(
+            rev1='a',
+            rev2='b',
+            content1=b'''key1 = My Value
+key2 = Other
+''',
+            content2=b'''key1 = My Value
+''',
+        )
+        lines = view.diffLines('file.ftl', 'changed')
+        self.assertListEqual(
+            lines,
+            [{'class': 'removed',
+              'entity': u'key2',
+              'oldval': [{'value': u'Other'}],
+              'newval': ''}])
+
+    def test_modify_fluent_remove_attr(self):
+        view = ValuedDiffView(
+            rev1='a',
+            rev2='b',
+            content1=b'''key1 = My Value
+key2
+    .attr = Attr
+''',
+            content2=b'''key1 = My Value
+''',
+        )
+        lines = view.diffLines('file.ftl', 'changed')
+        self.assertListEqual(
+            lines,
+            [{'class': 'removed',
+              'entity': u'key2.attr',
+              'oldval': [{'value': u'Attr'}],
+              'newval': ''}])
 
     def test_moved_to_fluent(self):
         view = ValuedDiffView(
