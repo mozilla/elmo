@@ -6,12 +6,20 @@ before_install:
     - git submodule update --init --recursive
 install:
     - pip install -U pip
-    - pip install -r requirements/dev.txt
+    - pip install -r requirements/env.txt
 before_script:
     #- cp elmo/settings/ldap_settings.py-dist elmo/settings/ldap_settings.py
     - cp elmo/settings/travis-local.py elmo/settings/local.py
     - mysql -e 'CREATE DATABASE IF NOT EXISTS test_elmo;'
+env:
+    - ELMO_TEST_COMPRESS_ENABLED=0 ELMO_TEST_COMPRESS_OFFLINE=0
+    - ELMO_TEST_COMPRESS_ENABLED=0 ELMO_TEST_COMPRESS_OFFLINE=1
+    - ELMO_TEST_COMPRESS_ENABLED=1 ELMO_TEST_COMPRESS_OFFLINE=0
+    - ELMO_TEST_COMPRESS_ENABLED=1 ELMO_TEST_COMPRESS_OFFLINE=1
 script:
+    - if [ "${ELMO_TEST_COMPRESS_ENABLED}" == "1" ] && [ "${ELMO_TEST_COMPRESS_OFFLINE}" == "1" ]; then
+        python manage.py compress --force;
+      fi
     - python manage.py test --noinput
 services:
     - mysql

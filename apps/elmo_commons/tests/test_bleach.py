@@ -8,7 +8,7 @@ from __future__ import absolute_import
 from django.template import Template
 from django.template import Context
 from elmo.test import TestCase
-from nose.tools import eq_, ok_
+
 
 class BleachFilterTestCase(TestCase):
 
@@ -26,13 +26,16 @@ class BleachFilterTestCase(TestCase):
         basic <strong>HTML</strong>
         but not so basic: <textarea>
         """.strip()
-        context = Context({'msg':msg})
+        context = Context({'msg': msg})
         rendered = template.render(context).strip()
 
-        ok_('<a href="http://mozilla.org/page?a=b#top" rel="nofollow">http://m'\
-            'ozilla.org/page?a=b#top</a>' in rendered)
-        ok_('<a href="http://mozilla.com" rel="nofollow">mozilla.com</a>'
-            in rendered)
-        ok_('&lt;script&gt;alert(\'xss\')&lt;/script&gt;' in rendered)
-        ok_('<strong>HTML</strong>' in rendered)
-        ok_('&lt;textarea&gt;' in rendered)
+        self.assertIn(
+            '<a href="http://mozilla.org/page?a=b#top" rel="nofollow">'
+            'http://mozilla.org/page?a=b#top</a>',
+            rendered)
+        self.assertIn(
+            '<a href="http://mozilla.com" rel="nofollow">mozilla.com</a>',
+            rendered)
+        self.assertIn('&lt;script&gt;alert(\'xss\')&lt;/script&gt;', rendered)
+        self.assertIn('<strong>HTML</strong>', rendered)
+        self.assertIn('&lt;textarea&gt;', rendered)

@@ -13,15 +13,18 @@ from life.models import Repository
 from ..utils import get_or_create_changeset
 
 
-@override_settings(REPOSITORY_BASE=tempfile.mkdtemp())
 class RepoTestBase(TestCase):
     def setUp(self):
         super(RepoTestBase, self).setUp()
-        self._base = settings.REPOSITORY_BASE
+        self._settings_context = override_settings(
+            REPOSITORY_BASE=tempfile.mkdtemp())
+        self._settings_context.enable()
+        self.repo = os.path.join(settings.REPOSITORY_BASE, self.repo_name)
 
     def tearDown(self):
         if os.path.isdir(settings.REPOSITORY_BASE):
             shutil.rmtree(settings.REPOSITORY_BASE)
+        self._settings_context.disable()
         super(RepoTestBase, self).tearDown()
 
     def dbrepo(self, name=None, changesets_from=None, revrange=None,

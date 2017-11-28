@@ -4,8 +4,15 @@
 from base import *
 
 # example of overriding installed apps
-#INSTALLED_APPS = list(INSTALLED_APPS) + ['django_extensions','debug_toolbar']
-#INSTALLED_APPS = tuple(INSTALLED_APPS)
+# INSTALLED_APPS = INSTALLED_APPS + ('django_extensions', 'debug_toolbar')
+if 'debug_toolbar' in INSTALLED_APPS:
+    MIDDLEWARE_CLASSES = (
+        ('debug_toolbar.middleware.DebugToolbarMiddleware',) +
+        MIDDLEWARE_CLASSES
+        )
+    INTERNAL_IPS = [
+        '127.0.0.1'
+    ]
 
 # You must set this to something different and unique
 SECRET_KEY = ''

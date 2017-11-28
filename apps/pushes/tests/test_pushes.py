@@ -3,10 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
 
-import os
 import datetime
 import time
-from nose.tools import eq_
 from elmo.test import TestCase
 from django.core.urlresolvers import reverse
 import hglib
@@ -23,17 +21,14 @@ class PushesTestCase(TestCase, EmbedsTestCaseMixin):
         """basic test rendering the pushlog"""
         url = reverse('pushes:pushlog')
         response = self.client.get(url)
-        eq_(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response.content)
         # like I said, a very basic test
 
 
 class TestHandlePushes(RepoTestBase):
 
-    def setUp(self):  # copied from DiffTestCase
-        super(TestHandlePushes, self).setUp()
-        self.repo_name = 'mozilla-central-original'
-        self.repo = os.path.join(self._base, self.repo_name)
+    repo_name = 'mozilla-central-original'
 
     def test_handlePushes(self):
         repo = Repository.objects.create(

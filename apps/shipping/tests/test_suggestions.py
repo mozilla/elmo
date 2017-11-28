@@ -5,8 +5,7 @@
 from collections import defaultdict
 import datetime
 import itertools
-from nose.tools import eq_, ok_
-from django.test import TestCase
+from elmo.test import TestCase
 from django.contrib.auth.models import User
 from shipping.models import (
     AppVersion,
@@ -66,7 +65,8 @@ class DataMixin(object):
             url=forest.url + self.locale.code + '/',
             forest=forest,
             locale=self.locale)
-        repo.changesets.set(Changeset.objects
+        repo.changesets.set(
+            Changeset.objects
             .filter(revision__startswith="000000000000"))
         tree = Tree.objects.create(code='fx_' + forest.name, l10n=forest)
         return repo, tree
@@ -164,32 +164,40 @@ class DataMixin(object):
 class TeamSnippetProcessMixin(object):
     def process(self, flags):
         context = teamsnippet(self.locale, [])['context']
-        ok_('applications' in context)
-        eq_(len(context['applications']), 1)
+        self.assertIn('applications', context)
+        self.assertEqual(len(context['applications']), 1)
         application, runs = context['applications'][0]
-        eq_(application, self.app)
+        self.assertEqual(application, self.app)
         run = self.check_runs_and_get(runs)
-        eq_(run['appversion'], self.av)
-        eq_(bool(run['is_active']), not(flags & self.NEEDS_UPDATE))
-        eq_(bool(run['accepted']),
+        self.assertEqual(run['appversion'], self.av)
+        self.assertEqual(
+            bool(run['is_active']),
+            not(flags & self.NEEDS_UPDATE))
+        self.assertEqual(
+            bool(run['accepted']),
             bool(flags & self.HAS_SIGNOFF) or bool(self.fallback))
-        eq_(bool(run['under_review']), bool(flags & self.PENDING))
+        self.assertEqual(
+            bool(run['under_review']),
+            bool(flags & self.PENDING))
         if flags & self.SUGGESTED:
-            eq_(run['is_active'], True)
-            eq_(run['suggested_shortrev'],
+            self.assertEqual(run['is_active'], True)
+            self.assertEqual(
+                run['suggested_shortrev'],
                 self.latest_run.revisions.all()[0].shortrev)
-            eq_(run['suggest_class'],
+            self.assertEqual(
+                run['suggest_class'],
                 'error' if self.latest_run.errors else
                 'warning' if self.latest_run.allmissing else 'success')
-            eq_(run['suggest_glyph'],
+            self.assertEqual(
+                run['suggest_glyph'],
                 'bolt' if self.latest_run.errors else
                 'graph' if self.latest_run.allmissing else 'badge')
         else:
-            eq_(run['suggested_shortrev'], None)
-            eq_(run['suggest_class'], None)
-            eq_(run['suggest_glyph'], None)
+            self.assertIsNone(run['suggested_shortrev'])
+            self.assertIsNone(run['suggest_class'])
+            self.assertIsNone(run['suggest_glyph'])
         signed = [a for a in (run.actions or []) if a.flag_name == 'accepted']
-        eq_(len(signed), 0)
+        self.assertEqual(len(signed), 0)
         if flags & self.REJECTED:
             pass
         # TODO: Test more actions
@@ -248,8 +256,8 @@ class TeamSnippetTest(TestCase, DataMixin, TeamSnippetProcessMixin):
 
     def check_runs_and_get(self, runs):
         """Subclass this if you run these tests on more than one run."""
-        eq_(len(runs), 1)
-        eq_(runs[0]['tree'], self.tree)
+        self.assertEqual(len(runs), 1)
+        self.assertEqual(runs[0]['tree'], self.tree)
         return runs[0]
 
     def test_no_progress(self):
@@ -414,63 +422,75 @@ class StatusProcessMixin(object):
             items[item['type']][item.get('id', item['label'])] = item
         # de-defaultdict
         items = dict(items.iteritems())
-        eq_(items['AppVer4Tree'], {self.tree.code: {
+        self.assertDictEqual(items['AppVer4Tree'], {self.tree.code: {
             'type': 'AppVer4Tree',
             'appversion': self.av.code,
             'label': self.tree.code}})
         self.check_runs(items['Build'])
         if flags & (self.PENDING | self.HAS_SIGNOFF | self.REJECTED):
-            eq_(len(items['SignOff']), 1)
+            self.assertEqual(len(items['SignOff']), 1)
             item = items['SignOff'][
                 '%s/%s' % (self.tree.code, self.locale.code)
             ]
-            eq_(item['tree'], self.tree.code)
+            self.assertEqual(item['tree'], self.tree.code)
             if flags & self.HAS_SIGNOFF:
-                eq_(item['state'], 'OK')
+                self.assertEqual(item['state'], 'OK')
                 if flags & self.SUGGESTED:
-                    eq_(item['state_glyph'], 'graph')
+                    self.assertEqual(item['state_glyph'], 'graph')
                 else:
-                    eq_(item['state_glyph'], 'check')
+                    self.assertEqual(item['state_glyph'], 'check')
             else:
-                eq_(item['state'], None)
-                eq_(item['state_glyph'], '')
-            eq_('pending' in item['signoff'], bool(flags & self.PENDING))
-            eq_('accepted' in item['signoff'], bool(flags & self.HAS_SIGNOFF))
-            eq_('rejected' in item['signoff'], bool(flags & self.REJECTED))
+                self.assertIsNone(item['state'])
+                self.assertEqual(item['state_glyph'], '')
+            self.assertEqual(
+                'pending' in item['signoff'],
+                bool(flags & self.PENDING))
+            self.assertEqual(
+                'accepted' in item['signoff'],
+                bool(flags & self.HAS_SIGNOFF))
+            self.assertEqual(
+                'rejected' in item['signoff'],
+                bool(flags & self.REJECTED))
             signoffs = set(item['signoff'])
-            eq_(len(signoffs), len(item['signoff']))
-            eq_(signoffs - set(('pending', 'accepted', 'rejected')),
+            self.assertEqual(len(signoffs), len(item['signoff']))
+            self.assertSetEqual(
+                signoffs - set(('pending', 'accepted', 'rejected')),
                 set([]))
             if flags & (self.PENDING | self.REJECTED):
-                eq_('review' in item['action'], bool(flags & self.PENDING))
-                eq_('rejected' in item['action'], bool(flags & self.REJECTED))
+                self.assertEqual(
+                    'review' in item['action'],
+                    bool(flags & self.PENDING))
+                self.assertEqual(
+                    'rejected' in item['action'],
+                    bool(flags & self.REJECTED))
             else:
-                ok_('actions' not in item)
+                self.assertNotIn('actions', item)
         else:
-            ok_('SignOff' not in items)
+            self.assertNotIn('SignOff', items)
         if flags & (self.NEEDS_UPDATE | self.SUGGESTED):
-            eq_(len(items['NewPush']), 1)
+            self.assertEqual(len(items['NewPush']), 1)
             item = items['NewPush'][
                 '%s/%s' % (self.tree.code, self.locale.code)
             ]
             if flags & self.SUGGESTED:
-                eq_(item['new_run'], 'sign off')
+                self.assertEqual(item['new_run'], 'sign off')
             else:
-                ok_('new_run' not in item)
+                self.assertNotIn('new_run', item)
             if flags & self.NEEDS_UPDATE:
-                eq_(item['needs_update'], True)
+                self.assertEqual(item['needs_update'], True)
             else:
-                ok_('needs_update' not in item)
+                self.assertNotIn('needs_update', item)
         else:
-            ok_('NewPush' not in items)
+            self.assertNotIn('NewPush', items)
 
 
 class StatusTest(StatusProcessMixin, TeamSnippetTest, DataMixin):
     """Test the dashboard status data without fallbacks or migrations.
     """
     def check_runs(self, runs):
-        eq_(len(runs), 1)
-        eq_(runs["%s/%s" % (self.tree.code, self.locale.code)]['tree'],
+        self.assertEqual(len(runs), 1)
+        self.assertEqual(
+            runs["%s/%s" % (self.tree.code, self.locale.code)]['tree'],
             self.tree.code)
 
 
@@ -505,7 +525,8 @@ class TeamSnippetMigrationTestcases(DataMixin):
         current_push_date = self.now()
         push_id = itertools.count(1)
         beta_push_id = itertools.count(1)
-        push = self.add_push(push_id, changesets[0],
+        push = self.add_push(
+            push_id, changesets[0],
             repository=self.aurora_repo,
             push_date=current_push_date)
         self.add_run(
@@ -516,7 +537,8 @@ class TeamSnippetMigrationTestcases(DataMixin):
             completion=80
         )
         self.pushes = [push]
-        betapush = self.add_push(beta_push_id, changesets[0],
+        betapush = self.add_push(
+            beta_push_id, changesets[0],
             repository=self.repo,
             push_date=current_push_date)
         self.add_run(
@@ -527,10 +549,14 @@ class TeamSnippetMigrationTestcases(DataMixin):
             completion=80
         )
         self.beta_pushes = [betapush]
-        self.pushes.append(self.add_push(push_id, changesets[1],
-            repository=self.aurora_repo))
-        self.pushes.append(self.add_push(push_id, changesets[2],
-            repository=self.aurora_repo))
+        self.pushes.append(
+            self.add_push(
+                push_id, changesets[1],
+                repository=self.aurora_repo))
+        self.pushes.append(
+            self.add_push(
+                push_id, changesets[2],
+                repository=self.aurora_repo))
         # MERGE DAY!
         avt1 = AppVersionTreeThrough.objects.create(
             start=self.now(),
@@ -550,22 +576,25 @@ class TeamSnippetMigrationTestcases(DataMixin):
             end=None)
         avt1.end = avt2.start
         avt1.save()
-        self.beta_pushes.append(self.add_push(beta_push_id,
-            changesets[1:3],
-            repository=self.repo))
+        self.beta_pushes.append(
+            self.add_push(beta_push_id,
+                          changesets[1:3],
+                          repository=self.repo))
         # post-merge work on beta, maybe
-        self.beta_pushes.append(self.add_push(beta_push_id,
-            changesets[3],
-            repository=self.repo))
-        self.beta_pushes.append(self.add_push(beta_push_id,
-            changesets[4],
-            repository=self.repo))
+        self.beta_pushes.append(
+            self.add_push(beta_push_id,
+                          changesets[3],
+                          repository=self.repo))
+        self.beta_pushes.append(
+            self.add_push(beta_push_id,
+                          changesets[4],
+                          repository=self.repo))
 
     def check_runs_and_get(self, runs):
-        eq_(len(runs), 2)
+        self.assertEqual(len(runs), 2)
         for run in runs:
             if run['appversion'] == self.av:
-                eq_(runs[0]['tree'], self.tree)
+                self.assertEqual(runs[0]['tree'], self.tree)
                 return run
 
     def test_nothing(self):
@@ -714,12 +743,16 @@ class TeamSnippetMigrationTest(
     pass
 
 
-class StatusMigrationTest(StatusProcessMixin, TeamSnippetMigrationTestcases, DataMixin, TestCase):
+class StatusMigrationTest(
+        StatusProcessMixin, TeamSnippetMigrationTestcases, DataMixin,
+        TestCase):
     """Test the dashboard status data without fallbacks or migrations.
     """
     def check_runs(self, runs):
-        eq_(len(runs), 2)
-        eq_(runs["%s/%s" % (self.aurora_tree.code, self.locale.code)]['tree'],
+        self.assertEqual(len(runs), 2)
+        self.assertEqual(
+            runs["%s/%s" % (self.aurora_tree.code, self.locale.code)]['tree'],
             self.aurora_tree.code)
-        eq_(runs["%s/%s" % (self.tree.code, self.locale.code)]['tree'],
+        self.assertEqual(
+            runs["%s/%s" % (self.tree.code, self.locale.code)]['tree'],
             self.tree.code)
