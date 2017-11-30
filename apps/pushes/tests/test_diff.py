@@ -487,6 +487,33 @@ key2
               'newval': [{'value': u'Attr'}],
               'oldval': ''}])
 
+    def test_modify_fluent_add_remove_none(self):
+        view = ValuedDiffView(
+            rev1='a',
+            rev2='b',
+            content1=b'''to_remove = Old Value
+    .attr = Attr
+to_add
+    .attr = Attr
+''',
+            content2=b'''to_remove
+    .attr = Attr
+to_add = New Value
+    .attr = Attr
+''',
+        )
+        lines = view.diffLines('file.ftl', 'changed')
+        self.assertListEqual(
+            lines,
+            [{'class': 'removed',
+              'entity': u'to_remove',
+              'newval': '',
+              'oldval': [{'value': u'Old Value'}]},
+             {'class': 'added',
+              'entity': u'to_add',
+              'newval': [{'value': u'New Value'}],
+              'oldval': ''}])
+
     def test_modify_fluent_val_attr(self):
         view = ValuedDiffView(
             rev1='a',
