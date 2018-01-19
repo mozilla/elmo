@@ -42,13 +42,9 @@ def setupBridge(master, settings, config):
     on the given settings.
     '''
 
-    import bb2mbdb.utils
-    import mbdb.models
     from bb2mbdb.utils import modelForSource, modelForChange, modelForLog, \
         timeHelper
     from mbdb.models import Master, Slave, Builder, BuildRequest, Build, Change
-
-    from django.db import transaction
 
     dbm, new_master = Master.objects.get_or_create(name=master)
 
@@ -67,18 +63,30 @@ def setupBridge(master, settings, config):
     config['schedulers'].insert(0, Scheduler('bb2mbdb'))
 
     class ChangeSource(base.ChangeSource):
+        '''Fake ChangeSource to sync ChangeMaster's nextNumber
+        with mbdb.
+        If mbdb is higher, set nextNumber and clear changes, ChangeMaster
+        likely restarted from an unclean old state.
+        Otherwise, we're fine, just let ChangeMaster do its thing. Also,
+        mbdb might have gotten the last recent changes pruned by
+        the clean_builds cron job.
+        '''
         def startService(self):
-            if self.parent.nextNumber == 1:
-                try:
-                    latest_changenumber = (
-                        Change.objects
-                        .order_by('-number')
-                        .values_list('number', flat=True)[0]
-                    )
+            try:
+                latest_changenumber = (
+                    Change.objects
+                    .order_by('-number')
+                    .values_list('number', flat=True)[0]
+                )
+                if latest_changenumber >= self.parent.nextNumber:
                     self.parent.nextNumber = latest_changenumber + 1
+                    del self.parent.changes[:]
                     log.msg('Resetting ChangeMaster.nextNumber')
-                except IndexError:
-                    pass
+                else:
+                    log.msg('ChangeMaster.nextNumber is OK')
+            except IndexError:
+                log.msg('No changes in mbdb, leaving ChangeMaster alone')
+                pass
     if 'change_source' not in config:
         config['change_source'] = []
     config['change_source'].insert(0, ChangeSource())
