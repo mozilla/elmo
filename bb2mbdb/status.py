@@ -164,6 +164,9 @@ def setupBridge(master, settings, config):
 
     class MyStatusReceiver(StatusReceiverMultiService):
         '''StatusReceiver for buildbot to db bridge.
+
+        Also ensure that the buildbot builder status have the right
+        startup data corresponding to the mbdb models.
         '''
         requestsForBuild = defaultdict(list)
 
@@ -187,6 +190,17 @@ def setupBridge(master, settings, config):
             if builder.category:
                 dbbuilder.category = builder.category
             dbbuilder.save()
+            try:
+                last_build_number = (
+                    dbbuilder.builds
+                    .order_by('-buildnumber')
+                    .values_list('buildnumber', flat=True)[0]
+                )
+                if last_build_number >= builder.nextBuildNumber:
+                    builder.nextBuildNumber = last_build_number + 1
+            except IndexError:
+                # new builder according to our db, that's OK
+                pass
             log.msg("added %s to mbdb" % builderName)
             return self
 
