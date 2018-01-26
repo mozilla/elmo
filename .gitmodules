@@ -1,3 +1,0 @@
-[submodule "vendor-local/src/compare-locales"]
-	path = vendor-local/src/compare-locales
-	url = https://github.com/Pike/compare-locales.git
