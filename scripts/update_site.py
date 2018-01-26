@@ -50,10 +50,6 @@ def update_site(verbose):
         sys.stdout.write("git merge --ff-only\n")
     subprocess.check_call(
         ['git', 'merge', '--ff-only', 'FETCH_HEAD'], cwd=basedir)
-    if verbose:
-        sys.stdout.write("git submodule update --init --recursive\n")
-    subprocess.check_call(
-        ['git', 'submodule', 'update', '--init', '--recursive'], cwd=basedir)
     # do install, update the commands module first
     import update_commands
     cmds = update_commands.InstallPhase(
