@@ -37,7 +37,7 @@ class Command(BaseCommand):
     props = re.compile('^; (.*?) : (.*?)$', re.M | re.S)
     params = re.compile('%\((.*?)\)s')
 
-    def handle(self, *args, **options):
+    def handle(self, **options):
         for alias, pn in (('fx', 'L10n:Bugogram'),
                           ('fennec', 'L10n:Mobile/Bugogram')):
 

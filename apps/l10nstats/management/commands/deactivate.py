@@ -13,13 +13,11 @@ from l10nstats.models import Active
 
 
 class Command(BaseCommand):
-    option_list = BaseCommand.option_list
 
-    def handle(self, *args, **kwargs):
-        self.handleApps(*args, **kwargs)
-        self.handleDirs(*args, **kwargs)
+    def handle(self, **kwargs):
+        self.handleApps(**kwargs)
 
-    def handleApps(self, *args, **kwargs):
+    def handleApps(self, **kwargs):
         l10nbuilds = urlopen(
             'https://raw.githubusercontent.com/Pike/master-ball/'
             'master/l10n-master/l10nbuilds.ini')
@@ -55,20 +53,3 @@ class Command(BaseCommand):
         s = raw_input('Remove %s? [Y/n] ' % obslocs)
         if s.lower() == 'y' or s == '':
             obs.delete()
-
-    def handleDirs(self, *args, **kwargs):
-        dirbuilds = json.load(urlopen(
-            'https://raw.githubusercontent.com/Pike/master-ball/'
-            'master/l10n-master/dir-builds.json'))
-        for treedata in dirbuilds:
-            obs = (Active.objects
-                   .filter(run__tree__code=treedata['name'])
-                   .exclude(run__locale__code__in=treedata['locales'])
-                   .order_by('run__locale__code'))
-            obslocs = ' '.join(obs.values_list('run__locale__code', flat=True))
-            if not obslocs:
-                self.stdout.write(' OK\n')
-                continue
-            s = raw_input('Remove %s? [Y/n] ' % obslocs)
-            if s.lower() == 'y' or s == '':
-                obs.delete()

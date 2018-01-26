@@ -139,10 +139,9 @@ class Repl(cmd.Cmd):
 
 
 class Command(BaseCommand):
-    option_list = BaseCommand.option_list
 
     help = 'REPL to clean up old trees and/or their build data'
 
-    def handle(self, *args, **options):
+    def handle(self, **options):
         repl = Repl(stdout=self.stdout)
         repl.cmdloop()

@@ -216,6 +216,15 @@ class DiffView(View):
         ar.set_left(old_translations.keys())
         ar.set_right(new_translations.keys())
         for action, key in ar:
+            if action == 'equal':
+                # In Fluent, values can be added or removed if an Attribute
+                # is there. As we're faking separate localizations for those,
+                # pretend we're adding or removing the whole entity.
+                # We detect this by checking the translation for None.
+                if old_translations[key] is None:
+                    action = 'add'
+                elif new_translations[key] is None:
+                    action = 'delete'
             if action == 'delete':
                 if old_translations[key] is None:
                     continue

@@ -20,7 +20,7 @@ class LoggingCommand(BaseCommand):
         def emit(self, record):
             pass
 
-    def handle(self, *args, **options):
+    def handle(self, **options):
         handler = self.Logger(self)
         logging.getLogger('elasticsearch').addHandler(handler)
-        self.handleWithLogging(*args, **options)
+        self.handleWithLogging(**options)

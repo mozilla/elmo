@@ -32,7 +32,7 @@ class Command(LoggingCommand):
         parser.add_argument('--replicas',
                             help="Number of replicas to create")
 
-    def handleWithLogging(self, *args, **options):
+    def handleWithLogging(self, **options):
         if not (hasattr(settings, 'ES_COMPARE_INDEX') and
                 hasattr(settings, 'ES_COMPARE_HOST')):
             raise CommandError('ES_COMPARE_INDEX or ES_COMPARE_HOST'

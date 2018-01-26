@@ -23,7 +23,7 @@ class RepositoryCommand(BaseCommand):
         parser.add_argument('repos', nargs='*',
                             help='Only repositories starting with this')
 
-    def handle(self, *args, **options):
+    def handle(self, **options):
         self.verbosity = options.pop('verbosity', 1)
         self.handleOptions(**options)
         import hglib

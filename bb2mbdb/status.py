@@ -9,6 +9,7 @@ from __future__ import absolute_import
 import os
 import os.path
 
+from buildbot.changes import base
 from buildbot.status.base import StatusReceiverMultiService, StatusReceiver
 from buildbot.scheduler import BaseScheduler
 from twisted.python import log
@@ -24,18 +25,14 @@ The main entry point for buildbot status notifications are a
 - fake scheduler to get all changes, and a
 - StatusReceiver to get all builder.
 
+Also add a fake ChangeSource, so that we can ensure the nextNumber
+on ChangeMaster is set if we're resetting the master. That way, we don't
+introduce conflicts with existing mbdb data.
+
 Both are set up by calling into
  setupBridge()
 so that you can pass in a single settings.py, and a BuildMasterConfig.
 '''
-
-# Notes on transaction handling:
-# There are two patterns for the transaction handling in the status
-# plugin below. Firstly, for methods that simply update the db, the
-# handlers are decorated with @transation.commit_on_success. For
-# handlers that attach new handlers, the decoration is
-# @transition.commit_manually, and transaction.commit() is called after
-# the child db objects is got, and before the child listener is created.
 
 
 def setupBridge(master, settings, config):
@@ -45,13 +42,9 @@ def setupBridge(master, settings, config):
     on the given settings.
     '''
 
-    import bb2mbdb.utils
-    import mbdb.models
     from bb2mbdb.utils import modelForSource, modelForChange, modelForLog, \
         timeHelper
-    from mbdb.models import Master, Slave, Builder, BuildRequest, Build
-
-    from django.db import transaction
+    from mbdb.models import Master, Slave, Builder, BuildRequest, Build, Change
 
     dbm, new_master = Master.objects.get_or_create(name=master)
 
@@ -68,6 +61,35 @@ def setupBridge(master, settings, config):
     if 'schedulers' not in config:
         config['schedulers'] = []
     config['schedulers'].insert(0, Scheduler('bb2mbdb'))
+
+    class ChangeSource(base.ChangeSource):
+        '''Fake ChangeSource to sync ChangeMaster's nextNumber
+        with mbdb.
+        If mbdb is higher, set nextNumber and clear changes, ChangeMaster
+        likely restarted from an unclean old state.
+        Otherwise, we're fine, just let ChangeMaster do its thing. Also,
+        mbdb might have gotten the last recent changes pruned by
+        the clean_builds cron job.
+        '''
+        def startService(self):
+            try:
+                latest_changenumber = (
+                    Change.objects
+                    .order_by('-number')
+                    .values_list('number', flat=True)[0]
+                )
+                if latest_changenumber >= self.parent.nextNumber:
+                    self.parent.nextNumber = latest_changenumber + 1
+                    del self.parent.changes[:]
+                    log.msg('Resetting ChangeMaster.nextNumber')
+                else:
+                    log.msg('ChangeMaster.nextNumber is OK')
+            except IndexError:
+                log.msg('No changes in mbdb, leaving ChangeMaster alone')
+                pass
+    if 'change_source' not in config:
+        config['change_source'] = []
+    config['change_source'].insert(0, ChangeSource())
 
     class StepReceiver(StatusReceiver):
         '''Build- and StatusReceiver helper objects to receive all
@@ -142,6 +164,9 @@ def setupBridge(master, settings, config):
 
     class MyStatusReceiver(StatusReceiverMultiService):
         '''StatusReceiver for buildbot to db bridge.
+
+        Also ensure that the buildbot builder status have the right
+        startup data corresponding to the mbdb models.
         '''
         requestsForBuild = defaultdict(list)
 
@@ -165,6 +190,17 @@ def setupBridge(master, settings, config):
             if builder.category:
                 dbbuilder.category = builder.category
             dbbuilder.save()
+            try:
+                last_build_number = (
+                    dbbuilder.builds
+                    .order_by('-buildnumber')
+                    .values_list('buildnumber', flat=True)[0]
+                )
+                if last_build_number >= builder.nextBuildNumber:
+                    builder.nextBuildNumber = last_build_number + 1
+            except IndexError:
+                # new builder according to our db, that's OK
+                pass
             log.msg("added %s to mbdb" % builderName)
             return self
 

@@ -34,7 +34,7 @@ class Command(BaseCommand):
         parser.add_argument('--limit', default=None, type=int,
                     help="Limit cycles, a cycle is %d builds" % self.chunksize)
 
-    def handle(self, *args, **options):
+    def handle(self, **options):
         dry_run = options['dry_run']
         backup_dir = options['backup']
         master_for_builder = dict(
