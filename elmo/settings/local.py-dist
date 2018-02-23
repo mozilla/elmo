@@ -1,8 +1,6 @@
 # This is an example settings/local.py file.
 # Copy it and add your local settings here.
 
-from base import *
-
 # example of overriding installed apps
 # INSTALLED_APPS = INSTALLED_APPS + ('django_extensions', 'debug_toolbar')
 if 'debug_toolbar' in INSTALLED_APPS:
@@ -46,20 +44,15 @@ CACHES = {
     }
 }
 
-ADMINS = (
-    # ('Your Name', 'your_email@domain.com'),
-)
-MANAGERS = ADMINS
-
 # these are appropriate settings only for local development
-DEBUG = TEMPLATES[0]['OPTIONS']['debug'] = True
+DEBUG = True
 COMPRESS_ENABLED = False
 SESSION_COOKIE_SECURE = False
 
 
-# if you want to test the Sentry (errormill.mozilla.org)
+# if you want to test the Sentry (https://sentry.prod.mozaws.net/operations)
 #RAVEN_CONFIG = {
-#    'dsn': ''  # see https://errormill.mozilla.org/
+#    'dsn': ''  # see https://sentry.prod.mozaws.net/operations
 #}
 
 # Feed for example, to avoid having to do a HTTP call for the feed use:
@@ -79,3 +72,7 @@ except ImportError:
     import os.path as op
     if op.isfile(op.join(op.dirname(__file__), 'mounts_local.py')):
 	raise
+try:
+    from . import ldap_settings
+except ImportError:
+    pass
