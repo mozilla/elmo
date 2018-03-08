@@ -20,7 +20,7 @@ mkdir -p /app/elmo/collected/static/l10nstats
 (cd /app/elmo/ && ${CMDPREFIX} /app/env/bin/python manage.py collectstatic --no-input)
 (cd /app/elmo/ && ${CMDPREFIX} /app/env/bin/python manage.py compress -f)
 
-if [ 1 ] || [ "$1" == "--dev" ]; then
+if [ "$1" == "--dev" ]; then
     # Run with manage.py
     echo "******************************************************************"
     echo "Running webapp in local dev environment."
@@ -30,10 +30,11 @@ if [ 1 ] || [ "$1" == "--dev" ]; then
 
 else
     # Run uwsgi
-    ${CMDPREFIX} uwsgi --pythonpath /app/webapp-django/ \
+    ${CMDPREFIX} uwsgi --venv /app/env/ \
+                 --pythonpath /app/elmo/:/app/elmo/apps/ \
                  --master \
                  --need-app \
-                 --wsgi webapp-django.wsgi.socorro-crashstats \
+                 --wsgi-file  /app/elmo/wsgi/elmo.wsgi \
                  --buffer-size "${BUFFER_SIZE}" \
                  --enable-threads \
                  --processes "${NUM_WORKERS}" \

@@ -7,6 +7,7 @@ RUN groupadd --gid 10001 app && useradd -g app --uid 10001 --shell /usr/sbin/nol
 # Install OS-level things
 COPY ./docker/set_up.sh /tmp/
 RUN DEBIAN_FRONTEND=noninteractive /tmp/set_up.sh
+RUN pip install uwsgi==2.0.17
 
 # create virtualenv for elmo
 RUN pip install -U virtualenv
