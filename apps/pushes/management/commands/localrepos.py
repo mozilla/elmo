@@ -43,9 +43,9 @@ class Command(BaseCommand):
             repos = Repository.objects.all()
         latest_cs = Changeset.objects.order_by('-pk')[0].id
 
-        for name, url in repos.values_list('name', 'url'):
-            repopath = str(resolve(name))
-            self.stdout.write(name + '\n')
+        for repo in repos:
+            repopath = str(repo.local_path())
+            self.stdout.write(repo.name + '\n')
             if not os.path.isdir(os.path.join(repopath, '.hg')):
                 # new repo, need to clone
                 if os.path.isdir(repopath):
@@ -63,9 +63,15 @@ class Command(BaseCommand):
                              % str(e))
                         )
                         continue
-                hglib.clone(str(url), repopath)
+                try:
+                    hglib.clone(str(repo.url), repopath, noupdate=not update)
+                except hglib.error.CommandError as e:
+                    self.stdout.write('Clone problems, %s' % str(e))
             else:
                 with hglib.open(repopath) as client:
-                    client.pull(**pull_args)
+                    try:
+                        client.pull(**pull_args)
+                    except hglib.error.CommandError as e:
+                        self.stdout.write('Pull problems, %s' % str(e))
 
         open(resolve('.latest_cs'), 'w').write('%i\n' % latest_cs)
