@@ -61,6 +61,9 @@ if 'ELMO_SENTRY_DSN' in os.environ:
 if 'ELMO_INCLUDE_ANALYTICS' in os.environ:
     INCLUDE_ANALYTICS = True
 
+if 'ELMO_MEMCACHED' in os.environ:
+    CACHES['default']['LOCATION'] = os.environ['ELMO_MEMCACHED']
+
 # check ldap config
 if all('LDAP_{}'.format(s) in globals() for s in ('HOST', 'DN', 'PASSWORD')):
     import ldap
