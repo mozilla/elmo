@@ -17,6 +17,11 @@ jobs:
       - image: circleci/mysql:5.7
       - image: memcached
 
+    branches:
+      only:
+        - master
+        - develop
+
     working_directory: ~/repo
 
     steps:
