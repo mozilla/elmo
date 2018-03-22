@@ -1,0 +1,66 @@
+# Python CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+#
+version: 2
+jobs:
+  build:
+    docker:
+      # specify the version you desire here
+      # use `-browsers` prefix for selenium tests, e.g. `3.6.1-browsers`
+      - image: circleci/python:3.6.1
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+      - image: circleci/mysql:5.7
+      - image: memcached
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      # - restore_cache:
+      #     keys:
+      #     - TBD
+
+      - setup_remote_docker
+
+      - run:
+          name: build docker images
+          command: |
+            docker build -f docker/Dockerfile -t elmo_webapp .
+
+      - run:
+          name: launch memcached
+          command: |
+            docker run --name my-memcache -d memcached
+
+      - run:
+          name: test container
+          command: |
+            docker run \
+            --rm -t \
+            --link my-memcache:memcache \
+            --env-file .circleci/test.env \
+            -e ELMO_TEST_COMPRESS_ENABLED=0 -e ELMO_TEST_COMPRESS_OFFLINE=0 \
+            elmo_webapp \
+            /app/env/bin/python manage.py test -k --noinput
+
+      - run:
+          name: stop memcached
+          command: |
+            docker stop my-memcache
+
+      - run:
+          name: upload docker images
+          command: |
+            ./.circleci/docker-hub-upload elmo_webapp
+
+      # - save_cache:
+      #     paths:
+      #       - ./venv
+      #     key: TBD

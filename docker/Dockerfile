@@ -16,5 +16,6 @@ COPY ./requirements env/requirements
 RUN ./env/bin/pip install -r env/requirements/dev.txt
 USER app
 COPY --chown=app:app ./ ./elmo/
+WORKDIR /app/elmo
 
 CMD ["/app/elmo/docker/run_webapp.sh"]
