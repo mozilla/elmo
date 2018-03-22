@@ -32,6 +32,8 @@ try:
             },
         },
     }
+    if 'ELMO_TEST_DB_NAME' in os.environ:
+        DATABASES['default']['TEST']['NAME'] = os.environ['ELMO_TEST_DB_NAME']
 except KeyError:
     pass
 for local_var, env_var in (
