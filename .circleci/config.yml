@@ -19,7 +19,7 @@ jobs:
       only:
         - master
         - develop
-        - /feature\/.*/
+        - /pull\/.*/
 
     working_directory: ~/repo
 
@@ -34,11 +34,11 @@ jobs:
       - run:
           name: Install Docker Compose
           command: |
-            curl -L https://github.com/docker/compose/releases/download/1.20.1/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+            curl -L https://github.com/docker/compose/releases/download/1.20.1/docker-compose-`uname -s`-`uname -m` -o ~/docker-compose
             chmod +x ~/docker-compose
             sudo mv ~/docker-compose /usr/local/bin/docker-compose
-      - setup_remote_docker
-        version: 17.11.0-ce
+      - setup_remote_docker:
+          version: 17.11.0-ce
 
       - run:
           name: build docker images
@@ -46,14 +46,19 @@ jobs:
             docker-compose build
 
       - run:
+          name: launch mysql
+          command: |
+            docker-compose up -d mysql
+
+      - run:
           name: launch memcached
           command: |
             docker-compose up -d memcached
 
       - run:
-          name: launch mysql
+          name: container startup memorial wait
           command: |
-            docker-compose up -d mysql
+            sleep 5
 
       - run:
           name: test container
