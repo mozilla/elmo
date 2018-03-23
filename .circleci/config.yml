@@ -14,13 +14,12 @@ jobs:
       # CircleCI maintains a library of pre-built images
       # documented at https://circleci.com/docs/2.0/circleci-images/
       # - image: circleci/postgres:9.4
-      - image: circleci/mysql:5.7
-      - image: memcached
 
     branches:
       only:
         - master
         - develop
+        - /feature\/.*/
 
     working_directory: ~/repo
 
@@ -32,34 +31,42 @@ jobs:
       #     keys:
       #     - TBD
 
+      - run:
+          name: Install Docker Compose
+          command: |
+            curl -L https://github.com/docker/compose/releases/download/1.20.1/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+            chmod +x ~/docker-compose
+            sudo mv ~/docker-compose /usr/local/bin/docker-compose
       - setup_remote_docker
+        version: 17.11.0-ce
 
       - run:
           name: build docker images
           command: |
-            docker build -f docker/Dockerfile -t elmo_webapp .
+            docker-compose build
 
       - run:
           name: launch memcached
           command: |
-            docker run --name my-memcache -d memcached
+            docker-compose up -d memcached
+
+      - run:
+          name: launch mysql
+          command: |
+            docker-compose up -d mysql
 
       - run:
           name: test container
           command: |
-            docker run \
-            --rm -t \
-            --link my-memcache:memcache \
-            -p 3306:3306/tcp \
-            --env-file .circleci/test.env \
+            docker-compose run --rm \
             -e ELMO_TEST_COMPRESS_ENABLED=0 -e ELMO_TEST_COMPRESS_OFFLINE=0 \
             elmo_webapp \
             /app/env/bin/python manage.py test -k --noinput
 
       - run:
-          name: stop memcached
+          name: stop dockers
           command: |
-            docker stop my-memcache
+            docker-compose down
 
       - run:
           name: upload docker images
