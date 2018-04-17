@@ -15,10 +15,10 @@ BUFFER_SIZE=${BUFFER_SIZE:-"16384"}
 PORT=${PORT:-"8000"}
 NUM_WORKERS=${NUM_WORKERS:-"6"}
 
-mkdir -p /app/elmo/collected/static/l10nstats
-(cd /app/elmo/ && ${CMDPREFIX} /app/env/bin/python manage.py progress)
-(cd /app/elmo/ && ${CMDPREFIX} /app/env/bin/python manage.py collectstatic --no-input)
-(cd /app/elmo/ && ${CMDPREFIX} /app/env/bin/python manage.py compress -f)
+mkdir -p /app/collected/static/l10nstats
+(cd /app/ && ${CMDPREFIX} /app/env/bin/python manage.py progress)
+(cd /app/ && ${CMDPREFIX} /app/env/bin/python manage.py collectstatic --no-input)
+(cd /app/ && ${CMDPREFIX} /app/env/bin/python manage.py compress -f)
 
 if [ "$1" == "--dev" ]; then
     # Run with manage.py
@@ -26,15 +26,15 @@ if [ "$1" == "--dev" ]; then
     echo "Running webapp in local dev environment."
     echo "Connect with your browser using: http://localhost:8000/ "
     echo "******************************************************************"
-    cd /app/elmo/ && ${CMDPREFIX} /app/env/bin/python manage.py runserver 0.0.0.0:8000
+    cd /app/ && ${CMDPREFIX} /app/env/bin/python manage.py runserver 0.0.0.0:8000
 
 else
     # Run uwsgi
     ${CMDPREFIX} uwsgi --venv /app/env/ \
-                 --pythonpath /app/elmo/:/app/elmo/apps/ \
+                 --pythonpath /app/:/app/apps/ \
                  --master \
                  --need-app \
-                 --wsgi-file  /app/elmo/wsgi/elmo.wsgi \
+                 --wsgi-file  /app/wsgi/elmo.wsgi \
                  --buffer-size "${BUFFER_SIZE}" \
                  --enable-threads \
                  --processes "${NUM_WORKERS}" \

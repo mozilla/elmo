@@ -15,7 +15,6 @@ RUN virtualenv env
 COPY ./requirements env/requirements
 RUN ./env/bin/pip install -r env/requirements/dev.txt
 USER app
-COPY --chown=app:app ./ ./elmo/
-WORKDIR /app/elmo
+COPY --chown=app:app . /app/
 
-CMD ["/app/elmo/docker/run_webapp.sh"]
+CMD ["/app/docker/run_webapp.sh"]
