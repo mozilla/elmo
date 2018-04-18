@@ -14,6 +14,8 @@ RUN pip install -U virtualenv
 RUN virtualenv env
 COPY ./requirements env/requirements
 RUN ./env/bin/pip install -r env/requirements/dev.txt
+RUN mkdir /app/collected
+RUN chown app:app /app/collected
 USER app
 COPY --chown=app:app . /app/
 
