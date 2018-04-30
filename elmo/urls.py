@@ -33,6 +33,9 @@ urlpatterns = [
     url(r'^contribute.json$',
         TemplateView.as_view(template_name='contribute.json',
                              content_type='application/json')),
+    url(r'^__version__$',
+        TemplateView.as_view(template_name='version.json',
+                             content_type='application/json')),
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
     # to INSTALLED_APPS to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),

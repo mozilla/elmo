@@ -1,0 +1,95 @@
+# Python CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+#
+version: 2
+jobs:
+  build:
+    docker:
+      # specify the version you desire here
+      # use `-browsers` prefix for selenium tests, e.g. `3.6.1-browsers`
+      - image: circleci/python:3.6.1
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+
+    branches:
+      only:
+        - master
+        - develop
+        - /pull\/.*/
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      # - restore_cache:
+      #     keys:
+      #     - TBD
+
+      - run:
+          name: Install Docker Compose
+          command: |
+            curl -L https://github.com/docker/compose/releases/download/1.20.1/docker-compose-`uname -s`-`uname -m` -o ~/docker-compose
+            chmod +x ~/docker-compose
+            sudo mv ~/docker-compose /usr/local/bin/docker-compose
+      - setup_remote_docker:
+          version: 17.11.0-ce
+
+      - run:
+          name: Create version.json
+          command: |
+            # create a version.json per https://github.com/mozilla-services/Dockerflow/blob/master/docs/version_object.md
+            printf '{"commit":"%s","version":"%s","source":"https://github.com/%s/%s","build":"%s"}\n' \
+            "$CIRCLE_SHA1" \
+            "$CIRCLE_TAG" \
+            "$CIRCLE_PROJECT_USERNAME" \
+            "$CIRCLE_PROJECT_REPONAME" \
+            "$CIRCLE_BUILD_URL" > version.json
+
+      - run:
+          name: launch mysql
+          command: |
+            docker-compose up -d mysql
+
+      - run:
+          name: launch memcached
+          command: |
+            docker-compose up -d memcached
+
+      - run:
+          name: build docker images
+          command: |
+            docker-compose build
+
+      - run:
+          name: container startup memorial wait
+          command: |
+            sleep 5
+
+      - run:
+          name: test container
+          command: |
+            docker-compose run --rm \
+            -e ELMO_TEST_COMPRESS_ENABLED=0 -e ELMO_TEST_COMPRESS_OFFLINE=0 \
+            elmo_webapp \
+            /app/env/bin/python manage.py test -k --noinput
+
+      - run:
+          name: stop dockers
+          command: |
+            docker-compose down
+
+      - run:
+          name: upload docker images
+          command: |
+            ./.circleci/docker-hub-upload elmo_webapp
+
+      # - save_cache:
+      #     paths:
+      #       - ./venv
+      #     key: TBD

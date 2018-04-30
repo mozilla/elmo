@@ -17,10 +17,10 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
     "blocked": "fx-l10n-tracker"
   }, 
   {
-    "comment": "We need a Bugzilla component for the '{{ loc }}' Localization, and a new value for the Locale custom field.\n\nPlease add a new value for the custom field 'Locale': {{ loc }} / {{ language }}\n\nThe details for the component should be:\n\nProduct: Mozilla Localizations\nComponent: {{ loc }} / {{ language }}\nDescription: {{ language }} Localization (...)\n\nAssignee: nobody\nQA Contact: Empty\n\n{{ name }}, could you provide a utf-8 encoded translation of '{{ language }} Localization' to include in the component description?\n\nOnce we have the description, this bug will be fixed by Mozilla staff.", 
+    "comment": "We need a Bugzilla component for the '{{ loc }}' Localization, and a new value for the Locale custom field.\n\nPlease add a new value for the custom field 'Locale': {{ loc }} / {{ language }}\n\nThe details for the component should be:\n\nProduct: Mozilla Localizations\nComponent: {{ loc }} / {{ language }}\nDescription: {{ language }} Localization (...)\n\nAssignee: nobody\nQA Contact: Empty\nTriage owner: :flod (francesco.lodolo@gmail.com)\n\n{{ name }}, could you provide a utf-8 encoded translation of '{{ language }} Localization' to include in the component description?\n\nOnce we have the description, this bug will be fixed by Mozilla staff.", 
     "product": "bugzilla.mozilla.org", 
     "title": "bugzilla", 
-    "cc": "{{ bugmail }},l10n@mozilla.com", 
+    "cc": "{{ bugmail }},l10n@mozilla.com,francesco.lodolo@gmail.com", 
     "rep_platform": "All", 
     "short_desc": "Create l10n Bugzilla component for {{ language }} ({{ loc }}), add value for Locale field", 
     "component": "Administration", 
@@ -39,7 +39,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "Please create a new hg repository for Firefox localization. The repository should be:\n\n- l10n-central/{{ loc }}/\n\nwith the common scm_l10n permissions and hooks, both python:mozhghooks.pushlog and python:mozhghooks.single_head_per_branch.hook.\n\nPlease make sure that dxr is updated to pick up the new repository.\n\nPS: to be clear to the localization team, this bug is handled by Mozilla staff.", 
+    "comment": "Please create a new hg repository for Firefox localization. The repository should be:\n\n- l10n-central/{{ loc }}/\n\nwith the common scm_l10n permissions and hooks, both python:mozhghooks.pushlog and python:mozhghooks.single_head_per_branch.hook.\n\nWe also need to initialize the repository with content from this external repository https://bitbucket.org/mozilla-l10n/{{ loc }}\n\nPlease make sure that dxr is updated to pick up the new repository.\n\nPS: to be clear to the localization team, this bug is handled by Mozilla staff.", 
     "product": "Developer Services", 
     "title": "hg_repo", 
     "cc": "l10n@mozilla.com", 
@@ -51,12 +51,12 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
   }, 
   {
     "comment": "We need to add '{{ loc }}' to browser/locales/all-locales on mozilla-central.\n\nPS: to be clear to the localization team, this bug is handled by Mozilla staff.", 
-    "product": "Core", 
+    "product": "Firefox Build System", 
     "title": "build", 
     "cc": "l10n@mozilla.com", 
     "rep_platform": "All", 
     "short_desc": "Add '{{ loc }}' to Firefox Nightly build", 
-    "component": "Build Config", 
+    "component": "General", 
     "op_sys": "All", 
     "blocked": "fx-l10n-{{ loc }}"
   }, 
@@ -72,7 +72,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "We want to ship Firefox with a good list of search engines for {{ language }}. \n\nWe'll do this in three phases: First, the localization team and flod (Francesco Lodolo) will look at the market for the language and come up with a good set of search providers. {{ name }}, we'll need your input on this. The guidelines for making recommendations are found on <https://wiki.mozilla.org/L10n:Firefox/Productization>. \n\nWe currently use this set for en-US, to which we can fall back in the case of lacking localized alternatives:\nGoogle, Yahoo!, Bing, Amazon, DuckDuckGo, Twitter, Wikipedia, eBay\n\nAdding brand new search engines, that not yet ship in any other language, needs approval from Business Development and requires more time to get authorization and assets from the provider. To avoid blocking the initial set up, this type of requests should be split into follow up bugs. {{ name }}, we'll likely need your help to at least get the owner's contact information.\n\nOnce we have a specification on what the search engines for {{ language }} should look like, flod and the localization team will work on an implementation on that. flod will create and attach patches for the desired changes and get them reviewed. After a successful review, flod will land them. {{ name }}, if you're interested, you could create the patches, too. You'd ask flod for review on those before landing.\n\nPlease don't commit any modifications in browser/searchplugins to the hg repository without a patch reviewed by flod, Stas, Axel or someone else appointed by flod. The data here is sensitive to users and our search partners, thus requiring extra care here.\n\nThe {{ language }} team and flod will be driving this bug to completion.", 
+    "comment": "We want to ship Firefox with a good list of search engines for {{ language }}. \n\nWe'll do this in three phases: First, the localization team and flod (Francesco Lodolo) will look at the market for the language and come up with a good set of search providers. {{ name }}, we'll need your input on this. The guidelines for making recommendations are found on <https://wiki.mozilla.org/L10n:Firefox/Productization>. \n\nWe currently use this set for en-US, to which we can fall back in the case of lacking localized alternatives:\nGoogle, Bing, Amazon, DuckDuckGo, Twitter, Wikipedia, eBay\n\nAdding brand new search engines, that not yet ship in any other language, needs approval from Business Development and requires more time to get authorization and assets from the provider. To avoid blocking the initial set up, this type of requests should be split into follow up bugs. {{ name }}, we'll likely need your help to at least get the owner's contact information.\n\nOnce we have a specification on what the search engines for {{ language }} should look like, flod and the localization team will work on an implementation on that. flod will create and attach patches for the desired changes and get them reviewed. After a successful review, flod will land them. {{ name }}, if you're interested, you could create the patches, too. You'd ask flod for review on those before landing.\n\nPlease don't commit any modifications in browser/searchplugins to the hg repository without a patch reviewed by flod, Stas, Axel or someone else appointed by flod. The data here is sensitive to users and our search partners, thus requiring extra care here.\n\nThe {{ language }} team and flod will be driving this bug to completion.", 
     "product": "Mozilla Localizations", 
     "title": "search", 
     "cc": "l10n@mozilla.com,{{ bugmail }},francesco.lodolo@gmail.com", 

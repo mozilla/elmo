@@ -16,12 +16,10 @@ from django.utils.functional import lazy
 ROOT_URLCONF = 'elmo.urls'
 TEST_RUNNER = 'elmo.test.TestRunner'
 
-DEBUG = TEMPLATE_DEBUG = False
+DEBUG = False
 
 ADMINS = ()
 MANAGERS = ADMINS
-
-DATABASES = {}  # See settings/local.py
 
 ## Internationalization.
 
@@ -42,9 +40,6 @@ TIME_ZONE = 'UTC'
 # calendars according to the current locale
 #USE_L10N = True
 
-
-## Media and templates.
-
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = ''
 
@@ -62,7 +57,6 @@ TEMPLATES = [
                 'accounts.context_processors.accounts',
                 'homepage.context_processors.analytics',
             ],
-            'debug': False
         }
     },
 ]
@@ -168,23 +162,6 @@ HOMEPAGE_FEED_SIZE = 5
 
 ## Google Analytics
 INCLUDE_ANALYTICS = False
-
-
-try:
-    from . import ldap_settings
-except ImportError:
-    import warnings
-    warnings.warn("ldap_settings not importable. No LDAP authentication")
-else:
-    # all these must exist and be set to something
-    for each in 'LDAP_HOST', 'LDAP_DN', 'LDAP_PASSWORD':
-        if not getattr(ldap_settings, each, None):
-            raise ValueError('%s must be set' % each)
-
-    from .ldap_settings import *
-    # ImportErrors are not acceptable if ldap_loaded is True
-    import ldap
-    AUTHENTICATION_BACKENDS = ('lib.auth.backends.MozLdapBackend',)
 
 WEBDASHBOARD_URL = 'https://l10n.mozilla-community.org/webdashboard/'
 

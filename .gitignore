@@ -5,6 +5,7 @@
 @elmo
 *.pyc
 .coverage
+/version.json
 /cover/
 /collected/
 /vendor/

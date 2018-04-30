@@ -1,0 +1,20 @@
+version: '3.4'
+services:
+    elmo_webapp:
+        build:
+            context: .
+            dockerfile: ./docker/Dockerfile
+        image: elmo_webapp
+        env_file:
+            - ./.circleci/test.env
+        depends_on:
+            - mysql
+            - memcached
+    memcached:
+        image: memcached
+    mysql:
+        image: mysql:5.7
+        environment:
+            MYSQL_DATABASE: test_elmo
+            MYSQL_USER: root
+            MYSQL_ALLOW_EMPTY_PASSWORD: "yes"

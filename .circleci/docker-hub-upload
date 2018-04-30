@@ -1,0 +1,70 @@
+#! /usr/bin/env python
+
+import argparse
+import os
+import subprocess
+
+
+DOCKER = ["docker"]
+
+
+def retry(cmd, tries):
+    while tries:
+        tries -= 1
+        try:
+            subprocess.check_call(cmd)
+            return
+        except subprocess.CalledProcessError:
+            if not tries:
+                raise
+            print("{} tries left".format(tries))
+
+
+def docker_login():
+    retry(DOCKER + [
+        "login",
+        "-u={DOCKER_USERNAME}".format(**os.environ),
+        "-p={DOCKER_PASSWORD}".format(**os.environ),
+    ], 2)
+
+
+def tag_image(img_name, tag):
+    subprocess.check_call(DOCKER + [
+        "tag",
+        "{}:latest".format(img_name),
+        "mozilla/{}:{}".format(img_name, tag),
+    ])
+
+
+def upload_image(img_name, tag):
+    retry(DOCKER + [
+        "push",
+        "mozilla/{}:{}".format(img_name, tag),
+    ], 3)
+
+
+if __name__ == "__main__":
+    p = argparse.ArgumentParser()
+    p.add_argument("--tag", default="latest")
+    p.add_argument("--debug", action="store_true")
+    p.add_argument("image", nargs="+")
+    args = p.parse_args()
+    if args.debug:
+        DOCKER.insert(0, "echo")
+    if os.environ.get("DOCKER_DEPLOY") != "true":
+        print("Set DOCKER_DEPLOY to \"true\" to deploy to docker hub.")
+        p.exit()
+    try:
+        docker_login()
+    except subprocess.CalledProcessError as e:
+        p.exit(status=e.returncode, message="docker login failed\n")
+    for image in args.image:
+        try:
+            tag_image(image, args.tag)
+        except subprocess.CalledProcessError as e:
+            p.exit(status=e.returncode, message="docker tag failed\n")
+    for image in args.image:
+        try:
+            upload_image(image, args.tag)
+        except subprocess.CalledProcessError as e:
+            p.exit(status=e.returncode, message="docker tag failed\n")
