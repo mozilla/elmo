@@ -52,11 +52,6 @@ jobs:
             "$CIRCLE_BUILD_URL" > version.json
 
       - run:
-          name: build docker images
-          command: |
-            docker-compose build
-
-      - run:
           name: launch mysql
           command: |
             docker-compose up -d mysql
@@ -65,6 +60,11 @@ jobs:
           name: launch memcached
           command: |
             docker-compose up -d memcached
+
+      - run:
+          name: build docker images
+          command: |
+            docker-compose build
 
       - run:
           name: container startup memorial wait
