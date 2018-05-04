@@ -96,6 +96,11 @@ for key, value in os.environ.items():
         continue
     globals()[key[len('DJANGO_'):]] = boolmapper.get(value.lower(), value)
 
+# remove secrets and passwords from environment
+for key in os.environ.keys():
+    if 'SECRET' in key or 'PASSWORD' in key:
+        del os.environ[key]
+
 __all__ = [
     setting for setting in globals().keys() if setting.isupper()
 ]
