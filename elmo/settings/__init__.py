@@ -80,12 +80,12 @@ if (
         'ELMO_DATADOG_NAMESPACE' in os.environ
         and os.environ['ELMO_DATADOG_NAMESPACE']
 ):
-    markus.configure({
+    markus.configure(backends=[{
         'class': 'markus.backends.datadog.DatadogMetrics',
         'options': {
             'statsd_namespace': os.environ['ELMO_DATADOG_NAMESPACE']
         }
-    })
+    }])
 
 # generic django settings, good for DEBUG etc
 boolmapper = {
