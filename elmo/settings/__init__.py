@@ -76,7 +76,10 @@ else:
     warnings.warn("No LDAP authentication")
 
 # hook up markus to datadog, if set
-if 'ELMO_DATADOG_NAMESPACE' in os.environ:
+if (
+        'ELMO_DATADOG_NAMESPACE' in os.environ
+        and os.environ['ELMO_DATADOG_NAMESPACE']
+):
     markus.configure({
         'class': 'markus.backends.datadog.DatadogMetrics',
         'options': {
