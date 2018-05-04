@@ -51,6 +51,7 @@ class DiffView(View):
         "CompareLocales reads files with universal newlines, fake that"
         return content.replace('\r\n', '\n').replace('\r', '\n')
 
+    @metrics.timer_decorator('diff.response')
     def get(self, request):
         '''Handle GET requests'''
         # The code validates the input, opens up an hglib client in a
