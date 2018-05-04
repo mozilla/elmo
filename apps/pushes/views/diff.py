@@ -20,18 +20,13 @@ from django.views.generic.base import View
 from life.models import Repository, Changeset
 
 import hglib
+import markus
 
 from compare_locales.parser import getParser, FluentEntity
 from compare_locales.compare import AddRemove, Tree as DataTree
 
 
-def log_time(wrapped):
-    def wrapper(*args, **kwargs):
-        start = datetime.utcnow()
-        rv = wrapped(*args, **kwargs)
-        print("{} took {}".format(wrapped.__name__, datetime.utcnow() - start))
-        return rv
-    return wrapper
+metrics = markus.get_metrics(__name__)
 
 
 class BadRevision(Exception):
@@ -109,13 +104,13 @@ class DiffView(View):
                         'diffs': diffs
                       })
 
-    @log_time
+    @metrics.timer_decorator('diff.getrepo')
     def getrepo(self, reponame):
         '''Set elmo db object and hglib client for given repo name'''
         self.repo = Repository.objects.get(name=reponame)
         self.client = hglib.open(self.repo.local_path())
 
-    @log_time
+    @metrics.timer_decorator('diff.status')
     def paths4revs(self, _from, _to):
         '''Validate that the passed in revisions are valid, and computes
         the affected paths and their status.
@@ -186,7 +181,7 @@ class DiffView(View):
         ctx = self.client[str(rev)]
         return ctx.node()
 
-    @log_time
+    @metrics.timer_decorator('diff.file')
     def diffLines(self, path, action):
         '''The actual l10n-aware diff for a particular file.
 

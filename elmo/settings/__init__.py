@@ -4,6 +4,7 @@
 from __future__ import absolute_import
 
 import os
+import markus
 
 from .base import *  # noqa
 try:
@@ -73,6 +74,15 @@ if all('LDAP_{}'.format(s) in globals() for s in ('HOST', 'DN', 'PASSWORD')):
 else:
     import warnings
     warnings.warn("No LDAP authentication")
+
+# hook up markus to datadog, if set
+if 'ELMO_DATADOG_NAMESPACE' in os.environ:
+    markus.configure({
+        'class': 'markus.backends.datadog.DatadogMetrics',
+        'options': {
+            'statsd_namespace': os.environ['ELMO_DATADOG_NAMESPACE']
+        }
+    })
 
 # generic django settings, good for DEBUG etc
 boolmapper = {
