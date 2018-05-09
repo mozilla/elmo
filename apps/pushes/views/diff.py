@@ -10,6 +10,7 @@ as the repositories are related.
 from __future__ import absolute_import
 
 from collections import OrderedDict
+from datetime import datetime
 from difflib import SequenceMatcher
 
 from django.shortcuts import render
@@ -19,9 +20,13 @@ from django.views.generic.base import View
 from life.models import Repository, Changeset
 
 import hglib
+import markus
 
 from compare_locales.parser import getParser, FluentEntity
 from compare_locales.compare import AddRemove, Tree as DataTree
+
+
+metrics = markus.get_metrics(__name__)
 
 
 class BadRevision(Exception):
@@ -46,6 +51,7 @@ class DiffView(View):
         "CompareLocales reads files with universal newlines, fake that"
         return content.replace('\r\n', '\n').replace('\r', '\n')
 
+    @metrics.timer_decorator('diff.response')
     def get(self, request):
         '''Handle GET requests'''
         # The code validates the input, opens up an hglib client in a
@@ -99,11 +105,13 @@ class DiffView(View):
                         'diffs': diffs
                       })
 
+    @metrics.timer_decorator('diff.getrepo')
     def getrepo(self, reponame):
         '''Set elmo db object and hglib client for given repo name'''
         self.repo = Repository.objects.get(name=reponame)
         self.client = hglib.open(self.repo.local_path())
 
+    @metrics.timer_decorator('diff.status')
     def paths4revs(self, _from, _to):
         '''Validate that the passed in revisions are valid, and computes
         the affected paths and their status.
@@ -174,6 +182,7 @@ class DiffView(View):
         ctx = self.client[str(rev)]
         return ctx.node()
 
+    @metrics.timer_decorator('diff.file')
     def diffLines(self, path, action):
         '''The actual l10n-aware diff for a particular file.
 
