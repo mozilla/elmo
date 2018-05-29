@@ -38,6 +38,8 @@ class Command(BaseCommand):
             q = Q(tree__code__in=options['tree'])
         runs = Run.objects.exclude(srctime__isnull=True)
         enddate = runs.aggregate(Max('srctime'))['srctime__max']
+        if enddate is None:
+            return
         startdate = enddate - timedelta(days=self.days)
         scale = 1. * (self.width - 1) / (enddate - startdate).total_seconds()
         runs = runs.filter(q, srctime__gte=startdate,
