@@ -41,7 +41,7 @@ for local_var, env_var in (
             ('ES_COMPARE_HOST', 'ES_COMPARE_HOST'),
             ('ES_COMPARE_INDEX', 'ES_COMPARE_INDEX'),
             ('LDAP_HOST', 'ELMO_LDAP_HOST'),
-            ('LDAP_DN', 'ELMO_DN'),
+            ('LDAP_DN', 'ELMO_LDAP_DN'),
             ('LDAP_PASSWORD', 'ELMO_LDAP_PASSWORD'),
             ('REPOSITORY_BASE', 'ELMO_REPOSITORY_BASE'),
             ('SECRET_KEY', 'ELMO_SECRET_KEY'),
