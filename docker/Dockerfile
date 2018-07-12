@@ -18,5 +18,7 @@ RUN mkdir /app/collected
 RUN chown app:app /app/collected
 USER app
 COPY --chown=app:app . /app/
+RUN ELMO_SECRET_KEY=foo /app/env/bin/python manage.py collectstatic --no-input
+RUN ELMO_SECRET_KEY=foo /app/env/bin/python manage.py compress --force
 
 CMD ["/app/docker/run_webapp.sh"]

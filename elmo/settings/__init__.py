@@ -36,7 +36,12 @@ try:
     if 'ELMO_TEST_DB_NAME' in os.environ:
         DATABASES['default']['TEST']['NAME'] = os.environ['ELMO_TEST_DB_NAME']
 except KeyError:
-    pass
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': 'mydatabase',
+        }
+    }
 for local_var, env_var in (
             ('ES_COMPARE_HOST', 'ES_COMPARE_HOST'),
             ('ES_COMPARE_INDEX', 'ES_COMPARE_INDEX'),
