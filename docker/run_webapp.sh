@@ -17,8 +17,6 @@ NUM_WORKERS=${NUM_WORKERS:-"6"}
 
 mkdir -p /app/collected/static/l10nstats
 (cd /app/ && ${CMDPREFIX} /app/env/bin/python manage.py progress)
-(cd /app/ && ${CMDPREFIX} /app/env/bin/python manage.py collectstatic --no-input)
-(cd /app/ && ${CMDPREFIX} /app/env/bin/python manage.py compress -f)
 
 if [ "$1" == "--dev" ]; then
     # Run with manage.py

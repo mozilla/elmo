@@ -36,12 +36,17 @@ try:
     if 'ELMO_TEST_DB_NAME' in os.environ:
         DATABASES['default']['TEST']['NAME'] = os.environ['ELMO_TEST_DB_NAME']
 except KeyError:
-    pass
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': 'mydatabase',
+        }
+    }
 for local_var, env_var in (
             ('ES_COMPARE_HOST', 'ES_COMPARE_HOST'),
             ('ES_COMPARE_INDEX', 'ES_COMPARE_INDEX'),
             ('LDAP_HOST', 'ELMO_LDAP_HOST'),
-            ('LDAP_DN', 'ELMO_DN'),
+            ('LDAP_DN', 'ELMO_LDAP_DN'),
             ('LDAP_PASSWORD', 'ELMO_LDAP_PASSWORD'),
             ('REPOSITORY_BASE', 'ELMO_REPOSITORY_BASE'),
             ('SECRET_KEY', 'ELMO_SECRET_KEY'),
