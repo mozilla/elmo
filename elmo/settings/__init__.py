@@ -36,12 +36,16 @@ try:
     if 'ELMO_TEST_DB_NAME' in os.environ:
         DATABASES['default']['TEST']['NAME'] = os.environ['ELMO_TEST_DB_NAME']
 except KeyError:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': 'mydatabase',
+    if 'DATABASES' not in vars():
+        # we're not configured, let's just set some database
+        # we probably need this to run django commands during
+        # docker image builds.
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': 'mydatabase',
+            }
         }
-    }
 for local_var, env_var in (
             ('ES_COMPARE_HOST', 'ES_COMPARE_HOST'),
             ('ES_COMPARE_INDEX', 'ES_COMPARE_INDEX'),
