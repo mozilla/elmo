@@ -3,9 +3,9 @@
 # Include production requirements
 -r env.txt
 
-coverage==4.4.1
+coverage==4.5.1
 
-django-debug-toolbar==1.8
+django-debug-toolbar==1.9.1
 sqlparse==0.2.4
 
-django-extensions==1.9.7
+django-extensions==2.1.0
