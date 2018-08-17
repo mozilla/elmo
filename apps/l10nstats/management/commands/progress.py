@@ -39,6 +39,7 @@ class Command(BaseCommand):
         runs = Run.objects.exclude(srctime__isnull=True)
         enddate = runs.aggregate(Max('srctime'))['srctime__max']
         if enddate is None:
+            self.stderr("Can't create progress without runs.")
             return
         startdate = enddate - timedelta(days=self.days)
         scale = 1. * (self.width - 1) / (enddate - startdate).total_seconds()
@@ -120,6 +121,7 @@ class Command(BaseCommand):
                               settings.PROGRESS_IMG_NAME))
         ProgressPosition.objects.all().delete()
         ProgressPosition.objects.bulk_create(backobjs)
+        self.stdout.write("Progress background updated.")
 
     def rescale(self, vals, span=.75):
         # return a scaling function for change values

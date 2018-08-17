@@ -1,0 +1,1 @@
+0 * * * * app /app/env/bin/python manage.py progress >> /var/log/cron.log 2>&1

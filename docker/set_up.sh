@@ -14,7 +14,8 @@ apt-get update
 apt-get upgrade -y
 
 # Install packages for building python packages, mysql, lxml, sasl, and cffi
-apt-get install -y gcc apt-transport-https build-essential python-dev \
+# Also install cron
+apt-get install -y cron gcc apt-transport-https build-essential python-dev \
         libpq-dev \
         libxml2-dev libxslt1-dev \
         libsasl2-dev \
