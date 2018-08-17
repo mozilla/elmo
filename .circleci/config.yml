@@ -15,12 +15,6 @@ jobs:
       # documented at https://circleci.com/docs/2.0/circleci-images/
       # - image: circleci/postgres:9.4
 
-    branches:
-      only:
-        - master
-        - develop
-        - /pull\/.*/
-
     working_directory: ~/repo
 
     steps:
@@ -87,9 +81,37 @@ jobs:
       - run:
           name: upload docker images
           command: |
-            ./.circleci/docker-hub-upload elmo_webapp
+            if [ "${CIRCLE_BRANCH}" == "master" ] || [ -n "${CIRCLE_TAG}" ]; then
+              ./.circleci/docker-hub-upload --tag ${CIRCLE_TAG} elmo_webapp
+            fi
+            if [ "${CIRCLE_BRANCH}" == "develop" ]; then
+              ./.circleci/docker-hub-upload elmo_webapp
+            fi
 
       # - save_cache:
       #     paths:
       #       - ./venv
       #     key: TBD
+
+workflows:
+  version: 2
+
+  # workflow jobs are _not_ run in tag builds by default
+  # we use filters to whitelist jobs that should be run for tags
+
+  # workflow jobs are run in _all_ branch builds by default
+  # we use filters to blacklist jobs that shouldn't be run for a branch
+
+  # see: https://circleci.com/docs/2.0/workflows/#git-tag-job-execution
+
+  build:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              only:
+                - master
+                - develop
+                - /pull\/.*/
