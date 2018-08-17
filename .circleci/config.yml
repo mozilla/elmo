@@ -109,8 +109,8 @@ workflows:
           filters:
             tags:
               only: /.*/
-          branches:
-            only:
-              - master
-              - develop
-              - /pull\/.*/
+            branches:
+              only:
+                - master
+                - develop
+                - /pull\/.*/
