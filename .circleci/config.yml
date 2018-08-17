@@ -81,7 +81,7 @@ jobs:
       - run:
           name: upload docker images
           command: |
-            if [ "${CIRCLE_BRANCH}" == "master" ] || [ -n "${CIRCLE_TAG}" ]; then
+            if [ -n "${CIRCLE_TAG}" ]; then
               ./.circleci/docker-hub-upload --tag ${CIRCLE_TAG} elmo_webapp
             fi
             if [ "${CIRCLE_BRANCH}" == "develop" ]; then
