@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import datetime
 import re
@@ -12,9 +13,10 @@ from django.core.cache import cache
 from django.conf import settings
 from django.test import override_settings
 from django.test.client import RequestFactory
+import six.moves.urllib.parse
+from six.moves import range
 from life.models import Locale, TeamLocaleThrough
 from elmo_commons.tests.mixins import EmbedsTestCaseMixin
-import urlparse
 
 
 def _local_feed_url(filename):
@@ -135,8 +137,8 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         self.assertEqual(response.status_code, 200)
 
         content = response.content
-        if isinstance(content, str):
-            content = unicode(content, 'utf-8')
+        if isinstance(content, six.binary_type):
+            content = content.decode('utf-8')
 
         # because I know what's in test_rss20.xml I can
         # check for it here
@@ -318,7 +320,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         new_response = self.client.get(target_url, {'path': 'query'})
         self.assertEqual(new_response.status_code, 200)
         self.assertEqual(
-            urlparse.urlparse(old_response['Location'])[2:],
+            six.moves.urllib.parse.urlparse(old_response['Location'])[2:],
             ('/source/pushes/repo', '', 'path=query', ''))
 
     def test_diff_redirect(self):
@@ -330,10 +332,13 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         target_url = reverse('pushes:diff')
         # not testing response, as we don't have a repo to back this up
         opath, oparam, oquery, ohash = \
-            urlparse.urlparse(old_response['Location'])[2:]
-        self.assertEqual((opath, oparam), urlparse.urlparse(target_url)[2:4])
+            six.moves.urllib.parse.urlparse(old_response['Location'])[2:]
         self.assertEqual(
-            urlparse.parse_qs(oquery),
+            (opath, oparam),
+            six.moves.urllib.parse.urlparse(target_url)[2:4]
+        )
+        self.assertEqual(
+            six.moves.urllib.parse.parse_qs(oquery),
             {
                 'to': ['62f87d2952f4'],
                 'from': ['fc700f4da954'],

@@ -8,9 +8,9 @@ The revisions don't necessarily need to be in the same repository, as long
 as the repositories are related.
 """
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from collections import OrderedDict
-from datetime import datetime
 from difflib import SequenceMatcher
 
 from django.shortcuts import render
@@ -49,7 +49,7 @@ class DiffView(View):
 
     def _universal_newlines(self, content):
         "CompareLocales reads files with universal newlines, fake that"
-        return content.replace('\r\n', '\n').replace('\r', '\n')
+        return content.replace(b'\r\n', b'\n').replace(b'\r', b'\n')
 
     @metrics.timer_decorator('diff.response')
     def get(self, request):
@@ -155,7 +155,7 @@ class DiffView(View):
 
         paths = ([(f, 'changed') for f in changed]
                  + [(f, 'removed') for f in removed
-                    if f not in self.moved.values()]
+                    if f not in list(self.moved.values())]
                  + [(f,
                      (f in self.moved and 'moved') or
                      (f in self.copied and 'copied')
@@ -222,8 +222,8 @@ class DiffView(View):
                 # logging.warn('Unable to parse %s', path, exc_info=True)
                 return None
         ar = AddRemove()
-        ar.set_left(old_translations.keys())
-        ar.set_right(new_translations.keys())
+        ar.set_left(list(old_translations.keys()))
+        ar.set_right(list(new_translations.keys()))
         for action, key in ar:
             if action == 'equal':
                 # In Fluent, values can be added or removed if an Attribute
@@ -280,7 +280,7 @@ class DiffView(View):
             if isinstance(entity, FluentEntity):
                 for fluent_attr in entity.attributes:
                     yield (
-                        u'{}.{}'.format(entity.key, fluent_attr.key),
+                        '{}.{}'.format(entity.key, fluent_attr.key),
                         fluent_attr.val)
 
     def diff_strings(self, oldval, newval):

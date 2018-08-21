@@ -5,6 +5,7 @@
 '''Command to check if any of the repositories in the database
 that miss changeset mappings.
 '''
+from __future__ import unicode_literals
 
 from ..base import RepositoryCommand
 

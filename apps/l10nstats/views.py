@@ -6,6 +6,7 @@
 and progress graphs.
 '''
 from __future__ import absolute_import, division
+from __future__ import unicode_literals
 
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -21,6 +22,7 @@ from django.db.models import Min, Max
 from django.views.generic.base import TemplateView
 import json
 import elasticsearch
+import six
 
 from l10nstats.models import Run
 from life.models import Locale, Tree
@@ -77,11 +79,11 @@ def history_plot(request):
     locale = get_object_or_404(Locale, code=request.GET.get('locale'))
     highlights = defaultdict(dict)
     for param in sorted(
-            (p for p in request.GET.iterkeys() if p.startswith('hl-'))):
+            (p for p in six.iterkeys(request.GET) if p.startswith('hl-'))):
         try:
             _, i, kind = param.split('-')
             i = int(i)
-        except:
+        except ValueError:
             continue
         highlights[i][kind] = request.GET.get(param)
     for i, highlight in highlights.items():
@@ -89,7 +91,7 @@ def history_plot(request):
             if k not in highlight:
                 highlights.pop(i)
                 break
-    highlights = [v for i, v in sorted(highlights.iteritems())]
+    highlights = [v for i, v in sorted(six.iteritems(highlights))]
     q = q2 = Run.objects.filter(tree=tree, locale=locale)
     try:
         startrange = (q.order_by('srctime')
@@ -196,7 +198,7 @@ def tree_progress(request, tree):
     initial_runs = getRunsBefore(tree, starttime,
                                  locales)
     datadict = defaultdict(dict)
-    for loc, r in initial_runs.iteritems():
+    for loc, r in six.iteritems(initial_runs):
         stamp = int(calendar.timegm(starttime.timetuple()))
         datadict[stamp][loc] = (r.missing +
                                 r.missingInFiles +

@@ -5,6 +5,7 @@
 '''Views showing the build statuses.
 '''
 from __future__ import absolute_import, division, print_function
+from __future__ import unicode_literals
 
 from django.db.models import Q
 from django.db import connection
@@ -15,18 +16,21 @@ from django.contrib.syndication.views import Feed
 from django.core.urlresolvers import reverse
 
 
-import operator
 from bz2 import BZ2File
-import os
-import re
+import calendar
 from collections import defaultdict
 from datetime import datetime, timedelta
-import calendar
+from functools import reduce
+import re
+import operator
+import os
+import six
+from six.moves import range
+from six.moves import zip
 from mbdb.models import (Build, Builder, BuildRequest,
                          Change, Log, Master, NumberedChange,
                          SourceStamp, Step, Property)
 from life.models import Push, Repository
-from functools import reduce
 
 
 resultclasses = ['success', 'warning', 'failure', 'skip', 'except']
@@ -46,11 +50,17 @@ def pmap(props, bld_ids):
     if not bld_ids:
         return {}
 
-    build_props = list(Build.properties.through.objects
+    build_props = list(
+        Build.properties.through.objects
         .filter(build__in=bld_ids, property__name__in=props)
-        .values_list('build', 'property'))
-    bound_props = dict((p.id, p)
-        for p in Property.objects.filter(id__in=set(p for _, p in build_props)))
+        .values_list('build', 'property')
+    )
+    bound_props = {
+        p.id: p
+        for p in Property.objects.filter(
+            id__in=set(p for _, p in build_props)
+        )
+    }
     rv = defaultdict(dict)
     for build, prop in build_props:
         prop = bound_props[prop]
@@ -86,14 +96,14 @@ def tbpl_inner(request):
                 try:
                     id = values[-1]
                     ss = ss.filter(id__gt=int(id))
-                except:
+                except (IndexError, ValueError):
                     pass
                 continue
             if key == "before":
                 try:
                     id = values[-1]
                     ss = ss.filter(id__lte=int(id))
-                except:
+                except (IndexError, ValueError):
                     pass
                 continue
             q = Q()
@@ -117,12 +127,14 @@ def tbpl_inner(request):
                .distinct()
                .select_related('tag')):
         changetags[ct.change_id].append(ct.tag.value)
-    reponames = dict((id, '/'.join([b] + changetags[id]))
-                     for id, b
-                     in Change.objects
-                         .filter(stamps__in=ss)
-                         .distinct()
-                         .values_list('id', 'branch'))
+    reponames = {
+        id: '/'.join([b] + changetags[id])
+        for id, b
+        in Change.objects
+            .filter(stamps__in=ss)
+            .distinct()
+            .values_list('id', 'branch')
+    }
     repourls = dict(Repository.objects
                     .filter(name__in=set(reponames.values()))
                     .values_list('name', 'url'))
@@ -132,7 +144,7 @@ def tbpl_inner(request):
         try:
             rev = c.revision[:12]
             url = repourls[reponames[c.id]] + 'pushloghtml?changeset=' + rev
-        except:
+        except IndexError:
             url = 'about:blank'
             rev = 12 * '0'
         return {'id': c.id,
@@ -157,17 +169,22 @@ def tbpl_inner(request):
     for _b in builds_for_source.values():
         _b.sort(key=lambda b: b.id)
     pending = defaultdict(int)
-    for s in (BuildRequest.objects
-               .filter(builds__isnull=True,
-                       sourcestamp__in=ss)
-               .values_list('sourcestamp', flat=True)):
+    for s in (
+                BuildRequest.objects
+                .filter(builds__isnull=True,
+                        sourcestamp__in=ss)
+                .values_list('sourcestamp', flat=True)
+    ):
         pending[s] += 1
 
     def chunks(ss):
         for s in ss:
             chunk = {}
 
-            chunk['changes'] = map(changer, changes_for_source[s.id])
+            chunk['changes'] = [
+                changer(c)
+                for c in changes_for_source[s.id]
+            ]
             chunk['builds'] = [{'id': b.id,
                                 'result': b.result,
                                 'props': bprops[b.id],
@@ -178,8 +195,9 @@ def tbpl_inner(request):
                                 'build': b}
                                for b in builds_for_source[s.id]]
             chunk['id'] = s.id
-            chunk['is_running'] = any(map(lambda c:
-                                          c['end'] is None, chunk['builds']))
+            chunk['is_running'] = any(
+                (c['end'] is None for c in chunk['builds'])
+            )
             chunk['pending'] = pending[s.id]
             yield chunk
     return chunks(ss)
@@ -234,7 +252,7 @@ class BColumn(object):
                 return
             # try to find a free column
             hasEmptyCol = False
-            for i in xrange(len(self.cols)):
+            for i in range(len(self.cols)):
                 if self.cols[i][0]['class'] == 'white':
                     # found the right column
                     hasEmptyCol = True
@@ -242,13 +260,17 @@ class BColumn(object):
             if not hasEmptyCol:
                 # we don't have an free column, add a new one
                 # first, fill it up with an empty cell
-                oldrows = sum(map(lambda c: c['rowspan'], self.cols[0]))
-                self.cols.append([{'class': 'white',
-                               'obj': None,
-                               'rowspan': oldrows}])
+                oldrows = sum((c['rowspan'] for c in self.cols[0]))
+                self.cols.append([
+                    {
+                        'class': 'white',
+                        'obj': None,
+                        'rowspan': oldrows
+                    }
+                ])
                 i = len(self.cols) - 1
             # add cell, increase rowspan of all others
-            for j in xrange(len(self.cols)):
+            for j in range(len(self.cols)):
                 if j == i:
                     c = self.cols[j]
                     # if the first cell has no rowspan, just replace it
@@ -290,7 +312,7 @@ class BColumn(object):
         spans = [0] * len(self.cols)
         while any(self.cols) or any(spans):
             r = []
-            for i in xrange(len(self.cols)):
+            for i in range(len(self.cols)):
                 if spans[i] == 0:
                     if self.cols[i]:
                         c = self.cols[i].pop()
@@ -309,13 +331,13 @@ class BColumn(object):
         return len(self.cols)
 
     def lengths(self):
-        l = []
+        lens = []
         for col in self.cols:
             ll = 0
             for cell in col:
                 ll += cell['rowspan']
-            l.append(ll)
-        return l
+            lens.append(ll)
+        return lens
 
 
 def _waterfall(request):
@@ -325,12 +347,16 @@ def _waterfall(request):
     '''
     start_t = end_t = None
     times = sorted(
-        list(Build.objects
-                  .order_by('-pk')
-                  .values_list('starttime', flat=True)[:1]) +
-        list(Change.objects
-                   .order_by('-pk')
-                   .values_list('when', flat=True)[:1]),
+        list(
+            Build.objects
+            .order_by('-pk')
+            .values_list('starttime', flat=True)[:1]
+        ) +
+        list(
+            Change.objects
+            .order_by('-pk')
+            .values_list('when', flat=True)[:1]
+        ),
         reverse=True
     )
     if times:
@@ -348,7 +374,7 @@ def _waterfall(request):
                 max_builds = int(filters.pop('max-builds')[-1])
                 if max_builds <= 0:
                     max_builds = None
-            except:
+            except IndexError:
                 pass
         if 'endtime' in request.GET:
             try:
@@ -405,7 +431,7 @@ def _waterfall(request):
         q_changes = q_changes.filter(when__lte=end_t)
     if buildf:
         q_buildsdone = q_buildsdone.filter(**buildf)
-    for p in  props:
+    for p in props:
         q_buildsdone = q_buildsdone.filter(properties__in=p)
     debug_("found %d builds" % q_buildsdone.count())
 
@@ -441,9 +467,11 @@ def _waterfall(request):
         if starts:
             b = starts.pop()
         while e or b or c:
-            if (e is not None and
-                (b is None or e.endtime >= b.starttime) and
-                (c is None or e.endtime >= c.when)):
+            if (
+                    e is not None and
+                    (b is None or e.endtime >= b.starttime) and
+                    (c is None or e.endtime >= c.when)
+            ):
                 yield (e.endtime, 'end build', e)
                 starts.insert(0, e)
                 if b is not None:
@@ -455,9 +483,11 @@ def _waterfall(request):
                 except StopIteration:
                     e = None
                 continue
-            if (b is not None and
-                (e is None or b.starttime > e.endtime) and
-                (c is None or b.starttime > c.when)):
+            if (
+                    b is not None and
+                    (e is None or b.starttime > e.endtime) and
+                    (c is None or b.starttime > c.when)
+            ):
                 yield (b.starttime, 'begin build', b)
                 if starts:
                     b = starts.pop()
@@ -492,7 +522,7 @@ def _waterfall(request):
                 open_or_close = 'open'
             blame.changeCell(open_or_close, 'white', obj)
             if open_or_close == 'open':
-                for bcol in cols.itervalues():
+                for bcol in six.itervalues(cols):
                     bcol.addRow()
         else:
             # build
@@ -506,7 +536,7 @@ def _waterfall(request):
                 open_or_close = 'open'
             if open_or_close == 'close':
                 blame.addRow()
-            for bname, bcol in cols.iteritems():
+            for bname, bcol in six.iteritems(cols):
                 if bname == builder:
                     bcol.changeCell(open_or_close, class_, obj)
                 elif open_or_close == 'close':
@@ -522,8 +552,10 @@ def _waterfall(request):
         filters = ''
 
     def timestamp(dto):
-        return ("%d" % calendar.timegm(dto.utctimetuple())
-            if dto else "NaN")
+        return (
+            "%d" % calendar.timegm(dto.utctimetuple())
+            if dto else "NaN"
+        )
 
     hourlist = [12, 24]
     if hours in hourlist:
@@ -551,7 +583,7 @@ def waterfall(request):
             for b in builders]
     rows = []
     rows = [reduce(operator.add, t, [])
-            for t in zip(*map(lambda b: b.rows(), builders))]
+            for t in zip(*(b.rows() for b in builders))]
     return render(request, 'tinder/waterfall.html', {
                     'times': times, 'filters': filters,
                     'heads': head,
@@ -579,15 +611,17 @@ def builds_for_change(request):
     for b in builds:
         done.append({
           'build': b,
-          'class': (b.result is not None and resultclasses[b.result])
-                     or ''})
+          'class': resultclasses[b.result] if b.result is not None else ''
+        })
 
     try:
 
-        url = str(Push.objects
-                 .get(changesets__revision__startswith=change.revision,
-                      repository__name__startswith=change.branch))
-    except:
+        url = str(
+            Push.objects
+            .get(changesets__revision__startswith=change.revision,
+                 repository__name__startswith=change.branch)
+        )
+    except (Push.DoesNotExist, ValueError):
         url = None
 
     return render(request, 'tinder/builds_for.html', {

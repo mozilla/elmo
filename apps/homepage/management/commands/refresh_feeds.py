@@ -8,6 +8,7 @@ Ideally this management command should run in sync with the update job on
 planet, but at least every hour.
 """
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import time
 import logging

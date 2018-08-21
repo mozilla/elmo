@@ -6,6 +6,7 @@
 which locales shipped in what.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import datetime
 from django.db import models
@@ -33,10 +34,10 @@ class AppVersionTreeThrough(DurationThrough):
                              related_name='appvers_over_time')
 
     def __unicode__(self):
-        rv = u'%s \u2014 %s' % (self.appversion.__unicode__(),
+        rv = '%s \u2014 %s' % (self.appversion.__unicode__(),
                                self.tree.__unicode__())
         if self.start or self.end:
-            rv += u' [%s:%s]' % (
+            rv += ' [%s:%s]' % (
                 self.start and str(self.start.date()) or '',
                 self.end and str(self.end.date()) or '')
         return rv
@@ -131,8 +132,9 @@ class Action(models.Model):
 
     def __unicode__(self):
         return ('%s action for [Signoff %s] by %s [%s]' %
-                 (self.get_flag_display(), self.signoff.id,
-                  self.author, self.when))
+                (self.get_flag_display(), self.signoff.id,
+                 self.author, self.when))
+
 
 TEST_CHOICES = (
     (0, Run),
@@ -158,6 +160,7 @@ class Snapshot(models.Model):
         for i in TEST_CHOICES:
             if i[0] == self.test:
                 return i[1].objects.get(id=self.tid)
+
 
 STATUS_CHOICES = (
     (0, 'upcoming'),

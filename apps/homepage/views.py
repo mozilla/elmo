@@ -5,18 +5,16 @@
 '''Views for the main navigation pages.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import datetime
-import sys
 import feedparser  # vendor-local
 from django.core.urlresolvers import reverse
-from django.http import (HttpResponsePermanentRedirect, Http404,
+from django.http import (HttpResponsePermanentRedirect,
                          HttpResponseServerError)
 from django.shortcuts import render, redirect
-from django.utils.safestring import mark_safe
-from django.template import RequestContext, loader
+from django.template import loader
 from django.conf import settings
-from django.views.defaults import page_not_found
 from django.core.cache import cache
 from django.views.decorators.http import etag
 

@@ -5,10 +5,14 @@
 '''Models representing statuses of buildbot builds on multiple masters.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from django.db import models
 from . import fields
 from django.conf import settings
+import six
+from six.moves import map
+from six.moves import range
 
 
 class Master(models.Model):
@@ -61,11 +65,11 @@ class Change(models.Model):
         unique_together = (('number', 'master'),)
 
     def __unicode__(self):
-        rv = u'Change %d' % self.number
+        rv = 'Change %d' % self.number
         if self.branch:
             rv += ', ' + self.branch
         if self.tags:
-            rv += u' (%s)' % ', '.join(map(unicode, self.tags.all()))
+            rv += ' (%s)' % ', '.join(map(six.text_type, self.tags.all()))
         return rv
 
 
@@ -122,7 +126,7 @@ class Builder(models.Model):
     bigState = models.CharField(max_length=30, null=True, blank=True)
 
     def __unicode__(self):
-        return u'Builder <%s>' % self.name
+        return 'Builder <%s>' % self.name
 
 
 class Build(models.Model):
@@ -181,12 +185,16 @@ class Build(models.Model):
         return prop.value
 
     def propertiesAsList(self):
-        l = [(p.name, p.value, p.source) for p in self.properties.iterator()]
+        prop_list = [
+            (p.name, p.value, p.source) for p in self.properties.iterator()
+        ]
         # hardcode buildername and buildnumber again
-        l += [('buildername', self.builder.name, 'Build'),
-              ('buildnumber', self.buildnumber, 'Build')]
-        l.sort()
-        return l
+        prop_list += [
+            ('buildername', self.builder.name, 'Build'),
+            ('buildnumber', self.buildnumber, 'Build')
+        ]
+        prop_list.sort()
+        return prop_list
 
     def __unicode__(self):
         v = self.builder.name
@@ -214,7 +222,7 @@ class URL(models.Model):
 
 
 class Log(models.Model):
-    STDOUT, STDERR, HEADER = range(3)
+    STDOUT, STDERR, HEADER = list(range(3))
     JSON = 5
     CHANNEL_NAMES = ('stdout', 'stderr', 'header', None, None, 'json')
     name = models.CharField(max_length=100, null=True, blank=True)

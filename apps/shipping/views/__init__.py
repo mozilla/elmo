@@ -5,9 +5,12 @@
 '''Views for managing sign-offs and shipping metrics.
 '''
 from __future__ import absolute_import, division
+from __future__ import unicode_literals
 
 from collections import defaultdict, OrderedDict
 from datetime import datetime, timedelta
+import six
+from six.moves import zip
 
 from django.shortcuts import render
 from django.views.generic import TemplateView
@@ -41,13 +44,15 @@ def index(request):
     for avt in avts:
         apps[avt.appversion.app].append(avt)
         trees.discard(avt.tree)
-    for avtlist in apps.itervalues():
+    for avtlist in six.itervalues(apps):
         avtlist.sort(key=lambda avt: avt.appversion.version)
 
     applist = sorted(
-        ({'name': str(app), 'avts': vals}
-         for app, vals in apps.iteritems()),
-         key=lambda d: d['name']
+        (
+            {'name': str(app), 'avts': vals}
+            for app, vals in six.iteritems(apps)
+        ),
+        key=lambda d: d['name']
     )
 
     selected_trees = request.GET.getlist('tree')
@@ -133,19 +138,27 @@ def teamsnippet(loc, team_locales):
                 .select_related('appversion__app', 'tree__l10n')):
         _treeid_to_avt[avt.tree.id] = avt
 
-    runs_with_open_av = [run for run in runs
+    runs_with_open_av = [
+        run for run in runs
         if run.tree.id in _treeid_to_avt
-        and _treeid_to_avt[run.tree.id].appversion.accepts_signoffs]
-    changesets = dict((tuple(t[:2]), t[2])
+        and _treeid_to_avt[run.tree.id].appversion.accepts_signoffs
+    ]
+    changesets = {
+        tuple(t[:2]): t[2]
         for t in Run.revisions.through.objects
         .filter(run__in=runs_with_open_av,
                 changeset__repositories__locale__in=locs)
-        .values_list('run__tree', 'run__locale', 'changeset'))
-    pushdates = dict((tuple(t[:2]), t[2])
+        .values_list('run__tree', 'run__locale', 'changeset')
+    }
+    pushdates = {
+        tuple(t[:2]): t[2]
         for t in Push.changesets.through.objects
         .filter(changeset__in=set(changesets.values()))
-        .values_list('changeset', 'push__repository__forest', 'push__push_date'))
-    for (treeid, locale_id), changeset in changesets.iteritems():
+        .values_list(
+            'changeset', 'push__repository__forest', 'push__push_date'
+        )
+    }
+    for (treeid, locale_id), changeset in six.iteritems(changesets):
         avt = _treeid_to_avt[treeid]
         push_date = pushdates[(changeset, avt.tree.l10n.id)]
         if avt.start and push_date < avt.start:
@@ -196,9 +209,13 @@ def teamsnippet(loc, team_locales):
     for run_ in runs:
         # copy the Run instance into a fancy dict but only copy those whose
         # key doesn't start with an underscore
-        run = RunElement(dict((k, getattr(run_, k))
-                       for k in run_.__dict__
-                       if not k.startswith('_')))
+        run = RunElement(
+            {
+                k: getattr(run_, k)
+                for k in run_.__dict__
+                if not k.startswith('_')
+            }
+        )
         run.locale = run_.locale
         run.allmissing = run_.allmissing  # a @property of the Run model
         run.tree = run_.tree  # foreign key lookup
@@ -230,39 +247,51 @@ def teamsnippet(loc, team_locales):
             appversion_has_pushes.get((appversion, run.locale_id))
         applications[application].append(run)
         if appversion and appversion in flags4av:
-            real_av, flags = (flags4av[appversion]
+            real_av, flags = (
+                flags4av[appversion]
                 .get(run_.locale.code, [None, {}])
             )
 
             # get current status of signoffs
             # we really only need the shortrevs, we'll get those below
             if flags:
-                interesting_flags = (Action.PENDING, Action.ACCEPTED,
-                                     Action.REJECTED)
-                actions = list(Action.objects
+                interesting_flags = (
+                    Action.PENDING, Action.ACCEPTED, Action.REJECTED
+                )
+                actions = list(
+                    Action.objects
                     .filter(id__in=flags.values(),
                             flag__in=interesting_flags)
                     .select_related('signoff__push')
-                    .order_by('when', 'pk'))
+                    .order_by('when', 'pk')
+                )
                 # only keep a rejected sign-off it's the last
-                if (Action.REJECTED in flags and
-                    actions[-1].flag != Action.REJECTED):
-                    actions = filter(lambda a: a.flag != Action.REJECTED,
-                                     actions)
+                if (
+                        Action.REJECTED in flags and
+                        actions[-1].flag != Action.REJECTED
+                ):
+                    actions = [a for a in actions if a.flag != Action.REJECTED]
                 pushes.update(a.signoff.push for a in actions)
-                objects = [RunElement(
-                    dict((k, getattr(a, k))
-                          for k in a.__dict__
-                          if not k.startswith('_')))
-                    for a in actions]
+                objects = [
+                    RunElement(
+                        {
+                            k: getattr(a, k)
+                            for k in a.__dict__
+                            if not k.startswith('_')
+                        }
+                    )
+                    for a in actions
+                ]
                 for a, obj in zip(actions, objects):
                     obj.signoff = a.signoff
                     obj.push = a.signoff.push
                     obj.flag_name = a.get_flag_display()
                 run.actions = objects
                 if Action.ACCEPTED in flags:
-                    run.accepted = [obj for obj in objects
-                        if obj.flag == Action.ACCEPTED][0]
+                    run.accepted = [
+                        obj for obj in objects
+                        if obj.flag == Action.ACCEPTED
+                    ][0]
                     objects.remove(run.accepted)
             if appversion.code != real_av:
                 run.fallback = real_av
@@ -282,7 +311,11 @@ def teamsnippet(loc, team_locales):
                     run.suggest_class = 'success'
 
     # get the tip shortrevs for all our pushes
-    pushes = map(lambda p: p.id, filter(None, pushes))
+    pushes = [
+        p.id
+        for p in pushes
+        if p is not None
+    ]
     tip4push = dict(Push.objects
                     .annotate(tc=Max('changesets'))
                     .filter(id__in=pushes)
@@ -290,7 +323,7 @@ def teamsnippet(loc, team_locales):
     rev4id = dict(Changeset.objects
                   .filter(id__in=tip4push.values())
                   .values_list('id', 'revision'))
-    for runs in applications.itervalues():
+    for runs in six.itervalues(applications):
         for run in runs:
             actions = [run.accepted] if run.accepted else []
             if run.actions:
@@ -316,10 +349,10 @@ def teamsnippet(loc, team_locales):
 
     return {'template': 'shipping/team-snippet.html',
             'context': {'locale': loc,
-                             'other_team_locales': other_team_locales,
-                             'applications': applications,
-                             'progress_start': progress_start,
-                            }}
+                        'other_team_locales': other_team_locales,
+                        'applications': applications,
+                        'progress_start': progress_start,
+                        }}
 
 
 def dashboard(request):

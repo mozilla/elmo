@@ -2,12 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import datetime
+import json
 from django.core.urlresolvers import reverse
 from elmo.test import TestCase
 from django.contrib.auth.models import User, Permission
-import json
 from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from shipping.models import (
     AppVersion,
@@ -334,7 +335,7 @@ en-US
         changesets = [c for p in pushes for c in p['changes']]
         revisions = [x.revision for x in changesets]
         # only `de` changes in the right order
-        self.assertListEqual(revisions, [u'l10n de 0003', u'l10n de 0002'])
+        self.assertListEqual(revisions, ['l10n de 0003', 'l10n de 0002'])
 
 
 class SignOffAnnotatedPushesTest(TestCase):

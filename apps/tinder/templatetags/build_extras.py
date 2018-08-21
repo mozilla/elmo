@@ -5,6 +5,7 @@
 '''Django template filters to be used to display builds.
 '''
 from __future__ import absolute_import, division
+from __future__ import unicode_literals
 
 from django import template
 from django.utils.safestring import mark_safe
@@ -19,19 +20,21 @@ register = template.Library()
 
 @register.filter
 def showbuild(build_or_step, autoescape=None):
-    if autoescape:
-        esc = conditional_escape
-    else:
-        esc = lambda x: x
+    def esc(input):
+        if autoescape:
+            return conditional_escape(input)
+        return input
     if build_or_step is None:
         return mark_safe("&nbsp;")
     if isinstance(build_or_step, Change):
         # blame column
-        c = build_or_step
+        change = build_or_step
         fmt = ('<a href="' +
                reverse(tinder.views.builds_for_change) +
                '?change=%d" title="%s">%s</a>')
-        return mark_safe(fmt % (c.number, c.when.isoformat(), esc(c.who)))
+        return mark_safe(
+            fmt % (change.number, change.when.isoformat(), esc(change.who))
+        )
     if isinstance(build_or_step, Build):
         fmt = '<a href="%s" title="%s">Build %d</a><br/>%s %s'
         build = build_or_step
@@ -44,8 +47,10 @@ def showbuild(build_or_step, autoescape=None):
             fmt = ('<a href="' +
                    reverse(tinder.views.builds_for_change) +
                    '?change=%d">%d</a>')
-            links = map(lambda c: fmt % (c.number, c.number),
-                        build.sourcestamp.changes.order_by('pk'))
+            links = [
+                fmt % (c.number, c.number)
+                for c in build.sourcestamp.changes.order_by('pk')
+            ]
             rv += '<br/>Changes ' + ', '.join(links)
         if build.endtime is not None:
             # We're a finished build, just show the build
@@ -56,20 +61,22 @@ def showbuild(build_or_step, autoescape=None):
 '''
         rowfmt = '''<tr><td class="%s">%s</td></tr>
 '''
-        rows = map(lambda s: rowfmt % (res2class(s), showstep(s)),
-                   build.steps.order_by('-pk'))
+        rows = [
+            rowfmt % (res2class(s), showstep(s))
+            for s in build.steps.order_by('-pk')
+        ]
         body = ''.join(rows) + rowfmt % ('running', rv)
         return mark_safe(outer % body)
     return build_or_step.name
-showbuild.needs_autoescape = True
+showbuild.needs_autoescape = True  # noqa
 
 
 @register.filter
 def showstep(step, autoescape=None):
-    if autoescape:
-        esc = conditional_escape
-    else:
-        esc = lambda x: x
+    def esc(input):
+        if autoescape:
+            return conditional_escape(input)
+        return input
 
     if step.starttime and step.endtime:
         step_t = step.endtime - step.starttime
@@ -90,7 +97,7 @@ def showstep(step, autoescape=None):
     fmt = '<span class="step_text">%s</span> <span class="step_time">%s</span>'
     result = fmt % (esc(' '.join(step.text)), step_t)
     return mark_safe(result)
-showstep.needs_autoescape = True
+showstep.needs_autoescape = True  # noqa
 
 
 @register.filter
@@ -98,7 +105,7 @@ def res2class(build_or_step):
     resultclasses = ['success', 'warning', 'failure', 'skip', 'except']
     try:
         class_ = resultclasses[build_or_step.result]
-    except:
+    except (TypeError, IndexError):
         if build_or_step.starttime:
             class_ = 'running'
         else:

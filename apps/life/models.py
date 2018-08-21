@@ -6,6 +6,7 @@
 most notable locales and hg repositories.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import os
 from django.conf import settings
@@ -14,7 +15,6 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.core.cache import cache
 from mbdb.models import File
-File  # silence pyflakes
 from elmo_commons.models import DurationThrough
 
 
@@ -62,11 +62,12 @@ class TeamLocaleThrough(DurationThrough):
         unique_together = (DurationThrough.unique + ('team', 'locale'),)
 
     def __unicode__(self):
-        rv = u'%s \u2014 %s' % (self.team.code, self.locale.code)
+        rv = '%s \u2014 %s' % (self.team.code, self.locale.code)
         if self.start or self.end:
-            rv += u' [%s:%s]' % (
-                self.start and str(self.start.date()) or '',
-                self.end and str(self.end.date()) or '')
+            rv += ' [{}:{}]'.format(
+                self.start.date() if self.start else '',
+                self.end.date() if self.end else ''
+            )
         return rv
 
 

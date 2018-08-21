@@ -2,12 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import datetime
+import json
 import re
 from elmo.test import TestCase
 from django.core.urlresolvers import reverse
-import json
 from l10nstats.models import Run
 from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from life.models import Tree, Forest, Locale
@@ -469,8 +470,8 @@ class DriversTest(ShippingTestCaseBase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         apps_and_versions = response.context['apps_and_versions']
-        self.assertListEqual(apps_and_versions.keys(), [appver.app])
-        avts = apps_and_versions.values()[0]
+        self.assertListEqual(list(apps_and_versions.keys()), [appver.app])
+        avts = list(apps_and_versions.values())[0]
         # Fennec first
         self.assertTrue(hasattr(avts[0], 'json_changesets'))
         self.assertEqual(avts[0].tree, beta)

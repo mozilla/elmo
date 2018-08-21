@@ -5,6 +5,7 @@
 '''Models for compare-locales statistics.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from django.db import models
 from life.models import Locale, Tree, Changeset
@@ -100,7 +101,6 @@ class Run(models.Model):
                 compare = 'green (%d%%)' % d[prefix + 'completion']
                 cls = 'success'
             yield (d, cls, compare)
-
 
 
 class Active(models.Model):

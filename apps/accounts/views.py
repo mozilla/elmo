@@ -5,7 +5,7 @@
 '''Views for logging in and out of l10n_site.
 '''
 from __future__ import absolute_import
-
+from __future__ import unicode_literals
 
 import json
 from django.contrib.auth.views import REDIRECT_FIELD_NAME

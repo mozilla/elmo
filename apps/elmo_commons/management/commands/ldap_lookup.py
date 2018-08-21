@@ -5,7 +5,7 @@
 '''Tool for doing local LDAP lookups
 '''
 from __future__ import absolute_import
-
+from __future__ import unicode_literals
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
@@ -15,6 +15,7 @@ from lib.auth.backends import (
     flatten_group_names
 )
 import ldap
+import six
 
 LDAP_IGNORE_ATTRIBUTES = (
     'uidNumber',
@@ -38,8 +39,10 @@ class Command(BaseCommand):
         mail = options['mailaddress']
 
         def show(key, value):
-            if (isinstance(value, list) and value
-                 and isinstance(value[0], basestring)):
+            if (
+                    isinstance(value, list) and value
+                    and isinstance(value[0], six.string_types)
+            ):
                 value = ', '.join(value)
             self.stdout.write(key.ljust(20) + " " + str(value))
 
@@ -78,13 +81,15 @@ class Command(BaseCommand):
             self.stdout.write("\nIN LDAP ".ljust(79, '-'))
             uid = None
             for uid, data in results:
-                for key, value in data.iteritems():
+                for key, value in six.iteritems(data):
                     if key in LDAP_IGNORE_ATTRIBUTES:
                         continue
                     show(key, value)
 
             if uid:
-                group_names = flatten_group_names(GROUP_MAPPINGS.values())
+                group_names = flatten_group_names(
+                    list(GROUP_MAPPINGS.values())
+                )
                 search_filter1 = backend.make_search_filter(
                     dict(cn=group_names),
                     any_parameter=True
@@ -113,11 +118,13 @@ class Command(BaseCommand):
 
                 groups = [x[1]['cn'][0] for x in group_results]
                 for group in groups:
-                    self.stdout.write(group.ljust(16) + ' -> ' +
+                    self.stdout.write(
+                        group.ljust(16) + ' -> ' +
                         _group_mappings_reverse.get(
                             group,
                             '*not a Django group*'
-                    ))
+                        )
+                    )
 
         finally:
             backend.disconnect()

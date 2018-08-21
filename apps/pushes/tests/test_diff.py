@@ -2,8 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
-import re
 import codecs
 from django.core.urlresolvers import reverse
 import hglib
@@ -69,7 +69,7 @@ class DiffTestCase(RepoTestBase):
         hgrepo = hglib.init(self.repo).open()
 
         (open(hgrepo.pathto('file.dtd'), 'w')
-            .write(u'<!ENTITY key1 "Hello">\n'))
+            .write('<!ENTITY key1 "Hello">\n'))
 
         hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                       message="initial commit",
@@ -77,7 +77,7 @@ class DiffTestCase(RepoTestBase):
         rev0 = hgrepo[0].node()
 
         # do this to trigger an exception on Mozilla.Parser.readContents
-        _content = u'<!ENTITY key1 "Hell\xe3">\n'
+        _content = '<!ENTITY key1 "Hell\xe3">\n'
         (codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1')
             .write(_content))
 
@@ -254,7 +254,7 @@ class TestDiffLines(TestCase):
         view = ValuedDiffView(
             rev1='a',
             rev2='b',
-            content1=u'key1 = Hell\xe3'.encode('latin-1'),
+            content1='key1 = Hell\xe3'.encode('latin-1'),
             content2=b'key1 = My Value\n',
         )
         lines = view.diffLines('file.ftl', 'changed')
@@ -265,7 +265,7 @@ class TestDiffLines(TestCase):
             rev1='a',
             rev2='b',
             content1=b'key1 = My Value\n',
-            content2=u'key1 = Hell\xe3'.encode('latin-1'),
+            content2='key1 = Hell\xe3'.encode('latin-1'),
         )
         lines = view.diffLines('file.ftl', 'changed')
         self.assertIsNone(lines)
@@ -292,7 +292,7 @@ class TestDiffLines(TestCase):
             [])
         self.assertListEqual(
             [d['value'] for d in val_line['newval']],
-            [u'My Value'])
+            ['My Value'])
         self.assertNotIn('class', val_line['newval'][0])
         self.assertEqual(attr_line['entity'], 'key1.attr')
         self.assertEqual(attr_line['class'], 'added')
@@ -304,7 +304,7 @@ class TestDiffLines(TestCase):
             [])
         self.assertListEqual(
             [d['value'] for d in attr_line['newval']],
-            [u'Attrbute'])
+            ['Attrbute'])
         self.assertNotIn('class', attr_line['newval'][0])
 
     def test_modify_fluent_add_val(self):
@@ -321,8 +321,8 @@ key2 = Other
         self.assertListEqual(
             lines,
             [{'class': 'added',
-              'entity': u'key2',
-              'newval': [{'value': u'Other'}],
+              'entity': 'key2',
+              'newval': [{'value': 'Other'}],
               'oldval': ''}])
 
     def test_modify_fluent_add_attr(self):
@@ -340,8 +340,8 @@ key2
         self.assertListEqual(
             lines,
             [{'class': 'added',
-              'entity': u'key2.attr',
-              'newval': [{'value': u'Attr'}],
+              'entity': 'key2.attr',
+              'newval': [{'value': 'Attr'}],
               'oldval': ''}])
 
     def test_modify_fluent_add_remove_none(self):
@@ -363,12 +363,12 @@ to_add = New Value
         self.assertListEqual(
             lines,
             [{'class': 'removed',
-              'entity': u'to_remove',
+              'entity': 'to_remove',
               'newval': '',
-              'oldval': [{'value': u'Old Value'}]},
+              'oldval': [{'value': 'Old Value'}]},
              {'class': 'added',
-              'entity': u'to_add',
-              'newval': [{'value': u'New Value'}],
+              'entity': 'to_add',
+              'newval': [{'value': 'New Value'}],
               'oldval': ''}])
 
     def test_modify_fluent_val_attr(self):
@@ -389,30 +389,30 @@ to_add = New Value
         self.assertEqual(val_line['class'], 'changed')
         self.assertListEqual(
             [d['value'] for d in val_line['oldval']],
-            [u'My', u' Value'])
+            ['My', ' Value'])
         self.assertListEqual(
             [d['class'] for d in val_line['oldval']],
-            [u'equal', u'equal'])
+            ['equal', 'equal'])
         self.assertListEqual(
             [d['value'] for d in val_line['newval']],
-            [u'My', u' New', u' Value'])
+            ['My', ' New', ' Value'])
         self.assertListEqual(
             [d['class'] for d in val_line['newval']],
-            [u'equal', u'insert', u'equal'])
+            ['equal', 'insert', 'equal'])
         self.assertEqual(attr_line['entity'], 'key1.attr')
         self.assertEqual(attr_line['class'], 'changed')
         self.assertListEqual(
             [d['value'] for d in attr_line['oldval']],
-            [u'Attr', u'bute'])
+            ['Attr', 'bute'])
         self.assertListEqual(
             [d['class'] for d in attr_line['oldval']],
-            [u'equal', u'equal'])
+            ['equal', 'equal'])
         self.assertListEqual(
             [d['value'] for d in attr_line['newval']],
-            [u'Attr', u'i', u'bute'])
+            ['Attr', 'i', 'bute'])
         self.assertListEqual(
             [d['class'] for d in attr_line['newval']],
-            [u'equal', u'insert', u'equal'])
+            ['equal', 'insert', 'equal'])
 
     def test_copied_fluent(self):
         view = ValuedDiffView(
@@ -428,11 +428,11 @@ to_add = New Value
         self.assertListEqual(
             lines,
             [{'class': 'changed',
-              'entity': u'key1',
-              'newval': [{'class': 'replace', 'value': u'New'},
-                         {'class': 'equal', 'value': u' Value'}],
-              'oldval': [{'class': 'replace', 'value': u'Old'},
-                         {'class': 'equal', 'value': u' Value'}]}]
+              'entity': 'key1',
+              'newval': [{'class': 'replace', 'value': 'New'},
+                         {'class': 'equal', 'value': ' Value'}],
+              'oldval': [{'class': 'replace', 'value': 'Old'},
+                         {'class': 'equal', 'value': ' Value'}]}]
             )
 
     def test_moved_fluent(self):
@@ -449,11 +449,11 @@ to_add = New Value
         self.assertListEqual(
             lines,
             [{'class': 'changed',
-              'entity': u'key1',
-              'newval': [{'class': 'replace', 'value': u'New'},
-                         {'class': 'equal', 'value': u' Value'}],
-              'oldval': [{'class': 'replace', 'value': u'Old'},
-                         {'class': 'equal', 'value': u' Value'}]}]
+              'entity': 'key1',
+              'newval': [{'class': 'replace', 'value': 'New'},
+                         {'class': 'equal', 'value': ' Value'}],
+              'oldval': [{'class': 'replace', 'value': 'Old'},
+                         {'class': 'equal', 'value': ' Value'}]}]
             )
 
     def test_removed_fluent(self):
@@ -470,9 +470,9 @@ to_add = New Value
         self.assertListEqual(
             lines,
             [{'class': 'removed',
-              'entity': u'key1',
+              'entity': 'key1',
               'newval': '',
-              'oldval': [{'value': u'Old Value'}]}]
+              'oldval': [{'value': 'Old Value'}]}]
             )
 
     def test_modify_fluent_remove_val(self):
@@ -489,8 +489,8 @@ key2 = Other
         self.assertListEqual(
             lines,
             [{'class': 'removed',
-              'entity': u'key2',
-              'oldval': [{'value': u'Other'}],
+              'entity': 'key2',
+              'oldval': [{'value': 'Other'}],
               'newval': ''}])
 
     def test_modify_fluent_remove_attr(self):
@@ -508,8 +508,8 @@ key2
         self.assertListEqual(
             lines,
             [{'class': 'removed',
-              'entity': u'key2.attr',
-              'oldval': [{'value': u'Attr'}],
+              'entity': 'key2.attr',
+              'oldval': [{'value': 'Attr'}],
               'newval': ''}])
 
     def test_moved_to_fluent(self):
@@ -526,11 +526,11 @@ key2
         self.assertListEqual(
             lines,
             [{'class': 'changed',
-              'entity': u'key1',
-              'newval': [{'class': 'replace', 'value': u'New'},
-                         {'class': 'equal', 'value': u' Value'}],
-              'oldval': [{'class': 'replace', 'value': u'Old'},
-                         {'class': 'equal', 'value': u' Value'}]}]
+              'entity': 'key1',
+              'newval': [{'class': 'replace', 'value': 'New'},
+                         {'class': 'equal', 'value': ' Value'}],
+              'oldval': [{'class': 'replace', 'value': 'Old'},
+                         {'class': 'equal', 'value': ' Value'}]}]
             )
 
     def test_moved_to_non_fluent(self):

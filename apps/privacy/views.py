@@ -5,6 +5,7 @@
 '''Views of privacy policies and their history.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from django.core.urlresolvers import reverse
 from django.db.models import Count
@@ -30,7 +31,7 @@ def show_policy(request, id=None):
             p = Policy.objects.get(active=True)
         else:
             p = Policy.objects.get(id=int(id))
-    except:
+    except (Policy.DoesNotExist, ValueError):
         p = None
     if p is not None and p.active:
         logs = LogEntry.objects.filter(content_type=Policy.contenttype())
@@ -94,7 +95,7 @@ def add_policy(request):
         return post_policy(request)
     try:
         current = Policy.objects.get(active=True).text
-    except:
+    except Policy.DoesNotExist:
         current = ''
     return render(request, 'privacy/add.html', {'current': current})
 
