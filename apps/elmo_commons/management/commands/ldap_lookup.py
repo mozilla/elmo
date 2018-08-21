@@ -87,9 +87,7 @@ class Command(BaseCommand):
                     show(key, value)
 
             if uid:
-                group_names = flatten_group_names(
-                    list(GROUP_MAPPINGS.values())
-                )
+                group_names = flatten_group_names(GROUP_MAPPINGS.values())
                 search_filter1 = backend.make_search_filter(
                     dict(cn=group_names),
                     any_parameter=True

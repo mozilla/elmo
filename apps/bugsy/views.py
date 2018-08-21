@@ -43,7 +43,7 @@ def get_bug_links(request):
     locale_codes = request.GET.getlist('locales')
     locales = Locale.objects.filter(code__in=locale_codes)
     locale_names = dict(locales.values_list('code', 'name'))
-    opts = dict((k, Template(v)) for k, v in six.iteritems(request.GET))
+    opts = {k: Template(v) for k, v in six.iteritems(request.GET)}
     opts.pop('locales')
     bugs = {}
     for loc in locale_codes:
@@ -51,7 +51,7 @@ def get_bug_links(request):
             'loc': loc,
             'locale': locale_names.get(loc, '[%s]' % loc),
         })
-        item = dict((k, t.render(c)) for k, t in six.iteritems(opts))
+        item = {k: t.render(c) for k, t in six.iteritems(opts)}
         bugs[loc] = item
     return HttpResponse(json.dumps(bugs, indent=2),
                         content_type="application/json")

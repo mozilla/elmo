@@ -11,8 +11,6 @@ from django.db import models
 from . import fields
 from django.conf import settings
 import six
-from six.moves import map
-from six.moves import range
 
 
 class Master(models.Model):
@@ -69,7 +67,9 @@ class Change(models.Model):
         if self.branch:
             rv += ', ' + self.branch
         if self.tags:
-            rv += ' (%s)' % ', '.join(map(six.text_type, self.tags.all()))
+            rv += ' (%s)' % ', '.join(
+                (six.text_type(t) for t in self.tags.all())
+            )
         return rv
 
 
@@ -222,7 +222,7 @@ class URL(models.Model):
 
 
 class Log(models.Model):
-    STDOUT, STDERR, HEADER = list(range(3))
+    STDOUT, STDERR, HEADER = range(3)
     JSON = 5
     CHANNEL_NAMES = ('stdout', 'stderr', 'header', None, None, 'json')
     name = models.CharField(max_length=100, null=True, blank=True)

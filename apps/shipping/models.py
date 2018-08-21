@@ -37,9 +37,10 @@ class AppVersionTreeThrough(DurationThrough):
         rv = '%s \u2014 %s' % (self.appversion.__unicode__(),
                                self.tree.__unicode__())
         if self.start or self.end:
-            rv += ' [%s:%s]' % (
-                self.start and str(self.start.date()) or '',
-                self.end and str(self.end.date()) or '')
+            rv += ' [{}:{}]'.format(
+                self.start.date() if self.start else '',
+                self.end.date if self.end else ''
+            )
         return rv
 
     class Meta(DurationThrough.DurationMeta):

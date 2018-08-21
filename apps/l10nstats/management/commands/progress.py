@@ -153,11 +153,11 @@ class Command(BaseCommand):
             )
             for l, r in locs.values_list('code', 'mr'):
                 rv[(l, tree)] = r
-        r2r = dict(
-            (id, (c, t))
+        r2r = {
+            id: (c, t)
             for id, c, t in
             Run.objects
             .filter(id__in=rv.values())
             .values_list('id', 'changed', 'total')
-        )
+        }
         return dict((t, r2r[r]) for t, r in rv.items())

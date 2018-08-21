@@ -222,8 +222,8 @@ class DiffView(View):
                 # logging.warn('Unable to parse %s', path, exc_info=True)
                 return None
         ar = AddRemove()
-        ar.set_left(list(old_translations.keys()))
-        ar.set_right(list(new_translations.keys()))
+        ar.set_left(old_translations.keys())
+        ar.set_right(new_translations.keys())
         for action, key in ar:
             if action == 'equal':
                 # In Fluent, values can be added or removed if an Attribute
