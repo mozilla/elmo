@@ -211,8 +211,6 @@ class AccountsTestCase(TestCase):
             settings.MIDDLEWARE_CLASSES)
 
         self.assertIn('session_csrf', settings.INSTALLED_APPS)
-        # funfactory initiates an important monkeypatch which we need
-        self.assertIn('funfactory', settings.INSTALLED_APPS)
 
         login_url = reverse('user-json')
 

@@ -11,7 +11,6 @@ import sys
 
 
 # Hook up elmo specific python locations.
-# This used to be funfactory, but that's doing too much
 prev_sys_path = list(sys.path)  # to reorder our stuff in front
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -21,11 +20,6 @@ sys.path[:] = (
     [_path for _path in sys.path if _path not in prev_sys_path] +
     prev_sys_path
 )
-
-# settings still uses a bunch of funfactory, but assumes a different ROOT.
-# help it fix that
-import funfactory.manage
-funfactory.manage.ROOT = ROOT
 
 if __name__ == "__main__":
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "elmo.settings")

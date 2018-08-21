@@ -6,9 +6,7 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from funfactory.manage import (
-    path,
-)
+import os
 
 ROOT_URLCONF = 'elmo.urls'
 TEST_RUNNER = 'elmo.test.TestRunner'
@@ -59,7 +57,9 @@ STATIC_URL = '/static/'
 # is so we, in nginx/apache, can set up the root to be
 # <base path>/collected
 # then a URL like http://domain/static/js/jquery.js just works
-STATIC_ROOT = COMPRESS_ROOT = path('collected', 'static')
+STATIC_ROOT = COMPRESS_ROOT = os.path.normpath(
+    os.path.join(os.path.dirname(__file__), '..', '..', 'collected', 'static')
+)
 
 # Middlewares, apps, URL configs.
 
@@ -76,8 +76,6 @@ MIDDLEWARE_CLASSES = (
 )
 
 INSTALLED_APPS = (
-    # a manually maintained list of apps "from funfactory"
-    'funfactory',
     'compressor',
     'commonware.response.cookies',
     'session_csrf',
