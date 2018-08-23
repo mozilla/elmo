@@ -16,6 +16,7 @@ import six.moves.urllib.parse
 from six.moves import range
 from functools import reduce
 import hglib
+from hglib.util import b
 
 from life.models import Repository, Push, Changeset, Branch, File
 from django.db import transaction, connection
@@ -69,8 +70,8 @@ def get_or_create_changeset(repo, hgrepo, ctx):
 
     cs.parents.set(list(p_dict.values()))
     repo.changesets.add(cs, *(list(p_dict.values())))
-    spacefiles = [p for p in ctx.files() if p.endswith(' ')]
-    goodfiles = [p for p in ctx.files() if not p.endswith(' ')]
+    spacefiles = [p for p in ctx.files() if p.endswith(b' ')]
+    goodfiles = [p for p in ctx.files() if not p.endswith(b' ')]
     if goodfiles:
         # chunk up the work on files,
         # mysql doesn't like them all at once
@@ -155,7 +156,7 @@ def _hg_repository_sync(repopath, url, do_update=False):
         hgrepo.open()
     else:
         hgrepo = hglib.open(repopath)
-        hgrepo.pull(source=str(url))
+        hgrepo.pull(source=b(url))
         if do_update:
             hgrepo.update()
     return hgrepo

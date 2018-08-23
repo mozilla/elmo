@@ -38,7 +38,7 @@ class ElmoConfig(AppConfig):
             import os
             from hglib.util import b
 
-            def pathto(self, f, cwd=b('.')):
+            def pathto(self, f, cwd='.'):
                 """
                 Return relative path to f. If cwd is given, use it as current
                 working directory.
@@ -47,7 +47,7 @@ class ElmoConfig(AppConfig):
                 f - file path with / as separator
                 cwd - working directory with os.sep as separator
                 """
-                return os.path.relpath(os.path.join(self.root(),
-                                                    *(f.split(b('/')))),
-                                       start=cwd)
+                return b(os.path.relpath(os.path.join(self.root().decode('latin-1'),
+                                                     *(f.split('/'))),
+                                        start=cwd))
             hgclient.pathto = pathto

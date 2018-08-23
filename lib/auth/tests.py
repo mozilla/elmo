@@ -16,7 +16,7 @@ from django.contrib.auth.models import User, Group
 
 # lib.auth.backends expects the LDAP_* to be set up
 # fake that so we can import MozLdapBackend
-settings.LDAP_HOST = settings.LDAP_DN = settings.LDAP_PASSWORD = b'test'
+settings.LDAP_HOST = settings.LDAP_DN = settings.LDAP_PASSWORD = 'test'
 from lib.auth.backends import MozLdapBackend  # noqa: E402
 
 
@@ -36,8 +36,8 @@ class MockLDAP:
 
     def simple_bind_s(self, dn, password):
         # to simulate how _ldap works we have to have byte strings here
-        assert isinstance(dn, six.binary_type)
-        assert isinstance(password, six.binary_type)
+        assert isinstance(dn, six.text_type), dn
+        assert isinstance(password, six.text_type), password
         if self.credentials is None:
             # password check passed
             return
@@ -70,8 +70,8 @@ class LDAPAuthTestCase(TestCase):
         ]
 
         self.fake_group = [
-          (b'cn=scm_l10n,ou=groups,dc=mozilla',
-           {'cn': [b'scm_l10n']})
+          ('cn=scm_l10n,ou=groups,dc=mozilla',
+           {'cn': ['scm_l10n']})
         ]
 
         # make sure there are certain groups available
@@ -294,7 +294,7 @@ class LDAPAuthTestCase(TestCase):
                 url,
                 {'username': 'foo', 'password': 'secret'})
             self.assertEqual(response.status_code, 503)
-            self.assertEqual(response.content, 'Service Unavailable')
+            self.assertEqual(response.content, b'Service Unavailable')
         finally:
             settings.AUTHENTICATION_BACKENDS = settings_before
 

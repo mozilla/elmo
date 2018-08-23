@@ -130,14 +130,15 @@ class DiffView(View):
         copies = {}
         for code, path in self.client.status(rev=[self.rev1, self.rev2],
                                              copies=True):
-            if code == 'M':
+            path = path.decode('latin-1')
+            if code == b'M':
                 changed.append(path)
-            elif code == 'A':
+            elif code == b'A':
                 added.append(path)
-            elif code == ' ':
+            elif code == b' ':
                 # last added file was copied
                 copies[added[-1]] = path
-            elif code == 'R':
+            elif code == b'R':
                 removed.append(path)
             else:
                 raise RuntimeError('status code %s unexpected for %s' %

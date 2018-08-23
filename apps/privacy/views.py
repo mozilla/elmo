@@ -13,7 +13,7 @@ from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
 from django.http import (HttpResponseRedirect,
                          HttpResponseForbidden, Http404)
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE
 from privacy.models import Policy, Comment
 
@@ -110,10 +110,10 @@ def post_policy(request):
                                who=request.user)
     LogEntry.objects.log_action(request.user.id,
                                 Policy.contenttype().id, p.id,
-                                force_unicode(p), ADDITION)
+                                force_text(p), ADDITION)
     LogEntry.objects.log_action(request.user.id,
                                 Comment.contenttype().id, c.id,
-                                force_unicode(c), ADDITION)
+                                force_text(c), ADDITION)
 
     return redirect(reverse('privacy:show',
                             kwargs={'id': p.id}))
@@ -138,12 +138,12 @@ def activate_policy(request):
             for _p in qa:
                 LogEntry.objects.log_action(request.user.id,
                                             Policy.contenttype().id, _p.id,
-                                            force_unicode(_p), CHANGE,
+                                            force_text(_p), CHANGE,
                                             change_message="deactivate")
             qa.update(active=False)
             LogEntry.objects.log_action(request.user.id,
                                         Policy.contenttype().id, policy.id,
-                                        force_unicode(policy), CHANGE,
+                                        force_text(policy), CHANGE,
                                         change_message="activate")
             policy.active = True
             policy.save()
@@ -166,5 +166,5 @@ def add_comment(request):
                                    who=request.user)
         LogEntry.objects.log_action(request.user.id,
                                     Comment.contenttype().id, c.id,
-                                    force_unicode(c), ADDITION)
+                                    force_text(c), ADDITION)
     return redirect(reverse('privacy:versions'))

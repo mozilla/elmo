@@ -10,8 +10,8 @@ from __future__ import unicode_literals
 
 import datetime
 import json
-from cStringIO import StringIO
 import six
+from six.moves import StringIO
 from elmo.test import TestCase
 from django.core import management
 from mbdb.models import Property, Step, Build, Builder, Master, Slave

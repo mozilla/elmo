@@ -9,7 +9,8 @@ from six.moves.urllib.parse import urlparse
 from elmo.test import TestCase
 from django.http import QueryDict
 from django.core.urlresolvers import reverse
-from django.utils.safestring import SafeUnicode
+from django.utils.encoding import force_text
+from django.utils.safestring import SafeText
 from django.test.client import RequestFactory
 from shipping.tests.test_views import ShippingTestCaseBase
 from life.models import Tree, Locale, Forest
@@ -75,7 +76,8 @@ class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
         url = reverse('tree-history', args=[tree.code])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertIn('no statistics for %s' % tree.code, response.content)
+        content = force_text(response.content)
+        self.assertIn('no statistics for %s' % tree.code, content)
 
         self._create_active_run()
         response = self.client.get(url)
@@ -125,7 +127,7 @@ class ShowRunTestCase(TestCase):
         r = Run(errors=3)
         r.id = 1
         rv = showrun(r)
-        self.assertIsInstance(rv, SafeUnicode)
+        self.assertIsInstance(rv, SafeText)
         frag = parseFragment(rv)
         childNodes = list(frag)
         self.assertEqual(len(childNodes), 1)
@@ -143,7 +145,7 @@ class ShowRunTestCase(TestCase):
         r = Run(missing=3)
         r.id = 1
         rv = showrun(r)
-        self.assertIsInstance(rv, SafeUnicode)
+        self.assertIsInstance(rv, SafeText)
         frag = parseFragment(rv)
         childNodes = list(frag)
         self.assertEqual(len(childNodes), 1)
@@ -161,7 +163,7 @@ class ShowRunTestCase(TestCase):
         r = Run(missingInFiles=3)
         r.id = 1
         rv = showrun(r)
-        self.assertIsInstance(rv, SafeUnicode)
+        self.assertIsInstance(rv, SafeText)
         frag = parseFragment(rv)
         childNodes = list(frag)
         self.assertEqual(len(childNodes), 1)
@@ -179,7 +181,7 @@ class ShowRunTestCase(TestCase):
         r = Run(warnings=3)
         r.id = 1
         rv = showrun(r)
-        self.assertIsInstance(rv, SafeUnicode)
+        self.assertIsInstance(rv, SafeText)
         frag = parseFragment(rv)
         childNodes = list(frag)
         self.assertEqual(len(childNodes), 1)
@@ -197,7 +199,7 @@ class ShowRunTestCase(TestCase):
         r = Run(obsolete=3)
         r.id = 1
         rv = showrun(r)
-        self.assertIsInstance(rv, SafeUnicode)
+        self.assertIsInstance(rv, SafeText)
         frag = parseFragment(rv)
         childNodes = list(frag)
         self.assertEqual(len(childNodes), 1)
@@ -215,7 +217,7 @@ class ShowRunTestCase(TestCase):
         r = Run()
         r.id = 1
         rv = showrun(r)
-        self.assertIsInstance(rv, SafeUnicode)
+        self.assertIsInstance(rv, SafeText)
         frag = parseFragment(rv)
         childNodes = list(frag)
         self.assertEqual(len(childNodes), 1)

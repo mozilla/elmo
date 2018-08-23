@@ -48,7 +48,7 @@ class SignOffTest(TestCase, EmbedsTestCaseMixin):
         url += '?av=fx1.0'
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content, """da l10n da 0003
+        self.assertEqual(response.content, b"""da l10n da 0003
 de l10n de 0002
 """)
         self.assertEqual('max-age=60', response['Cache-Control'])
@@ -59,7 +59,7 @@ de l10n de 0002
         url += '?av=fx1.0'
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content, """da
+        self.assertEqual(response.content, b"""da
 de
 en-US
 """)

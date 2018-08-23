@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 import codecs
 from django.core.urlresolvers import reverse
 import hglib
+import six
 
 from life.models import Repository
 from .base import RepoTestBase, TestCase
@@ -220,12 +221,12 @@ class TestPaths4Revs(RepoTestBase):
         with self.assertRaises(BadRevision) as bad_rev_cm:
             view.paths4revs('iiii', '0')
         self.assertEqual(
-            bad_rev_cm.exception.message,
+            six.text_type(bad_rev_cm.exception),
             "Unrecognized 'from' parameter")
         with self.assertRaises(BadRevision) as bad_rev_cm:
             view.paths4revs('0', 'jjjj')
         self.assertEqual(
-            bad_rev_cm.exception.message,
+            six.text_type(bad_rev_cm.exception),
             "Unrecognized 'to' parameter")
 
         # test content retrieval from hg

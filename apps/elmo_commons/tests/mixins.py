@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 import re
 from django.conf import settings
 from django.contrib.staticfiles import finders
+from django.utils.encoding import force_text
 
 SCRIPTS_REGEX = re.compile(
     '<script\s*[^>]*src=["\']([^"\']+)["\'].*?</script>',
@@ -41,6 +42,7 @@ class EmbedsTestCaseMixin:
     def assert_all_embeds(self, response):
         if hasattr(response, 'content'):
             response = response.content
+        response = force_text(response)
         response = re.sub('<!--(.*)-->', '', response, re.M)
         self._check(response, SCRIPTS_REGEX, '.js')
         self._check(response, STYLES_REGEX, '.css')

@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
 from __future__ import unicode_literals
+
 import ldap
 from ldap.filter import filter_format
 
@@ -11,7 +12,7 @@ from django.contrib.auth.models import User, Group
 from django.contrib.auth.backends import ModelBackend
 from django.core.validators import validate_email, ValidationError
 from hashlib import md5
-from django.utils.encoding import force_unicode, smart_str
+from django.utils.encoding import force_text, smart_str
 import os
 import six
 
@@ -49,9 +50,9 @@ def flatten_group_names(values):
 
 class MozLdapBackend(ModelBackend):
     """Creates the connvection to the server, and binds anonymously"""
-    host = b""
-    dn = b""
-    password = b""
+    host = ""
+    dn = ""
+    password = ""
     certfile = os.path.join(HERE, "cacert.pem")
     ldo = None
 
@@ -116,7 +117,7 @@ class MozLdapBackend(ModelBackend):
         # XXX this creates option errors, no idea why. keep it around
         # if needed, seems to work fine without it
         # ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, self.certfile)
-        self.ldo = ldap.initialize(self.host)
+        self.ldo = ldap.initialize(self.host, bytes_mode=False)
         self.ldo.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
 
     def connect(self):
@@ -153,6 +154,7 @@ class MozLdapBackend(ModelBackend):
                 return
 
             uid, result = results[0]
+            uid = force_text(uid)
 
             # search by groups
             group_names = flatten_group_names(GROUP_MAPPINGS.values())
@@ -190,7 +192,7 @@ class MozLdapBackend(ModelBackend):
         # need to check if their password is correct
         self.initialize()
         try:
-            self.ldo.simple_bind_s(smart_str(uid), smart_str(password))
+            self.ldo.simple_bind_s(force_text(uid), force_text(password))
         except ldap.INVALID_CREDENTIALS:  # Bad password, credentials are bad.
             return
         except ldap.UNWILLING_TO_PERFORM:  # Bad password, credentials are bad.
@@ -201,8 +203,8 @@ class MozLdapBackend(ModelBackend):
         first_name = result['givenName'][0]
         last_name = result['sn'][0]
         email = result['mail'][0]
-        first_name = force_unicode(first_name)
-        last_name = force_unicode(last_name)
+        first_name = force_text(first_name)
+        last_name = force_text(last_name)
 
         # final wrapper that returns the user
         return self._update_local_user(

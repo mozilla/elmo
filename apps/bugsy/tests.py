@@ -18,7 +18,7 @@ class BugsyTestCase(TestCase, EmbedsTestCaseMixin):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response.content)
-        self.assertIn('There are currently ', response.content)
+        self.assertIn(b'There are currently ', response.content)
 
     def test_basic_render_new_locale(self):
         url = reverse(bugsy.views.new_locale)

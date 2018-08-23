@@ -419,7 +419,7 @@ class TeamSnippetTest(TestCase, DataMixin, TeamSnippetProcessMixin):
 
 class StatusProcessMixin(object):
     def process(self, flags):
-        view = StatusJSON(locales=[self.locale], trees=[], avs=[])
+        view = StatusJSON(locales=[self.locale.code], trees=[], avs=[])
         items = defaultdict(dict)
         for item in view.get_data()[0]:
             items[item['type']][item.get('id', item['label'])] = item

@@ -320,5 +320,8 @@ class Tree(models.Model):
     def __unicode__(self):
         return self.code
 
+    def __str__(self):
+        return self.code
+
     def natural_key(self):
         return (self.code,)

@@ -89,7 +89,7 @@ def tbpl_inner(request):
     ss = SourceStamp.objects.filter(builds__isnull=False).order_by('-pk')
     props = []
     if request is not None:
-        for key, values in request.GET.iterlists():
+        for key, values in request.GET.lists():
             if key == "random":
                 continue
             if key == "after":
@@ -206,7 +206,7 @@ def tbpl_inner(request):
 def tbpl(request):
     return render(request, 'tinder/tbpl.html', {
                     'stamps': tbpl_inner(request),
-                    'params': request.GET.iterlists(),
+                    'params': request.GET.lists(),
                   })
 
 
@@ -476,7 +476,7 @@ def _waterfall(request):
                 starts.insert(0, e)
                 if b is not None:
                     starts.append(b)
-                starts.sort(lambda r, l: cmp(r.starttime, l.starttime))
+                starts.sort(key=lambda k: k.starttime)
                 b = starts.pop()
                 try:
                     e = next(b_iter)

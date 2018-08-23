@@ -5,12 +5,14 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import datetime
+from importlib import import_module
 import re
 import os
 from elmo.test import TestCase
 from django.core.urlresolvers import reverse
 from django.core.cache import cache
 from django.conf import settings
+from django.utils.encoding import force_text
 from django.test import override_settings
 from django.test.client import RequestFactory
 import six.moves.urllib.parse
@@ -42,13 +44,12 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         # exists.
 
         # import the root urlconf like django does when it starts up
-        root_urlconf = __import__(settings.ROOT_URLCONF,
-                                  globals(), locals(), ['urls'], -1)
+        root_urlconf = import_module(settings.ROOT_URLCONF)
         # ...so that we can access the 'handler500' defined in there
         par, end = root_urlconf.handler500.rsplit('.', 1)
         # ...which is an importable reference to the
         # real handler500 function
-        views = __import__(par, globals(), locals(), [end], -1)
+        views = import_module(par)
         # ...and finally we the handler500 function at hand
         handler500 = getattr(views, end)
 
@@ -67,7 +68,8 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
             # do this inside a frame that has a sys.exc_info()
             response = handler500(fake_request)
             self.assertEqual(response.status_code, 500)
-            self.assertIn('Oops', response.content)
+            content = force_text(response.content)
+            self.assertIn('Oops', content)
 
     # SESSION_COOKIE_SECURE has to be True for tests to work.
     # The reason this might be switched off is if you have set it to False
@@ -83,7 +85,8 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
              'password': 'secret'},
             **{'X-Requested-With': 'XMLHttpRequest'})
         self.assertEqual(response.status_code, 200)
-        self.assertIn('class="error', response.content)
+        content = force_text(response.content)
+        self.assertIn('class="error', content)
 
         from django.contrib.auth.models import User
         user = User.objects.create(username='peterbe',
@@ -115,8 +118,9 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         url = reverse('user-json')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+        content = force_text(response.content)
         # "Hi Peter" or something like that
-        self.assertIn('Peter', response.content)
+        self.assertIn('Peter', content)
 
     def test_index_page(self):
         """load the current homepage index view"""
@@ -181,7 +185,8 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response.content)
-        content = response.content.split('id="teams"')[1]
+        content = force_text(response.content)
+        content = content.split('id="teams"')[1]
         content = content.split('<footer')[0]
 
         url_fr = reverse('l10n-team', args=['fr'])
@@ -217,7 +222,8 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         url = reverse('teams')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        content = response.content.split('id="teams"')[1]
+        content = force_text(response.content)
+        content = content.split('id="teams"')[1]
         content = content.split('<footer')[0]
 
         url_sr = reverse('l10n-team', args=['sr'])
@@ -230,23 +236,26 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         team_locale.start = tomorrow
         team_locale.save()
         response = self.client.get(url)
-        self.assertIn(url_sr, response.content)
-        self.assertIn(url_sr_latn, response.content)
+        content = force_text(response.content)
+        self.assertIn(url_sr, content)
+        self.assertIn(url_sr_latn, content)
 
         yesterday = today - datetime.timedelta(days=1)
         team_locale.start = None
         team_locale.end = yesterday
         team_locale.save()
         response = self.client.get(url)
-        self.assertIn(url_sr, response.content)
-        self.assertIn(url_sr_latn, response.content)
+        content = force_text(response.content)
+        self.assertIn(url_sr, content)
+        self.assertIn(url_sr_latn, content)
 
         team_locale.start = yesterday
         team_locale.end = tomorrow
         team_locale.save()
         response = self.client.get(url)
-        self.assertIn(url_sr, response.content)
-        self.assertNotIn(url_sr_latn, response.content)
+        content = force_text(response.content)
+        self.assertIn(url_sr, content)
+        self.assertNotIn(url_sr_latn, content)
 
     def test_team_page_with_owning_team(self):
         """Trying to reach a locale owned by another team should redirect. """
@@ -303,11 +312,12 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
         url = reverse('l10n-team', args=['sv-SE'])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assert_all_embeds(response.content)
-        self.assertIn('Swedish', response.content)
+        content = force_text(response.content)
+        self.assert_all_embeds(content)
+        self.assertIn('Swedish', content)
         # it should also say "Swedish" in the <h1>
         h1_text = re.findall('<h1[^>]*>(.*?)</h1>',
-                             response.content,
+                             content,
                              re.M | re.DOTALL)[0]
         self.assertIn('Swedish', h1_text)
 

@@ -15,6 +15,7 @@ from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from django.core.urlresolvers import reverse
 from django.test import override_settings
 from django.test.client import Client
+from django.utils.encoding import force_text
 from mbdb.models import (Build, Change, Master, Log, Property, SourceStamp,
                          Builder, Slave)
 import tinder.views
@@ -311,7 +312,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
 
         with override_settings(LOG_MOUNTS={master.name: self.temp_directory}):
             response = self.client.get(url)
-        content = response.content
+        content = force_text(response.content)
         content = content.split('</header>')[1].split('</footer')[0]
 
         self.assertIn(
@@ -357,7 +358,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         url = reverse('tinder-showlog',
                       args=[step.id, log.name])
         response = self.client.get(url)
-        content = response.content
+        content = force_text(response.content)
         content = content.split('</header>')[1].split('</footer')[0]
 
         self.assertIn(htmlcontent, content)
@@ -402,7 +403,8 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         self.assertEqual(response.status_code, 200)
 
         feed_url = reverse('BuildsForChangeFeed', args=(change.number,))
-        self.assertIn(feed_url, response.content)
+        content = force_text(response.content)
+        self.assertIn(feed_url, content)
 
 
 SAMPLE_BUILD_LOG_PAYLOAD = '''16:2header content

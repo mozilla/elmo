@@ -9,6 +9,7 @@ import time
 from elmo.test import TestCase
 from django.core.urlresolvers import reverse
 import hglib
+from hglib.util import b
 
 from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from life.models import Repository, Push, Branch, File
@@ -73,7 +74,7 @@ class TestHandlePushes(RepoTestBase):
 
         self.assertEqual(changeset.description, 'initial commit')
         self.assertEqual(changeset.user, 'Jane Doe <jdoe@foo.tld>')
-        self.assertEqual(changeset.revision, rev0)
+        self.assertEqual(b(changeset.revision), rev0)
         self.assertEqual(changeset.branch, branch)
 
         self.assertEqual(branch.name, 'default')

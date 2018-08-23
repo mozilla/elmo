@@ -134,15 +134,11 @@ def history_plot(request):
             'run': r.id
         }
         for r in q2
-    ] + [
-        {
-            'srctime': endtime,
-            'missing': r.allmissing + r.report,
-            'obsolete': r.obsolete,
-            'unchanged': r.unchanged,
-            'run': r.id
-        }
     ]
+    if runs:
+        r = runs[-1].copy()
+        r['srctime'] = endtime
+        runs.append(r)
     stamps = {}
     stamps['start'] = int(calendar.timegm(starttime.timetuple()))
     stamps['end'] = int(calendar.timegm(endtime.timetuple()))

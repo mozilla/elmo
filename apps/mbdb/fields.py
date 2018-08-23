@@ -36,13 +36,19 @@ class PickledObjectField(models.Field):
     def from_db_value(self, value, expression, connection, context):
         if value is None:
             return value
-        return pickle.loads(str(value))
+        if isinstance(value, six.text_type):
+            value = value.encode('ascii')
+        return pickle.loads(value)
 
     def to_python(self, value):
         if value is None:
             return value
         try:
-            return pickle.loads(str(value))
+            if isinstance(value, six.text_type):
+                b_value = value.encode('ascii')
+            else:
+                b_value = value
+            return pickle.loads(b_value)
         except pickle.UnpicklingError:
             # If an error was raised, just return the plain value
             return value
@@ -52,10 +58,11 @@ class PickledObjectField(models.Field):
         if value is None:
             return value
         if isinstance(value, six.binary_type):
-            # normalize all strings to unicode, like django does
+            # normalize all strings to bytes for pickle
             value = six.text_type(value)
-        value = pickle.dumps(value)
-        return value
+        value = pickle.dumps(value, protocol=0)
+        # convert to unicode, like django does
+        return value.decode('ascii')
 
     def get_internal_type(self):
         return 'TextField'
