@@ -18,7 +18,7 @@ import tinder.views
 register = template.Library()
 
 
-@register.filter
+@register.filter(needs_autoescape=True)
 def showbuild(build_or_step, autoescape=None):
     def esc(input):
         if autoescape:
@@ -68,10 +68,9 @@ def showbuild(build_or_step, autoescape=None):
         body = ''.join(rows) + rowfmt % ('running', rv)
         return mark_safe(outer % body)
     return build_or_step.name
-showbuild.needs_autoescape = True  # noqa
 
 
-@register.filter
+@register.filter(needs_autoescape=True)
 def showstep(step, autoescape=None):
     def esc(input):
         if autoescape:
@@ -97,7 +96,6 @@ def showstep(step, autoescape=None):
     fmt = '<span class="step_text">%s</span> <span class="step_time">%s</span>'
     result = fmt % (esc(' '.join(step.text)), step_t)
     return mark_safe(result)
-showstep.needs_autoescape = True  # noqa
 
 
 @register.filter

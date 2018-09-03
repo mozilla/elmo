@@ -13,7 +13,6 @@ import bleach
 register = template.Library()
 
 
-@register.filter
+@register.filter(needs_autoescape=False)
 def bleach_safe(text, autoescape=None):
     return mark_safe(bleach.linkify(bleach.clean(text)))
-bleach_safe.needs_autoescape = False  # noqa
