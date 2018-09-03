@@ -8,6 +8,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from django.contrib.auth.models import User
+from django.utils.encoding import force_text
 from django.core.management.base import BaseCommand
 from lib.auth.backends import (
     MozLdapBackend,
@@ -41,10 +42,9 @@ class Command(BaseCommand):
         def show(key, value):
             if (
                     isinstance(value, list) and value
-                    and isinstance(value[0], six.string_types)
             ):
-                value = ', '.join(value)
-            self.stdout.write(key.ljust(20) + " " + str(value))
+                value = ', '.join(force_text(v) for v in value)
+            self.stdout.write(key.ljust(20) + " " + force_text(value))
 
         self.stdout.write("\nLOCAL USER ".ljust(79, '-'))
         try:
@@ -114,7 +114,7 @@ class Command(BaseCommand):
                     for name in ldap_names:
                         _group_mappings_reverse[name] = django_name
 
-                groups = [x[1]['cn'][0] for x in group_results]
+                groups = [force_text(x[1]['cn'][0]) for x in group_results]
                 for group in groups:
                     self.stdout.write(
                         group.ljust(16) + ' -> ' +
