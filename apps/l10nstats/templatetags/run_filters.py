@@ -5,14 +5,21 @@
 '''Django template filters to be used to display compare-locales runs.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from django import template
 from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
+import six
 
 from l10nstats.models import Run
 
 register = template.Library()
+
+
+def plural(msg, num):
+    # dirty plural hack
+    return num == 1 and (msg % num) or ((msg + 's') % num)
 
 
 @register.filter
@@ -26,15 +33,12 @@ def showrun(run):
     if not isinstance(run, Run):
         return mark_safe("&nbsp;")
     fmt = ('<a %%s href="%s?run=%%d">%%s</a>' %
-            reverse('compare-locales'))
+           reverse('compare-locales'))
     missing = run.missing + run.missingInFiles
     data = {'missing': missing}
     for k in ('errors', 'warnings', 'total'):
         data[k] = getattr(run, k)
-    datastr = ' '.join('data-%s="%d"' % (k, v) for k, v in data.iteritems())
-    def plural(msg, num):
-        # dirty plural hack
-        return num==1 and (msg % num) or ((msg + 's') % num)
+    datastr = ' '.join('data-%s="%d"' % (k, v) for k, v in six.iteritems(data))
     cmp_segs = []
     if run.errors:
         cmp_segs.append(plural('%d error', run.errors))

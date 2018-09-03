@@ -5,9 +5,10 @@
 '''Tool for doing local LDAP lookups
 '''
 from __future__ import absolute_import
-
+from __future__ import unicode_literals
 
 from django.contrib.auth.models import User
+from django.utils.encoding import force_text
 from django.core.management.base import BaseCommand
 from lib.auth.backends import (
     MozLdapBackend,
@@ -15,6 +16,7 @@ from lib.auth.backends import (
     flatten_group_names
 )
 import ldap
+import six
 
 LDAP_IGNORE_ATTRIBUTES = (
     'uidNumber',
@@ -38,10 +40,11 @@ class Command(BaseCommand):
         mail = options['mailaddress']
 
         def show(key, value):
-            if (isinstance(value, list) and value
-                 and isinstance(value[0], basestring)):
-                value = ', '.join(value)
-            self.stdout.write(key.ljust(20) + " " + str(value))
+            if (
+                    isinstance(value, list) and value
+            ):
+                value = ', '.join(force_text(v) for v in value)
+            self.stdout.write(key.ljust(20) + " " + force_text(value))
 
         self.stdout.write("\nLOCAL USER ".ljust(79, '-'))
         try:
@@ -78,7 +81,7 @@ class Command(BaseCommand):
             self.stdout.write("\nIN LDAP ".ljust(79, '-'))
             uid = None
             for uid, data in results:
-                for key, value in data.iteritems():
+                for key, value in six.iteritems(data):
                     if key in LDAP_IGNORE_ATTRIBUTES:
                         continue
                     show(key, value)
@@ -111,13 +114,15 @@ class Command(BaseCommand):
                     for name in ldap_names:
                         _group_mappings_reverse[name] = django_name
 
-                groups = [x[1]['cn'][0] for x in group_results]
+                groups = [force_text(x[1]['cn'][0]) for x in group_results]
                 for group in groups:
-                    self.stdout.write(group.ljust(16) + ' -> ' +
+                    self.stdout.write(
+                        group.ljust(16) + ' -> ' +
                         _group_mappings_reverse.get(
                             group,
                             '*not a Django group*'
-                    ))
+                        )
+                    )
 
         finally:
             backend.disconnect()

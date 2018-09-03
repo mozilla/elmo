@@ -6,12 +6,15 @@
 '''Unit testing for this module.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
+
 import datetime
+import json
+import six
+from six.moves import StringIO
 from elmo.test import TestCase
 from django.core import management
 from mbdb.models import Property, Step, Build, Builder, Master, Slave
-import json
-from cStringIO import StringIO
 
 
 class TestCustomDataType(str):
@@ -70,7 +73,7 @@ class ModelsTest(TestCase):
             data = json.loads(mock_stdout.getvalue())
             value_data = data[0]['fields']['value']
             # dump data will always dump the pickled data stringified
-            self.assertEqual(unicode(value), value_data)
+            self.assertEqual(six.text_type(value), value_data)
             prop.delete()
 
     def testStepModel(self):
@@ -102,7 +105,7 @@ class ModelsTest(TestCase):
           build=build
         )
         # this proves that custom fields `text` and `text2` are optional
-        test_list = ['Peter', u'\xa3pounds']
+        test_list = ['Peter', '\xa3pounds']
         self.assertEqual(step.text, None)
         self.assertEqual(step.text2, None)
         step.text = test_list
@@ -136,9 +139,9 @@ class ModelsWithPickleFixtureTest(TestCase):
 
     def testPropertyModel(self):
         prop = Property.objects.get(name='one')
-        self.assertEqual(prop.value, u'one string')
+        self.assertEqual(prop.value, 'one string')
         prop = Property.objects.get(name='two')
-        self.assertEqual(prop.value, u'one pickled string')
+        self.assertEqual(prop.value, 'one pickled string')
         prop = Property.objects.get(name='three')
         self.assertEqual(prop.value, ['pickled', 'array'])
 
@@ -148,9 +151,9 @@ class ModelsWithListFixtureTest(TestCase):
 
     def testStepModel(self):
         step = Step.objects.get(name='step 1')
-        self.assertEqual(step.text, [u'Peter', u'Be'])
+        self.assertEqual(step.text, ['Peter', 'Be'])
         self.assertEqual(step.text2, [])
 
         step = Step.objects.get(name='step 2')
-        self.assertEqual(step.text, [u'Joined', u'list', u'of', u'strings'])
+        self.assertEqual(step.text, ['Joined', 'list', 'of', 'strings'])
         self.assertEqual(step.text2, None)

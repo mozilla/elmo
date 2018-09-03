@@ -2,12 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import datetime
+import json
 import re
 from elmo.test import TestCase
 from django.core.urlresolvers import reverse
-import json
+from django.utils.encoding import force_text
 from l10nstats.models import Run
 from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from life.models import Tree, Forest, Locale
@@ -68,11 +70,12 @@ class ShippingTestCase(ShippingTestCaseBase):
                       args=[appver.code])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assert_all_embeds(response.content)
+        content = force_text(response.content)
+        self.assert_all_embeds(content)
         self.assertIn(
           '<title>Locale changes for %s' % appver,
-          response.content)
-        self.assertIn('<h1>Locale changes for %s' % appver, response.content)
+          content)
+        self.assertIn('<h1>Locale changes for %s' % appver, content)
 
     def test_dashboard_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""
@@ -328,7 +331,8 @@ class ShippingTestCase(ShippingTestCaseBase):
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(get_query(response.content), '')
+        content = force_text(response.content)
+        self.assertEqual(get_query(content), '')
 
         Locale.objects.get_or_create(
           code='en-US',
@@ -337,7 +341,8 @@ class ShippingTestCase(ShippingTestCaseBase):
 
         response = self.client.get(url, {'locale': 'en-US'})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(get_query(response.content), 'locale=en-US')
+        content = force_text(response.content)
+        self.assertEqual(get_query(content), 'locale=en-US')
 
         response = self.client.get(url, {'locale': ['en-US', 'xxx']})
         self.assertEqual(response.status_code, 404)
@@ -348,13 +353,15 @@ class ShippingTestCase(ShippingTestCaseBase):
         )
         response = self.client.get(url, {'locale': ['en-US', 'ta']})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(get_query(response.content), 'locale=en-US&locale=ta')
+        content = force_text(response.content)
+        self.assertEqual(get_query(content), 'locale=en-US&locale=ta')
 
         appver, __ = self._create_appver_tree()
         tree, = Tree.objects.all()
         response = self.client.get(url, {'tree': tree.code})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(get_query(response.content), 'tree=%s' % tree.code)
+        content = force_text(response.content)
+        self.assertEqual(get_query(content), 'tree=%s' % tree.code)
 
         response = self.client.get(url, {'tree': [tree.code, 'xxx']})
         self.assertEqual(response.status_code, 404)
@@ -366,13 +373,15 @@ class ShippingTestCase(ShippingTestCaseBase):
 
         response = self.client.get(url, {'tree': [tree.code, tree2.code]})
         self.assertEqual(response.status_code, 200)
+        content = force_text(response.content)
         self.assertEqual(
-          get_query(response.content),
+          get_query(content),
           'tree=%s&tree=%s' % (tree.code, tree2.code))
 
         response = self.client.get(url, {'av': appver.code})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(get_query(response.content), 'av=%s' % appver.code)
+        content = force_text(response.content)
+        self.assertEqual(get_query(content), 'av=%s' % appver.code)
 
         appver2 = AppVersion.objects.create(
           app=appver.app,
@@ -382,8 +391,9 @@ class ShippingTestCase(ShippingTestCaseBase):
         )
         response = self.client.get(url, {'av': [appver.code, appver2.code]})
         self.assertEqual(response.status_code, 200)
+        content = force_text(response.content)
         self.assertEqual(
-          get_query(response.content),
+          get_query(content),
           'av=%s&av=%s' % (appver.code, appver2.code))
 
         # combine them all
@@ -394,7 +404,8 @@ class ShippingTestCase(ShippingTestCaseBase):
         }
         response = self.client.get(url, data)
         self.assertEqual(response.status_code, 200)
-        query = get_query(response.content)
+        content = force_text(response.content)
+        query = get_query(content)
         for key, values in data.items():
             for value in values:
                 self.assertIn('%s=%s' % (key, value), query)
@@ -469,8 +480,8 @@ class DriversTest(ShippingTestCaseBase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         apps_and_versions = response.context['apps_and_versions']
-        self.assertListEqual(apps_and_versions.keys(), [appver.app])
-        avts = apps_and_versions.values()[0]
+        self.assertListEqual(list(apps_and_versions.keys()), [appver.app])
+        avts = list(apps_and_versions.values())[0]
         # Fennec first
         self.assertTrue(hasattr(avts[0], 'json_changesets'))
         self.assertEqual(avts[0].tree, beta)

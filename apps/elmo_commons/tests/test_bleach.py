@@ -4,6 +4,7 @@
 
 """tests for bleach filter"""
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from django.template import Template
 from django.template import Context
@@ -19,7 +20,7 @@ class BleachFilterTestCase(TestCase):
         {{ msg|bleach_safe }}
         """
         template = Template(template_as_string)
-        msg = u"""
+        msg = """
         A url first: http://mozilla.org/page?a=b#top
         or a link <a href="http://mozilla.com">mozilla.com</a>
         nasty stuff: <script>alert('xss')</script>

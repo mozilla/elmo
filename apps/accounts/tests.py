@@ -2,16 +2,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import json
 import re
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 from elmo.test import TestCase
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.template import engines
+from django.utils.encoding import force_text
 from django.test import override_settings
 
 
@@ -38,7 +40,8 @@ class AccountsTestCase(TestCase):
         # first get the password wrong
         response = self.client.post(url, dict(data, password='WRONG!'))
         self.assertEqual(response.status_code, 200)
-        self.assertIn('Please enter a correct', response.content)
+        content = force_text(response.content)
+        self.assertIn('Please enter a correct', content)
 
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, 302)
@@ -53,8 +56,9 @@ class AccountsTestCase(TestCase):
         url = '/'
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+        content = force_text(response.content)
         input_regex = re.compile('<input ([^>]+)>', re.M)
-        for input_ in input_regex.findall(response.content):
+        for input_ in input_regex.findall(content):
             for name in re.findall('name="(.*?)"', input_):
                 if name == 'username':
                     maxlength = re.findall('maxlength="(\d+)"', input_)[0]
@@ -151,8 +155,9 @@ class AccountsTestCase(TestCase):
         response = self.client.post(url, {'username': user.username,
                                           'password': 'wrong'})
         self.assertEqual(response.status_code, 200)
-        self.assertIn('error', response.content)
-        self.assertIn('value="%s"' % user.username, response.content)
+        content = force_text(response.content)
+        self.assertIn('error', content)
+        self.assertIn('value="%s"' % user.username, content)
         self.assertIn('text/html', response['Content-Type'])
 
         # if the password is wrong it doesn't matter if it's an AJAX request
@@ -160,8 +165,9 @@ class AccountsTestCase(TestCase):
                                           'password': 'wrong'},
                                     HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(response.status_code, 200)
-        self.assertIn('error', response.content)
-        self.assertIn('value="%s"' % user.username, response.content)
+        content = force_text(response.content)
+        self.assertIn('error', content)
+        self.assertIn('value="%s"' % user.username, content)
 
         # but get it right and as AJAX and you get JSON back
         response = self.client.post(url, {'username': user.username,
@@ -210,8 +216,6 @@ class AccountsTestCase(TestCase):
             settings.MIDDLEWARE_CLASSES)
 
         self.assertIn('session_csrf', settings.INSTALLED_APPS)
-        # funfactory initiates an important monkeypatch which we need
-        self.assertIn('funfactory', settings.INSTALLED_APPS)
 
         login_url = reverse('user-json')
 
@@ -230,8 +234,10 @@ class AccountsTestCase(TestCase):
         # any page with a POST form will do
         url = reverse('privacy:add')
         response = self.client.get(url)
-        self.assertIn('href="/#login"', response.content)
+        content = force_text(response.content)
+        self.assertIn('href="/#login"', content)
         assert self.client.login(username='admin', password='secret')
         response = self.client.get(url)
+        content = force_text(response.content)
         self.assertTrue(
-            re.findall('name=[\'"]csrfmiddlewaretoken[\'"]', response.content))
+            re.findall('name=[\'"]csrfmiddlewaretoken[\'"]', content))

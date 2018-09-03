@@ -5,9 +5,10 @@
 '''Temporary command to convert the bugogram on wikimo to a local json.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import os.path
-from urllib2 import urlopen
+from six.moves.urllib.request import urlopen
 import re
 
 from django.core.management.base import BaseCommand

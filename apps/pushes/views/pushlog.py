@@ -5,6 +5,7 @@
 '''View methods for the source/pushlog views.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from datetime import datetime
 import operator
@@ -44,8 +45,8 @@ def pushlog(request, repo_name):
     except (ValueError, KeyError):
         start = 0
     excludes = request.GET.getlist('exclude')
-    paths = filter(None, request.GET.getlist('path'))
-    repo_parts = filter(None, request.GET.getlist('repo'))
+    paths = [_p for _p in request.GET.getlist('path') if _p is not None]
+    repo_parts = [_r for _r in request.GET.getlist('repo') if _r is not None]
     search = {}
     q = Push.objects
     if startTime is not None:
@@ -57,7 +58,7 @@ def pushlog(request, repo_name):
     if repo_name is not None:
         q = q.filter(repository__name__startswith=repo_name)
     elif repo_parts:
-        repo_parts = map(lambda s: Q(repository__name__contains=s), repo_parts)
+        repo_parts = [Q(repository__name__contains=s) for s in repo_parts]
         if len(repo_parts) == 1:
             q = q.filter(repo_parts[0])
         else:

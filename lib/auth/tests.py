@@ -2,10 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import os
 
 from mock import Mock
 import ldap
+import six
 
 from elmo.test import TestCase
 from django.conf import settings
@@ -33,8 +36,8 @@ class MockLDAP:
 
     def simple_bind_s(self, dn, password):
         # to simulate how _ldap works we have to have byte strings here
-        assert isinstance(dn, str)
-        assert isinstance(password, str)
+        assert isinstance(dn, six.text_type), dn
+        assert isinstance(password, six.text_type), password
         if self.credentials is None:
             # password check passed
             return
@@ -58,11 +61,11 @@ class LDAPAuthTestCase(TestCase):
     def setUp(self):
         super(LDAPAuthTestCase, self).setUp()
         self.fake_user = [
-          ('mail=pbengtsson@mozilla.com,o=com,dc=mozilla',
-           {'givenName': ['Pet\xc3\xa3r'],  # utf-8 encoded
-            'mail': ['peterbe@mozilla.com'],
-            'sn': ['Bengtss\xc2\xa2n'],
-            'uid': ['pbengtsson']
+          (b'mail=pbengtsson@mozilla.com,o=com,dc=mozilla',
+           {'givenName': [b'Pet\xc3\xa3r'],  # utf-8 encoded
+            'mail': [b'peterbe@mozilla.com'],
+            'sn': [b'Bengtss\xc2\xa2n'],
+            'uid': [b'pbengtsson']
             })
         ]
 
@@ -107,8 +110,8 @@ class LDAPAuthTestCase(TestCase):
         user = backend.authenticate('foo', 'secret')
         self.assertTrue(user)
         self.assertTrue(User.objects.get(username='foo'))
-        user = User.objects.get(first_name=u'Pet\xe3r')
-        self.assertEqual(user.last_name, u'Bengtss\xa2n')
+        user = User.objects.get(first_name='Pet\xe3r')
+        self.assertEqual(user.last_name, 'Bengtss\xa2n')
         self.assertFalse(user.has_usable_password())
         self.assertFalse(user.check_password('secret'))
         self.assertTrue(user.groups.filter(name='Localizers').exists())
@@ -123,9 +126,9 @@ class LDAPAuthTestCase(TestCase):
         fake_user = [
           ('mail=%s,...' % long_email,
            {'cn': ['Peter Bengtsson'],
-            'givenName': ['Pet\xc3\xa3r'],  # utf-8 encoded
+            'givenName': [b'Pet\xc3\xa3r'],  # utf-8 encoded
             'mail': [long_email],
-            'sn': ['Bengtss\xc2\xa2n'],
+            'sn': [b'Bengtss\xc2\xa2n'],
             'uid': ['pbengtsson']
             })
         ]
@@ -140,8 +143,8 @@ class LDAPAuthTestCase(TestCase):
         self.assertTrue(user)
         self.assertTrue(User.objects.get(email=long_email))
         self.assertTrue(len(User.objects.get(email=long_email).username) <= 30)
-        user = User.objects.get(first_name=u'Pet\xe3r')
-        self.assertEqual(user.last_name, u'Bengtss\xa2n')
+        user = User.objects.get(first_name='Pet\xe3r')
+        self.assertEqual(user.last_name, 'Bengtss\xa2n')
         self.assertFalse(user.has_usable_password())
         self.assertFalse(user.check_password('secret'))
 
@@ -151,7 +154,7 @@ class LDAPAuthTestCase(TestCase):
         ldap.open.mock_returns = Mock('ldap_connection')
         ldap.set_option = Mock(return_value=None)
 
-        email = u'm\xc3@example.com'
+        email = 'm\xc3@example.com'
         fake_user = [
           ('mail=%s,...' % email,
            {'cn': ['Peter Bengtsson'],
@@ -195,7 +198,7 @@ class LDAPAuthTestCase(TestCase):
         }))
         backend = MozLdapBackend()
 
-        user = backend.authenticate(email, u's\xc4cret')
+        user = backend.authenticate(email, 's\xc4cret')
         self.assertTrue(user)
         self.assertTrue(User.objects.get(email=email))
 
@@ -203,8 +206,8 @@ class LDAPAuthTestCase(TestCase):
         assert not User.objects.all().exists()
         user = User.objects.create(
           username='foo',
-          first_name=u'P\xe4ter',
-          last_name=u'B\xa3ngtsson',
+          first_name='P\xe4ter',
+          last_name='B\xa3ngtsson',
         )
         assert user.groups.all().count() == 0
         user.set_unusable_password()
@@ -223,9 +226,9 @@ class LDAPAuthTestCase(TestCase):
         user = backend.authenticate('foo', 'secret')
         self.assertTrue(user)
         _first_name = self.fake_user[0][1]['givenName'][0]
-        self.assertEqual(user.first_name, unicode(_first_name, 'utf-8'))
+        self.assertEqual(user.first_name, _first_name.decode('utf-8'))
         _last_name = self.fake_user[0][1]['sn'][0]
-        self.assertEqual(user.last_name, unicode(_last_name, 'utf-8'))
+        self.assertEqual(user.last_name, _last_name.decode('utf-8'))
         self.assertEqual(user.email, self.fake_user[0][1]['mail'][0])
 
         user_saved = User.objects.get(username='foo')
@@ -291,7 +294,7 @@ class LDAPAuthTestCase(TestCase):
                 url,
                 {'username': 'foo', 'password': 'secret'})
             self.assertEqual(response.status_code, 503)
-            self.assertEqual(response.content, 'Service Unavailable')
+            self.assertEqual(response.content, b'Service Unavailable')
         finally:
             settings.AUTHENTICATION_BACKENDS = settings_before
 

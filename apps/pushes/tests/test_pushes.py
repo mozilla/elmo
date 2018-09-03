@@ -2,12 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import datetime
 import time
 from elmo.test import TestCase
 from django.core.urlresolvers import reverse
 import hglib
+from hglib.util import b
 
 from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from life.models import Repository, Push, Branch, File
@@ -72,7 +74,7 @@ class TestHandlePushes(RepoTestBase):
 
         self.assertEqual(changeset.description, 'initial commit')
         self.assertEqual(changeset.user, 'Jane Doe <jdoe@foo.tld>')
-        self.assertEqual(changeset.revision, rev0)
+        self.assertEqual(b(changeset.revision), rev0)
         self.assertEqual(changeset.branch, branch)
 
         self.assertEqual(branch.name, 'default')

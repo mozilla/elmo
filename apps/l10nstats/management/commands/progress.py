@@ -5,6 +5,7 @@
 '''Create background images for progress previews
 '''
 from __future__ import absolute_import, division
+from __future__ import unicode_literals
 
 from collections import defaultdict
 from datetime import timedelta
@@ -19,6 +20,7 @@ from life.models import Locale, Tree
 
 import PIL.Image
 import PIL.ImageDraw
+import six
 
 
 class Command(BaseCommand):
@@ -87,7 +89,7 @@ class Command(BaseCommand):
                      (Tree.objects
                       .filter(code__in=trees)))
         backobjs = []
-        for (loc, tree), vals in tuples.iteritems():
+        for (loc, tree), vals in six.iteritems(tuples):
             rescale = self.rescale(vals)
             oldx = oldy = None
             _offy = offloc[loc]
@@ -130,8 +132,10 @@ class Command(BaseCommand):
         _min = min(c for _, c, __ in vals)
         _max = max(c for _, c, __ in vals)
         total = max(t for _, __, t in vals)
-        if ((_max - _min) >= total * span or
-            (_min >= _max)):
+        if (
+                (_max - _min) >= total * span or
+                (_min >= _max)
+        ):
             # no resize needed or useful
             return lambda v: 1.0 * v / total
         ratio = span / (_max - _min)
@@ -140,16 +144,20 @@ class Command(BaseCommand):
 
     def initialCoverage(self, tree2locs, startdate):
         rv = {}
-        for tree, locales in tree2locs.iteritems():
-            locs = (Locale.objects
+        for tree, locales in six.iteritems(tree2locs):
+            locs = (
+                Locale.objects
                 .filter(code__in=locales)
                 .filter(run__srctime__lt=startdate, run__tree__code=tree)
                 .annotate(mr=Max('run'))
             )
             for l, r in locs.values_list('code', 'mr'):
                 rv[(l, tree)] = r
-        r2r = dict((id, (c, t)) for id, c, t in Run.objects
+        r2r = {
+            id: (c, t)
+            for id, c, t in
+            Run.objects
             .filter(id__in=rv.values())
             .values_list('id', 'changed', 'total')
-        )
+        }
         return dict((t, r2r[r]) for t, r in rv.items())

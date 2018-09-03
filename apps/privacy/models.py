@@ -5,8 +5,10 @@
 '''Models representing privacy policies and how they change over time.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 from django.utils.html import strip_tags
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
@@ -24,6 +26,7 @@ class CTMixin(object):
         return cls._ct
 
 
+@python_2_unicode_compatible
 class Policy(models.Model, CTMixin):
     """A privacy
 
@@ -37,10 +40,11 @@ class Policy(models.Model, CTMixin):
     class Meta:
         permissions = (('activate_policy', 'Can activate a policy'),)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%d" % self.id
 
 
+@python_2_unicode_compatible
 class Comment(models.Model, CTMixin):
     """Comments on a policy.
     """
@@ -50,5 +54,5 @@ class Comment(models.Model, CTMixin):
     who = models.ForeignKey(User, related_name="privacy_comments",
                             on_delete=models.CASCADE)
 
-    def __unicode__(self):
+    def __str__(self):
         return strip_tags(self.text)[:20]

@@ -5,17 +5,18 @@
 '''Clean up mbdb data that doesn't connect to data that elmo needs.
 '''
 from __future__ import absolute_import, division
+from __future__ import unicode_literals
 
 import cmd
 import os
 import os.path
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.db.models import Max, Count
 from django.db.utils import DatabaseError
 from django.conf import settings
 
-from life.models import Tree, Forest
+from life.models import Tree
 from mbdb.models import (Build, Step, Log, Property)
 
 
@@ -27,7 +28,7 @@ class Repl(cmd.Cmd):
     def do_ls(self, rest):
         '''show the list of inactive trees'''
         tree_width = len(sorted(Tree.objects.values_list('code', flat=True),
-                                key=lambda c:-len(c))[0])
+                                key=lambda c: -len(c))[0])
         fmt = '{0!s:<10}  {1:<' + str(tree_width+2) + '}{2:>6}{3:>8}\n'
         self.stdout.write(fmt.format('end date', 'code', 'runs', 'builds'))
         for t in (Tree.objects
@@ -63,7 +64,7 @@ class Repl(cmd.Cmd):
         # Let's rule out that Runs could be associated with multiple
         # Builders, and thus Masters.
         master = (builds
-                  .values_list('builder__master__name',flat=True)
+                  .values_list('builder__master__name', flat=True)
                   .distinct())[0]
         base = settings.LOG_MOUNTS[master]
         for f in (logs
@@ -130,7 +131,7 @@ class Repl(cmd.Cmd):
             if recursion > 10:
                 raise
             limit = query.count() // 2
-            limit = query.order_by('pk').values_list('pk',flat=True)[limit]
+            limit = query.order_by('pk').values_list('pk', flat=True)[limit]
             self.stdout.write('Bisecting at %d\n' % limit)
             self.bisect_delete(query.filter(pk__lt=limit),
                                recursion + 1)

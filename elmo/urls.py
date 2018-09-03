@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from django.conf.urls import include, url
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -11,8 +12,6 @@ from django.http import HttpResponse
 import django.views.static
 from django.views.generic import TemplateView
 
-## Monkeypatches:
-## ... don't go here anymore, but in to elmo.apps.ElmoConfig
 
 def simple_x_frame_view(request):
     response = HttpResponse()
@@ -58,11 +57,10 @@ handler500 = 'homepage.views.handler500'
 static_url = settings.STATIC_URL.lstrip('/').rstrip('/')
 urlpatterns += [
     url(r'^%s/(?P<path>.*)$' % static_url, django.views.static.serve,
-     {'document_root': settings.STATIC_ROOT},
-     'static'),
+        {'document_root': settings.STATIC_ROOT},
+        'static'),
 ]
 
-#if settings.DEBUG:
 urlpatterns += staticfiles_urlpatterns()
 
 if 'debug_toolbar' in settings.INSTALLED_APPS:
