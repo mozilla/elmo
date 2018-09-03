@@ -1,5 +1,6 @@
+ARG pythonversion
 # Not using -slim, as Axel can't figure out where to get packages there.
-FROM python:2.7.14-stretch
+FROM python:${pythonversion}-stretch
 
 WORKDIR /app/
 RUN groupadd --gid 10001 app && useradd -g app --uid 10001 --shell /usr/sbin/nologin app
@@ -14,6 +15,7 @@ RUN pip install -U virtualenv
 RUN virtualenv env
 COPY ./requirements env/requirements
 RUN ./env/bin/pip install -r env/requirements/dev.txt
+RUN pip2 install -r env/requirements/py2.txt
 RUN mkdir /app/collected
 RUN chown app:app /app/collected
 USER app
