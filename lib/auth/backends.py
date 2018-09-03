@@ -12,7 +12,7 @@ from django.contrib.auth.models import User, Group
 from django.contrib.auth.backends import ModelBackend
 from django.core.validators import validate_email, ValidationError
 from hashlib import md5
-from django.utils.encoding import force_text, smart_str
+from django.utils.encoding import force_text
 import os
 import six
 
@@ -59,9 +59,9 @@ class MozLdapBackend(ModelBackend):
     def __init__(self):
         # Note, any exceptions that happen here will be swallowed by Django's
         # core handler for middleware classes. Ugly truth :)
-        self.host = settings.LDAP_HOST
-        self.dn = settings.LDAP_DN
-        self.password = settings.LDAP_PASSWORD
+        self.host = force_text(settings.LDAP_HOST)
+        self.dn = force_text(settings.LDAP_DN)
+        self.password = force_text(settings.LDAP_PASSWORD)
         self.localizers = None
 
         self.ldo = None
@@ -146,7 +146,7 @@ class MozLdapBackend(ModelBackend):
             results = self.ldo.search_s(
                 "dc=mozilla",
                 ldap.SCOPE_SUBTREE,
-                smart_str(search_filter),
+                search_filter,
                 ['uid', 'givenName', 'sn', 'mail']
             )
             if not results:
@@ -178,13 +178,13 @@ class MozLdapBackend(ModelBackend):
             group_results = self.ldo.search_s(
                 "ou=groups,dc=mozilla",
                 ldap.SCOPE_SUBTREE,
-                smart_str(search_filter),
+                search_filter,
                 ['cn']
             )
             groups = []
             for __, each in group_results:
                 for names in each.values():
-                    groups.extend(names)
+                    groups.extend((force_text(name) for name in names))
         finally:
             self.disconnect()
 
