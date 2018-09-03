@@ -14,6 +14,7 @@ from django.db import models
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.core.cache import cache
+from django.utils.encoding import python_2_unicode_compatible
 from mbdb.models import File
 from elmo_commons.models import DurationThrough
 
@@ -23,6 +24,7 @@ class LocaleManager(models.Manager):
         return self.get(code=code)
 
 
+@python_2_unicode_compatible
 class Locale(models.Model):
     """stores list of locales and their names
 
@@ -36,7 +38,7 @@ class Locale(models.Model):
     name = models.CharField(max_length=100, blank=True, null=True)
     native = models.CharField(max_length=100, blank=True, null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         if self.name:
             return '%s (%s)' % (self.name, self.code)
         else:
@@ -52,6 +54,7 @@ def invalidate_homepage_index_cache(sender, **kwargs):
     cache.delete(cache_key)
 
 
+@python_2_unicode_compatible
 class TeamLocaleThrough(DurationThrough):
     team = models.ForeignKey(Locale, related_name='locales_over_time',
                              on_delete=models.CASCADE)
@@ -61,7 +64,7 @@ class TeamLocaleThrough(DurationThrough):
     class Meta(DurationThrough.DurationMeta):
         unique_together = (DurationThrough.unique + ('team', 'locale'),)
 
-    def __unicode__(self):
+    def __str__(self):
         rv = '%s \u2014 %s' % (self.team.code, self.locale.code)
         if self.start or self.end:
             rv += ' [{}:{}]'.format(
@@ -71,12 +74,13 @@ class TeamLocaleThrough(DurationThrough):
         return rv
 
 
+@python_2_unicode_compatible
 class Branch(models.Model):
     """mercurial in-repo branch
     """
     name = models.TextField(help_text="name of the branch")
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -85,6 +89,7 @@ class ChangesetManager(models.Manager):
         return self.get(revision__startswith=rev)
 
 
+@python_2_unicode_compatible
 class Changeset(models.Model):
     """stores list of changsets
 
@@ -125,7 +130,7 @@ class Changeset(models.Model):
         except IndexError:
             return "urn:x-changeset:" + self.shortrev
 
-    __unicode__ = url
+    __str__ = url
 
     def natural_key(self):
         return (self.shortrev,)
@@ -136,6 +141,7 @@ class ForestManager(models.Manager):
         return self.get(name=name)
 
 
+@python_2_unicode_compatible
 class Forest(models.Model):
     """stores set of trees
 
@@ -154,7 +160,7 @@ class Forest(models.Model):
                                 on_delete=models.PROTECT,
                                 related_name='forks')
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def natural_key(self):
@@ -186,6 +192,7 @@ class RepositoryManager(models.Manager):
         return self.get(name=name)
 
 
+@python_2_unicode_compatible
 class Repository(models.Model):
     """stores set of repositories
 
@@ -249,7 +256,7 @@ class Repository(models.Model):
             cs = Changeset.objects.get(revision='0' * 40)
             self.changesets.add(cs)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def natural_key(self):
@@ -262,6 +269,7 @@ class PushManager(models.Manager):
                         changesets__revision__startswith=rev)
 
 
+@python_2_unicode_compatible
 class Push(models.Model):
     """stores context of who pushed what when
 
@@ -286,7 +294,7 @@ class Push(models.Model):
         setattr(self, '_tip', tip)
         return tip
 
-    def __unicode__(self):
+    def __str__(self):
         tip = self.tip.shortrev
         return self.repository.url + 'pushloghtml?changeset=' + tip
 
@@ -299,6 +307,7 @@ class TreeManager(models.Manager):
         return self.get(code=code)
 
 
+@python_2_unicode_compatible
 class Tree(models.Model):
     """stores unique repositories combination
 
@@ -316,9 +325,6 @@ class Tree(models.Model):
     code = models.CharField(max_length=50, unique=True)
     repositories = models.ManyToManyField(Repository)
     l10n = models.ForeignKey(Forest, on_delete=models.PROTECT)
-
-    def __unicode__(self):
-        return self.code
 
     def __str__(self):
         return self.code

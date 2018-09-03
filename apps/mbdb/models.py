@@ -8,44 +8,50 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 from . import fields
 from django.conf import settings
 import six
 
 
+@python_2_unicode_compatible
 class Master(models.Model):
     """Model for a buildbot master"""
     name = models.CharField(max_length=100, unique=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
+@python_2_unicode_compatible
 class Slave(models.Model):
     """Model for a build slave"""
     name = models.CharField(max_length=150, unique=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
+@python_2_unicode_compatible
 class File(models.Model):
     """Model for files throughout"""
     # not  unique = True, mysql doesn't like long unique utf-8 strings
     path = models.CharField(max_length=400)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.path
 
 
+@python_2_unicode_compatible
 class Tag(models.Model):
     """Model to add tags to the Change model"""
     value = models.CharField(max_length=50, db_index=True, unique=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.value
 
 
+@python_2_unicode_compatible
 class Change(models.Model):
     """Model for buildbot.changes.changes.Change"""
     number = models.PositiveIntegerField()
@@ -62,7 +68,7 @@ class Change(models.Model):
     class Meta:
         unique_together = (('number', 'master'),)
 
-    def __unicode__(self):
+    def __str__(self):
         rv = 'Change %d' % self.number
         if self.branch:
             rv += ', ' + self.branch
@@ -98,6 +104,7 @@ except KeyError:
     database_engine = settings.DATABASE_ENGINE
 
 
+@python_2_unicode_compatible
 class Property(models.Model):
     """Helper model for build properties.
 
@@ -112,10 +119,11 @@ class Property(models.Model):
             # hack around mysql, that doesn't do unique of unconstrained texts
             unique_together = (('name', 'source', 'value'),)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s: %s" % (self.name, self.value)
 
 
+@python_2_unicode_compatible
 class Builder(models.Model):
     """Model for buildbot.status.builder.BuilderStatus"""
     name = models.CharField(max_length=50, unique=True, db_index=True)
@@ -125,10 +133,11 @@ class Builder(models.Model):
                                 db_index=True)
     bigState = models.CharField(max_length=30, null=True, blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return 'Builder <%s>' % self.name
 
 
+@python_2_unicode_compatible
 class Build(models.Model):
     """Model for buildbot..status.builder.Build
     """
@@ -196,7 +205,7 @@ class Build(models.Model):
         prop_list.sort()
         return prop_list
 
-    def __unicode__(self):
+    def __str__(self):
         v = self.builder.name
         if self.buildnumber is not None:
             v += ': %d' % self.buildnumber
@@ -221,6 +230,7 @@ class URL(models.Model):
                              on_delete=models.CASCADE)
 
 
+@python_2_unicode_compatible
 class Log(models.Model):
     STDOUT, STDERR, HEADER = range(3)
     JSON = 5
@@ -233,7 +243,7 @@ class Log(models.Model):
     isFinished = models.BooleanField(default=False)
     html = models.TextField(null=True, blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         if self.filename:
             return self.filename
         return 'HTMLLog %d' % self.id
