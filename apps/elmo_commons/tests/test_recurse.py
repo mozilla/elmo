@@ -2,9 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from elmo.test import TestCase
-import unittest
 from django import template
 
 
@@ -35,5 +35,7 @@ class Recurse(TestCase):
               ]}
         c = template.Context(d)
         out = t.render(c)
-        self.assertEqual(out,
-          u'\nroot\n\n leaf1\n\n  leafleaf1\n\n\n leaf2\n\n\n')
+        self.assertEqual(
+            out,
+            '\nroot\n\n leaf1\n\n  leafleaf1\n\n\n leaf2\n\n\n'
+        )

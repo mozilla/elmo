@@ -2,11 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import os
 import markus
 
 from .base import *  # noqa
+# we modify that later, explicitly import
+from .base import CACHES
 try:
     from .local import *  # noqa
 except ImportError:
@@ -78,7 +81,7 @@ if 'ELMO_MEMCACHED' in os.environ:
 
 # check ldap config
 if all('LDAP_{}'.format(s) in globals() for s in ('HOST', 'DN', 'PASSWORD')):
-    import ldap
+    import ldap  # noqa
     AUTHENTICATION_BACKENDS = ('lib.auth.backends.MozLdapBackend',)
 else:
     import warnings

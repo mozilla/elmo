@@ -5,6 +5,7 @@
 '''Tests for the build progress displays.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import os
 import datetime
@@ -14,6 +15,7 @@ from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from django.core.urlresolvers import reverse
 from django.test import override_settings
 from django.test.client import Client
+from django.utils.encoding import force_text
 from mbdb.models import (Build, Change, Master, Log, Property, SourceStamp,
                          Builder, Slave)
 import tinder.views
@@ -31,7 +33,7 @@ class WaterfallStarted(TestCase):
                          'Width of blame column is not 1')
         self.assertEqual(len(buildercolumns), 1,
                          'Not one builder found')
-        name, builder = buildercolumns.items()[0]
+        name, builder = list(buildercolumns.items())[0]
         self.assertEqual(name, 'dummy')
         self.assertEqual(builder.width, 1,
                          'Width of builder column is not 1')
@@ -274,10 +276,10 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
             sorted(result.keys()),
             sorted((build1.id, build2.id)))
         # for build1 we attached the first property (name)
-        self.assertDictEqual(result[build1.id], {u'gender': u'male'})
+        self.assertDictEqual(result[build1.id], {'gender': 'male'})
         # for build2 we attached the second property and the third
         # but the third is ignored as per the second argument to pmap()
-        self.assertDictEqual(result[build2.id], {u'age': 31})
+        self.assertDictEqual(result[build2.id], {'age': 31})
 
         result = pmap(('age',), [build1.id])
         self.assertDictEqual(result, {})
@@ -287,8 +289,8 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
 
         build2.properties.add(prop1)
         result = pmap(('gender',), [build2.id])
-        self.assertListEqual(result.keys(), [build2.id])
-        self.assertDictEqual(result[build2.id], {u'gender': u'male'})
+        self.assertListEqual(list(result.keys()), [build2.id])
+        self.assertDictEqual(result[build2.id], {'gender': 'male'})
 
     def test_showlog(self):
         """Test that showlog shows headers, stdout, stderr,
@@ -310,7 +312,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
 
         with override_settings(LOG_MOUNTS={master.name: self.temp_directory}):
             response = self.client.get(url)
-        content = response.content
+        content = force_text(response.content)
         content = content.split('</header>')[1].split('</footer')[0]
 
         self.assertIn(
@@ -356,7 +358,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         url = reverse('tinder-showlog',
                       args=[step.id, log.name])
         response = self.client.get(url)
-        content = response.content
+        content = force_text(response.content)
         content = content.split('</header>')[1].split('</footer')[0]
 
         self.assertIn(htmlcontent, content)
@@ -401,7 +403,8 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         self.assertEqual(response.status_code, 200)
 
         feed_url = reverse('BuildsForChangeFeed', args=(change.number,))
-        self.assertIn(feed_url, response.content)
+        content = force_text(response.content)
+        self.assertIn(feed_url, content)
 
 
 SAMPLE_BUILD_LOG_PAYLOAD = '''16:2header content

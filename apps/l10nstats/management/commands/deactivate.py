@@ -2,10 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import json
-from urllib2 import urlopen
-from urlparse import urljoin
-from ConfigParser import ConfigParser
+from __future__ import absolute_import
+from __future__ import unicode_literals
+from six.moves.configparser import ConfigParser
+from six.moves import input
+from six.moves.urllib.request import urlopen
+from six.moves.urllib.parse import urljoin
 
 from django.core.management.base import BaseCommand
 
@@ -50,6 +52,6 @@ class Command(BaseCommand):
         if not obslocs:
             self.stdout.write(' OK\n')
             return
-        s = raw_input('Remove %s? [Y/n] ' % obslocs)
+        s = input('Remove %s? [Y/n] ' % obslocs)
         if s.lower() == 'y' or s == '':
             obs.delete()

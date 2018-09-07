@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from .models import Tree, Repository, Locale, Forest
 from django.contrib import admin
@@ -9,6 +10,7 @@ from django.contrib import admin
 
 class RepositoryAdmin(admin.ModelAdmin):
     exclude = ('changesets',)
+
 
 admin.site.register(Locale)
 admin.site.register(Repository, RepositoryAdmin)

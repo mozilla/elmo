@@ -5,6 +5,7 @@
 '''Views of privacy policies and their history.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from django.core.urlresolvers import reverse
 from django.db.models import Count
@@ -12,7 +13,7 @@ from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
 from django.http import (HttpResponseRedirect,
                          HttpResponseForbidden, Http404)
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE
 from privacy.models import Policy, Comment
 
@@ -30,7 +31,7 @@ def show_policy(request, id=None):
             p = Policy.objects.get(active=True)
         else:
             p = Policy.objects.get(id=int(id))
-    except:
+    except (Policy.DoesNotExist, ValueError):
         p = None
     if p is not None and p.active:
         logs = LogEntry.objects.filter(content_type=Policy.contenttype())
@@ -94,7 +95,7 @@ def add_policy(request):
         return post_policy(request)
     try:
         current = Policy.objects.get(active=True).text
-    except:
+    except Policy.DoesNotExist:
         current = ''
     return render(request, 'privacy/add.html', {'current': current})
 
@@ -109,10 +110,10 @@ def post_policy(request):
                                who=request.user)
     LogEntry.objects.log_action(request.user.id,
                                 Policy.contenttype().id, p.id,
-                                force_unicode(p), ADDITION)
+                                force_text(p), ADDITION)
     LogEntry.objects.log_action(request.user.id,
                                 Comment.contenttype().id, c.id,
-                                force_unicode(c), ADDITION)
+                                force_text(c), ADDITION)
 
     return redirect(reverse('privacy:show',
                             kwargs={'id': p.id}))
@@ -137,12 +138,12 @@ def activate_policy(request):
             for _p in qa:
                 LogEntry.objects.log_action(request.user.id,
                                             Policy.contenttype().id, _p.id,
-                                            force_unicode(_p), CHANGE,
+                                            force_text(_p), CHANGE,
                                             change_message="deactivate")
             qa.update(active=False)
             LogEntry.objects.log_action(request.user.id,
                                         Policy.contenttype().id, policy.id,
-                                        force_unicode(policy), CHANGE,
+                                        force_text(policy), CHANGE,
                                         change_message="activate")
             policy.active = True
             policy.save()
@@ -165,5 +166,5 @@ def add_comment(request):
                                    who=request.user)
         LogEntry.objects.log_action(request.user.id,
                                     Comment.contenttype().id, c.id,
-                                    force_unicode(c), ADDITION)
+                                    force_text(c), ADDITION)
     return redirect(reverse('privacy:versions'))

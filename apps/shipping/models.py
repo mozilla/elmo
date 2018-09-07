@@ -6,39 +6,43 @@
 which locales shipped in what.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import datetime
 from django.db import models
 from django.forms import ModelForm
 from django.contrib.auth.models import User
+from django.utils.encoding import python_2_unicode_compatible
 from l10nstats.models import Run
 from life.models import Tree, Locale, Push
 from elmo_commons.models import DurationThrough
 
 
+@python_2_unicode_compatible
 class Application(models.Model):
     """ stores applications
     """
     name = models.CharField(max_length=50)
     code = models.CharField(max_length=30)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
+@python_2_unicode_compatible
 class AppVersionTreeThrough(DurationThrough):
     appversion = models.ForeignKey('AppVersion', on_delete=models.CASCADE,
                                    related_name='trees_over_time')
     tree = models.ForeignKey(Tree, on_delete=models.CASCADE,
                              related_name='appvers_over_time')
 
-    def __unicode__(self):
-        rv = u'%s \u2014 %s' % (self.appversion.__unicode__(),
-                               self.tree.__unicode__())
+    def __str__(self):
+        rv = '{} \u2014 {}'.format(self.appversion, self.tree)
         if self.start or self.end:
-            rv += u' [%s:%s]' % (
-                self.start and str(self.start.date()) or '',
-                self.end and str(self.end.date()) or '')
+            rv += ' [{}:{}]'.format(
+                self.start.date() if self.start else '',
+                self.end.date if self.end else ''
+            )
         return rv
 
     class Meta(DurationThrough.DurationMeta):
@@ -50,6 +54,7 @@ class AppVersionManager(models.Manager):
         return self.get(code=code)
 
 
+@python_2_unicode_compatible
 class AppVersion(models.Model):
     """ stores application versions
     """
@@ -71,13 +76,14 @@ class AppVersion(models.Model):
             self.code = '%s%s' % (self.app.code, self.version)
         super(AppVersion, self).save(*args, **kwargs)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s %s' % (self.app.name, self.version)
 
     def natural_key(self):
         return (self.code,)
 
 
+@python_2_unicode_compatible
 class Signoff(models.Model):
     push = models.ForeignKey(Push, on_delete=models.CASCADE)
     appversion = models.ForeignKey(AppVersion, related_name='signoffs',
@@ -106,11 +112,12 @@ class Signoff(models.Model):
     def flag(self):
         return dict(Action._meta.get_field('flag').flatchoices)[self.status]
 
-    def __unicode__(self):
+    def __str__(self):
         return ('Signoff for %s %s by %s [%s]' %
                 (self.appversion, self.locale.code, self.author, self.when))
 
 
+@python_2_unicode_compatible
 class Action(models.Model):
     """Action implements status changes for sign-offs.
     """
@@ -129,10 +136,11 @@ class Action(models.Model):
                                 default=datetime.datetime.utcnow)
     comment = models.TextField(blank=True, null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return ('%s action for [Signoff %s] by %s [%s]' %
-                 (self.get_flag_display(), self.signoff.id,
-                  self.author, self.when))
+                (self.get_flag_display(), self.signoff.id,
+                 self.author, self.when))
+
 
 TEST_CHOICES = (
     (0, Run),
@@ -158,6 +166,7 @@ class Snapshot(models.Model):
         for i in TEST_CHOICES:
             if i[0] == self.test:
                 return i[1].objects.get(id=self.tid)
+
 
 STATUS_CHOICES = (
     (0, 'upcoming'),

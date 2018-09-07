@@ -5,16 +5,20 @@
 '''Utility methods used by the twistd daemon and other hooks.
 '''
 from __future__ import absolute_import, division
+from __future__ import unicode_literals
 
 from datetime import datetime
 import json
 import os.path
-import urllib2
+import six.moves.urllib.request
+import six.moves.urllib.error
+import six.moves.urllib.parse
+from six.moves import range
+from functools import reduce
 import hglib
 
 from life.models import Repository, Push, Changeset, Branch, File
 from django.db import transaction, connection
-from six.moves import range
 
 
 def getURL(repo, limit):
@@ -65,8 +69,8 @@ def get_or_create_changeset(repo, hgrepo, ctx):
 
     cs.parents.set(list(p_dict.values()))
     repo.changesets.add(cs, *(list(p_dict.values())))
-    spacefiles = [p for p in ctx.files() if p.endswith(' ')]
-    goodfiles = [p for p in ctx.files() if not p.endswith(' ')]
+    spacefiles = [p for p in ctx.files() if p.endswith(b' ')]
+    goodfiles = [p for p in ctx.files() if not p.endswith(b' ')]
     if goodfiles:
         # chunk up the work on files,
         # mysql doesn't like them all at once
@@ -113,7 +117,7 @@ def handlePushes(repo_id, submits, do_update=False, close_connection=False):
         (data.changesets for data in submits),
         [])
     if not revs:
-        r = urllib2.urlopen(repo.url + u'json-log?rev=head()')
+        r = six.moves.urllib.request.urlopen(repo.url + 'json-log?rev=head()')
         data = json.load(r)
         revs += [d['node'] for d in data['entries']]
         if not revs:
@@ -151,7 +155,7 @@ def _hg_repository_sync(repopath, url, do_update=False):
         hgrepo.open()
     else:
         hgrepo = hglib.open(repopath)
-        hgrepo.pull(source=str(url))
+        hgrepo.pull(source=hglib.util.b(url))
         if do_update:
             hgrepo.update()
     return hgrepo

@@ -5,12 +5,13 @@
 '''Views for the bug handling pages.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from django.http import HttpResponse
 from django.template import Context, Template
-from django.template.loader import render_to_string
 from django.shortcuts import render
 import json
+import six
 
 from life.models import Locale
 
@@ -24,11 +25,14 @@ def teamsnippet(locale):
                 'field0-0-0=component;type0-0-0=regexp;value0-0-0=^%s / ;'
                 'field0-0-1=cf_locale;type0-0-1=regexp;value0-0-1=^%s / ;'
                 'resolution=---'
-                 % (locale.code, locale.code)).replace(' ', '%20')
-    return {'template': 'bugsy/team-snippet.html',
-            'context': {'locale': locale,
-                        'bugs_url': bugs_url,
-                       }}
+                % (locale.code, locale.code)).replace(' ', '%20')
+    return {
+        'template': 'bugsy/team-snippet.html',
+        'context': {
+            'locale': locale,
+            'bugs_url': bugs_url,
+        }
+    }
 
 
 def file_bugs(request):
@@ -39,7 +43,7 @@ def get_bug_links(request):
     locale_codes = request.GET.getlist('locales')
     locales = Locale.objects.filter(code__in=locale_codes)
     locale_names = dict(locales.values_list('code', 'name'))
-    opts = dict((k, Template(v)) for k, v in request.GET.iteritems())
+    opts = {k: Template(v) for k, v in six.iteritems(request.GET)}
     opts.pop('locales')
     bugs = {}
     for loc in locale_codes:
@@ -47,7 +51,7 @@ def get_bug_links(request):
             'loc': loc,
             'locale': locale_names.get(loc, '[%s]' % loc),
         })
-        item = dict((k, t.render(c)) for k, t in opts.iteritems())
+        item = {k: t.render(c) for k, t in six.iteritems(opts)}
         bugs[loc] = item
     return HttpResponse(json.dumps(bugs, indent=2),
                         content_type="application/json")

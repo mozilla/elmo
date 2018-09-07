@@ -5,9 +5,11 @@
 """Views and helpers for sign-off views.
 """
 from __future__ import absolute_import, print_function
+from __future__ import unicode_literals
 
 import json
 from collections import defaultdict
+from six.moves import range
 
 from django.db.models import Max, Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponse
@@ -273,9 +275,12 @@ class SignoffView(TemplateView):
             run4push_tree = dict(
                 rr.order_by('run__srctime', 'run')
                 .values_list('changeset__pushes', 'run'))
-            run4id = dict(
-                (r.id, r)
-                for r in Run.objects.filter(id__in=run4push_tree.values()))
+            run4id = {
+                r.id: r
+                for r in Run.objects.filter(
+                    id__in=run4push_tree.values()
+                )
+            }
             run4push.update((p, run4id[r]) for p, r in run4push_tree.items())
 
         # merge data back into pushes list
@@ -316,7 +321,7 @@ class SignoffView(TemplateView):
                         suggested_signoff = False
 
         # mark up pushes that change forests/trees
-        for i in xrange(len(pushes) - 1, 0, -1):
+        for i in range(len(pushes) - 1, 0, -1):
             if pushes[i]['forest'] != pushes[i - 1]['forest']:
                 pushes[i]['new_forest'] = True
 
@@ -539,7 +544,7 @@ def add_signoff(request, locale_code, app_code):
                     run = runs.get(id=runid)
                 except Run.DoesNotExist:
                     run = runs.order_by('-srctime')[0]
-            except:
+            except Run.DoesNotExist:
                 run = None
             run  # noqa, decide on what to do when we decide about Snapshot
             so = Signoff.objects.create(push=push, appversion=appver,

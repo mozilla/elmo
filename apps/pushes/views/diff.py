@@ -8,9 +8,9 @@ The revisions don't necessarily need to be in the same repository, as long
 as the repositories are related.
 """
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from collections import OrderedDict
-from datetime import datetime
 from difflib import SequenceMatcher
 
 from django.shortcuts import render
@@ -49,7 +49,7 @@ class DiffView(View):
 
     def _universal_newlines(self, content):
         "CompareLocales reads files with universal newlines, fake that"
-        return content.replace('\r\n', '\n').replace('\r', '\n')
+        return content.replace(b'\r\n', b'\n').replace(b'\r', b'\n')
 
     @metrics.timer_decorator('diff.response')
     def get(self, request):
@@ -130,14 +130,15 @@ class DiffView(View):
         copies = {}
         for code, path in self.client.status(rev=[self.rev1, self.rev2],
                                              copies=True):
-            if code == 'M':
+            path = path.decode('latin-1')
+            if code == b'M':
                 changed.append(path)
-            elif code == 'A':
+            elif code == b'A':
                 added.append(path)
-            elif code == ' ':
+            elif code == b' ':
                 # last added file was copied
                 copies[added[-1]] = path
-            elif code == 'R':
+            elif code == b'R':
                 removed.append(path)
             else:
                 raise RuntimeError('status code %s unexpected for %s' %
@@ -155,7 +156,7 @@ class DiffView(View):
 
         paths = ([(f, 'changed') for f in changed]
                  + [(f, 'removed') for f in removed
-                    if f not in self.moved.values()]
+                    if f not in list(self.moved.values())]
                  + [(f,
                      (f in self.moved and 'moved') or
                      (f in self.copied and 'copied')
@@ -280,7 +281,7 @@ class DiffView(View):
             if isinstance(entity, FluentEntity):
                 for fluent_attr in entity.attributes:
                     yield (
-                        u'{}.{}'.format(entity.key, fluent_attr.key),
+                        '{}.{}'.format(entity.key, fluent_attr.key),
                         fluent_attr.val)
 
     def diff_strings(self, oldval, newval):

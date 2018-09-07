@@ -1,6 +1,9 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
 import ldap
 from ldap.filter import filter_format
 
@@ -9,8 +12,9 @@ from django.contrib.auth.models import User, Group
 from django.contrib.auth.backends import ModelBackend
 from django.core.validators import validate_email, ValidationError
 from hashlib import md5
-from django.utils.encoding import force_unicode, smart_str
+from django.utils.encoding import force_text
 import os
+import six
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
@@ -33,10 +37,10 @@ def flatten_group_names(values):
 
     """
     group_names = []
-    if isinstance(values, basestring):
+    if isinstance(values, six.string_types):
         return [values]
     for value in values:
-        if isinstance(value, basestring):
+        if isinstance(value, six.string_types):
             group_names.append(value)
         else:
             # tuple or list
@@ -55,9 +59,9 @@ class MozLdapBackend(ModelBackend):
     def __init__(self):
         # Note, any exceptions that happen here will be swallowed by Django's
         # core handler for middleware classes. Ugly truth :)
-        self.host = settings.LDAP_HOST
-        self.dn = settings.LDAP_DN
-        self.password = settings.LDAP_PASSWORD
+        self.host = force_text(settings.LDAP_HOST)
+        self.dn = force_text(settings.LDAP_DN)
+        self.password = force_text(settings.LDAP_PASSWORD)
         self.localizers = None
 
         self.ldo = None
@@ -112,8 +116,8 @@ class MozLdapBackend(ModelBackend):
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
         # XXX this creates option errors, no idea why. keep it around
         # if needed, seems to work fine without it
-        #ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, self.certfile)
-        self.ldo = ldap.initialize(self.host)
+        # ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, self.certfile)
+        self.ldo = ldap.initialize(self.host, bytes_mode=False)
         self.ldo.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
 
     def connect(self):
@@ -142,7 +146,7 @@ class MozLdapBackend(ModelBackend):
             results = self.ldo.search_s(
                 "dc=mozilla",
                 ldap.SCOPE_SUBTREE,
-                smart_str(search_filter),
+                search_filter,
                 ['uid', 'givenName', 'sn', 'mail']
             )
             if not results:
@@ -150,6 +154,7 @@ class MozLdapBackend(ModelBackend):
                 return
 
             uid, result = results[0]
+            uid = force_text(uid)
 
             # search by groups
             group_names = flatten_group_names(GROUP_MAPPINGS.values())
@@ -173,13 +178,13 @@ class MozLdapBackend(ModelBackend):
             group_results = self.ldo.search_s(
                 "ou=groups,dc=mozilla",
                 ldap.SCOPE_SUBTREE,
-                smart_str(search_filter),
+                search_filter,
                 ['cn']
             )
             groups = []
             for __, each in group_results:
                 for names in each.values():
-                    groups.extend(names)
+                    groups.extend((force_text(name) for name in names))
         finally:
             self.disconnect()
 
@@ -187,7 +192,7 @@ class MozLdapBackend(ModelBackend):
         # need to check if their password is correct
         self.initialize()
         try:
-            self.ldo.simple_bind_s(smart_str(uid), smart_str(password))
+            self.ldo.simple_bind_s(force_text(uid), force_text(password))
         except ldap.INVALID_CREDENTIALS:  # Bad password, credentials are bad.
             return
         except ldap.UNWILLING_TO_PERFORM:  # Bad password, credentials are bad.
@@ -198,8 +203,8 @@ class MozLdapBackend(ModelBackend):
         first_name = result['givenName'][0]
         last_name = result['sn'][0]
         email = result['mail'][0]
-        first_name = force_unicode(first_name)
-        last_name = force_unicode(last_name)
+        first_name = force_text(first_name)
+        last_name = force_text(last_name)
 
         # final wrapper that returns the user
         return self._update_local_user(
@@ -225,7 +230,7 @@ class MozLdapBackend(ModelBackend):
             django_username = username
             try:
                 validate_email(django_username)
-                if isinstance(username, unicode):
+                if isinstance(username, six.text_type):
                     # md5 chokes on non-ascii characters
                     django_username = username.encode('ascii', 'ignore')
                 django_username = (md5(django_username)

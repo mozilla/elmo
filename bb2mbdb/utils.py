@@ -4,13 +4,14 @@
 
 '''Utility and help code for buildbot-mbdb adapters.'''
 from __future__ import absolute_import
-
+from __future__ import unicode_literals
 
 from datetime import datetime
 import os.path
 
 from mbdb.models import Change, Tag, File, SourceStamp
 from django.db import transaction
+import six
 
 
 def timeHelper(t):
@@ -39,7 +40,7 @@ def modelForChange(master, change):
             return dbchange
 
         dbfiles = list(File.objects.filter(path__in=change.files))
-        newfiles = set(change.files) - set(map(unicode, dbfiles))
+        newfiles = set(change.files) - set((six.text_type(f) for f in dbfiles))
         dbfiles += [File.objects.create(path=file) for file in newfiles]
         dbchange.files.add(*dbfiles)
         return dbchange
@@ -77,8 +78,7 @@ def modelForSource(master, source, maxChanges=4):
         for ss in q:
             cs = ss.numbered_changes.order_by('number')[maxChanges:]
             cs = list(cs.values_list('change__number', flat=True))
-            if cs == map(lambda change: change.number,
-                         source.changes[maxChanges:]):
+            if cs == [change.number for change in source.changes[maxChanges:]]:
                 return ss
 
     # create a new source stamp.

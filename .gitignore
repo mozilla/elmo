@@ -2,10 +2,8 @@
 /elmo/settings/ldap_settings.py
 /elmo/settings/mounts_local.py
 /env/
-@elmo
 *.pyc
 .coverage
 /version.json
 /cover/
 /collected/
-/vendor/

@@ -5,8 +5,10 @@
 """Views centric around AppVersion data.
 """
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from collections import defaultdict
+import six
 from django.shortcuts import render, get_object_or_404
 from shipping.models import AppVersion, Action, Signoff
 from shipping.api import flags4appversions
@@ -26,7 +28,7 @@ def changes(request, app_code):
     flags4loc = flags4av[av]
     locs4av = defaultdict(dict)  # av -> loc -> ACCEPTED
     notaccepted = {}  # av -> flags
-    for loc, (real_av, flags) in flags4loc.iteritems():
+    for loc, (real_av, flags) in six.iteritems(flags4loc):
         if Action.ACCEPTED in flags:
             locs4av[real_av][loc] = flags[Action.ACCEPTED]
         else:
@@ -102,7 +104,7 @@ def changes(request, app_code):
     # see if we have some locales dropped in the last appver
     if latest:
         # previous appver has locales left, update previous changes
-        changes += [(loc, 'dropped') for loc in latest.iterkeys()]
+        changes += [(loc, 'dropped') for loc in six.iterkeys(latest)]
         changes.sort()
     # add group info to the avrow
     if avrow:
@@ -112,10 +114,12 @@ def changes(request, app_code):
             'group_locales_count': len(locales_group)
             })
     # finally, check if there's more signoffs after the last shipped appver
-    newso = [(loc, loc in current and 'changed' or 'added')
-        for loc, pid in accepted.iteritems()
-        if current.get(loc) != pid]
-    for loc, flags in notaccepted.iteritems():
+    newso = [
+        (loc, loc in current and 'changed' or 'added')
+        for loc, pid in six.iteritems(accepted)
+        if current.get(loc) != pid
+    ]
+    for loc, flags in six.iteritems(notaccepted):
         if Action.PENDING in flags:
             newso.append((loc, 'pending'))
         elif Action.REJECTED in flags:
@@ -128,7 +132,7 @@ def changes(request, app_code):
             'name': '%s .next' % str(av),
             'changes': newso
         })
-        addcount = len([t for t in newso if t[1]=='added'])
+        addcount = len([t for t in newso if t[1] == 'added'])
         if addcount:
             rows[-1].update({
                 'rowspan': 1,

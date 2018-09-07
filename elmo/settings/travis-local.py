@@ -1,4 +1,4 @@
-from base import *
+from base import *  # noqa
 
 SECRET_KEY = 'travis'
 
@@ -12,8 +12,8 @@ DATABASES = {
         'PORT': '',
         'OPTIONS': {
             'init_command': 'SET storage_engine=InnoDB',
-            'charset' : 'utf8',
-            'use_unicode' : True,
+            'charset': 'utf8',
+            'use_unicode': True,
         },
         'TEST': {
             'CHARSET': "utf8",

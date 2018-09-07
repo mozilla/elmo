@@ -2,12 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import os
 from django.test import TestCase as OrigTestCase
 from django.test import override_settings
 from django.test.runner import DiscoverRunner
-from django.conf import settings
 
 
 class TestRunner(DiscoverRunner):
@@ -25,7 +25,7 @@ def env(suffix, default):
     key = 'ELMO_TEST_' + suffix
     if key not in os.environ:
         return default
-    val =  os.environ[key].lower()
+    val = os.environ[key].lower()
     return val in ['1', 'true']
 
 
