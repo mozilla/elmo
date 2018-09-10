@@ -67,11 +67,9 @@
               </tr></tbody></table>
           </td>
           <td class="treeprogress {{ runcycle }}">
-            {% if run.prog_pos %}
             <a href="{% url 'locale-tree-history' %}?tree={{run.tree.code}}&amp;locale={{run.locale.code}}&amp;starttime={{ context.progress_start|date:"Y-m-d" }}">
-              <div class="treeprogress-graph" style="background-position:{{run.prog_pos.x}}px {{run.prog_pos.y}}px;"></div>
+              <div class="progress-thumb tree-{{run.tree.code}} loc-{{run.locale.code}}"></div>
             </a>
-            {% endif %}
           </td>
           <td class="signoffs status{% if not run.fallback %} ok{% endif %} {{ runcycle }}">
               <!-- Accepted -->

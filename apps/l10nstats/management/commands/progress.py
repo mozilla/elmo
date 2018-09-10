@@ -7,20 +7,27 @@
 from __future__ import absolute_import, division
 from __future__ import unicode_literals
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from datetime import timedelta
 import os.path
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from django.db.models import Max, Q
+from django.template.loader import render_to_string
 
-from l10nstats.models import Run, ProgressPosition
+from l10nstats.models import Run
 from life.models import Locale, Tree
 
 import PIL.Image
 import PIL.ImageDraw
 import six
+
+
+ProgressPosition = namedtuple(
+    'ProgressPosition',
+    ['tree', 'locale', 'x', 'y']
+)
 
 
 class Command(BaseCommand):
@@ -117,11 +124,21 @@ class Command(BaseCommand):
                                              locale=locales[loc],
                                              x=-offtree[tree],
                                              y=offy))
+        output_path = os.path.join(
+            settings.STATIC_ROOT, settings.PROGRESS_BASE_NAME
+        )
         pal = im.convert("P", palette="ADAPTIVE")
-        pal.save(os.path.join(settings.STATIC_ROOT,
-                              settings.PROGRESS_IMG_NAME))
-        ProgressPosition.objects.all().delete()
-        ProgressPosition.objects.bulk_create(backobjs)
+        pal.save(output_path + 'png')
+        style_sheet_content = render_to_string(
+            'l10nstats/progress.css',
+            {
+                'background_positions': backobjs,
+                'PROGRESS_IMG_SIZE': settings.PROGRESS_IMG_SIZE,
+                'PROGRESS_BASE_NAME': settings.PROGRESS_BASE_NAME,
+            }
+        )
+        with open(output_path + 'css', 'wb') as style_file:
+            style_file.write(style_sheet_content)
 
     def rescale(self, vals, span=.75):
         # return a scaling function for change values

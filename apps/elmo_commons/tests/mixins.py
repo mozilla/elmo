@@ -14,6 +14,9 @@ SCRIPTS_REGEX = re.compile(
     re.M | re.DOTALL)
 STYLES_REGEX = re.compile('<link.*?href=["\']([^"\']+)["\'].*?>',
                           re.M | re.DOTALL)
+WHITELIST = {
+    '.css': re.compile('l10nstats/progress.css$')
+}
 
 
 class EmbedsTestCaseMixin:
@@ -30,6 +33,10 @@ class EmbedsTestCaseMixin:
                 # external urls like tabzilla, ignore
                 continue
             if found.endswith(only_extension):
+                white = WHITELIST.get(only_extension)
+                if white and white.search(found):
+                    # whitelist file that only exists in prod
+                    continue
                 if settings.DEBUG:
                     resp = self.client.get(found)
                     self.assertEqual(resp.status_code, 200, found)

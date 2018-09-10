@@ -151,7 +151,7 @@ WEBDASHBOARD_URL = 'https://l10n.mozilla-community.org/webdashboard/'
 # settings for the compare-locales progress preview images
 PROGRESS_DAYS = 50
 PROGRESS_IMG_SIZE = {'x': 100, 'y': 20}
-PROGRESS_IMG_NAME = 'l10nstats/progress.png'
+PROGRESS_BASE_NAME = 'l10nstats/progress.'
 
 __all__ = [
     setting for setting in globals().keys() if setting.isupper()

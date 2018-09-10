@@ -107,12 +107,3 @@ class Active(models.Model):
     """Keep track of the currently active Runs.
     """
     run = models.OneToOneField(Run, on_delete=models.CASCADE)
-
-
-class ProgressPosition(models.Model):
-    """Position in the background image
-    """
-    tree = models.ForeignKey(Tree, on_delete=models.CASCADE)
-    locale = models.ForeignKey(Locale, on_delete=models.CASCADE)
-    x = models.IntegerField()
-    y = models.IntegerField()

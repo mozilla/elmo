@@ -16,7 +16,7 @@ from django.shortcuts import render
 from django.views.generic import TemplateView
 from django import http
 from life.models import Locale, Tree, Push, Changeset
-from l10nstats.models import Run, ProgressPosition
+from l10nstats.models import Run
 from shipping.models import AppVersion, Action
 from shipping.api import flags4appversions
 from django.conf import settings
@@ -192,13 +192,6 @@ def teamsnippet(loc, team_locales):
                                  changeset__repositories__locale__in=locs)
                          .values_list('run_id', 'changeset__revision'))
 
-    progresses = dict(
-        ((pp.tree.code, pp.locale.code), pp) for pp in (
-            ProgressPosition.objects
-            .filter(locale__in=locs)
-            .select_related('tree', 'locale')
-            )
-        )
     applications = defaultdict(list)
     pushes = set()
 
@@ -231,7 +224,6 @@ def teamsnippet(loc, team_locales):
                 if ratio:
                     ratio -= 1
                     break
-        run.prog_pos = progresses.get((run.tree.code, run.locale.code))
 
         appversion = tree_to_appversion(run.tree)
         # because Django templates (stupidly) swallows lookup errors we
@@ -388,18 +380,9 @@ def dashboard(request):
         query['tree'].extend(trees)
 
     progress_start = datetime.utcnow() - timedelta(days=settings.PROGRESS_DAYS)
-    try:
-        cachebuster = (
-            '?%d' % Run.objects.order_by('-pk').values_list('id', flat=True)[0]
-            )
-    except IndexError:
-        cachebuster = ''
 
     return render(request, 'shipping/dashboard.html', {
                     'subtitles': subtitles,
-                    'PROGRESS_IMG_SIZE': settings.PROGRESS_IMG_SIZE,
-                    'PROGRESS_IMG_NAME': settings.PROGRESS_IMG_NAME,
-                    'cachebuster': cachebuster,
                     'progress_start': progress_start,
                     'query': mark_safe(urlencode(query, True)),
                   })
