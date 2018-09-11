@@ -46,23 +46,6 @@ urlpatterns = [
 
 handler500 = 'homepage.views.handler500'
 
-# Usually, you would include this only for DEBUG, but let's keep
-# this so that we can reverse resolve static.
-# That way, we can move the site to /stage/foo without messing with
-# the references to /media/.
-
-# Remove leading and trailing slashes so the regex matches.
-# TODO: consider subclassing django.views.static.serve with something
-# that prints a warning message
-static_url = settings.STATIC_URL.lstrip('/').rstrip('/')
-urlpatterns += [
-    url(r'^%s/(?P<path>.*)$' % static_url, django.views.static.serve,
-        {'document_root': settings.STATIC_ROOT},
-        'static'),
-]
-
-urlpatterns += staticfiles_urlpatterns()
-
 if 'debug_toolbar' in settings.INSTALLED_APPS:
     import debug_toolbar
     urlpatterns = [

@@ -64,11 +64,11 @@ STATIC_ROOT = COMPRESS_ROOT = os.path.normpath(
 # Middlewares, apps, URL configs.
 
 MIDDLEWARE_CLASSES = (
-    'django.middleware.common.CommonMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
     'session_csrf.CsrfMiddleware',
 
     'commonware.middleware.FrameOptionsHeader',
@@ -86,6 +86,7 @@ INSTALLED_APPS = (
     'raven.contrib.django.raven_compat',
 
     # Third-party apps
+    'whitenoise.runserver_nostatic',
 
     # Django contrib apps
     'django.contrib.admin',
