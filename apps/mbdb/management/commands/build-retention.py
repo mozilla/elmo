@@ -9,6 +9,8 @@ We're keeping log files for a day, and build data for seven.
 # We also need to keep the last build for each builder, so that
 # BuilderStatus.determineNextBuildNumber still works.
 
+from __future__ import absolute_import
+from __future__ import unicode_literals
 from datetime import datetime, timedelta
 import os.path
 import tarfile
@@ -28,11 +30,13 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--dry-run', '-n', action='store_true',
-                    help="Dry run, don't touch files and database")
+                            help="Dry run, don't touch files and database")
         parser.add_argument('--backup', default=None,
-                    help="Back up logs in this directory")
-        parser.add_argument('--limit', default=None, type=int,
-                    help="Limit cycles, a cycle is %d builds" % self.chunksize)
+                            help="Back up logs in this directory")
+        parser.add_argument(
+            '--limit', default=None, type=int,
+            help="Limit cycles, a cycle is %d builds" % self.chunksize
+        )
 
     def handle(self, **options):
         dry_run = options['dry_run']
@@ -40,18 +44,23 @@ class Command(BaseCommand):
         master_for_builder = dict(
             Builder.objects.values_list('id', 'master__name')
         )
-        last_builds = filter(None, Builder.objects
+        last_builds = [
+            last_build
+            for last_build in Builder.objects
             .annotate(last_build=Max('builds'))
-            .values_list('last_build', flat=True))
+            .values_list('last_build', flat=True)
+            if last_build is not None
+        ]
         now = datetime.utcnow()
         logtime = now - self.logsoffset
         buildtime = now - self.buildoffset
 
-        builds = (Build.objects
-                  .exclude(id__in=last_builds)
-                  .filter(endtime__lt=max(buildtime, logtime))
-                  .values_list('id', 'endtime', 'buildnumber',
-                               'builder', 'builder__name')
+        builds = (
+            Build.objects
+            .exclude(id__in=last_builds)
+            .filter(endtime__lt=max(buildtime, logtime))
+            .values_list('id', 'endtime', 'buildnumber',
+                         'builder', 'builder__name')
         )
         if not dry_run and backup_dir:
             if not os.path.isdir(backup_dir):
@@ -60,7 +69,8 @@ class Command(BaseCommand):
         for chunk in self.chunkBuilds(builds, options['limit']):
             if not dry_run and backup_dir:
                 tarball = tarfile.open(
-                    name=os.path.join(backup_dir,
+                    name=os.path.join(
+                        backup_dir,
                         'logs-%d-%d.tar.bz2' % (chunk[0][0], chunk[-1][0])),
                     mode='w:bz2'
                 )

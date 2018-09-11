@@ -4,6 +4,7 @@
 
 'Base command to include ES logging'
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import logging
 from django.core.management.base import BaseCommand

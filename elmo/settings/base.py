@@ -4,14 +4,9 @@
 
 # Django settings file for a project based on the playdoh template.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
-from funfactory.manage import (
-    path,
-    ROOT,
-)
-import os.path
-
-from django.utils.functional import lazy
+import os
 
 ROOT_URLCONF = 'elmo.urls'
 TEST_RUNNER = 'elmo.test.TestRunner'
@@ -21,7 +16,7 @@ DEBUG = False
 ADMINS = ()
 MANAGERS = ADMINS
 
-## Internationalization.
+# Internationalization.
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -31,14 +26,6 @@ MANAGERS = ADMINS
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
 TIME_ZONE = 'UTC'
-
-# If you set this to False, Django will make some optimizations so as not
-# to load the internationalization machinery.
-#USE_I18N = True
-
-# If you set this to False, Django will not format dates, numbers and
-# calendars according to the current locale
-#USE_L10N = True
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = ''
@@ -70,18 +57,18 @@ STATIC_URL = '/static/'
 # is so we, in nginx/apache, can set up the root to be
 # <base path>/collected
 # then a URL like http://domain/static/js/jquery.js just works
-STATIC_ROOT = COMPRESS_ROOT = path('collected', 'static')
+STATIC_ROOT = COMPRESS_ROOT = os.path.normpath(
+    os.path.join(os.path.dirname(__file__), '..', '..', 'collected', 'static')
+)
 
-## Middlewares, apps, URL configs.
+# Middlewares, apps, URL configs.
 
-# not using funfactory.settings_base.MIDDLEWARE_CLASSES here because there's
-# so few things we need and so many things we'd need to add
 MIDDLEWARE_CLASSES = (
-    'django.middleware.common.CommonMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
     'session_csrf.CsrfMiddleware',
 
     'commonware.middleware.FrameOptionsHeader',
@@ -89,8 +76,6 @@ MIDDLEWARE_CLASSES = (
 )
 
 INSTALLED_APPS = (
-    # a manually maintained list of apps "from funfactory"
-    'funfactory',
     'compressor',
     'commonware.response.cookies',
     'session_csrf',
@@ -101,6 +86,7 @@ INSTALLED_APPS = (
     'raven.contrib.django.raven_compat',
 
     # Third-party apps
+    'whitenoise.runserver_nostatic',
 
     # Django contrib apps
     'django.contrib.admin',
@@ -127,12 +113,10 @@ INSTALLED_APPS = (
 
 SESSION_COOKIE_SECURE = True
 
-## Tests
-
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        'LOCATION': '127.0.0.1:11211',  # fox2mike suggest to use IP instead of localhost
+        'LOCATION': '127.0.0.1:11211',
         'TIMEOUT': 500,
         'KEY_PREFIX': 'elmo',
     }
@@ -142,9 +126,9 @@ CACHES = {
 # using the cache backend
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
-## django_compressor
-COMPRESS_ENABLED = True  # defaults to `not DEBUG`
-COMPRESS_OFFLINE = True  # make sure you run `./manage.py compress` upon deployment
+# django_compressor
+COMPRESS_ENABLED = True
+COMPRESS_OFFLINE = True
 COMPRESS_CSS_FILTERS = (
   'compressor.filters.css_default.CssAbsoluteFilter',
   'compressor.filters.cssmin.CSSMinFilter',
@@ -156,11 +140,11 @@ STATICFILES_FINDERS = (
   'compressor.finders.CompressorFinder',
 )
 
-## Feeds
+# Feeds
 L10N_FEED_URL = 'http://planet.mozilla.org/l10n/atom.xml'
 HOMEPAGE_FEED_SIZE = 5
 
-## Google Analytics
+# Google Analytics
 INCLUDE_ANALYTICS = False
 
 WEBDASHBOARD_URL = 'https://l10n.mozilla-community.org/webdashboard/'
@@ -168,4 +152,8 @@ WEBDASHBOARD_URL = 'https://l10n.mozilla-community.org/webdashboard/'
 # settings for the compare-locales progress preview images
 PROGRESS_DAYS = 50
 PROGRESS_IMG_SIZE = {'x': 100, 'y': 20}
-PROGRESS_IMG_NAME = 'l10nstats/progress.png'
+PROGRESS_BASE_NAME = 'l10nstats/progress.'
+
+__all__ = [
+    setting for setting in globals().keys() if setting.isupper()
+]

@@ -5,6 +5,7 @@
 '''URL mappings for the l10n_site integration pages.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from django.conf.urls import url
 from . import views

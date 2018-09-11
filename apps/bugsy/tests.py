@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import json
 from django.core.urlresolvers import reverse
@@ -17,7 +18,7 @@ class BugsyTestCase(TestCase, EmbedsTestCaseMixin):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response.content)
-        self.assertIn('There are currently ', response.content)
+        self.assertIn(b'There are currently ', response.content)
 
     def test_basic_render_new_locale(self):
         url = reverse(bugsy.views.new_locale)

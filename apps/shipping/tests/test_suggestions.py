@@ -2,9 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from __future__ import absolute_import
+from __future__ import unicode_literals
 from collections import defaultdict
 import datetime
 import itertools
+from six.moves import range
 from elmo.test import TestCase
 from django.contrib.auth.models import User
 from shipping.models import (
@@ -79,7 +82,7 @@ class DataMixin(object):
         n = repo.changesets.count() - 1
         parent = repo.changesets.order_by('-pk')[0]
         changesets = []
-        for i in xrange(count):
+        for i in range(count):
             cs = Changeset.objects.create(
                 revision='%s-123-%d' % (self.locale.code, i + n),
                 user='user@example.tld',
@@ -102,7 +105,7 @@ class DataMixin(object):
         if push_date is None:
             push_date = self.now()
         try:
-            push_id = push_id.next()
+            push_id = next(push_id)
         except AttributeError:
             pass
         push = Push.objects.create(
@@ -416,12 +419,12 @@ class TeamSnippetTest(TestCase, DataMixin, TeamSnippetProcessMixin):
 
 class StatusProcessMixin(object):
     def process(self, flags):
-        view = StatusJSON(locales=[self.locale], trees=[], avs=[])
+        view = StatusJSON(locales=[self.locale.code], trees=[], avs=[])
         items = defaultdict(dict)
         for item in view.get_data()[0]:
             items[item['type']][item.get('id', item['label'])] = item
         # de-defaultdict
-        items = dict(items.iteritems())
+        items = dict(items)
         self.assertDictEqual(items['AppVer4Tree'], {self.tree.code: {
             'type': 'AppVer4Tree',
             'appversion': self.av.code,

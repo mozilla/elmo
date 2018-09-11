@@ -5,6 +5,7 @@
 '''Clean up mbdb data that doesn't connect to data that elmo needs.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from django.core.management.base import BaseCommand, CommandError
 
@@ -28,10 +29,13 @@ class Command(BaseCommand):
         # builds that matter. Reduce the risk by only running on
         # idle builders, and limiting all queries to the data we have at
         # that point.
-        if (Builder.objects
+        if (
+            Builder.objects
             .exclude(bigState='idle')
-            .exclude(bigState='offline').count()):
+            .exclude(bigState='offline').count()
+        ):
             raise CommandError('Wait for all builders to be idle')
+
         buildrequests = freeze(BuildRequest)
         sourcestamps = freeze(SourceStamp)
         numberedchanges = freeze(NumberedChange)

@@ -6,6 +6,7 @@
 of an upstream database.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from django.core.management.base import BaseCommand
 
@@ -51,7 +52,7 @@ class Command(BaseCommand):
                 if os.path.isdir(repopath):
                     self.stdout.write((
                         "\n\nCannot clone %s, "
-                        "existing directory in the way\n\n") % name)
+                        "existing directory in the way\n\n") % repo.name)
                     continue
                 _parent = os.path.dirname(repopath)
                 if not os.path.isdir(_parent):

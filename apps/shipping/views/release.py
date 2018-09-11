@@ -2,10 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import re
 from collections import defaultdict
 from datetime import datetime
+import six
 from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.views import generic
@@ -76,7 +78,7 @@ class MigrateAppversions(generic.View):
 
     def migrateApps(self, migration_date, app_ids, tree_q, av_details):
         branches4app = self.getBranchData(app_ids, tree_q)
-        for app, branch in branches4app.iteritems():
+        for app, branch in six.iteritems(branches4app):
             self.migrateBranch(migration_date, branch, av_details[app])
 
     def getBranchData(self, app_ids, tree_q):

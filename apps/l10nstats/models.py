@@ -5,6 +5,7 @@
 '''Models for compare-locales statistics.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from django.db import models
 from life.models import Locale, Tree, Changeset
@@ -102,17 +103,7 @@ class Run(models.Model):
             yield (d, cls, compare)
 
 
-
 class Active(models.Model):
     """Keep track of the currently active Runs.
     """
     run = models.OneToOneField(Run, on_delete=models.CASCADE)
-
-
-class ProgressPosition(models.Model):
-    """Position in the background image
-    """
-    tree = models.ForeignKey(Tree, on_delete=models.CASCADE)
-    locale = models.ForeignKey(Locale, on_delete=models.CASCADE)
-    x = models.IntegerField()
-    y = models.IntegerField()

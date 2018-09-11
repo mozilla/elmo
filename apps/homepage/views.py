@@ -5,23 +5,20 @@
 '''Views for the main navigation pages.
 '''
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import datetime
-import sys
 import feedparser  # vendor-local
 from django.core.urlresolvers import reverse
-from django.http import (HttpResponsePermanentRedirect, Http404,
+from django.http import (HttpResponsePermanentRedirect,
                          HttpResponseServerError)
 from django.shortcuts import render, redirect
-from django.utils.safestring import mark_safe
-from django.template import RequestContext, loader
+from django.template import loader
 from django.conf import settings
-from django.views.defaults import page_not_found
 from django.core.cache import cache
 from django.views.decorators.http import etag
 
 from life.models import Locale, TeamLocaleThrough
-from l10nstats.models import Run
 
 
 def handler500(request):
@@ -134,22 +131,12 @@ def locale_team(request, code):
 
     name = loc.name or loc.code
 
-    try:
-        cachebuster = (
-            '?%d' % Run.objects.order_by('-pk').values_list('id', flat=True)[0]
-            )
-    except IndexError:
-        cachebuster = ''
-
     return render(request, 'homepage/locale-team.html', {
                     'locale': loc,
                     'locale_name': name,
                     'shipping': shipping,
                     'bugs': bugs,
                     'webdashboard_url': settings.WEBDASHBOARD_URL,
-                    'PROGRESS_IMG_SIZE': settings.PROGRESS_IMG_SIZE,
-                    'PROGRESS_IMG_NAME': settings.PROGRESS_IMG_NAME,
-                    'cachebuster': cachebuster,
                   })
 
 # redirects for moves within pushes app, and moving the diff view

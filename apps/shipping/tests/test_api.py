@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from elmo.test import TestCase
 from django.contrib.auth.models import User
@@ -12,6 +13,7 @@ from shipping.models import (Signoff, Action, Application, AppVersion,
 from shipping.api import (_actions4appversion, actions4appversions,
                           flags4appversions)
 from datetime import datetime, timedelta
+from six.moves import range
 
 
 class ApiActionTest(TestCase):
@@ -25,7 +27,7 @@ class ApiActionTest(TestCase):
     def test_getflags(self):
         """Test that the list returns the right flags."""
         av = AppVersion.objects.get(code="fx1.0")
-        flags = flags4appversions([av], locales=range(1, 5))
+        flags = flags4appversions([av], locales=list(range(1, 5)))
         self.assertDictEqual(flags, {av: {
             "pl": ["fx1.0", {Action.PENDING: 2}],
             "de": ["fx1.0", {Action.ACCEPTED: 3}],
@@ -136,8 +138,8 @@ class ApiMigrationTest(TestCase):
                                                      None,
                                                      100)
         self.assertEqual(not_found, set())
-        self.assertListEqual(flaglocs4av.keys(), [locale.id])
-        flag, action_id = flaglocs4av[locale.id].items()[0]
+        self.assertListEqual(list(flaglocs4av.keys()), [locale.id])
+        flag, action_id = list(flaglocs4av[locale.id].items())[0]
         self.assertEqual(flag, Action.ACCEPTED)
         self.assertEqual(
             Signoff.objects.get(action=action_id).locale_id,
@@ -171,7 +173,7 @@ class ApiMigrationTest(TestCase):
             100,
         )
         actions = flaglocs4av[locale.id]
-        action = Action.objects.get(pk=actions.values()[0])
+        action = Action.objects.get(pk=list(actions.values())[0])
         self.assertEqual(action.flag, Action.ACCEPTED)
 
         flaglocs4av, __ = _actions4appversion(
@@ -182,7 +184,7 @@ class ApiMigrationTest(TestCase):
             up_until=self.pre_date
         )
         actions = flaglocs4av[locale.id]
-        action = Action.objects.get(pk=actions.values()[0])
+        action = Action.objects.get(pk=list(actions.values())[0])
         self.assertEqual(action.flag, Action.PENDING)
 
         flaglocs4av, __ = _actions4appversion(
@@ -193,7 +195,7 @@ class ApiMigrationTest(TestCase):
             up_until=self.post_date
         )
         actions = flaglocs4av[locale.id]
-        action = Action.objects.get(pk=actions.values()[0])
+        action = Action.objects.get(pk=list(actions.values())[0])
         self.assertEqual(action.flag, Action.ACCEPTED)
 
     def testOneNew(self):
@@ -209,8 +211,8 @@ class ApiMigrationTest(TestCase):
         a4av, not_found = _actions4appversion(self.new_av,
                                               {locale.id}, None, 100)
         self.assertEqual(not_found, set())
-        self.assertListEqual(a4av.keys(), [locale.id])
-        flag, action_id = a4av[locale.id].items()[0]
+        self.assertListEqual(list(a4av.keys()), [locale.id])
+        flag, action_id = list(a4av[locale.id].items())[0]
         self.assertEqual(flag, Action.ACCEPTED)
         self.assertEqual(
             Signoff.objects.get(action=action_id).locale_id,
@@ -256,20 +258,20 @@ class ApiMigrationTest(TestCase):
         a4av, not_found = _actions4appversion(self.old_av,
                                               {da.id, de.id}, None, 100)
         self.assertSetEqual(not_found, {de.id})
-        self.assertListEqual(a4av.keys(), [da.id])
-        flag, action_id = a4av[da.id].items()[0]
+        self.assertListEqual(list(a4av.keys()), [da.id])
+        flag, action_id = list(a4av[da.id].items())[0]
         self.assertEqual(flag, Action.ACCEPTED)
         a4av, not_found = _actions4appversion(self.new_av,
                                               {da.id, de.id}, None, 100)
         self.assertSetEqual(not_found, {da.id})
-        self.assertListEqual(a4av.keys(), [de.id])
-        flag, action_id = a4av[de.id].items()[0]
+        self.assertListEqual(list(a4av.keys()), [de.id])
+        flag, action_id = list(a4av[de.id].items())[0]
         self.assertEqual(flag, Action.ACCEPTED)
         a4av, not_found = _actions4appversion(self.old_av,
                                               {da.id, de.id}, None, 100)
         self.assertSetEqual(not_found, {de.id})
-        self.assertListEqual(a4av.keys(), [da.id])
-        flag, action_id = a4av[da.id].items()[0]
+        self.assertListEqual(list(a4av.keys()), [da.id])
+        flag, action_id = list(a4av[da.id].items())[0]
         self.assertEqual(flag, Action.ACCEPTED)
         a4avs = actions4appversions(appversions=[self.new_av],
                                     locales=[da.id, de.id])

@@ -4,16 +4,18 @@
 
 'Save buildbot logs from disk into ElasticSearch'
 from __future__ import absolute_import, division
+from __future__ import unicode_literals
 
 from datetime import datetime
 import itertools
 
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 import elasticsearch
 from elasticsearch.helpers import bulk
 import json
 import six
+from six.moves import range
 
 from l10nstats.models import Run
 from mbdb.models import Master, Log, Step
@@ -37,8 +39,10 @@ class Command(LoggingCommand):
                 hasattr(settings, 'ES_COMPARE_HOST')):
             raise CommandError('ES_COMPARE_INDEX or ES_COMPARE_HOST'
                                ' not defined in settings')
-        if (not hasattr(settings, 'LOG_MOUNTS')
-            or not isinstance(settings.LOG_MOUNTS, dict)):
+        if (
+                not hasattr(settings, 'LOG_MOUNTS')
+                or not isinstance(settings.LOG_MOUNTS, dict)
+        ):
             raise CommandError('LOG_MOUNTS is not a dict in settings')
 
         for master in Master.objects.order_by('-pk').values_list('name',
@@ -51,13 +55,14 @@ class Command(LoggingCommand):
         self.index = settings.ES_COMPARE_INDEX
         # get the latest comparison, in the right direction
         direction = "asc" if options['backwards'] else "desc"
-        rv = self.es.search(index=self.index,
-                             doc_type='comparison',
-                             body={
-                                "from": 0,
-                                "size": 1,
-                                "sort": [{"run": direction}]}
-                             )
+        rv = self.es.search(
+            index=self.index,
+            doc_type='comparison',
+            body={
+                "from": 0,
+                "size": 1,
+                "sort": [{"run": direction}]}
+        )
         hits = rv['hits']['hits']
         offset = hits[0]['sort'][0] if hits else None
         if offset is None:
@@ -82,7 +87,7 @@ class Command(LoggingCommand):
         if limit is None:
             pagenums = itertools.count()
         else:
-            pagenums = xrange(limit)
+            pagenums = range(limit)
         for pagenum in pagenums:
             start = datetime.now()
             # self.offset is updated in generateDocs

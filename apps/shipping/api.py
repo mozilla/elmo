@@ -5,9 +5,10 @@
 '''APIs for managing sign-offs and shipping metrics.
 '''
 from __future__ import absolute_import
-
+from __future__ import unicode_literals
 
 from collections import defaultdict
+import six
 
 from life.models import Locale
 from l10nstats.models import Run
@@ -17,7 +18,8 @@ from shipping.models import AppVersion, Signoff, Action
 test_locales = []
 
 
-def _actions4appversion(appversion, locales, fallbacks_for, chunk_size, up_until=None):
+def _actions4appversion(appversion, locales, fallbacks_for, chunk_size,
+                        up_until=None):
     '''Helper method, get the actions/flags for each of the given locales
     Also return the locales not found
 
@@ -31,26 +33,29 @@ def _actions4appversion(appversion, locales, fallbacks_for, chunk_size, up_until
         # we're now in fallback mode, let's see if any of these
         # have a chance
         # First, find the earliest appver we fall back to
-        last_fallbacks = list((AppVersion.objects
+        last_fallbacks = list((
+            AppVersion.objects
             .order_by('-pk')
             .filter(app=appversion.app_id,
                     followups__isnull=False,
                     fallback=None)
             .values_list('id', flat=True)
             )[:1])
-        old_signoffs = (Signoff.objects
+        old_signoffs = (
+            Signoff.objects
             .filter(appversion__app=appversion.app_id)
             .filter(appversion__followups__isnull=False)
             .filter(appversion__id__lte=appversion.id)
             .filter(locale__in=fallbacks_for)
             .filter(action__flag=Action.ACCEPTED)
-            )
+        )
         if last_fallbacks:
-            old_signoffs = (old_signoffs
-            .filter(appversion__id__gte=last_fallbacks[0])
+            old_signoffs = (
+                old_signoffs
+                .filter(appversion__id__gte=last_fallbacks[0])
             )
         locales = list(old_signoffs
-                       .values_list('locale',flat=True)
+                       .values_list('locale', flat=True)
                        .distinct())
     if locales is None:
         # we're not restricting locales
@@ -73,11 +78,12 @@ def _actions4appversion(appversion, locales, fallbacks_for, chunk_size, up_until
         actions = actions.filter(signoff__locale__in=inc_locales.keys())
 
     # reduce the queryset by sort order and only the data we need out
-    actions = (actions.order_by('-signoff__id', '-id')
-                       .values_list('id',
-                                   'flag',
-                                   'signoff_id',
-                                   'signoff__locale_id'))
+    actions = (
+        actions.order_by('-signoff__id', '-id')
+        .values_list(
+            'id', 'flag', 'signoff_id', 'signoff__locale_id'
+        )
+    )
     i = 0
     rv = defaultdict(dict)  # return value
     while inc_locales:
@@ -163,7 +169,7 @@ def accepted_signoffs(appversion, up_until=None):
     flags4loc = (flags4appversions([appversion],
                                    up_until=up_until)
                  .get(appversion, {}))
-    actions = [flags[Action.ACCEPTED] for _, flags in flags4loc.itervalues()
+    actions = [flags[Action.ACCEPTED] for _, flags in six.itervalues(flags4loc)
                if Action.ACCEPTED in flags]
     return Signoff.objects.filter(action__in=actions)
 
@@ -173,7 +179,7 @@ def _flags4av(flaglocs4av, loc4id, rv, av=None):
     Makes sure to get all fallbacks before processing an av via recursion.
     """
     if av is None:
-        av = next(flaglocs4av.iterkeys())
+        av = next(six.iterkeys(flaglocs4av))
     fallback = av.fallback
     flagdict4loc = flaglocs4av.pop(av)
     _rv = {}
@@ -183,11 +189,11 @@ def _flags4av(flaglocs4av, loc4id, rv, av=None):
             _flags4av(flaglocs4av, loc4id, rv, fallback)
         # got fallback data, only take those that are accepted
         if fallback in rv:
-            for loc, (real_av, flags) in rv[fallback].iteritems():
+            for loc, (real_av, flags) in six.iteritems(rv[fallback]):
                 if Action.ACCEPTED in flags:
                     _rv[loc] = [real_av,
                                 {Action.ACCEPTED: flags[Action.ACCEPTED]}]
-    for locid, action4flag in flagdict4loc.iteritems():
+    for locid, action4flag in six.iteritems(flagdict4loc):
         loc = loc4id[locid]
         if Action.OBSOLETED in action4flag:
             _rv.pop(loc, None)
@@ -204,7 +210,8 @@ def flags4appversions(appversions, locales=None, up_until=None):
     """
     # map to replace locale IDs with codes inside the helper
     loc4id = dict(Locale.objects.values_list('id', 'code'))
-    flaglocs4av = actions4appversions(appversions,
+    flaglocs4av = actions4appversions(
+        appversions,
         locales=locales,
         up_until=up_until
     )

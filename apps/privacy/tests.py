@@ -2,9 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from django.core.urlresolvers import reverse
 from elmo.test import TestCase
+from django.utils.encoding import force_text
 from django.contrib.auth.models import User, Permission
 from django.contrib.admin.models import LogEntry, CHANGE
 from .models import Policy, Comment
@@ -18,7 +20,8 @@ class PrivacyTestCase(TestCase, EmbedsTestCaseMixin):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response.content)
-        self.assertIn('Policy not found', response.content)
+        content = force_text(response.content)
+        self.assertIn('Policy not found', content)
 
         user = User.objects.create(
           username='peter'
@@ -75,13 +78,15 @@ class PrivacyTestCase(TestCase, EmbedsTestCaseMixin):
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertIn(data['comment'], response.content)
+        content = force_text(response.content)
+        self.assertIn(data['comment'], content)
 
         policy, = Policy.objects.all()
         self.assertFalse(policy.active)
         policy_url = reverse('privacy:show',
                              args=[policy.pk])
-        self.assertIn(policy_url, response.content)
+        content = force_text(response.content)
+        self.assertIn(policy_url, content)
 
         # now activate it
         activate_url = reverse('privacy:activate')
@@ -105,7 +110,8 @@ class PrivacyTestCase(TestCase, EmbedsTestCaseMixin):
 
         response = self.client.get(policy_url)
         self.assertEqual(response.status_code, 200)
-        self.assertIn(data['content'], response.content)
+        content = force_text(response.content)
+        self.assertIn(data['content'], content)
         self.assert_all_embeds(response.content)
 
         # lastly post a comment to this policy

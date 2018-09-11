@@ -2,16 +2,21 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import re
 from django.conf import settings
 from django.contrib.staticfiles import finders
+from django.utils.encoding import force_text
 
 SCRIPTS_REGEX = re.compile(
     '<script\s*[^>]*src=["\']([^"\']+)["\'].*?</script>',
     re.M | re.DOTALL)
 STYLES_REGEX = re.compile('<link.*?href=["\']([^"\']+)["\'].*?>',
                           re.M | re.DOTALL)
+WHITELIST = {
+    '.css': re.compile('l10nstats/progress.css$')
+}
 
 
 class EmbedsTestCaseMixin:
@@ -28,6 +33,10 @@ class EmbedsTestCaseMixin:
                 # external urls like tabzilla, ignore
                 continue
             if found.endswith(only_extension):
+                white = WHITELIST.get(only_extension)
+                if white and white.search(found):
+                    # whitelist file that only exists in prod
+                    continue
                 if settings.DEBUG:
                     resp = self.client.get(found)
                     self.assertEqual(resp.status_code, 200, found)
@@ -40,6 +49,7 @@ class EmbedsTestCaseMixin:
     def assert_all_embeds(self, response):
         if hasattr(response, 'content'):
             response = response.content
+        response = force_text(response)
         response = re.sub('<!--(.*)-->', '', response, re.M)
         self._check(response, SCRIPTS_REGEX, '.js')
         self._check(response, STYLES_REGEX, '.css')

@@ -99,11 +99,6 @@ tr.separator td {
     color: #ff6c00;
 }
 
-.trees .treeprogress-graph {
-    border-bottom: solid 1px grey;
-    border-right: solid 1px grey;
-}
-
 .trees .treeprogress {
     vertical-align: middle;
 }

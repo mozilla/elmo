@@ -5,20 +5,29 @@
 '''Create background images for progress previews
 '''
 from __future__ import absolute_import, division
+from __future__ import unicode_literals
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from datetime import timedelta
 import os.path
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from django.db.models import Max, Q
+from django.template.loader import render_to_string
 
-from l10nstats.models import Run, ProgressPosition
+from l10nstats.models import Run
 from life.models import Locale, Tree
 
 import PIL.Image
 import PIL.ImageDraw
+import six
+
+
+ProgressPosition = namedtuple(
+    'ProgressPosition',
+    ['tree', 'locale', 'x', 'y']
+)
 
 
 class Command(BaseCommand):
@@ -87,7 +96,7 @@ class Command(BaseCommand):
                      (Tree.objects
                       .filter(code__in=trees)))
         backobjs = []
-        for (loc, tree), vals in tuples.iteritems():
+        for (loc, tree), vals in six.iteritems(tuples):
             rescale = self.rescale(vals)
             oldx = oldy = None
             _offy = offloc[loc]
@@ -115,11 +124,21 @@ class Command(BaseCommand):
                                              locale=locales[loc],
                                              x=-offtree[tree],
                                              y=offy))
+        output_path = os.path.join(
+            settings.STATIC_ROOT, settings.PROGRESS_BASE_NAME
+        )
         pal = im.convert("P", palette="ADAPTIVE")
-        pal.save(os.path.join(settings.STATIC_ROOT,
-                              settings.PROGRESS_IMG_NAME))
-        ProgressPosition.objects.all().delete()
-        ProgressPosition.objects.bulk_create(backobjs)
+        pal.save(output_path + 'png')
+        style_sheet_content = render_to_string(
+            'l10nstats/progress.css',
+            {
+                'background_positions': backobjs,
+                'PROGRESS_IMG_SIZE': settings.PROGRESS_IMG_SIZE,
+                'PROGRESS_BASE_NAME': settings.PROGRESS_BASE_NAME,
+            }
+        )
+        with open(output_path + 'css', 'wb') as style_file:
+            style_file.write(style_sheet_content)
 
     def rescale(self, vals, span=.75):
         # return a scaling function for change values
@@ -130,8 +149,10 @@ class Command(BaseCommand):
         _min = min(c for _, c, __ in vals)
         _max = max(c for _, c, __ in vals)
         total = max(t for _, __, t in vals)
-        if ((_max - _min) >= total * span or
-            (_min >= _max)):
+        if (
+                (_max - _min) >= total * span or
+                (_min >= _max)
+        ):
             # no resize needed or useful
             return lambda v: 1.0 * v / total
         ratio = span / (_max - _min)
@@ -140,16 +161,20 @@ class Command(BaseCommand):
 
     def initialCoverage(self, tree2locs, startdate):
         rv = {}
-        for tree, locales in tree2locs.iteritems():
-            locs = (Locale.objects
+        for tree, locales in six.iteritems(tree2locs):
+            locs = (
+                Locale.objects
                 .filter(code__in=locales)
                 .filter(run__srctime__lt=startdate, run__tree__code=tree)
                 .annotate(mr=Max('run'))
             )
             for l, r in locs.values_list('code', 'mr'):
                 rv[(l, tree)] = r
-        r2r = dict((id, (c, t)) for id, c, t in Run.objects
+        r2r = {
+            id: (c, t)
+            for id, c, t in
+            Run.objects
             .filter(id__in=rv.values())
             .values_list('id', 'changed', 'total')
-        )
+        }
         return dict((t, r2r[r]) for t, r in rv.items())
