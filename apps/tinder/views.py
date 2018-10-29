@@ -144,7 +144,7 @@ def tbpl_inner(request):
         try:
             rev = c.revision[:12]
             url = repourls[reponames[c.id]] + 'pushloghtml?changeset=' + rev
-        except IndexError:
+        except TypeError, IndexError:
             url = 'about:blank'
             rev = 12 * '0'
         return {'id': c.id,
