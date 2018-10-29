@@ -68,8 +68,10 @@ class TestHandlePushes(RepoTestBase):
         self.assertEqual(push.repository, repo)
         self.assertEqual(push.push_id, push_id)
         self.assertEqual(push.user, username)
-        self.assertEqual(push.push_date.strftime('%Y%m%d%H%M'),
-                         datetime.datetime.utcnow().strftime('%Y%m%d%H%M'))
+        self.assertEqual(
+            push.push_date,
+            datetime.datetime.utcfromtimestamp(timestamp)
+        )
 
         self.assertEqual(changeset.description, 'initial commit')
         self.assertEqual(changeset.user, 'Jane Doe <jdoe@foo.tld>')
