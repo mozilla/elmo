@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 from django.apps import AppConfig
 from django.contrib.admin import AdminSite
 from django.contrib import admin as django_admin
+from django.contrib.admin import sites as django_admin_sites
 from session_csrf import anonymous_csrf
 
 
@@ -32,7 +33,7 @@ class ElmoConfig(AppConfig):
         import session_csrf
         session_csrf.monkeypatch()
         site = CSRFAdminSite()
-        django_admin.site = site
+        django_admin.site = django_admin_sites.site = site
         # Monkeypath hglib.client.pathto
         # Working around the lack of
         # https://bz.mercurial-scm.org/show_bug.cgi?id=4510

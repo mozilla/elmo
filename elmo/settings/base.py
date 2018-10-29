@@ -41,6 +41,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'session_csrf.context_processor',
                 'django.template.context_processors.static',
+                'django.contrib.messages.context_processors.messages',
                 'accounts.context_processors.accounts',
                 'homepage.context_processors.analytics',
             ],
@@ -69,6 +70,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     'session_csrf.CsrfMiddleware',
 
     'commonware.middleware.FrameOptionsHeader',
@@ -93,6 +95,7 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    'django.contrib.messages',
     'django.contrib.staticfiles',
 
     # L10n
