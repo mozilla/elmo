@@ -23,7 +23,7 @@ import hglib
 import markus
 
 from compare_locales.parser import getParser, FluentEntity
-from compare_locales.compare import AddRemove, Tree as DataTree
+from compare_locales.compare.utils import AddRemove, Tree as DataTree
 
 
 metrics = markus.get_metrics(__name__)
