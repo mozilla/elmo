@@ -1,5 +1,3 @@
-from base import *  # noqa
-
 SECRET_KEY = 'travis'
 
 DATABASES = {
@@ -11,7 +9,6 @@ DATABASES = {
         'HOST': '',
         'PORT': '',
         'OPTIONS': {
-            'init_command': 'SET storage_engine=InnoDB',
             'charset': 'utf8',
             'use_unicode': True,
         },
@@ -19,8 +16,6 @@ DATABASES = {
             'CHARSET': "utf8",
             'COLLATION': 'utf8_general_ci',
         },
-        'TEST_CHARSET': 'utf8',
-        'TEST_COLLATION': 'utf8_general_ci',
     },
 }
 

@@ -1,0 +1,63 @@
+# Dependencies of our top-level dependencies
+
+## production
+
+# >=2017.4.17 requests
+certifi==2018.11.29
+# <3.1.0,>=3.0.2 requests
+chardet==3.0.4
+# raven
+contextlib2==0.5.5
+# markus
+datadog==0.26.0
+# >=3.3.2 datadog
+decorator==4.3.0
+# >=1.0 django-compressor
+django-appconf==1.0.2
+# >=0.3 stastistics
+docutils==0.14
+# >=0.10.0,<0.11 compare-locales
+fluent==0.10.0
+# >=1 mock
+funcsigs==1.0.2
+# <2.9,>=2.5 requests
+idna==2.8
+# >=0.11 mock
+pbr==5.1.1
+# <0.5.0,>=0.4.1 pyasn1-modules
+# >=0.3.7 python-ldap
+pyasn1==0.4.5
+# >=0.1.5 python-ldap
+pyasn1-modules==0.2.3
+# compare-locales
+pytoml==0.1.20
+# Django
+pytz==2018.9
+# ==1.0.6 django-compressor
+rcssmin==1.0.6
+# >=2.6.0 datadog
+requests==2.21.0
+# ==1.0.12 django-compressor
+rjsmin==1.0.12
+# >=2.0.9 datadog
+simplejson==3.16.0
+# bleach, compare-locales, markus
+# >=1.4.0 python-memcached
+# >=1.9 bleach, html5lib, mock
+six==1.12.0
+# markus
+statistics==1.0.3.5
+# <1.25,>=1.21.1 requests
+# <2.0,>=1.8 elasticsearch
+urllib3==1.24.1
+# bleach, html5lib
+webencodings==0.5.1
+
+
+## dev
+
+# >=0.2.0 django-debug-toolbar
+sqlparse==0.2.4
+
+# django-extensions
+typing==3.6.6
