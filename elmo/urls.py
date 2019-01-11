@@ -5,11 +5,10 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from django.conf.urls import include, url
-from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.contrib import admin
+from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.http import HttpResponse
-import django.views.static
 from django.views.generic import TemplateView
 
 
@@ -35,11 +34,10 @@ urlpatterns = [
     url(r'^__version__$',
         TemplateView.as_view(template_name='version.json',
                              content_type='application/json')),
-    # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
-    # to INSTALLED_APPS to enable admin documentation:
-    # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
-    # Uncomment the next line to enable the admin:
+    url(r'^login/$', auth_views.LoginView.as_view(), name='login'),
+    url(r'^logout/$', auth_views.LogoutView.as_view(), name='logout'),
+
     url(r'^admin/', admin.site.urls),
 ]
 

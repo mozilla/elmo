@@ -278,25 +278,23 @@ class LDAPAuthTestCase(TestCase):
           self.fake_user[0][0]: 'secret'
         }))
         backend = BreakingMozLdapBackend()
-        self.assertRaises(ldap.SERVER_DOWN, backend.authenticate,
-                          'foo', 'secret')
+        with self.assertRaises(ldap.SERVER_DOWN):
+            backend._authenticate_ldap('foo', 'secret')
 
         # try it from the "outside"
         from django.core.urlresolvers import reverse
         url = reverse('login')
-        settings_before = settings.AUTHENTICATION_BACKENDS
 
-        try:
-            settings.AUTHENTICATION_BACKENDS = (
+        with self.settings(
+            AUTHENTICATION_BACKENDS = (
               'lib.auth.tests.BreakingMozLdapBackend',
             )
+        ):
             response = self.client.post(
                 url,
                 {'username': 'foo', 'password': 'secret'})
-            self.assertEqual(response.status_code, 503)
-            self.assertEqual(response.content, b'Service Unavailable')
-        finally:
-            settings.AUTHENTICATION_BACKENDS = settings_before
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(b'Please try again', response.content)
 
     def test_lost_group_privileges(self):
         # test a user that is part of the `Localizers` group one day but not

@@ -112,7 +112,6 @@ class SignoffView(TemplateView):
             'accepted': accepted,
             'first': first,
             'suggested_signoff': pushes_data['suggested_signoff'],
-            'login_form_needs_reload': True,
             'fallback': fallback,
             'real_av': real_av,
         }

@@ -27,7 +27,15 @@ table {
     position: relative;
 }
 
-#auth form {
+#auth.user > .site_login {
+    display: none;
+}
+
+#auth:not(.user) > .site_logout {
+    display: none;
+}
+
+#auth section {
     background: #FFFFFF;
     box-shadow: 1px 1px 3px #AAAAAA;
     padding: 20px;
@@ -36,30 +44,12 @@ table {
     width: 200px;
     z-index: 1;
 }
-
-#auth form img {
-    float: right;
-    margin-top: 5px;
+#auth:not(.logout) section {
+    display: none;
 }
 
-#auth form .logout .button {
+#auth section.logout .button {
     width: 200px;
-}
-
-#auth form input {
-    margin-bottom: 10px;
-    width: 185px;
-}
-
-#auth form .error {
-    color: #FF0000;
-    margin-bottom: 10px;
-    text-transform: none;
-}
-
-#auth form .site_login_error,
-#auth form .site_login_error .message {
-    margin-bottom: 0;
 }
 
 #colophon .footer-logo {

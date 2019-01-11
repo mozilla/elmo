@@ -78,16 +78,6 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
     def test_secure_session_cookies(self):
         """secure session cookies should always be 'secure' and 'httponly'"""
         url = reverse('login')
-        # run it as a mocked AJAX request because that's how elmo does it
-        response = self.client.post(
-            url,
-            {'username': 'peterbe',
-             'password': 'secret'},
-            **{'X-Requested-With': 'XMLHttpRequest'})
-        self.assertEqual(response.status_code, 200)
-        content = force_text(response.content)
-        self.assertIn('class="error', content)
-
         from django.contrib.auth.models import User
         user = User.objects.create(username='peterbe',
                                    first_name='Peter')
@@ -99,7 +89,7 @@ class HomepageTestCase(TestCase, EmbedsTestCaseMixin):
             {'username': 'peterbe',
              'password': 'secret',
              'next': '/foo'},
-            **{'X-Requested-With': 'XMLHttpRequest'})
+        )
         # even though it's
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response['Location'].endswith('/foo'))

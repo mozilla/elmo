@@ -10,6 +10,8 @@ import os
 
 ROOT_URLCONF = 'elmo.urls'
 TEST_RUNNER = 'elmo.test.TestRunner'
+LOGIN_REDIRECT_URL = 'homepage'
+LOGOUT_REDIRECT_URL = 'homepage'
 
 DEBUG = False
 
