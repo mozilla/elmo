@@ -87,7 +87,7 @@ class LDAPAuthTestCase(TestCase):
         backend = MozLdapBackend()
         self.assertEqual(backend.authenticate('foo@mozilla.com', 'secret'),
                          user)
-        self.assertEqual(backend.authenticate('foo', 'secret'), user)
+        self.assertEqual(backend.authenticate('foo', 'secret'), None)
         self.assertEqual(backend.authenticate('foo', 'JUNK'), None)
 
     def test_backend_cert_file(self):
@@ -107,9 +107,9 @@ class LDAPAuthTestCase(TestCase):
         }))
         backend = MozLdapBackend()
 
-        user = backend.authenticate('foo', 'secret')
+        user = backend.authenticate('peterbe@mozilla.com', 'secret')
         self.assertTrue(user)
-        self.assertTrue(User.objects.get(username='foo'))
+        self.assertTrue(User.objects.get(email='peterbe@mozilla.com'))
         user = User.objects.get(first_name='Pet\xe3r')
         self.assertEqual(user.last_name, 'Bengtss\xa2n')
         self.assertFalse(user.has_usable_password())
@@ -154,7 +154,7 @@ class LDAPAuthTestCase(TestCase):
         ldap.open.mock_returns = Mock('ldap_connection')
         ldap.set_option = Mock(return_value=None)
 
-        email = 'm\xc3@example.com'
+        email = 'me@\xc3xample.com'
         fake_user = [
           ('mail=%s,...' % email,
            {'cn': ['Peter Bengtsson'],
@@ -206,6 +206,7 @@ class LDAPAuthTestCase(TestCase):
         assert not User.objects.all().exists()
         user = User.objects.create(
           username='foo',
+          email='foo@example.com',
           first_name='P\xe4ter',
           last_name='B\xa3ngtsson',
         )
@@ -223,7 +224,7 @@ class LDAPAuthTestCase(TestCase):
         }))
         backend = MozLdapBackend()
 
-        user = backend.authenticate('foo', 'secret')
+        user = backend.authenticate('peterbe@mozilla.com', 'secret')
         self.assertTrue(user)
         _first_name = self.fake_user[0][1]['givenName'][0]
         self.assertEqual(user.first_name, _first_name.decode('utf-8'))
@@ -231,7 +232,7 @@ class LDAPAuthTestCase(TestCase):
         self.assertEqual(user.last_name, _last_name.decode('utf-8'))
         self.assertEqual(user.email, self.fake_user[0][1]['mail'][0])
 
-        user_saved = User.objects.get(username='foo')
+        user_saved = User.objects.get(email='peterbe@mozilla.com')
         self.assertEqual(user_saved.first_name, user.first_name)
         self.assertEqual(user_saved.last_name, user.last_name)
 
@@ -279,7 +280,7 @@ class LDAPAuthTestCase(TestCase):
         }))
         backend = BreakingMozLdapBackend()
         with self.assertRaises(ldap.SERVER_DOWN):
-            backend._authenticate_ldap('foo', 'secret')
+            backend._authenticate_ldap('foo@example.com', 'secret')
 
         # try it from the "outside"
         from django.core.urlresolvers import reverse
@@ -317,7 +318,7 @@ class LDAPAuthTestCase(TestCase):
         }))
         backend = MozLdapBackend()
 
-        user = backend.authenticate('foo', 'secret')
+        user = backend.authenticate('peterbe@mozilla.com', 'secret')
         assert user == User.objects.get()
         self.assertTrue(user.groups.filter(name='Localizers').exists())
         self.assertTrue(user.groups.filter(name='build').exists())
@@ -331,7 +332,7 @@ class LDAPAuthTestCase(TestCase):
           'ou=groups,dc=mozilla': new_groups
         }))
 
-        user = backend.authenticate('foo', 'secret')
+        user = backend.authenticate('peterbe@mozilla.com', 'secret')
         assert user == User.objects.get()
         self.assertFalse(user.groups.filter(name='Localizers').exists())
         self.assertTrue(user.groups.filter(name='build').exists())
@@ -346,7 +347,7 @@ class LDAPAuthTestCase(TestCase):
           'ou=groups,dc=mozilla': new_new_groups
         }))
 
-        user = backend.authenticate('foo', 'secret')
+        user = backend.authenticate('peterbe@mozilla.com', 'secret')
         assert user == User.objects.get()
         self.assertTrue(user.groups.filter(name='Localizers').exists())
         self.assertFalse(user.groups.filter(name='build').exists())

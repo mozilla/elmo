@@ -16,33 +16,9 @@ from django.test import override_settings
 
 
 @override_settings(
-    AUTHENTICATION_BACKENDS=('lib.auth.backends.MozLdapBackend',),
-    LDAP_HOST=None,
-    LDAP_DN=None,
-    LDAP_PASSWORD=None,
+    AUTHENTICATION_BACKENDS=('django.contrib.auth.backends.ModelBackend',),
 )
 class AccountsTestCase(TestCase):
-
-    def test_login_long_username(self):
-        url = reverse('login')
-        data = dict(
-          username='some_with_a_really_long@emailaddress.com',
-          password='secret'
-        )
-        user = User(**dict(username='something_short',
-                           email=data['username'],
-                           first_name="Looong"))
-        user.set_password(data['password'])
-        user.save()
-
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, 302)
-        url = reverse('user-json')
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['Content-Type'], 'application/json')
-        data = json.loads(response.content)
-        self.assertEqual(data['user_name'], 'Looong')
 
     def test_login_form_allows_long_username(self):
         url = reverse('login')
