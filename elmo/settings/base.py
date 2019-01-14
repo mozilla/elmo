@@ -74,7 +74,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'session_csrf.CsrfMiddleware',
-
+    'mozilla_django_oidc.middleware.SessionRefresh',
     'csp.middleware.CSPMiddleware',
     'commonware.middleware.FrameOptionsHeader',
     'commonware.middleware.ScrubRequestOnException',
@@ -101,7 +101,8 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # L10n
+    # OIDC
+    'mozilla_django_oidc',
 
     # elmo specific
     'life',
@@ -131,6 +132,16 @@ CACHES = {
 # When we have a good cache backend, we can get much faster session storage
 # using the cache backend
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+
+# OICD
+OIDC_DISABLE = False
+OIDC_RP_SCOPES = 'openid profile email'
+# Mock private OIDC settings for tests
+OIDC_OP_TOKEN_ENDPOINT = \
+    OIDC_OP_USER_ENDPOINT = \
+    OIDC_RP_CLIENT_ID = \
+    OIDC_RP_CLIENT_SECRET = False
+SSO_GROUPS = 'https://sso.mozilla.com/claim/groups'
 
 # django_compressor
 COMPRESS_ENABLED = True

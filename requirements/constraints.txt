@@ -2,12 +2,22 @@
 
 ## production
 
+# >=0.13 josepy
+PyOpenSSL==18.0.0
+# >=0.21.0 cryptography
+asn1crypto==0.24.0
 # >=2017.4.17 requests
 certifi==2018.11.29
+# >=1.7,!=1.11.3 cryptography
+cffi==1.11.5
 # <3.1.0,>=3.0.2 requests
 chardet==3.0.4
 # raven
 contextlib2==0.5.5
+# mozilla-django-oidc
+# >=0.8 josepy
+# >=2.2.1 PyOpenSSL
+cryptography==2.4.2
 # markus
 datadog==0.26.0
 # >=3.3.2 datadog
@@ -16,25 +26,30 @@ decorator==4.3.0
 django-appconf==1.0.2
 # >=0.3 stastistics
 docutils==0.14
+# cryptography
+enum34==1.1.6
 # >=0.10.0,<0.11 compare-locales
 fluent.syntax==0.10.0
 # >=1 mock
 funcsigs==1.0.2
 # <2.9,>=2.5 requests
+# >=2.1 cryptography
 idna==2.8
+# cryptography
+ipaddress==1.0.22
+# mozilla-django-oidc
+josepy==1.1.0
 # >=0.11 mock
 pbr==5.1.1
-# <0.5.0,>=0.4.1 pyasn1-modules
-# >=0.3.7 python-ldap
-pyasn1==0.4.5
-# >=0.1.5 python-ldap
-pyasn1-modules==0.2.3
+# cffi
+pycparser==2.19
 # compare-locales
 pytoml==0.1.20
 # Django
 pytz==2018.9
 # ==1.0.6 django-compressor
 rcssmin==1.0.6
+# mozilla-django-oidc
 # >=2.6.0 datadog
 requests==2.21.0
 # ==1.0.12 django-compressor
@@ -43,6 +58,7 @@ rjsmin==1.0.12
 simplejson==3.16.0
 # bleach, compare-locales, markus
 # >=1.4.0 python-memcached
+# >=1.4.1 cryptography
 # >=1.9 bleach, html5lib, mock
 six==1.12.0
 # markus

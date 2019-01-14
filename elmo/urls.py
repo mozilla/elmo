@@ -35,12 +35,13 @@ urlpatterns = [
     url(r'^__version__$',
         TemplateView.as_view(template_name='version.json',
                              content_type='application/json')),
-
     url(
         r'^login/$',
         anonymous_csrf(auth_views.LoginView.as_view()),
         name='login'
     ),
+    url(r'^oidc/', include('mozilla_django_oidc.urls')),
+
     url(r'^logout/$', auth_views.LogoutView.as_view(), name='logout'),
 
     url(r'^admin/', admin_site.urls),

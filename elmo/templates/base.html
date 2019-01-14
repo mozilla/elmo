@@ -52,7 +52,11 @@
                             <li role="menuitem"><a href="//wiki.mozilla.org/L10n:Contribute">{{_('Get Involved')}}</a></li>
                             <li role="menuitem">
                                 <div id="auth">
+                                    {% if OIDC_DISABLE %}
                                     <a class="site_login" href="{% url 'login' %}?next={{ request.path }}">Log in</a>
+                                    {% else %}
+                                    <a class="site_login" href="{% url 'oidc_authentication_init' %}?next={{ request.path }}">Log in</a>
+                                    {% endif %}
                                     <a class="site_logout logout" href="#">Hello, <span class="username"></span></a>
 
                                     <section class="logout">

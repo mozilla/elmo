@@ -9,7 +9,7 @@ import markus
 
 from .base import *  # noqa
 # we modify that later, explicitly import
-from .base import CACHES, DEBUG
+from .base import CACHES, OIDC_DISABLE
 try:
     from .local import *  # noqa
 except ImportError:
@@ -52,9 +52,7 @@ except KeyError:
 for local_var, env_var in (
             ('ES_COMPARE_HOST', 'ES_COMPARE_HOST'),
             ('ES_COMPARE_INDEX', 'ES_COMPARE_INDEX'),
-            ('LDAP_HOST', 'ELMO_LDAP_HOST'),
-            ('LDAP_DN', 'ELMO_LDAP_DN'),
-            ('LDAP_PASSWORD', 'ELMO_LDAP_PASSWORD'),
+            ('OIDC_DISABLE', 'OIDC_DISABLE'),
             ('REPOSITORY_BASE', 'ELMO_REPOSITORY_BASE'),
             ('SECRET_KEY', 'ELMO_SECRET_KEY'),
 ):
@@ -80,18 +78,16 @@ if 'ELMO_MEMCACHED' in os.environ:
     CACHES['default']['LOCATION'] = os.environ['ELMO_MEMCACHED']
 
 AUTHENTICATION_BACKENDS = []
-if DEBUG:
-    # enable local users and passwords for DEBUG
+if OIDC_DISABLE:
+    # enable local users and passwords
     AUTHENTICATION_BACKENDS.append(
         'django.contrib.auth.backends.ModelBackend'
     )
-# check ldap config
-if all('LDAP_{}'.format(s) in globals() for s in ('HOST', 'DN', 'PASSWORD')):
-    import ldap  # noqa
-    AUTHENTICATION_BACKENDS.append('lib.auth.backends.MozLdapBackend')
-if not AUTHENTICATION_BACKENDS:
-    import warnings
-    warnings.warn("No authentication")
+else:
+    # Add 'mozilla_django_oidc' authentication backend
+    AUTHENTICATION_BACKENDS.append(
+        'lib.auth.backends.ElmoOIDCBackend'
+    )
 
 # hook up markus to datadog, if set
 if (

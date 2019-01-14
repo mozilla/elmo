@@ -5,8 +5,14 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from .forms import AuthenticationForm
+from django.conf import settings
 
 
 def accounts(request):
-    login_form = AuthenticationForm()
-    return {'login_form': login_form}
+    ctx = {
+        'OIDC_DISABLE': settings.OIDC_DISABLE
+    }
+    if settings.OIDC_DISABLE:
+        login_form = AuthenticationForm()
+        ctx['login_form'] = login_form
+    return ctx

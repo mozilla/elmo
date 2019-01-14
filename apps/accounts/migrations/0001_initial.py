@@ -5,10 +5,13 @@ from __future__ import unicode_literals
 from django.db import migrations
 
 
+# Snapshot of lib.auth.backends.MAPPING.values()
+GROUPS = ("Localizers",)
+
+
 def ensure_ldap_groups(apps, schema_editor):
-    from lib.auth.backends import GROUP_MAPPINGS
     Group = apps.get_model('auth', 'Group')
-    for django_group in GROUP_MAPPINGS:
+    for django_group in GROUPS:
         Group.objects.get_or_create(name=django_group)
 
 
@@ -19,5 +22,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(ensure_ldap_groups),
+        migrations.RunPython(
+            ensure_ldap_groups,
+            migrations.RunPython.noop
+        ),
     ]

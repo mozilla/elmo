@@ -1,3 +1,0 @@
-LDAP_HOST = 'must'
-LDAP_DN = 'be'
-LDAP_PASSWORD = 'configured'
