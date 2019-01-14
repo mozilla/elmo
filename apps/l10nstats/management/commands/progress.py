@@ -46,10 +46,18 @@ class Command(BaseCommand):
         if options['tree']:
             q = Q(tree__code__in=options['tree'])
         runs = Run.objects.exclude(srctime__isnull=True)
-        enddate = runs.aggregate(Max('srctime'))['srctime__max']
+        enddate = (
+            runs
+            .filter(active__isnull=False)
+            .aggregate(Max('srctime'))
+            ['srctime__max']
+        )
         if enddate is None:
             return
         startdate = enddate - timedelta(days=self.days)
+        # cut off searching for previous data by half a progress timeline
+        # split active locales on active projects from the rest
+        cutdate = startdate - timedelta(days=self.days/2)
         scale = 1. * (self.width - 1) / (enddate - startdate).total_seconds()
         runs = runs.filter(q, srctime__gte=startdate,
                            srctime__lte=enddate)
@@ -74,7 +82,7 @@ class Command(BaseCommand):
             tree2locs[tree].add(loc)
             locales.add(loc)
             trees.add(tree)
-        initialCoverage = self.initialCoverage(tree2locs, startdate)
+        initialCoverage = self.initialCoverage(tree2locs, cutdate, startdate)
         for (loc, tree), (c, t) in initialCoverage.items():
             tuples[(loc, tree)].insert(0, (startdate, c, t))
         locales = sorted(locales)
@@ -159,13 +167,32 @@ class Command(BaseCommand):
         offset = (1.0 - span) * _min / (total - _max + _min)
         return lambda v: (v - _min) * ratio + offset
 
-    def initialCoverage(self, tree2locs, startdate):
+    def initialCoverage(self, tree2locs, cutdate, startdate):
         rv = {}
         for tree, locales in six.iteritems(tree2locs):
+            # Do this in two batches:
+            # First, get active locales and/or active projects,
+            # only for the recent past (cutdate).
+            # Then, for the remainder, check unlimited history.
+            remaining = locales.copy()
             locs = (
                 Locale.objects
-                .filter(code__in=locales)
-                .filter(run__srctime__lt=startdate, run__tree__code=tree)
+                .filter(
+                    code__in=locales,
+                    run__srctime__gt=cutdate,
+                    run__srctime__lt=startdate,
+                    run__tree__code=tree)
+                .annotate(mr=Max('run'))
+            )
+            for l, r in locs.values_list('code', 'mr'):
+                rv[(l, tree)] = r
+                remaining.remove(l)
+            locs = (
+                Locale.objects
+                .filter(
+                    code__in=remaining,
+                    run__srctime__lt=startdate,
+                    run__tree__code=tree)
                 .annotate(mr=Max('run'))
             )
             for l, r in locs.values_list('code', 'mr'):
