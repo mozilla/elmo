@@ -10,6 +10,7 @@ from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.http import HttpResponse
 from django.views.generic import TemplateView
+from session_csrf import anonymous_csrf
 
 
 def simple_x_frame_view(request):
@@ -35,7 +36,11 @@ urlpatterns = [
         TemplateView.as_view(template_name='version.json',
                              content_type='application/json')),
 
-    url(r'^login/$', auth_views.LoginView.as_view(), name='login'),
+    url(
+        r'^login/$',
+        anonymous_csrf(auth_views.LoginView.as_view()),
+        name='login'
+    ),
     url(r'^logout/$', auth_views.LogoutView.as_view(), name='logout'),
 
     url(r'^admin/', admin.site.urls),
