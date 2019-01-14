@@ -5,12 +5,12 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from django.conf.urls import include, url
-from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.http import HttpResponse
 from django.views.generic import TemplateView
 from session_csrf import anonymous_csrf
+from elmo.admin_site import admin_site
 
 
 def simple_x_frame_view(request):
@@ -43,7 +43,7 @@ urlpatterns = [
     ),
     url(r'^logout/$', auth_views.LogoutView.as_view(), name='logout'),
 
-    url(r'^admin/', admin.site.urls),
+    url(r'^admin/', admin_site.urls),
 ]
 
 
