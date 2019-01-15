@@ -9,10 +9,11 @@ from __future__ import unicode_literals
 
 from django.conf.urls import url
 from . import views
+from .views import plots, compare
 
 urlpatterns = [
     url(r'^$', views.index),
-    url(r'^history$', views.history_plot, name='locale-tree-history'),
-    url(r'^compare$', views.CompareView.as_view(), name='compare-locales'),
-    url(r'^tree-status/([^/]+)$', views.tree_progress, name='tree-history'),
+    url(r'^history$', plots.history_plot, name='locale-tree-history'),
+    url(r'^compare$', compare.CompareView.as_view(), name='compare-locales'),
+    url(r'^tree-status/([^/]+)$', plots.tree_progress, name='tree-history'),
 ]

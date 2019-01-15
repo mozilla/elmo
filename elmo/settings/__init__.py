@@ -9,7 +9,7 @@ import markus
 
 from .base import *  # noqa
 # we modify that later, explicitly import
-from .base import CACHES
+from .base import CACHES, DEBUG
 try:
     from .local import *  # noqa
 except ImportError:
@@ -79,13 +79,19 @@ if 'ELMO_INCLUDE_ANALYTICS' in os.environ:
 if 'ELMO_MEMCACHED' in os.environ:
     CACHES['default']['LOCATION'] = os.environ['ELMO_MEMCACHED']
 
+AUTHENTICATION_BACKENDS = []
+if DEBUG:
+    # enable local users and passwords for DEBUG
+    AUTHENTICATION_BACKENDS.append(
+        'django.contrib.auth.backends.ModelBackend'
+    )
 # check ldap config
 if all('LDAP_{}'.format(s) in globals() for s in ('HOST', 'DN', 'PASSWORD')):
     import ldap  # noqa
-    AUTHENTICATION_BACKENDS = ('lib.auth.backends.MozLdapBackend',)
-else:
+    AUTHENTICATION_BACKENDS.append('lib.auth.backends.MozLdapBackend')
+if not AUTHENTICATION_BACKENDS:
     import warnings
-    warnings.warn("No LDAP authentication")
+    warnings.warn("No authentication")
 
 # hook up markus to datadog, if set
 if (

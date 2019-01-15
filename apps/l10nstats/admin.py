@@ -10,7 +10,9 @@ from django.contrib import admin
 
 class ActiveAdmin(admin.ModelAdmin):
     exclude = ('run',)
-    search_fields = ['run__tree__code', 'run__locale__code', 'run__locale__name']
+    search_fields = [
+        'run__tree__code', 'run__locale__code', 'run__locale__name',
+    ]
 
 
 admin.site.register(Active, ActiveAdmin)

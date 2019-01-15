@@ -11,17 +11,6 @@ from django.contrib.admin import sites as django_admin_sites
 from session_csrf import anonymous_csrf
 
 
-class CSRFAdminSite(AdminSite):
-    def login(self, request, extra_context=None):
-        @anonymous_csrf
-        def upstream(request, extra_context):
-            return (
-                super(CSRFAdminSite, self)
-                .login(request, extra_context=extra_context)
-            )
-        return upstream(request, extra_context)
-
-
 class ElmoConfig(AppConfig):
     """Monkey patches for elmo"""
 
@@ -32,8 +21,6 @@ class ElmoConfig(AppConfig):
         # Monkeypatch session_csrf
         import session_csrf
         session_csrf.monkeypatch()
-        site = CSRFAdminSite()
-        django_admin.site = django_admin_sites.site = site
         # Monkeypath hglib.client.pathto
         # Working around the lack of
         # https://bz.mercurial-scm.org/show_bug.cgi?id=4510

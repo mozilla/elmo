@@ -16,6 +16,7 @@
         <title>{% block title_matter %}{% endblock %}</title>
 
         {% block favicon %}<link rel="shortcut icon" href="{% static "img/favicon.ico" %}" />{% endblock %}
+        <link rel="user_json" href="{% url 'user-json' %}" />
 
         <!--[if lte IE 8]>
         <script src="{% static "js/libs/html5shiv.js" %}"></script>
@@ -49,7 +50,16 @@
                             <li role="menuitem"><a href="//blog.mozilla.com/l10n">{{_('Blog')}}</a></li>
                             <li role="menuitem"><a href="//wiki.mozilla.org/L10n:Communication">{{_('Contact')}}</a></li>
                             <li role="menuitem"><a href="//wiki.mozilla.org/L10n:Contribute">{{_('Get Involved')}}</a></li>
-                            <li role="menuitem"><div id="auth">{% include "accounts/user_forms.html" %}</div></li>
+                            <li role="menuitem">
+                                <div id="auth">
+                                    <a class="site_login" href="{% url 'login' %}?next={{ request.path }}">Log in</a>
+                                    <a class="site_logout logout" href="#">Hello, <span class="username"></span></a>
+
+                                    <section class="logout">
+                                        <button class="button" data-href="{% url 'logout' %}?next={{ request.path }}">Log out</button>
+                                    </section>
+                                </div>
+                            </li>
                             {% block extra_nav_list_items %}{% endblock %}
                         </ul>
                     </nav>
@@ -85,13 +95,6 @@
             </footer>
             {% endblock %}
         </div>
-        <script>
-        var CONFIG = {USER_URL: '{% url 'user-json' %}',
-                      CURRENT_URL: {% if request %}'{{ request.get_full_path }}'{% else %}window.location.href{% endif %}, {# needed because of some lack of RequestContext #}
-                      LOADING_GIF_URL: '{% static "img/loading.gif" %}',
-                      NEEDS_RELOAD: {% if login_form_needs_reload and request %}true{% else %} false{% endif %}
-                      };
-        </script>
 
         {% block js %}
           <script src="{% static "js/libs/jquery-1.11.3.js" %}"></script>

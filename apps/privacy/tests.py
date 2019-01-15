@@ -9,6 +9,7 @@ from elmo.test import TestCase
 from django.utils.encoding import force_text
 from django.contrib.auth.models import User, Permission
 from django.contrib.admin.models import LogEntry, CHANGE
+from django.test import override_settings
 from .models import Policy, Comment
 from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 
@@ -41,6 +42,9 @@ class PrivacyTestCase(TestCase, EmbedsTestCaseMixin):
         self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response.content)
 
+    @override_settings(
+        AUTHENTICATION_BACKENDS=('django.contrib.auth.backends.ModelBackend',),
+    )
     def test_render_policy_versions(self):
         url = reverse('privacy:versions')
         response = self.client.get(url)

@@ -9,6 +9,7 @@ import json
 from django.core.urlresolvers import reverse
 from elmo.test import TestCase
 from django.contrib.auth.models import User, Permission
+from django.test import override_settings
 from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from shipping.models import (
     AppVersion,
@@ -111,6 +112,9 @@ en-US
         self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response.content)
 
+    @override_settings(
+        AUTHENTICATION_BACKENDS=('django.contrib.auth.backends.ModelBackend',),
+    )
     def test_signoff_static_files(self):
         """render the signoffs page and chek that all static files work"""
         url = reverse('shipping-signoff',
@@ -119,6 +123,9 @@ en-US
         self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response.content)
 
+    @override_settings(
+        AUTHENTICATION_BACKENDS=('django.contrib.auth.backends.ModelBackend',),
+    )
     def test_redirect_signoff_locale(self):
         locale = Locale.objects.get(code='de')
 
@@ -181,6 +188,9 @@ en-US
         self.assertTrue(structure['html'])
         self.assertFalse(structure['pushes_left'])
 
+    @override_settings(
+        AUTHENTICATION_BACKENDS=('django.contrib.auth.backends.ModelBackend',),
+    )
     def test_cancel_pending_signoff(self):
         appver, = AppVersion.objects.all()
         # gotta know your signoffs.json
@@ -245,6 +255,9 @@ en-US
         signoff = Signoff.objects.get(pk=signoff.pk)
         self.assertEqual(signoff.status, Action.CANCELED)
 
+    @override_settings(
+        AUTHENTICATION_BACKENDS=('django.contrib.auth.backends.ModelBackend',),
+    )
     def test_reopen_canceled_signoff(self):
         appver, = AppVersion.objects.all()
         # gotta know your signoffs.json

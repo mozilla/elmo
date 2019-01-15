@@ -79,22 +79,20 @@ class MozLdapBackend(ModelBackend):
     #  We don't store LDAP password locally, so LDAP accounts will
     #  never be authenticated locally
     def authenticate(self, username=None, password=None):
+        # if the username isn't an email address, it's not us.
+        try:
+            validate_email(username)
+        except ValidationError:
+            return
+        local_user = None
         try:  # Let's see if we have such user
-            try:
-                validate_email(username)
-                local_user = User.objects.get(email=username)
-            except ValidationError:
-                local_user = User.objects.get(username=username)
-
-            if local_user.has_usable_password():
-                if local_user.check_password(password):
-                    return local_user
-                else:
-                    return
-            else:
-                return self._authenticate_ldap(username, password, local_user)
+            local_user = User.objects.get(email=username)
         except User.DoesNotExist:
-            return self._authenticate_ldap(username, password)
+            pass
+        try:
+            return self._authenticate_ldap(username, password, user=local_user)
+        except AUTHENTICATION_SERVER_ERRORS:
+            return
 
     @staticmethod
     def make_search_filter(data, any_parameter=False):
