@@ -21,6 +21,7 @@ from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from html5lib import parseFragment
 import l10nstats.views
 import shipping.views
+from l10nstats.views import compare
 
 
 class L10nstatsTestCase(ShippingTestCaseBase, EmbedsTestCaseMixin):
@@ -305,14 +306,14 @@ class TestCompareView(TestCase):
 
     def test_compare_view_legacy(self):
 
-        class View(l10nstats.views.CompareView):
+        class View(compare.CompareView):
             def get_doc(self, run):
                 return doc_v1['_source']
         self._check_view(View)
 
     def test_compare_view(self):
 
-        class View(l10nstats.views.CompareView):
+        class View(compare.CompareView):
             def get_doc(self, run):
                 return doc_v2['_source']
         self._check_view(View)
