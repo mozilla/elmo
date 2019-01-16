@@ -57,3 +57,8 @@ var gLogoutHelper = (function() {
 
     return new LogoutHelper(document.getElementById("auth"));
 })();
+
+// Some CSS can be loaded after initial paint.
+(window.requestIdleCallback || window.setTimeout)(function() {
+    document.head.querySelector('link[rel="lazy-stylesheet"]').rel = "stylesheet";
+})

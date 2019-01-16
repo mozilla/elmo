@@ -17,7 +17,6 @@ SCRIPTS_REGEX = re.compile(
 STYLES_REGEX = re.compile('<link.*?href=["\']([^"\']+)["\'].*?>',
                           re.M | re.DOTALL)
 WHITELIST = {
-    '/static/l10nstats/progress.css',
 }
 
 

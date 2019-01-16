@@ -28,7 +28,8 @@ var LOCALE_CODE = '{{ locale.code }}';
 <link rel="stylesheet" href="{% static "shipping/css/snippet.css" %}" type="text/css">
 <link rel="stylesheet" href="{% static "css/open-iconic.css" %}" type="text/css">
 {% endcompress %}
-<link rel="stylesheet" href="{% static "l10nstats/progress.css" %}" type="text/css">
+<link rel="stylesheet" href="{% url "progress-layout" %}" type="text/css">
+<link rel="lazy-stylesheet" href="{% url "progress-css" %}" type="text/css">
 {% endblock %}
 
 {% block alt_header %}

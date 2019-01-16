@@ -7,14 +7,15 @@
 from __future__ import absolute_import, division
 from __future__ import unicode_literals
 
+import base64
 from collections import defaultdict, namedtuple
 from datetime import timedelta
-import os.path
 
-from django.core.management.base import BaseCommand
 from django.conf import settings
-from django.db.models import Max, Q
-from django.template.loader import render_to_string
+from django.db.models import Max
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_control
+from django.views.generic.base import TemplateView
 
 from l10nstats.models import Run
 from life.models import Locale, Tree
@@ -30,21 +31,40 @@ ProgressPosition = namedtuple(
 )
 
 
-class Command(BaseCommand):
-    help = 'Create background images for progress previews'
+class ProgressLayout(TemplateView):
     width = settings.PROGRESS_IMG_SIZE['x']
     height = settings.PROGRESS_IMG_SIZE['y']
     days = settings.PROGRESS_DAYS
     line_fill = (0, 128, 0)
     area_fill = (0, 128, 0, 20)
+    template_name = 'l10nstats/progress-layout.css'
+    content_type = 'text/css'
 
-    def add_arguments(self, parser):
-        parser.add_argument('tree', nargs='*')
+    def get_context_data(self, **kwargs):
+        context = super(ProgressLayout, self).get_context_data(**kwargs)
+        context.update(
+            {
+                'PROGRESS_IMG_SIZE': settings.PROGRESS_IMG_SIZE,
+            }
+        )
+        return context
 
-    def handle(self, **options):
-        q = Q()
-        if options['tree']:
-            q = Q(tree__code__in=options['tree'])
+
+@method_decorator(
+    cache_control(max_age=60*60*24),
+    name='dispatch'
+)
+class ProgressView(TemplateView):
+    width = settings.PROGRESS_IMG_SIZE['x']
+    height = settings.PROGRESS_IMG_SIZE['y']
+    days = settings.PROGRESS_DAYS
+    line_fill = (0, 128, 0)
+    area_fill = (0, 128, 0, 20)
+    template_name = 'l10nstats/progress.css'
+    content_type = 'text/css'
+
+    def get_context_data(self, **kwargs):
+        context = super(ProgressView, self).get_context_data(**kwargs)
         runs = Run.objects.exclude(srctime__isnull=True)
         enddate = (
             runs
@@ -59,7 +79,7 @@ class Command(BaseCommand):
         # split active locales on active projects from the rest
         cutdate = startdate - timedelta(days=self.days/2)
         scale = 1. * (self.width - 1) / (enddate - startdate).total_seconds()
-        runs = runs.filter(q, srctime__gte=startdate,
+        runs = runs.filter(srctime__gte=startdate,
                            srctime__lte=enddate)
         runs = runs.order_by('srctime')
         tuples = defaultdict(list)
@@ -67,7 +87,7 @@ class Command(BaseCommand):
         locales = set()
         trees = set()
         for loc, tree in (Run.objects
-                          .filter(q, active__isnull=False)
+                          .filter(active__isnull=False)
                           .values_list('locale__code', 'tree__code')):
             tree2locs[tree].add(loc)
             locales.add(loc)
@@ -132,21 +152,19 @@ class Command(BaseCommand):
                                              locale=locales[loc],
                                              x=-offtree[tree],
                                              y=offy))
-        output_path = os.path.join(
-            settings.STATIC_ROOT, settings.PROGRESS_BASE_NAME
-        )
         pal = im.convert("P", palette="ADAPTIVE")
-        pal.save(output_path + 'png')
-        style_sheet_content = render_to_string(
-            'l10nstats/progress.css',
+        png = six.BytesIO()
+        pal.save(png, format='PNG')
+        background_data_uri = 'data:image/png;base64,'
+        background_data_uri += base64.b64encode(png.getvalue()).decode('ascii')
+        context.update(
             {
+                'background_data_uri': background_data_uri,
                 'background_positions': backobjs,
                 'PROGRESS_IMG_SIZE': settings.PROGRESS_IMG_SIZE,
-                'PROGRESS_BASE_NAME': settings.PROGRESS_BASE_NAME,
             }
         )
-        with open(output_path + 'css', 'wb') as style_file:
-            style_file.write(style_sheet_content)
+        return context
 
     def rescale(self, vals, span=.75):
         # return a scaling function for change values

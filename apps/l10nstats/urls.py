@@ -10,10 +10,17 @@ from __future__ import unicode_literals
 from django.conf.urls import url
 from . import views
 from .views import plots, compare
+from .views.progress import ProgressView, ProgressLayout
 
 urlpatterns = [
     url(r'^$', views.index),
     url(r'^history$', plots.history_plot, name='locale-tree-history'),
     url(r'^compare$', compare.CompareView.as_view(), name='compare-locales'),
     url(r'^tree-status/([^/]+)$', plots.tree_progress, name='tree-history'),
+    url(r'^progress.css$', ProgressView.as_view(), name='progress-css'),
+    url(
+        r'^progress-layout.css$',
+        ProgressLayout.as_view(),
+        name='progress-layout'
+    ),
 ]
