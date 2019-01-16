@@ -75,6 +75,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'session_csrf.CsrfMiddleware',
 
+    'csp.middleware.CSPMiddleware',
     'commonware.middleware.FrameOptionsHeader',
     'commonware.middleware.ScrubRequestOnException',
 )
@@ -143,6 +144,32 @@ STATICFILES_FINDERS = (
   'django.contrib.staticfiles.finders.FileSystemFinder',
   'django.contrib.staticfiles.finders.AppDirectoriesFinder',
   'compressor.finders.CompressorFinder',
+)
+
+# ContentSecurityPolicy, CSP
+CSP_DEFAULT_SRC = ("'none'",)
+CSP_CONNECT_SRC = ("https:", "'self'",)
+CSP_FONT_SRC = ("'self'",)
+CSP_FRAME_SRC = ("https://platform.twitter.com",)
+CSP_IMG_SRC = (
+    "'self'",
+    "https://syndication.twitter.com",
+    "https://ssl.google-analytics.com",
+)
+CSP_MEDIA_SRC = (
+    "https://videos.cdn.mozilla.net",
+    "https://videos-real-origin.cdn.mozilla.net",
+)
+CSP_SCRIPT_SRC = (
+    "'self'",
+    "'unsafe-inline'",
+    "'unsafe-eval'",
+    "https://platform.twitter.com",
+    "https://ssl.google-analytics.com/ga.js",
+)
+CSP_STYLE_SRC = (
+    "'self'",
+    "'unsafe-inline'",
 )
 
 # Feeds
