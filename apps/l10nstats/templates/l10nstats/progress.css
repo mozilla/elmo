@@ -1,10 +1,5 @@
-{% load staticfiles %}
 .progress-thumb {
-    width: {{ PROGRESS_IMG_SIZE.x }}px;
-    height: {{ PROGRESS_IMG_SIZE.y }}px;
-    background-image: url("{% static PROGRESS_BASE_NAME %}png");
-    border-bottom: solid 1px grey;
-    border-right: solid 1px grey;
+    background-image: url("{{ background_data_uri }}");
 }
 
 {% for backpos in background_positions %}

@@ -1,0 +1,6 @@
+.progress-thumb {
+    width: {{ PROGRESS_IMG_SIZE.x }}px;
+    height: {{ PROGRESS_IMG_SIZE.y }}px;
+    border-bottom: solid 1px grey;
+    border-right: solid 1px grey;
+}
