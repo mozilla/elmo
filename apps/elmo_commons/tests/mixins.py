@@ -7,7 +7,9 @@ from __future__ import unicode_literals
 import re
 from django.conf import settings
 from django.contrib.staticfiles import finders
+from django.urls import resolve
 from django.utils.encoding import force_text
+from six.moves.urllib.parse import urlparse
 
 SCRIPTS_REGEX = re.compile(
     '<script\s*[^>]*src=["\']([^"\']+)["\'].*?</script>',
@@ -15,7 +17,7 @@ SCRIPTS_REGEX = re.compile(
 STYLES_REGEX = re.compile('<link.*?href=["\']([^"\']+)["\'].*?>',
                           re.M | re.DOTALL)
 WHITELIST = {
-    '.css': re.compile('l10nstats/progress.css$')
+    '/static/l10nstats/progress.css',
 }
 
 
@@ -27,29 +29,30 @@ class EmbedsTestCaseMixin:
     django.contrib.staticfiles and do the look up manually.
     """
 
-    def _check(self, response, regex, only_extension):
+    def _check(self, response, regex):
         for found in regex.findall(response):
             if found.startswith('//'):
                 # external urls like tabzilla, ignore
                 continue
-            if found.endswith(only_extension):
-                white = WHITELIST.get(only_extension)
-                if white and white.search(found):
-                    # whitelist file that only exists in prod
-                    continue
-                if settings.DEBUG:
-                    resp = self.client.get(found)
-                    self.assertEqual(resp.status_code, 200, found)
-                else:
-                    absolute_path = finders.find(
-                      found.replace(settings.STATIC_URL, '')
-                    )
-                    self.assertTrue(absolute_path, found)
+            url = urlparse(found)
+            if url.netloc:
+                # external url, too.
+                continue
+            path = url.path
+            if path in WHITELIST:
+                continue
+            if path.startswith(settings.STATIC_URL):
+                absolute_path = finders.find(
+                    path[len(settings.STATIC_URL):]
+                )
+                self.assertTrue(absolute_path, found + " not found")
+            else:
+                resolve(path)
 
     def assert_all_embeds(self, response):
         if hasattr(response, 'content'):
             response = response.content
         response = force_text(response)
         response = re.sub('<!--(.*)-->', '', response, re.M)
-        self._check(response, SCRIPTS_REGEX, '.js')
-        self._check(response, STYLES_REGEX, '.css')
+        self._check(response, SCRIPTS_REGEX)
+        self._check(response, STYLES_REGEX)
