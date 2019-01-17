@@ -76,7 +76,6 @@ class LDAPAuthTestCase(TestCase):
 
         # make sure there are certain groups available
         Group.objects.get_or_create(name='Localizers')
-        Group.objects.get_or_create(name='build')
 
     def test_authenticate_without_ldap(self):
         assert not User.objects.all().exists()
@@ -309,8 +308,6 @@ class LDAPAuthTestCase(TestCase):
         groups = [
           ('cn=scm_l10n,ou=groups,dc=mozilla',
            {'cn': ['scm_l10n']}),
-          ('cn=buildteam,ou=groups,dc=mozilla',
-           {'cn': ['buildteam']})
         ]
         ldap.initialize = Mock(return_value=MockLDAP({
           'dc=mozilla': self.fake_user,
@@ -321,12 +318,8 @@ class LDAPAuthTestCase(TestCase):
         user = backend.authenticate('peterbe@mozilla.com', 'secret')
         assert user == User.objects.get()
         self.assertTrue(user.groups.filter(name='Localizers').exists())
-        self.assertTrue(user.groups.filter(name='build').exists())
 
-        new_groups = [
-          ('cn=buildteam,ou=groups,dc=mozilla',
-           {'cn': ['buildteam']})
-        ]
+        new_groups = []
         ldap.initialize = Mock(return_value=MockLDAP({
           'dc=mozilla': self.fake_user,
           'ou=groups,dc=mozilla': new_groups
@@ -335,7 +328,6 @@ class LDAPAuthTestCase(TestCase):
         user = backend.authenticate('peterbe@mozilla.com', 'secret')
         assert user == User.objects.get()
         self.assertFalse(user.groups.filter(name='Localizers').exists())
-        self.assertTrue(user.groups.filter(name='build').exists())
 
         # Now reverse it
         new_new_groups = [
@@ -350,4 +342,3 @@ class LDAPAuthTestCase(TestCase):
         user = backend.authenticate('peterbe@mozilla.com', 'secret')
         assert user == User.objects.get()
         self.assertTrue(user.groups.filter(name='Localizers').exists())
-        self.assertFalse(user.groups.filter(name='build').exists())
