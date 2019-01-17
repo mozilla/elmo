@@ -23,8 +23,7 @@ AUTHENTICATION_SERVER_ERRORS = (ldap.SERVER_DOWN,)
 
 GROUP_MAPPINGS = {
     # Django name:  LDAP name(s),
-    'Localizers': ('scm_l10n', 'locale_peer'),
-    'build': ('buildteam', 'shipit'),
+    'Localizers': ('scm_l10n'),
 }
 
 
