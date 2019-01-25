@@ -17,7 +17,7 @@ django-appconf==1.0.2
 # >=0.3 stastistics
 docutils==0.14
 # >=0.10.0,<0.11 compare-locales
-fluent==0.10.0
+fluent.syntax==0.10.0
 # >=1 mock
 funcsigs==1.0.2
 # <2.9,>=2.5 requests

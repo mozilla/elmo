@@ -15,9 +15,6 @@ BUFFER_SIZE=${BUFFER_SIZE:-"16384"}
 PORT=${PORT:-"8000"}
 NUM_WORKERS=${NUM_WORKERS:-"6"}
 
-mkdir -p /app/collected/static/l10nstats
-(cd /app/ && ${CMDPREFIX} /app/env/bin/python manage.py progress)
-
 if [ "$1" == "--dev" ]; then
     # Run with manage.py
     echo "******************************************************************"

@@ -11,9 +11,9 @@
 {% block head_matter %}
 <link rel="stylesheet" href="{% static "shipping/css/dashboard.css" %}" type="text/css">
 <link rel="stylesheet" href="{% static "css/open-iconic.css" %}" type="text/css">
-<link rel="stylesheet" href="{% static "l10nstats/progress.css" %}" type="text/css">
+<link rel="stylesheet" href="{% url "progress-layout" %}" type="text/css">
+<link rel="lazy-stylesheet" href="{% url "progress-css" %}" type="text/css">
 <link href="{% url 'shipping-status_json' %}?{{ query }}" type="application/json" rel="exhibit-data"/>
-</style>
 {% endblock %}
 
 {% block javascript_matter %}
