@@ -53,6 +53,16 @@ for local_var, env_var in (
             ('ES_COMPARE_HOST', 'ES_COMPARE_HOST'),
             ('ES_COMPARE_INDEX', 'ES_COMPARE_INDEX'),
             ('OIDC_DISABLE', 'OIDC_DISABLE'),
+            (
+                'OIDC_OP_AUTHORIZATION_ENDPOINT',
+                'OIDC_OP_AUTHORIZATION_ENDPOINT'
+            ),
+            ('OIDC_OP_TOKEN_ENDPOINT', 'OIDC_OP_TOKEN_ENDPOINT'),
+            ('OIDC_OP_USER_ENDPOINT', 'OIDC_OP_USER_ENDPOINT'),
+            ('OIDC_RP_SIGN_ALGO', 'OIDC_RP_SIGN_ALGO'),
+            ('OIDC_OP_JWKS_ENDPOINT', 'OIDC_OP_JWKS_ENDPOINT'),
+            ('OIDC_RP_CLIENT_ID', 'OIDC_RP_CLIENT_ID'),
+            ('OIDC_RP_CLIENT_SECRET', 'OIDC_RP_CLIENT_SECRET'),
             ('REPOSITORY_BASE', 'ELMO_REPOSITORY_BASE'),
             ('SECRET_KEY', 'ELMO_SECRET_KEY'),
 ):
