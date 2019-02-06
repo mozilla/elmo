@@ -6,7 +6,11 @@ var gLogoutHelper = (function() {
     class LogoutHelper {
         constructor(container) {
             this.container = container;
-            fetch(document.head.querySelector('link[rel=user_json]').href)
+            var url = document.head.querySelector('link[rel=user_json]').href;
+            if (!url || !container) {
+                return;
+            }
+            fetch(url)
             .then(
                 response => response.json()
             )
@@ -60,5 +64,8 @@ var gLogoutHelper = (function() {
 
 // Some CSS can be loaded after initial paint.
 (window.requestIdleCallback || window.setTimeout)(function() {
-    document.head.querySelector('link[rel="lazy-stylesheet"]').rel = "stylesheet";
+    var lazy = document.head.querySelector('link[rel="lazy-stylesheet"]');
+    if (lazy) {
+        lazy.rel = "stylesheet";
+    }
 })
