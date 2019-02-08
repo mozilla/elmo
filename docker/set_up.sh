@@ -20,7 +20,7 @@ apt-get install -y gcc apt-transport-https build-essential \
         libxml2-dev libxslt1-dev \
         libsasl2-dev \
         libffi-dev \
-        libldap2-dev libssl-dev \
+        libssl-dev \
         libmariadbclient-dev \
         git
 
