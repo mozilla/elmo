@@ -728,7 +728,7 @@ def generateLog(master, filename, channels):
             'The log mount %r is not in settings.LOG_MOUNTS'
             % master
         )
-    head = re.compile('(\d+):(\d)')
+    head = re.compile(r'(\d+):(\d)')
     f = None
     filename = os.path.join(base, filename)
     try:

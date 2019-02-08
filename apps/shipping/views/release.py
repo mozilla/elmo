@@ -20,14 +20,12 @@ def select_appversions(request):
             .current()
             .filter(tree__code__endswith='central')
             .select_related('appversion__app'))
-    apps = list(Application.objects.all())
-    apps.sort(cmp=lambda r, l: cmp(len(r.code), len(l.code)))
     tree_kinds = set(code.split('_')[1]
                      for code in AppVersionTreeThrough.objects
                      .current()
                      .values_list('tree__code', flat=True))
 
-    lastdigits = re.compile('\d+$')
+    lastdigits = re.compile(r'\d+$')
 
     def inc(s):
         return lastdigits.sub(lambda m: str(int(m.group()) + 1), s)

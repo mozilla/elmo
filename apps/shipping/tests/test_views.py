@@ -327,7 +327,7 @@ class ShippingTestCase(ShippingTestCaseBase):
 
         def get_query(content):
             json_url = reverse('shipping-status_json')
-            return re.findall('href="%s\?([^"]*)"' % json_url, content)[0]
+            return re.findall(r'href="%s\?([^"]*)"' % json_url, content)[0]
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
