@@ -12,12 +12,13 @@ var BugPuller = (function(code) {
 
   function getData() {
     return {
-      'field0-0-0': 'component',
-      'type0-0-0': 'regexp',
-      'value0-0-0': '^' + _locale_code + ' / ',
-      'field0-0-1': 'cf_locale',
-      'type0-0-1': 'regexp',
-      'value0-0-1': '^' + _locale_code + ' / ',
+      'j_top': 'OR',
+      'f1': 'component',
+      'o1': 'regexp',
+      'v1': '^' + _locale_code + ' / ',
+      'f2': 'cf_locale',
+      'o2': 'regexp',
+      'v2': '^' + _locale_code + ' / ',
       'resolution': '---',
       'include_fields': 'id,last_change_time'
     };

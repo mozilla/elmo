@@ -21,11 +21,14 @@ def index(request):
 
 
 def teamsnippet(locale):
-    bugs_url = ('https://bugzilla.mozilla.org/buglist.cgi?'
-                'field0-0-0=component;type0-0-0=regexp;value0-0-0=^%s / ;'
-                'field0-0-1=cf_locale;type0-0-1=regexp;value0-0-1=^%s / ;'
-                'resolution=---'
-                % (locale.code, locale.code)).replace(' ', '%20')
+    bugs_url = (
+        'https://bugzilla.mozilla.org/buglist.cgi?'
+        'j_top=OR&'
+        '&o1=regexp&v1=^%s / &f1=component'
+        '&o2=regexp&v2=^%s / &f2=cf_locale'
+        '&resolution=---'
+        % (locale.code, locale.code)
+    ).replace(' ', '%20')
     return {
         'template': 'bugsy/team-snippet.html',
         'context': {
