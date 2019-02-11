@@ -29,7 +29,7 @@ class AccountsTestCase(TestCase):
         for input_ in input_regex.findall(content):
             for name in re.findall('name="(.*?)"', input_):
                 if name == 'username':
-                    maxlength = re.findall('maxlength="(\d+)"', input_)[0]
+                    maxlength = re.findall(r'maxlength="(\d+)"', input_)[0]
                     self.assertTrue(maxlength.isdigit())
                     self.assertTrue(int(maxlength) > 30)
 

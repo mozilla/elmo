@@ -36,7 +36,7 @@ class Command(BaseCommand):
 
     sectioner = re.compile('===? (.*?) ===?\n(.*?)(?===)', re.M | re.S)
     props = re.compile('^; (.*?) : (.*?)$', re.M | re.S)
-    params = re.compile('%\((.*?)\)s')
+    params = re.compile(r'%\((.*?)\)s')
 
     def handle(self, **options):
         for alias, pn in (('fx', 'L10n:Bugogram'),

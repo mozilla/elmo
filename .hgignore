@@ -1,9 +1,0 @@
-# .hgignore - List of filenames hg should ignore
-^l10n_site/local_settings.py
-^l10n_site/auth/cacert.pem
-^l10n_site/ldap_settings.py
-# Filenames that should be ignored wherever they appear
-~$
-\.pyc$
-(^|/)TAGS$
-\.DS_Store$

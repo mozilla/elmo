@@ -9,8 +9,8 @@
 
 {% block title_matter %}Localization bugs{% endblock %}
 {% block head_matter %}
-<link href="https://bugzilla.mozilla.org/bzapi/count?product=Mozilla+Localizations&amp;field0-0-0=component&amp;type0-0-0=regexp&amp;value0-0-0=^[a-z]{2%2C3}[+-]&amp;resolution=---&amp;x_axis_field=component" type="x-bugzilla/counts" rel="exhibit-data"/>
-<link href="https://bugzilla.mozilla.org/rest/bug?field0-0-0=cf_locale&amp;type0-0-0=substring&amp;value0-0-0=%2F&amp;resolution=---&amp;include_fields=cf_locale%2Cid%2Csummary%2Cproduct%2Ccomponent" type="x-bugzilla/flags" rel="exhibit-data"/>
+<link href="https://bugzilla.mozilla.org/bzapi/count?product=Mozilla+Localizations&amp;f1=component&amp;o1=regexp&amp;v1=^[a-z]{2%2C3}[+-]&amp;resolution=---&amp;x_axis_field=component" type="x-bugzilla/counts" rel="exhibit-data"/>
+<link href="https://bugzilla.mozilla.org/rest/bug?&amp;f1=cf_locale&amp;o1=substring&amp;v1=%2F&amp;resolution=---&amp;include_fields=cf_locale%2Cid%2Csummary%2Cproduct%2Ccomponent" type="x-bugzilla/flags" rel="exhibit-data"/>
 {% endblock %}
 
 {% block javascript_matter %}
@@ -40,7 +40,7 @@ id="noc">?</span> components.</p>
   <table class="standard">
     <tr>
       <td><a target="_blank"
-        data-ex-href-subcontent="https://bugzilla.mozilla.org/buglist.cgi?field0-0-0=component;type0-0-0=equals;value0-0-0={&#123;.label}};field0-;field0-0-1=cf_locale;type0-0-1=equals;value0-0-1={&#123;.label}}&amp;resolution=---&amp;columnlist=assigned_to%2Cshort_desc%2Cchangeddate"
+        data-ex-href-subcontent="https://bugzilla.mozilla.org/buglist.cgi?j_top=OR&amp;f1=component&amp;o1=equals&amp;v1={&#123;.label}}&amp;f2=cf_locale&amp;o2=equals&amp;v2={&#123;.label}}&amp;columnlist=assigned_to%2Cshort_desc%2Cchangeddate&amp;resolution=---"
         data-ex-content=".label"></a></td>
         <td data-ex-content="add( .flagged , .comp)"></td>
     </tr>

@@ -1,5 +1,5 @@
 /elmo/settings/local*.py
-/elmo/settings/ldap_settings.py
+/elmo/settings/oidc.py
 /elmo/settings/mounts_local.py
 /env/
 *.pyc

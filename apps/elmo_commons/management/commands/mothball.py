@@ -103,7 +103,7 @@ class Repl(cmd.Cmd):
         self.dirty = False
 
     def default(self, line):
-        if line is 'EOF':
+        if line == 'EOF':
             if self.dirty:
                 self.stdout.write('You want to `cleanup` first. '
                                   'Crtl-D to really quit\n')

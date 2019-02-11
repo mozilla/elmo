@@ -12,7 +12,7 @@ from django.utils.encoding import force_text
 from six.moves.urllib.parse import urlparse
 
 SCRIPTS_REGEX = re.compile(
-    '<script\s*[^>]*src=["\']([^"\']+)["\'].*?</script>',
+    r'<script\s*[^>]*src=["\']([^"\']+)["\'].*?</script>',
     re.M | re.DOTALL)
 STYLES_REGEX = re.compile('<link.*?href=["\']([^"\']+)["\'].*?>',
                           re.M | re.DOTALL)

@@ -9,7 +9,9 @@ from django.contrib import admin
 
 
 class RepositoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'id',)
     exclude = ('changesets',)
+    search_fields = ('name',)
 
 
 admin.site.register(Locale)
