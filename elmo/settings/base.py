@@ -191,8 +191,6 @@ HOMEPAGE_FEED_SIZE = 5
 # Google Analytics
 INCLUDE_ANALYTICS = False
 
-WEBDASHBOARD_URL = 'https://l10n.mozilla-community.org/webdashboard/'
-
 # settings for the compare-locales progress preview images
 PROGRESS_DAYS = 50
 PROGRESS_IMG_SIZE = {'x': 100, 'y': 20}
