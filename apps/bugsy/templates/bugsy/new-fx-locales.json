@@ -98,18 +98,18 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "flod, Peiying, please set up the webdashboard for {{ language }}, and add web pages to this locale's folder on mozilla.org.\n\nPlease notify in the actual translation bug when this is done.", 
+    "comment": "flod, Peiying, please add web pages to this locale's folder on mozilla.org.\n\nPlease notify in the actual translation bug when this is done.", 
     "product": "Mozilla Localizations", 
     "title": "websetup", 
     "cc": "{{ bugmail }},francesco.lodolo@gmail.com,l10n@mozilla.com,pmo@mozilla.com", 
     "rep_platform": "All", 
-    "short_desc": "[{{ loc }}] bootstrap {{ language }} on GitHub and the web dashboard", 
+    "short_desc": "[{{ loc }}] bootstrap {{ language }} on GitHub", 
     "component": "Infrastructure", 
     "op_sys": "All", 
     "blocked": "fx-l10n-{{ loc }}"
   }, 
   {
-    "comment": "To release Firefox in {{ language }}, we need a way to promote it. We do that via https://www.mozilla.org/firefox/ web pages. There's a set of pages that are essential to having a successful Firefox localization and promotion, and those depend on the files listed below. \n\nflod or Peying will follow up here when the initial setup work is done. After that, you'll find the files to localize in GitHub.\n\nThe repository you want to work with is located at https://github.com/mozilla-l10n/www.mozilla.org/tree/master/{{ loc }}/\n\nThe status of web parts for your locale on GitHub can be checked at this URL (updated every 15 minutes)\nhttp://l10n.mozilla-community.org/webdashboard/?locale={{ loc }}\n\nPlease start by translating files with higher priority according to the dashboard.\n\nAll the translations you do will be available on the testing website, http://www-dev.allizom.org/{{ loc }}/ , around 15-30 minutes after commit.\n\nThe {{ language }} team will be driving this bug to completion.", 
+    "comment": "To release Firefox in {{ language }}, we need a way to promote it. We do that via https://www.mozilla.org/firefox/ web pages. \n\nflod or Peying will follow up here when the initial setup work is done. After that, files will be added to GitHub, and will be available for localization in Pontoon at https://pontoon.mozilla.org/{{ loc }}/mozillaorg/\n\nAll the translations you do will be available on the testing website, http://www-dev.allizom.org/{{ loc }}/ , around 15-30 minutes after commit.\n\nThe {{ language }} team will be driving this bug to completion.", 
     "product": "www.mozilla.org", 
     "title": "webparts", 
     "cc": "{{ bugmail }},francesco.lodolo@gmail.com,l10n@mozilla.com,pmo@mozilla.com", 
