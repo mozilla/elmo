@@ -49,6 +49,18 @@
     padding-right: 15px;
 }
 
+/* keep showing theads */
+.show-head > thead {
+    position: sticky;
+    top: 0;
+}
+
+/* scroll offset */
+.appname h3 {
+    padding-top: calc(14pt + 2px + 1em);
+    margin-top: calc(-14pt - 2px - 1em);
+}
+
 /* cycling backgrounds in snippet tables */
 
 .cycling th {
