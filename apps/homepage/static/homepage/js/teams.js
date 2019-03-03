@@ -20,8 +20,8 @@ function searchFor(s) {
   }
 }
 
-$(function() {
-  $('#id_locale_code').bind('keyup', function() {
+document.getElementById('id_locale_code').addEventListener(
+  'keyup',
+  function() {
     searchFor(this.value);
-  });
 });
