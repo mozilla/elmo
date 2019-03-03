@@ -1,51 +1,58 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* global URL, fetch */
 
 function getBugURL(params) {
-  var ps = [];
+  const url = new URL('https://bugzilla.mozilla.org/enter_bug.cgi?');
   for (var k in params) {
     if (k != 'title') {
-      ps.push(k + '=' + encodeURIComponent(params[k]));
+      url.searchParams.set(k, params[k]);
     }
   }
-  var url = 'https://bugzilla.mozilla.org/enter_bug.cgi?';
-  url += ps.join('&');
   return url;
 }
 
 function doBugs() {
-  var params = {};
-  function addParam() {
-    params[this.name] = this.value;
-  }
-  $.each(document.forms.bugdata.elements, addParam);
+  const url = new URL(document.head.querySelector('[rel=new-locale-bugs]').href);
+  Array.from(document.forms.bugdata.elements).forEach(
+    input => url.searchParams.set(input.name, input.value)
+  );
   // generate edit_bugs links right away,
   // and the buglinks once we have them formatted
-  var editout = $('#users').html('');
-  $.each(document.forms.bugdata.bugmail.value.split(/\s*,\s*/),
-         function (_, email) {
-          var link = 'https://bugzilla.mozilla.org/editusers.cgi?' +
-            'action=list&matchvalue=login_name&matchtype=substr&matchstr=';
-          link += encodeURIComponent(email);
-          var child = $('<a>').text(email);
-          child.attr({href: link, target: '_blank'});
-          editout.append(child).append(' ');
+  const editout = document.getElementById('users');
+  editout.innerHTML = '';
+  const link_template = document.createElement('a');
+  link_template.href =
+    'https://bugzilla.mozilla.org/editusers.cgi?' +
+    'action=list&matchvalue=login_name&matchtype=substr&matchstr=';
+  link_template.target = '_blank';
+  document.forms.bugdata.bugmail.value.split(/\s*,\s*/).forEach(
+         function (email) {
+          let link = link_template.cloneNode(true);
+          link.href += encodeURIComponent(email);
+          link.textContent = email;
+          editout.appendChild(link);
+          editout.appendChild(document.createTextNode(' '));
          });
-  function handleLinkJSON(data, result) {
-    var out = $('#links');
-    if (result != 'success') {
-      out.html('Failed to create bug links');
+  function handleLinkJSON(data) {
+    if (data === undefined) {
       return;
     }
-    out.html('');
-    $.each(data, function() {
-      var child = $('<a>').text(this.title);
-      child.attr('href', getBugURL(this));
-      child.attr('target', '_blank');
-      out.append(child);
-      out.append(' ');
+    var out = document.getElementById('links');
+    out.innerHTML = '';
+    data.forEach(function(bug) {
+      var child = document.createElement('a');
+      child.textContent = bug.title;
+      child.href = getBugURL(bug);
+      child.target = '_blank';
+      out.appendChild(child);
+      out.appendChild(document.createTextNode(' '));
     });
   }
-  $.getJSON(NEW_LOCALE_URL, params, handleLinkJSON);
+  function handleLinkFailure() {
+    document.getElementById('links').textContent = 'Failed to create bug links';
+  }
+
+  fetch(url).then(r => r.json()).then(handleLinkJSON, handleLinkFailure);
 }

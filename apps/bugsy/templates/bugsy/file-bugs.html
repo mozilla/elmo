@@ -36,7 +36,7 @@ var BUG_LINKS_URL = '{% url "get-bug-links" %}';
            <input type="hidden" name="component" value="Other">
            <input type="hidden" name="op_sys" value="All">
            <input type="hidden" name="rep_platform" value="All">
-           <table>
+           <table id="bugdetails">
              <tr>
                <td class="b_desc"><u>S</u>ummary:</td>
                <td><input name="short_desc" size="80" accesskey="s"
@@ -78,7 +78,7 @@ var BUG_LINKS_URL = '{% url "get-bug-links" %}';
              </tr>
              <tr class="extra-field">
                <td class="b_desc">Url:</td>
-               <td><input name="bug_file_loc" size="80" value="http://"></td>
+               <td><input name="bug_file_loc" size="80" placeholder="https://"></td>
              </tr>
              <tr>
                <td></td>

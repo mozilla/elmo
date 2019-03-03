@@ -1,28 +1,29 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* global Exhibit */
+/* global Exhibit, URLSearchParams */
 
-// hack around params default in jquery
-$.ajaxSettings.traditional = true;
 var BugComponentImporter = {
   _importer: null
 };
 BugComponentImporter.parse = function(url, data, callback, link) {
-  var items = [], o = {items: items};
-  var json = JSON.parse(data);
-  function getComponent(_, comp) {
-    if (!/ \/ /.test(comp.name)) {return;}
-    var loc = comp.name.split(' / ')[0];
-    var item = {'id': loc,
-      'label': comp.name,
-      'product': 'Mozilla Localizations',
-      'component': comp.name,
-      'type': 'Component'};
-    items.push(item);
-  }
-  $.each(json.products[0].components, getComponent);
-  callback(o);
+  const json = JSON.parse(data);
+  const items = json.products[0].components
+    .filter(
+      comp => / \/ /.test(comp.name)
+    )
+    .map(
+      comp => {
+        let loc = comp.name.split(' / ')[0];
+        return {
+          'id': loc,
+          'label': comp.name,
+          'product': 'Mozilla Localizations',
+          'component': comp.name,
+          'type': 'Component'};
+      }
+    );
+  callback({items: items});
 };
 
 BugComponentImporter._register = function() {
@@ -33,56 +34,59 @@ BugComponentImporter._register = function() {
     );
 };
 
-jQuery(document).one("registerImporters.exhibit",
-                     BugComponentImporter._register);
+$(document).one("registerImporters.exhibit", BugComponentImporter._register);
 
 
-$(document).ready(function() {
-  document.forms.bugdata.short_desc.focus();
-  $('#show-extra-fields').click(function() {
-    $(this).hide();
-    $('.extra-field').fadeIn();
+document.forms.bugdata.short_desc.focus();
+document.getElementById('show-extra-fields')
+  .addEventListener('click', function() {
+    document.getElementById('bugdetails').classList.add('expanded');
   });
-});
 
 function getFormData() {
   var elems = document.forms.bugdata.elements;
-  var out = {};
+  var out = new URLSearchParams();
   for (var i = 0; i < elems.length; ++i) {
     var elem = elems[i];
-    if (elem.name == '') continue;
-    out[elem.name] = elem.value;
+    if (elem.name == '' || elem.value == '') continue;
+    out.set(elem.name, elem.value);
   }
   return out;
 }
 
 function getBugURL(params) {
   var url = 'https://bugzilla.mozilla.org/enter_bug.cgi?';
-  url += $.param(params);
+  let search = new URLSearchParams();
+  Object.keys(params).forEach(p => search.set(p, params[p]));
+  url += search;
   return url;
 }
 
 function displayBugLinks(data) {
-  var locs = [];
-  $.each(data, function(loc, val) {locs.push(loc);});
+  const container = document.getElementById('linkpane');
+  const locs = Object.keys(data);
   locs.sort();
-  $.each(locs, function() {
-    var loc = this + ''; // get string
-    var props = data[loc];
-    var comp = database.getObject(loc, 'component');
+  locs.forEach(loc => {
+    let props = data[loc];
+    let comp = database.getObject(loc, 'component');
     if (comp != null) {
       props.component = comp;
     }
-    var url = getBugURL(data[loc]);
-    var link = $('<a>').attr('href', url).attr('target', '_blank').text(loc);
-    $('#linkpane').append(link).append(' ');
+    let link = document.createElement('a');
+    link.href = getBugURL(props);
+    link.target = '_blank';
+    link.textContent = loc;
+    container.appendChild(link);
+    container.appendChild(document.createTextNode(' '));
   });
 }
 
 function getBugLinks() {
-  $('#linkpane').html('');
+  document.getElementById('linkpane').innerHTML = '';
   var set = exhibit.getUIContext().getCollection().getRestrictedItems();
   var params = getFormData();
-  params.locales = set.toArray();
-  $.getJSON(BUG_LINKS_URL, params, displayBugLinks);
+  set.visit(loc => params.append('locales', loc));
+  fetch(`${BUG_LINKS_URL}?${params}`)
+  .then(r => r.json())
+  .then(displayBugLinks)
 }
