@@ -18,10 +18,6 @@
         {% block favicon %}<link rel="shortcut icon" href="{% static "img/favicon.ico" %}" />{% endblock %}
         <link rel="user_json" href="{% url 'user-json' %}" />
 
-        <!--[if lte IE 8]>
-        <script src="{% static "js/libs/html5shiv.js" %}"></script>
-        <![endif]-->
-
         {% compress css %}
         <link rel="stylesheet" type="text/css" href="{% static "css/sandstone-resp.css" %}" media="screen" />
         <link rel="stylesheet" type="text/css" href="{% static "css/tabzilla.css" %}" media="screen"/>
@@ -103,7 +99,6 @@
         {% block js %}
           <script src="{% static "js/libs/jquery-1.11.3.js" %}"></script>
           {% compress js %}
-            <script src="{% static "js/site.js" %}"></script>
             <script src="{% static "js/base.js" %}"></script>
           {% endcompress %}
         {% endblock %}
