@@ -1,0 +1,9 @@
+#rows {
+  width: 100%;
+  text-align: center;
+}
+
+#rows > tbody > tr > td {
+  border-bottom: 1px solid black;
+  padding: 5px;
+}

@@ -66,7 +66,7 @@
               {{so.action.author.get_full_name}}
               rejected sign-off by {{so.signoff.author.get_full_name}} on
               {{so.action.when|date}}:</div>
-              <div class="so_msg">{{so.action.comment|bleach_safe}}
+              <div class="so_msg">{% if so.action.comment %}{{so.action.comment|bleach_safe}}{% else %}No reason given{% endif %}
               {% endifequal %}
               {% ifequal flag "pending" %}
                 {{so.signoff.author.get_full_name}} signed off on

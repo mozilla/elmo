@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+<!-- {% comment %}
+   - This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/.
+{% endcomment %} -->
+{% load compress %}
+{% load staticfiles %}
+{% load run_filters %}
+
+{% block title_matter %}Sign-offs for {{appver}}{% endblock %}
+
+{% block head_matter %}
+{% compress css %}
+<link rel="stylesheet" type="text/css" href="{% static "shipping/css/prod-signoffs.css" %}">
+{% endcompress %}
+{% endblock %}
+
+{% block javascript_matter %}
+
+<script>
+var permissions = {
+  canAddSignoff: {% if appver.accepts_signoffs %} {{ perms.shipping.add_signoff|yesno:"true,false" }}{% else %}false{% endif %},
+  canReviewSignoff: {{ perms.shipping.review_signoff|yesno:"true,false" }}
+};
+</script>
+{% compress js %}
+<script src="{% static "shipping/js/prod-signoffs.js" %}"></script>
+{% endcompress %}
+{% endblock %}
+
+
+{% block content %}
+<h1>Sign-offs for {{appver}}</h1>
+{% if not appver.accepts_signoffs %}
+<p>This version doesn't accept Sign-offs.<p>
+{% endif %}
+{% if not perms.shipping.review_signoff %}
+<p>
+  You don't have permissions to review Sign-offs. Please log in with an account
+  with appropriate permissions.
+</p>
+{% endif %}
+<p>Showing {{rows|length}} of <a href="{% url 'dashboard' %}?av={{appver.code}}">{{total_count}} locales</a>.</p>
+<table id="rows">
+    <thead>
+      <tr>
+        <th>Locale</th>
+        {% for tree in trees %}<th>{{tree.code}}</th> {% endfor %}
+        <th>Diff</th><th>Sign off</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for loc, row in rows.items %}
+      <tr>
+        <td><a href="{% url 'shipping-signoff' loc appver.code %}">{{ loc }}</a></td>
+        {% for run in row.runs %}
+        <td>{{ run|showrun }}</td>
+        {% endfor %}
+        <td><a href="{% url 'pushes:diff' %}?from={{row.signoff}}&to={{row.tip}}&repo={{row.repo}}">
+          {{row.signoff|slice:":4"}}&rarr;{{row.tip|slice:":4"}}
+        </a></td>
+        <td>
+          <form class="add-signoff" action="{% url 'product-add-sign-off' appver.code loc row.push %}" method="POST">
+            <button type="submit" name="accept">accept</button>
+            {% comment %}{# DISABLED #}
+            <button type="submit" name="reject">reject</button>
+            {% endcomment %}
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+</table>
+<div class="hidden">{% csrf_token %}</div>
+{% endblock %}

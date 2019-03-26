@@ -25,7 +25,7 @@
             <th>Application</th>
             <th>Version</th>
             <th>L10n Progress</th>
-            <th>Fallbacks/Betas</th>
+            <th>Bulk Sign-Off</th>
             <th>Latest Sign-Offs</th>
         </tr>
     </thead>
@@ -44,7 +44,7 @@
         {% endif %}
             <td class="version  {% cycle 'odd-td' 'even-td' as runcycle %}">{{ avt.appversion.version }}</td>
             <td class="{{ runcycle }}"><a href="{% url 'tree-history' avt.tree.code %}">{{ avt.tree }}</a></td>
-            <td class="{{ runcycle }}"><a href="{% url 'shipping-appversion-history' avt.appversion.code %}">{{ avt.appversion }}</a></td>
+            <td class="{{ runcycle }}"><a href="{% url 'product-sign-offs' avt.appversion.code %}">{{ avt.appversion }}</a></td>
             <td class="{{ runcycle }}">{% if "beta" in avt.tree.code %}<a href="{% if avt.json_changesets %}{{ avt.json_changesets }}{% else %}{% url 'shipping-l10n_changesets' %}?av={{ avt.appversion.code }}{% endif %}">{{avt.appversion.code}}{% if avt.json_changesets %} (json){% endif %}</a>{% endif %}</td>
         </tr>
         {% endfor %}
