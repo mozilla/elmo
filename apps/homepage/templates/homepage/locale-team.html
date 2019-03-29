@@ -9,15 +9,10 @@
 {% block title_matter %}Mozilla Localization Team {{ locale.name }}{% endblock %}
 {% block javascript_matter %}
 <script>
-var WEBDASHBOARD_URL = '{{ webdashboard_url }}';
 var LOCALE_CODE = '{{ locale.code }}';
 </script>
 {% compress js %}
 <script src="{% static "bugsy/js/bugcount.js" %}"></script>
-<script src="{% static "homepage/js/webdashboard.js" %}"></script>
-<script src="{% static "js/libs/jquery-migrate-1.2.1.min.js" %}"></script>
-<script src="{% static "js/libs/jquery.thead-1.1.min.js" %}"></script>
-<script src="{% static "shipping/js/team-page.js" %}"></script>
 {% endcompress %}
 {% endblock %}
 
@@ -46,7 +41,6 @@ var LOCALE_CODE = '{{ locale.code }}';
     <li><a href="#applications">Applications &amp; Sign-offs</a></li>
     {% endif %}
     <li><a href="#bugzilla">Bugzilla</a></li>
-    <li><a href="#webdashboard">Web Dashboard</a></li>
     <li><a href="https://wiki.mozilla.org/L10n:Teams:{{locale.code}}" class="external-link">Contact</a></li>
   </ul>
 </nav>
@@ -57,34 +51,5 @@ var LOCALE_CODE = '{{ locale.code }}';
 {% include shipping.template with context=shipping.context only %}
 
 {% include bugs.template with context=bugs.context only %}
-
-<div id="webdashboard">
-<p class="rss-icon-outer" style="float:right"><a href="{{ webdashboard_url }}?locale={{ locale.code }}"><img src="{% static "img/icons/feed.png" %}" alt="Subscribe to our feed"></a></p>
-<h2>Web Dashboard <a href="#webdashboard" class="permalink">#</a></h2>
-
-<p class="intro">The team's work on the <a href="http://www.mozilla.org/{{ locale.code }}/">mozilla.org website</a>
-is tracked on the <a href="{{ webdashboard_url }}?locale={{ locale.code }}">Web Dashboard</a>.
-<a href="https://github.com/mozilla-l10n/www.mozilla.org/tree/master/{{ locale.code }}/">The sources</a> are on Github,
-you can check the current status on the <a href="https://www-dev.allizom.org/{{ locale.code }}/firefox/whatsnew">team's staging site</a>.</p>
-
-  <div class="loading">
-    <p><em>Please wait, loading Web Dashboard feed...</em></p>
-  </div>
-
-  <div class="failed" style="display:none">
-    <p><em><strong>Sorry.</strong><br>
-       Unable to load the Web Dashboard feed.</em></p>
-  </div>
-
-  <div class="not-found" style="display:none">
-    <p><em><strong>Sorry.</strong><br>
-       The <strong>{{ locale.name }} ({{ locale.code }})</strong> locale is not available on the Web Dashboard.</em></p>
-  </div>
-
-
-<table class="standard cycling" style="display:none">
-</table>
-</div>
-
 
 {% endblock %}

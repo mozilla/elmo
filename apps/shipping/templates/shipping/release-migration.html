@@ -8,6 +8,7 @@
 {% block title_matter %}Channel Migration{% endblock %}
 
 {% block content %}
+{% if perms.shipping.can_ship %}
 <h4>Select the applications you want to migrate:</h4>
 <form action="{% url 'shipping-release-migrate' %}" method="POST">{%csrf_token%}
 <table>
@@ -38,4 +39,7 @@ Migration date (defaults to now): <input type="text" name="migration-date" value
 <br>
 <input type="submit" value="Submit">
 </form>
+{% else %}
+Please log in to migrate applications to the next release cycle.
+{% endif %}
 {% endblock %}

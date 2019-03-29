@@ -41,7 +41,7 @@ class AppVersionTreeThrough(DurationThrough):
         if self.start or self.end:
             rv += ' [{}:{}]'.format(
                 self.start.date() if self.start else '',
-                self.end.date if self.end else ''
+                self.end.date() if self.end else ''
             )
         return rv
 

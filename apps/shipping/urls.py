@@ -10,7 +10,7 @@ from __future__ import unicode_literals
 from django.conf.urls import url
 
 from . import views
-from .views import status, app, signoff, release
+from .views import status, app, signoff, prod_signoffs, release
 
 urlpatterns = [
     url(r'^$', views.index, name='select-dashboard'),
@@ -54,6 +54,19 @@ urlpatterns += [
     # POST only
     url(r'^reopen-signoff/(.*?)/(.*)', signoff.reopen_signoff,
         name='reopen-signoff'),
+]
+
+urlpatterns += [
+    url(
+        r'^sign-off/(.*)$',
+        prod_signoffs.SignoffTableView.as_view(),
+        name='product-sign-offs'
+    ),
+    url(
+        r'^sign-off-add/(.+)/(.+)/([0-9]+)$',
+        prod_signoffs.SignOffView.as_view(),
+        name='product-add-sign-off'
+    ),
 ]
 
 urlpatterns += [
