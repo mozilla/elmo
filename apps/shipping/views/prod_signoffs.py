@@ -143,7 +143,7 @@ class SignOffView(PermissionRequiredMixin, View):
         loc = get_object_or_404(Locale, code=loc_code)
         push = get_object_or_404(Push, id=int(push_id))
         action = (
-            Action.ACCEPTED if request.GET.get('action') == 'accepted'
+            Action.ACCEPTED if request.GET.get('action') == 'accept'
             else
             Action.REJECTED
         )
