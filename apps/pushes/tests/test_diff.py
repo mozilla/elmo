@@ -333,7 +333,7 @@ key2 = Other
             content1=b'''key1 = My Value
 ''',
             content2=b'''key1 = My Value
-key2
+key2 =
     .attr = Attr
 ''',
         )
@@ -351,10 +351,10 @@ key2
             rev2='b',
             content1=b'''to_remove = Old Value
     .attr = Attr
-to_add
+to_add =
     .attr = Attr
 ''',
-            content2=b'''to_remove
+            content2=b'''to_remove =
     .attr = Attr
 to_add = New Value
     .attr = Attr
@@ -499,7 +499,7 @@ key2 = Other
             rev1='a',
             rev2='b',
             content1=b'''key1 = My Value
-key2
+key2 =
     .attr = Attr
 ''',
             content2=b'''key1 = My Value

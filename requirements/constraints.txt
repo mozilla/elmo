@@ -28,8 +28,8 @@ django-appconf==1.0.2
 docutils==0.14
 # cryptography
 enum34==1.1.6
-# >=0.10.0,<0.11 compare-locales
-fluent.syntax==0.10.0
+# >=0.14.0,<0.15 compare-locales
+fluent.syntax==0.14.0
 # >=1 mock
 funcsigs==1.0.2
 # <2.9,>=2.5 requests
