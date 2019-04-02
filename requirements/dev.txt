@@ -3,8 +3,8 @@
 # Include production requirements
 -r env.txt
 
-coverage==4.5.2
+coverage==4.5.3
 
 django-debug-toolbar==1.11
 
-django-extensions==2.1.5
+django-extensions==2.1.6
