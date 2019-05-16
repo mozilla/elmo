@@ -142,6 +142,8 @@ OIDC_OP_TOKEN_ENDPOINT = \
     OIDC_RP_CLIENT_ID = \
     OIDC_RP_CLIENT_SECRET = False
 SSO_GROUPS = 'https://sso.mozilla.com/claim/groups'
+# Check for changed permissions only every 48 hours, instead of 15 minutes.
+OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 48 * 60 * 60
 
 # django_compressor
 COMPRESS_ENABLED = True

@@ -7,9 +7,9 @@ PyOpenSSL==19.0.0
 # >=0.21.0 cryptography
 asn1crypto==0.24.0
 # >=2017.4.17 requests
-certifi==2018.11.29
+certifi==2019.3.9
 # >=1.8,!=1.11.3 cryptography
-cffi==1.11.5
+cffi==1.12.3
 # <3.1.0,>=3.0.2 requests
 chardet==3.0.4
 # raven
@@ -17,19 +17,19 @@ contextlib2==0.5.5
 # mozilla-django-oidc
 # >=0.8 josepy
 # >=2.3 PyOpenSSL
-cryptography==2.5.0
+cryptography==2.6.1
 # markus
-datadog==0.26.0
+datadog==0.28.0
 # >=3.3.2 datadog
-decorator==4.3.2
+decorator==4.4.0
 # >=1.0 django-compressor
-django-appconf==1.0.2
+django-appconf==1.0.3
 # >=0.3 stastistics
 docutils==0.14
 # cryptography
 enum34==1.1.6
-# >=0.10.0,<0.11 compare-locales
-fluent.syntax==0.10.0
+# >=0.14.0,<0.16 compare-locales
+fluent.syntax==0.15.0
 # >=1 mock
 funcsigs==1.0.2
 # <2.9,>=2.5 requests
@@ -39,14 +39,12 @@ idna==2.8
 ipaddress==1.0.22
 # mozilla-django-oidc
 josepy==1.1.0
-# >=0.11 mock
-pbr==5.1.2
 # cffi
 pycparser==2.19
 # compare-locales
 pytoml==0.1.20
 # Django
-pytz==2018.9
+pytz==2019.1
 # ==1.0.6 django-compressor
 rcssmin==1.0.6
 # mozilla-django-oidc
@@ -54,8 +52,6 @@ rcssmin==1.0.6
 requests==2.21.0
 # ==1.0.12 django-compressor
 rjsmin==1.0.12
-# >=2.0.9 datadog
-simplejson==3.16.0
 # bleach, compare-locales, markus
 # >=1.4.0 python-memcached
 # >=1.4.1 cryptography
@@ -65,7 +61,7 @@ six==1.12.0
 statistics==1.0.3.5
 # <1.25,>=1.21.1 requests
 # <2.0,>=1.8 elasticsearch
-urllib3==1.24.1
+urllib3==1.24.3
 # bleach, html5lib
 webencodings==0.5.1
 
@@ -73,7 +69,7 @@ webencodings==0.5.1
 ## dev
 
 # >=0.2.0 django-debug-toolbar
-sqlparse==0.2.4
+sqlparse==0.3.0
 
 # django-extensions
 typing==3.6.6

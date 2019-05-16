@@ -38,7 +38,10 @@ class PickledObjectField(models.Field):
             return value
         if isinstance(value, six.text_type):
             value = value.encode('ascii')
-        return pickle.loads(value)
+        kwargs = {}
+        if six.PY3:
+            kwargs['encoding'] = 'latin1'
+        return pickle.loads(value, **kwargs)
 
     def to_python(self, value):
         if value is None:
@@ -48,7 +51,10 @@ class PickledObjectField(models.Field):
                 b_value = value.encode('ascii')
             else:
                 b_value = value
-            return pickle.loads(b_value)
+            kwargs = {}
+            if six.PY3:
+                kwargs['encoding'] = 'latin1'
+            return pickle.loads(b_value, **kwargs)
         except pickle.UnpicklingError:
             # If an error was raised, just return the plain value
             return value
