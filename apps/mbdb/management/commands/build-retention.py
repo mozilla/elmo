@@ -17,9 +17,10 @@ import tarfile
 
 from django.db.models import Min, Max
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
+from django.core.management import call_command
 
-from mbdb.models import Builder, Build, Log
+from mbdb.models import Builder, Build, Log, BuildRequest
 
 
 class Command(BaseCommand):
@@ -65,7 +66,7 @@ class Command(BaseCommand):
         if not dry_run and backup_dir:
             if not os.path.isdir(backup_dir):
                 os.makedirs(backup_dir)
-        buildcount = files = objects = 0
+        buildcount = files = objects = last_build_request = 0
         for chunk in self.chunkBuilds(builds, options['limit']):
             if not dry_run and backup_dir:
                 tarball = tarfile.open(
@@ -113,6 +114,15 @@ class Command(BaseCommand):
             if thiscount:
                 buildcount += thiscount
                 minmax = buildquery.aggregate(min=Min('id'), max=Max('id'))
+                last_build_request = max(
+                    last_build_request,
+                    BuildRequest.objects
+                    .filter(builds__in=buildquery)
+                    .order_by('-pk')
+                    .values_list('id', flat=True)
+                    .first()
+                    or 0
+                )
                 if not dry_run:
                     buildquery.delete()
                 self.stdout.write('Deleting builds from %d to %d\n' % (
@@ -124,6 +134,32 @@ class Command(BaseCommand):
             objects, files
         ))
         self.stdout.write('Removed %d builds\n' % buildcount)
+        if dry_run:
+            self.stdout.write(
+                'Might remove up to %d build requests\n' %
+                BuildRequest.objects.filter(id__lte=last_build_request).count()
+            )
+        else:
+            brc, _ = (
+                BuildRequest.objects
+                .filter(
+                    id__lte=last_build_request,
+                    builds__isnull=True,
+                )
+                .delete()
+            )
+            self.stdout.write('Remove %d build requests\n' % brc)
+        if dry_run:
+            # skip clean_builds
+            return
+        # Let's try to run clean_builds.
+        # This might error if our master isn't idle, but that's OK, we'll
+        # clean up the rest next time.
+        # Only the BuildRequests were really important.
+        try:
+            call_command('clean_builds')
+        except CommandError:
+            pass
 
     def chunkBuilds(self, q, limit):
         q = q.order_by('id')
