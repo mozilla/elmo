@@ -38,6 +38,10 @@ class Command(BaseCommand):
             help='Clean builds older than N days (-1 for None)'
         )
         parser.add_argument(
+            '-W', action='store_true',
+            help='Error when files to delete are missing'
+        )
+        parser.add_argument(
             '--limit', default=None, type=int,
             help="Limit cycles, a cycle is %d builds" % self.chunksize
         )
@@ -49,6 +53,7 @@ class Command(BaseCommand):
     def handle(self, **options):
         dry_run = options['dry_run']
         chunksize = options['chunksize']
+        break_on_missing = options['W']
         master_for_builder = dict(
             Builder.objects.values_list('name', 'master__name')
         )
@@ -103,6 +108,8 @@ class Command(BaseCommand):
                         files += 1
                         if not dry_run:
                             os.remove(filename)
+                    if break_on_missing:
+                        raise CommandError('Log file missing: {}'.format(filename))
                 if not dry_run:
                     chunk.delete()
         self.stdout.write('Removed %d logs with %d files\n' % (
@@ -128,8 +135,6 @@ class Command(BaseCommand):
                 self.stdout.write('Deleting builds between %d and %d\n' % (
                     min(build_ids), max(build_ids)
                 ))
-                if dry_run:
-                    continue
                 for buildername, buildnumber in buildquery.values_list(
                     'builder__name',
                     'buildnumber',
@@ -139,8 +144,11 @@ class Command(BaseCommand):
                         buildername,
                         str(buildnumber))
                     if os.path.exists(builderpath):
-                        os.remove(builderpath)
+                        if not dry_run:
+                            os.remove(builderpath)
                         files += 1
+                    elif break_on_missing:
+                        raise CommandError('Builder file missing: {}'.format(builderpath))
                 buildquery.delete()
         self.stdout.write('Removed %d builds\n' % buildcount)
         if dry_run:
