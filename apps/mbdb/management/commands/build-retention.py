@@ -25,12 +25,18 @@ from mbdb.models import Builder, Build, Log, BuildRequest
 class Command(BaseCommand):
     chunksize = 1000
     help = __doc__
-    logsoffset = timedelta(days=1)
-    buildoffset = timedelta(days=7)
 
     def add_arguments(self, parser):
         parser.add_argument('--dry-run', '-n', action='store_true',
                             help="Dry run, don't touch files and database")
+        parser.add_argument(
+            '--builds-before', type=int, default=1,
+            help='Clean builds older than N days (-1 for None)'
+        )
+        parser.add_argument(
+            '--logs-before', type=int, default=1,
+            help='Clean builds older than N days (-1 for None)'
+        )
         parser.add_argument(
             '--limit', default=None, type=int,
             help="Limit cycles, a cycle is %d builds" % self.chunksize
@@ -54,19 +60,25 @@ class Command(BaseCommand):
             if last_build is not None
         ]
         now = datetime.utcnow()
-        logtime = now - self.logsoffset
-        buildtime = now - self.buildoffset
+        logtime = now - timedelta(days=options['logs_before'])
+        buildtime = now - timedelta(days=options['builds_before'])
 
         logs = (
             Log.objects
-            .filter(step__build__endtime__lt=logtime)
             .exclude(filename__isnull=True)
         )
+        if options['logs_before'] >= 0:
+            logs = logs.filter(step__build__endtime__lt=logtime)
+        else:
+            logs = logs.none()
         builds = (
             Build.objects
             .exclude(id__in=last_builds)
-            .filter(endtime__lt=buildtime)
         )
+        if options['builds_before'] >= 0:
+            builds = builds.filter(endtime__lt=buildtime)
+        else:
+            builds = builds.none()
         self.stdout.write(
             'Working on {} builds and {} logs.'.format(
                 Build.objects.count(),
