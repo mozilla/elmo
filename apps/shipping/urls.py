@@ -10,7 +10,7 @@ from __future__ import unicode_literals
 from django.conf.urls import url
 
 from . import views
-from .views import status, app, signoff, prod_signoffs, release
+from .views import status, signoff, prod_signoffs, release
 
 urlpatterns = [
     url(r'^$', views.index, name='select-dashboard'),
@@ -27,11 +27,6 @@ urlpatterns += [
         name='shipping-shipped_locales'),
     url(r'^api/status$', status.StatusJSON.as_view(),
         name='shipping-status_json'),
-]
-
-urlpatterns += [
-    url(r'^app/locale-changes/(.*)', app.changes,
-        name='shipping-appversion-history'),
 ]
 
 urlpatterns += [
