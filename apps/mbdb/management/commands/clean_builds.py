@@ -14,10 +14,15 @@ from mbdb.models import (Builder, BuildRequest, SourceStamp, NumberedChange,
 
 
 def freeze(cls):
-    return (cls.objects
-            .filter(id__lte=(cls.objects
-                             .order_by('-pk')
-                             .values_list('pk', flat=True)[0])))
+    try:
+        q = cls.objects.filter(id__lte=(
+            cls.objects
+               .order_by('-pk')
+               .values_list('pk', flat=True)[0]
+        ))
+    except IndexError:
+        q = cls.objects.none()
+    return q
 
 
 class Command(BaseCommand):

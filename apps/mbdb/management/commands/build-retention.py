@@ -108,7 +108,7 @@ class Command(BaseCommand):
                         files += 1
                         if not dry_run:
                             os.remove(filename)
-                    if break_on_missing:
+                    elif break_on_missing:
                         raise CommandError('Log file missing: {}'.format(filename))
                 if not dry_run:
                     chunk.delete()
@@ -180,7 +180,7 @@ class Command(BaseCommand):
         # clean up the rest next time.
         # Only the BuildRequests were really important.
         try:
-            call_command('clean_builds')
+            call_command('clean_builds', stdout=self.stdout)
         except CommandError:
             pass
 
