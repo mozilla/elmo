@@ -4,12 +4,12 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {% endcomment %} -->
 
-<div id="bugzilla">
+<div id="bugzilla" class="not-loaded">
   <h2>Bugzilla  <a href="#bugzilla" class="permalink">#</a></h2>
   <p>Mozilla is using bugs in Bugzilla to track the development
   and progress of our projects.</p>
 
-  <div class="loaded" style="display:none">
+  <div class="buglist">
     <p>There are
     <a href="{{ context.bugs_url }}"><span class="bug-count">?</span> open bugs </a>
     specific to {{ context.locale.name }}.
@@ -18,7 +18,7 @@
     </span>
     </p>
 
-    <table class="standard recent-bugs cycling show-head" style="display:none">
+    <table class="standard recent-bugs cycling show-head">
       <thead>
         <tr>
           <th>ID</th>
@@ -27,14 +27,11 @@
           <th>Filed</th>
         </tr>
       </thead>
+      <tbody></tbody>
     </table>
   </div>
 
-  <div class="loading" style="display:none">
-    <p><em>Please wait, loading bugs...</em></p>
-  </div>
-
-  <div class="failed" style="display:none">
+  <div class="failed">
     <p><em><strong>Sorry.</strong><br>
        Unable to load the bugs. Try reloading a little later.</em></p>
   </div>

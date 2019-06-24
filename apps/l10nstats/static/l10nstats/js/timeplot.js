@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* global d3, URLSearchParams */
 
 /*
  * Generic code to create a view that takes starttime, endtime,
@@ -19,9 +20,9 @@ function timeplot(selector, fullrange, domain, params, options) {
   else {
     options = defaultoptions;
   }
-  var t = $(selector),
-    width = +(t.css("width").replace('px', '')) - options.yAxes*options.xmargin,
-    height = +(t.css("height").replace('px', '')) - 3*options.ymargin;
+  let {width, height} = window.getComputedStyle(document.querySelector(selector));
+  width = +(width.replace('px', '')) - options.yAxes*options.xmargin;
+  height = +(height.replace('px', '')) - 3*options.ymargin;
   var x = d3.time.scale()
       .range([0, width]);
   var x2 = d3.time.scale()
@@ -119,23 +120,23 @@ function onBrushEnd(_brush, params) {
     if (_brush.empty()) return;
     var extent = _brush.extent();
     var domain = _brush.x().domain();
-    var _p = {}, sd, ed;
+    var _p = new URLSearchParams(), sd, ed;
     if (extent[0] - domain[0]) {
       // set start date only if it's not start of time
       sd = extent[0];
-      _p.starttime = formatRoundedDate(sd);
+      _p.set('starttime', formatRoundedDate(sd));
     }
     if (extent[1] - domain[1]) {
       ed = _brush.extent()[1];
-      _p.endtime = formatRoundedDate(ed);
+      _p.set('endtime', formatRoundedDate(ed));
     }
     if (params) {
       for (var k in params) {
         if (params.hasOwnProperty(k) && ! _p.hasOwnProperty(k)) {
-          _p[k] = params[k];
+          _p.set(k, params[k]);
         }
       }
     }
-    document.location.search = '?' + $.param(_p);
+    document.location.search = '?' + _p;
   };
 }

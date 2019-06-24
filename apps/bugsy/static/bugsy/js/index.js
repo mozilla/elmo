@@ -27,7 +27,7 @@ function parse_counts(url, data, callback, link) {
     bug_count += count;
     show_bug_count();
   }
-  $('#noc').text(json.data.length);
+  document.getElementById('noc').textContent = json.data.length;
   callback({items: items});
 }
 function parse_flags(url, data, callback, link) {
@@ -61,7 +61,7 @@ function parse_flags(url, data, callback, link) {
   callback({items: items});
 }
 function show_bug_count() {
-  $('#nob').text(bug_count);
+  document.getElementById('nob').textContent = bug_count;
 }
 
 function registerBugImporters() {

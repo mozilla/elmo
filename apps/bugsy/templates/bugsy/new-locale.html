@@ -12,12 +12,10 @@
 {% compress css %}
 <link rel="stylesheet" href="{% static "bugsy/css/new-locale.css" %}" type="text/css">
 {% endcompress %}
+<link rel="new-locale-bugs" href="{% url "new-locale-bugs" %}">
 
 {% endblock %}
 {% block javascript_matter %}
-<script>
-var NEW_LOCALE_URL = '{% url "new-locale-bugs" %}';
-</script>
 {% compress js %}
 <script src="{% static "bugsy/js/new_locale.js" %}"></script>
 {% endcompress %}
