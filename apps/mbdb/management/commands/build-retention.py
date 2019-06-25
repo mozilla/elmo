@@ -107,11 +107,11 @@ class Command(BaseCommand):
                 try:
                     unlink(filename)
                     files += 1
-                except FileNotFoundError:
+                except OSError:
                     try:
                         unlink(filename + '.bz2')
                         files += 1
-                    except FileNotFoundError:
+                    except OSError:
                         if break_on_missing:
                             raise CommandError(
                                 'Log file missing: {}'.format(filename)
@@ -152,7 +152,7 @@ class Command(BaseCommand):
                     try:
                         unlink(builderpath)
                         files += 1
-                    except FileNotFoundError:
+                    except OSError:
                         if break_on_missing:
                             raise CommandError(
                                 'Builder file missing: {}'.format(builderpath)
