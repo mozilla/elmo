@@ -54,6 +54,11 @@ class Command(BaseCommand):
         dry_run = options['dry_run']
         chunksize = options['chunksize']
         break_on_missing = options['W']
+        if not dry_run:
+            unlink = os.remove
+        else:
+            # os.stat raises the same errors as os.remove, let's build on that.
+            unlink = os.stat
         master_for_builder = dict(
             Builder.objects.values_list('name', 'master__name')
         )
@@ -98,20 +103,21 @@ class Command(BaseCommand):
                 'step__build__builder__name',
             ):
                 mount = settings.LOG_MOUNTS[master_for_builder[buildername]]
-                if filename:
-                    arcname = filename
-                    filename = os.path.join(mount, filename)
-                    if not os.path.exists(filename):
-                        filename += '.bz2'
-                        arcname += '.bz2'
-                    if os.path.exists(filename):
+                filename = os.path.join(mount, filename)
+                try:
+                    unlink(filename)
+                    files += 1
+                except FileNotFoundError:
+                    try:
+                        unlink(filename + '.bz2')
                         files += 1
-                        if not dry_run:
-                            os.remove(filename)
-                    elif break_on_missing:
-                        raise CommandError('Log file missing: {}'.format(filename))
-                if not dry_run:
-                    chunk.delete()
+                    except FileNotFoundError:
+                        if break_on_missing:
+                            raise CommandError(
+                                'Log file missing: {}'.format(filename)
+                            )
+            if not dry_run:
+                chunk.delete()
         self.stdout.write('Removed %d logs with %d files\n' % (
             objects, files
         ))
@@ -143,12 +149,15 @@ class Command(BaseCommand):
                         settings.LOG_MOUNTS[master_for_builder[buildername]],
                         buildername,
                         str(buildnumber))
-                    if os.path.exists(builderpath):
-                        if not dry_run:
-                            os.remove(builderpath)
+                    try:
+                        unlink(builderpath)
                         files += 1
-                    elif break_on_missing:
-                        raise CommandError('Builder file missing: {}'.format(builderpath))
+                    except FileNotFoundError:
+                        if break_on_missing:
+                            raise CommandError(
+                                'Builder file missing: {}'.format(builderpath)
+                            )
+            if not dry_run:
                 buildquery.delete()
         self.stdout.write('Removed %d builds\n' % buildcount)
         if dry_run:
