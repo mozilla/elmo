@@ -259,7 +259,10 @@ class TestDiffLines(TestCase):
             content2=b'key1 = My Value\n',
         )
         lines = view.diffLines('file.ftl', 'changed')
-        self.assertIsNone(lines)
+        self.assertEqual(len(lines), 1)
+        line, = lines
+        self.assertEqual(line['entity'], 'key1')
+        self.assertIn("\ufffd", line['oldval'][-1]['value'])
 
     def test_broken_new_encoding(self):
         view = ValuedDiffView(
@@ -269,7 +272,10 @@ class TestDiffLines(TestCase):
             content2='key1 = Hell\xe3'.encode('latin-1'),
         )
         lines = view.diffLines('file.ftl', 'changed')
-        self.assertIsNone(lines)
+        self.assertEqual(len(lines), 1)
+        line, = lines
+        self.assertEqual(line['entity'], 'key1')
+        self.assertIn("\ufffd", line['newval'][-1]['value'])
 
     def test_add_fluent(self):
         view = ValuedDiffView(
