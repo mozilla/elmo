@@ -12,7 +12,8 @@ We're keeping log files for a day, and build data for seven.
 from __future__ import absolute_import
 from __future__ import unicode_literals
 from datetime import datetime, timedelta
-import os.path
+import errno
+import os
 
 from django.db.models import Max
 from django.conf import settings
@@ -20,6 +21,45 @@ from django.core.management.base import BaseCommand, CommandError
 from django.core.management import call_command
 
 from mbdb.models import Builder, Build, Log, BuildRequest
+
+
+def return_if_running(cmd):
+    # Pick a lock file path on the shared disc.
+    # The LOG_MOUNTS end in either test-master or l10n-master, use their
+    # parent dir.
+    lock_path = os.path.dirname(list(settings.LOG_MOUNTS.values())[0])
+    lock_path = os.path.join(lock_path, 'build-retention.lck')
+    flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
+    def handle(*args, **kwargs):
+        # Check if the lock file exists and is old
+        try:
+            mtime = datetime.utcfromtimestamp(os.stat(lock_path).st_mtime)
+            if (datetime.utcnow() - mtime) > timedelta(days=1):
+                print('Removing old lock file {}, age: {}'.format(
+                    lock_path, datetime.utcnow() - mtime
+                ))
+                os.remove(lock_path)
+        except OSError:
+            pass
+        try:
+            file_handle = os.open(lock_path, flags)
+        except OSError as e:
+            if e.errno == errno.EEXIST:  # Failed as the file already exists.
+                return
+            # Something unexpected went wrong so reraise the exception.
+            raise
+        else:  # No exception, so the file must have been created successfully.
+            with os.fdopen(file_handle, 'w') as file_obj:
+                # Using `os.fdopen` converts the handle to an object that acts like a
+                # regular Python file object, and the `with` context manager means the
+                # file will be automatically closed when we're done with it.
+                file_obj.write("lck")
+        try:
+            rv = cmd(*args, **kwargs)
+        finally:
+            os.remove(lock_path)
+        return rv
+    return handle
 
 
 class Command(BaseCommand):
@@ -50,6 +90,7 @@ class Command(BaseCommand):
             help="Take N objects at a time"
         )
 
+    @return_if_running
     def handle(self, **options):
         dry_run = options['dry_run']
         chunksize = options['chunksize']
