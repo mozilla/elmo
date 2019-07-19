@@ -15,7 +15,6 @@ from elmo_commons.tests.mixins import EmbedsTestCaseMixin
 from life.models import Tree, Forest, Locale
 from shipping.models import Application, AppVersion
 import shipping.views
-import shipping.views.app
 import shipping.views.release
 import shipping.views.status
 
@@ -57,25 +56,6 @@ class ShippingTestCase(ShippingTestCaseBase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response.content)
-
-    def test_basic_render_app_changes(self):
-        """render shipping.views.app.changes"""
-        url = reverse(shipping.views.app.changes,
-                      args=['junk'])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 404)
-
-        appver, __ = self._create_appver_tree()
-        url = reverse(shipping.views.app.changes,
-                      args=[appver.code])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        content = force_text(response.content)
-        self.assert_all_embeds(content)
-        self.assertIn(
-          '<title>Locale changes for %s' % appver,
-          content)
-        self.assertIn('<h1>Locale changes for %s' % appver, content)
 
     def test_dashboard_bad_urls(self):
         """test that bad GET parameters raise 404 errors not 500s"""

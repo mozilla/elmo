@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* global d3 */
 
 function Data(stacked, nonstacked) {
   this.stacked = stacked;
@@ -8,12 +9,12 @@ function Data(stacked, nonstacked) {
   this._data = {};
   var _d = this._data;
   if (this.stacked) {
-    $.each(this.stacked, function(i, n) {
+    this.stacked.forEach(function(n) {
       _d[n] = 0;
     });
   }
   if (this.nonstacked) {
-    $.each(this.nonstacked, function(i, n) {
+    this.nonstacked.forEach(function(n) {
       _d[n] = 0;
     });
   }
@@ -30,13 +31,13 @@ Data.prototype = {
     var v = 0, rv = {}, _d = this._data;
     if (date) rv.date = date;
     if (this.stacked) {
-      $.each(this.stacked, function(i, n) {
+      this.stacked.forEach(function(n) {
         v += _d[n];
         rv[n] = v;
       });
     }
     if (this.nonstacked) {
-      $.each(this.nonstacked, function(i, n) {
+      this.nonstacked.forEach(function(n) {
         rv[n] = _d[n];
       });
     }
@@ -68,10 +69,10 @@ function renderPlot() {
   var svg = tp.svg;
   X = tp.x;
 
-  var tooltipElt = $('#locales-tooltip');
-  var goodLocalesElt = $('.good', tooltipElt);
-  var shadyLocalesElt = $('.shady', tooltipElt);
-  var badLocalesElt = $('.bad', tooltipElt);
+  var tooltipElt = document.getElementById('locales-tooltip');
+  var goodLocalesElt = tooltipElt.querySelector('.good');
+  var shadyLocalesElt = tooltipElt.querySelector('.shady');
+  var badLocalesElt = tooltipElt.querySelector('.bad');
 
   var i = 0, loc;
   state = new Data(null, ['good', 'shady', 'bad']);
@@ -91,11 +92,10 @@ function renderPlot() {
     state.update(undefined, latest[loc]);
   }
   data.push(state.data(loc_data[i].time));
-  var changeEvents = [];
   for (i = 1; i < loc_data.length; ++i) {
     for (loc in loc_data[i].locales) {
       _data[loc] = loc_data[i].locales[loc];
-      isGood = _getState(loc_data[i].locales[loc]);
+      let isGood = _getState(loc_data[i].locales[loc]);
       if (isGood != latest[loc]) {
         state.update(latest[loc], isGood);
         latest[loc] = isGood;
@@ -145,35 +145,40 @@ function renderPlot() {
     var clipTreshold = 4;
 
     if (ln === 0) {
-      element.text("-");
+      element.textContent = "-";
       return;
     }
 
-    element.empty();
+    element.innerHTML = '';
 
-    var clippedElt = $("<span>", { "class": "clipped" });
+    var clippedElt = document.createElement("span");
+    clippedElt.className = "clipped";
     var addTo = element;
 
     for (var i = 0; i < ln; i++) {
       var locale = locales[i];
 
-      var linkElt = $("<a>", { href: dashboardHistoryUrl + locale });
-      linkElt.text(locale);
+      var linkElt = document.createElement("a");
+      linkElt.href= dashboardHistoryUrl + locale;
+      linkElt.textContent = locale;
 
       if (i >= clipTreshold) {
         addTo = clippedElt;
       }
 
       if (i > 0) {
-        addTo.append(', ');
+        addTo.appendChild(document.createTextNode(', '));
       }
-      addTo.append(linkElt);
+      addTo.appendChild(linkElt);
     }
 
-    element.append(clippedElt);
+    element.appendChild(clippedElt);
 
     if (ln > clipTreshold) {
-      element.append($("<span>", { "class": "hellip" }).html("&hellip;"));
+      const hellip = document.createElement("span");
+      hellip.className = "hellip";
+      hellip.textContent = "…";
+      element.appendChild(hellip);
     }
   }
 
@@ -230,12 +235,12 @@ function renderPlot() {
 
   function showTooltip() {
     whiteBox.style("opacity", 0.2);
-    tooltipElt.show();
+    tooltipElt.style.display = 'block';
   }
 
   function hideTooltip() {
     whiteBox.style("opacity", 0);
-    tooltipElt.hide();
+    tooltipElt.style.display = 'none';
   }
 
   function showLocalesTooltip() {
@@ -257,12 +262,12 @@ function renderPlot() {
     }
 
     if (mouseX > tp.width / 2) {
-      tooltipElt.css("right", (tp.width - mouseX) + "px");
-      tooltipElt.css("left", "auto");
+      tooltipElt.style.right = (tp.width - mouseX) + "px";
+      tooltipElt.style.left = "auto";
     }
     else {
-      tooltipElt.css("left", mouseX + "px");
-      tooltipElt.css("right", "auto");
+      tooltipElt.style.left = mouseX + "px";
+      tooltipElt.style.right = "auto";
     }
 
     showTooltip();
@@ -282,28 +287,24 @@ function renderPlot() {
   graphZone.on("mousemove", showLocalesTooltip)
            .on("mouseout", hideTooltip);
 
-  tooltipElt.on("mouseover", showTooltip)
-            .on("mouseout", hideTooltip);
+  tooltipElt.addEventListener("mouseover", showTooltip);
+  tooltipElt.addEventListener("mouseout", hideTooltip);
 
   // <-- Changing locales logic --> //
 
   paintHistogram(_data);
-  $('#my-timeplot').click(onClickPlot);
-  $('#boundField').attr('value', params.bound);
-  if (params.showBad)
-    $('#showBadField').attr('checked', 'checked');
-  else
-    $('#showBadField').removeAttr('checked');
+  document.getElementById('my-timeplot').addEventListener('click', onClickPlot);
+  document.getElementById('boundField').value = params.bound;
+  document.getElementById('showBadField').checked = params.showBad;
 }
 
 function update(args) {
-  $.extend(params, args);
+  Object.assign(params, args);
   renderPlot();
 }
 
 function onClickPlot(evt) {
-  var x = evt.pageX-$("g.x.axis").offset().left;
-  var t = X.invert(x);
+  var t = X.invert(evt.offsetX);
   var d = {};
   for (var i = 0; i < loc_data.length && loc_data[i].time < t; ++i) {
     for (var loc in loc_data[i].locales) {
@@ -314,12 +315,9 @@ function onClickPlot(evt) {
 }
 
 function paintHistogram(d) {
-  var data = [], loc, i;
-  for (loc in d) {
-    data.push(d[loc]);
-  }
+  var data, loc, i;
   function numerical(a, b) {return a-b;}
-  data.sort(numerical);
+  data = Object.values(d).sort(numerical);
   var smooth = Math.sqrt;
   var clusterer = new Clusterer(data, smooth);
   var ranges = clusterer.get_ranges(4); // TODO find something better
@@ -407,4 +405,4 @@ function paintHistogram(d) {
   }
 }
 
-$(renderPlot);
+renderPlot();

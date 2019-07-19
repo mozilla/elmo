@@ -98,3 +98,14 @@
 .cycling tbody td:last-child {
     border-right: 1px solid #d3d3d3;
 }
+
+/* loading information for bugzilla */
+#bugzilla.not-loaded > .buglist,
+#bugzilla.failed > .buglist {
+    display: none;
+}
+#bugzilla.not-loaded > .failed,
+#bugzilla.loaded > .failed
+{
+    display: none;
+}

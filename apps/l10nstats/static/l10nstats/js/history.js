@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* global d3, timeplot */
 
 function renderPlot() {
   var tp = timeplot("#my-timeplot",
@@ -24,15 +25,15 @@ function renderPlot() {
     .attr("stop-opacity", function (d) {return d.opacity;});
   }
 
-  mg = genGradient("missingGradient", [
+  genGradient("missingGradient", [
       {offset: "5%", color: "rgb(204, 128, 128)", opacity: ".8"},
       {offset: "95%", color:"rgb(204, 128, 128)", opacity: ".2"}
            ]);
-  og = genGradient("obsoleteGradient", [
+  genGradient("obsoleteGradient", [
       {offset: "5%", color: "#808080", opacity: ".8"},
       {offset: "95%", color:"#808080", opacity: ".2"}
            ]);
-  ug = genGradient("unchangedGradient", [
+  genGradient("unchangedGradient", [
       {offset: "5%", color: "#cccccc", opacity: ".8"},
       {offset: "65%", color:"#cccccc", opacity: ".1"}
            ]);
@@ -61,7 +62,7 @@ function renderPlot() {
       unchanged: +row[4]
     };
   }
-  data = d3.csv.parseRows($("#txtData").text().trim(), processRow);
+  data = d3.csv.parseRows(document.getElementById("txtData").textContent.trim(), processRow);
   tp.yDomain([0, d3.max(data.map(function(d) { return d3.max([d.missing, d.obsolete]); }))]);
   tp.y2Domain([0, d3.max(data.map(function(d) { return d.unchanged; }))]);
   svg.selectAll("rect.high")
@@ -114,4 +115,4 @@ function renderPlot() {
   markers.append('title').text(function(d) {return 'missing: ' + d.missing;});
 }
 
-$(renderPlot);
+renderPlot();
