@@ -42,6 +42,20 @@ def getRunsBefore(tree, stamp, locales):
                 locales.remove(r.locale)
 
 
+def milestones(tree, starttime, endtime):
+    return [
+        {
+            'timestamp': int(calendar.timegm(timestamp.timetuple())),
+            'version': version,
+        }
+        for timestamp, version in
+        tree.appvers_over_time
+        .filter(end__isnull=False)
+        .filter(end__gte=starttime, end__lte=endtime)
+        .values_list('end', 'appversion__version')
+    ]
+
+
 def history_plot(request):
     """Progress of a single locale and tree.
 
@@ -124,6 +138,7 @@ def history_plot(request):
                     'endtime': endtime,
                     'stamps': stamps,
                     'runs': runs,
+                    'milestones': milestones(tree, starttime, endtime),
                     'highlights': highlights
                   })
 
@@ -197,5 +212,6 @@ def tree_progress(request, tree):
                     'startTime': starttime,
                     'endTime': endtime,
                     'stamps': stamps,
+                    'milestones': milestones(tree, starttime, endtime),
                     'data': data
                   })

@@ -113,6 +113,7 @@ function renderPlot() {
             })
     .attr("d", d3.svg.symbol().type('circle'))
   markers.append('title').text(function(d) {return 'missing: ' + d.missing;});
+  showMilestones(tp);
 }
 
 renderPlot();

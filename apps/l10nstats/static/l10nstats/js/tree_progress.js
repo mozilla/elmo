@@ -272,6 +272,7 @@ function renderPlot() {
 
     showTooltip();
   }
+  showMilestones(tp);
 
   // Define a new element that is the size of the graph, and that is used to
   // detect the mouse movements. As this element is on top in the DOM, this

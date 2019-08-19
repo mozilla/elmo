@@ -10,10 +10,7 @@
 {% block title_matter %}{{ tree }} l10n stats{% endblock %}
 
 {% block timeplot_styles %}
-{% compress css %}
-<link rel="stylesheet" href="{% static "l10nstats/css/timeplot.css" %}" type="text/css">
 <link rel="stylesheet" href="{% static "l10nstats/css/tree_progress.css" %}" type="text/css">
-{% endcompress %}
 {% endblock %}
 
 {% block timeplot_extra_js %}
@@ -31,11 +28,8 @@ var DASHBOARD_HISTORY_URL = '{% url "locale-tree-history" %}?tree=' + tree;
 {% endblock %}
 
 {% block timeplot_scripts %}
-{% compress js %}
-<script src="{% static "l10nstats/js/timeplot.js" %}"></script>
 <script src="{% static "l10nstats/js/clusterer.js" %}"></script>
 <script src="{% static "l10nstats/js/tree_progress.js" %}"></script>
-{% endcompress %}
 {% endblock %}
 
 {% block alt_header %}
