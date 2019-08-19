@@ -33,8 +33,11 @@ td:nth-child(even) {
     height: 400px;
 }
 
+#percentile {
+    height: 400px;
+}
+
 .legend {
-    float: right;
     margin-top: 10px;
 }
 
@@ -79,4 +82,10 @@ td:nth-child(even) {
 .tooltip:hover .clipped,
 .tooltip .hellip {
     display: inline;
+}
+
+.top_locales {
+    stroke: darkgrey;
+    stroke-width: 1.5px;
+    fill: none;
 }

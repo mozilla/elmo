@@ -10,10 +10,7 @@
 {% block title_matter %}[{{ locale}}, {{ tree }}] l10n stats{% endblock %}
 
 {% block timeplot_styles %}
-{% compress css %}
-<link rel="stylesheet" href="{% static "l10nstats/css/timeplot.css" %}" type="text/css">
 <link rel="stylesheet" href="{% static "l10nstats/css/history.css" %}" type="text/css">
-{% endcompress %}
 {% endblock %}
 
 {% block timeplot_extra_js %}
@@ -24,10 +21,7 @@ var compare_link = "{% url 'compare-locales' %}";
 {% endblock %}
 
 {% block timeplot_scripts %}
-{% compress js %}
-<script src="{% static "l10nstats/js/timeplot.js" %}"></script>
 <script src="{% static "l10nstats/js/history.js" %}"></script>
-{% endcompress %}
 {% endblock %}
 
 {% block content %}

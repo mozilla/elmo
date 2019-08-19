@@ -140,3 +140,20 @@ function onBrushEnd(_brush, params) {
     document.location.search = '?' + _p;
   };
 }
+
+function showMilestones(tp) {
+  var milestone, ms_label, ms_tick;
+  for (milestone of MILESTONES) {
+    ms_label = tp.svg.append("text");
+    ms_label.attr("x", tp.x(milestone.time))
+    .attr("y", tp.y(0) - tp.height - 1)
+    .style("text-anchor", "middle")
+    ms_label.text(milestone.version);
+    ms_tick = tp.svg.append("rect");
+    ms_tick.attr("x", tp.x(milestone.time))
+    .attr("y", tp.y(0) - tp.height + 10)
+    .attr("width", 1)
+    .attr("height", tp.height / 4)
+    .style("fill", "black");
+  }
+}

@@ -10,10 +10,7 @@
 {% block title_matter %}{{ tree }} l10n stats{% endblock %}
 
 {% block timeplot_styles %}
-{% compress css %}
-<link rel="stylesheet" href="{% static "l10nstats/css/timeplot.css" %}" type="text/css">
 <link rel="stylesheet" href="{% static "l10nstats/css/tree_progress.css" %}" type="text/css">
-{% endcompress %}
 {% endblock %}
 
 {% block timeplot_extra_js %}
@@ -21,6 +18,7 @@
 var tree = "{{ tree }}";
 var SHOW_BAD = {{ showBad|yesno:"true,false" }};
 var BOUND = {{ bound }};
+var top_locales = {{ top_locales }};
 
 var LOCALE_DATA = [{% for item in data %}
     {time: new Date({{item.srctime}} * 1000), locales: {{ item.locales|safe }}}{% if not forloop.last %},{% endif %}{% endfor %}
@@ -31,11 +29,8 @@ var DASHBOARD_HISTORY_URL = '{% url "locale-tree-history" %}?tree=' + tree;
 {% endblock %}
 
 {% block timeplot_scripts %}
-{% compress js %}
-<script src="{% static "l10nstats/js/timeplot.js" %}"></script>
 <script src="{% static "l10nstats/js/clusterer.js" %}"></script>
 <script src="{% static "l10nstats/js/tree_progress.js" %}"></script>
-{% endcompress %}
 {% endblock %}
 
 {% block alt_header %}
@@ -52,15 +47,17 @@ var DASHBOARD_HISTORY_URL = '{% url "locale-tree-history" %}?tree=' + tree;
     <p><span>Good</span><span class="good"></span></p>
     <p><span>OK-ish</span><span class="shady"></span></p>
     <p><span>Bad</span><span class="bad"></span></p>
+    <p style="display:none"><span>top_locales</span><span class="top_locales"></span></p>
   </div>
 </div>
 
 <div id="my-timeplot"></div>
-<div class="legend" style="float:right">
+<div class="legend">
   <input type="checkbox" onchange="update({showBad:event.target.checked});" id="showBadField">red area: locales with missing strings<br>
   shaded area: locales with <input type="text" size="3" id="boundField" onchange="update({bound:Number(event.target.value)})"> missing strings<br>
+  line: missing strings of the <input style="width: 3em;" type="number" step="10" min="0" max="100" size="3" id="perctField" onchange="update({top_locales:Number(event.target.value)})"> most complete locales<br>
   green area: good locales
 </div>
-<div id="histogram">
-</div>
+<div id="percentile"></div>
+<div id="histogram"></div>
 {% endblock %}
