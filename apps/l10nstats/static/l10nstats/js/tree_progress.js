@@ -312,10 +312,78 @@ function onClickPlot(evt) {
       d[loc] = loc_data[i].locales[loc];
     }
   }
-  paintHistogram(d);
+  paintHistogram(d, evt.controlKey || evt.metaKey);
 }
 
-function paintHistogram(d) {
+let kown_graphs = [];
+function paintPercentile(d, add) {
+  let missing2locales = {};
+  let locales = Object.keys(d);
+  locales.forEach(locale => {
+    let loc_list;
+    const missing = d[locale];
+    if (!(missing in missing2locales)) {
+      missing2locales[missing] = [];
+    }
+    missing2locales[missing].push(locale);
+  });
+  let x = Object.keys(missing2locales), last=0;
+  x.sort((l, r) => l - r);
+  if (!add) {
+    known_graphs = [];
+  }
+  known_graphs.push(x.map(_x => ({
+    x: _x,
+    locales: missing2locales[_x],
+    percentile: last += missing2locales[_x].length,
+  })));
+  let xmargin = 40, ymargin = 40;
+  let {width, height} = window.getComputedStyle(document.querySelector('#percentile'));
+  width = +(width.replace('px', '')) - 2*xmargin;
+  height = +(height.replace('px', '')) - 2*ymargin;
+  let x_scale = d3.scale.sqrt()
+      .range([0, width])
+      .domain([0, x[x.length - 1] * 1.1]);
+  let y_scale = d3.scale.linear()
+      .range([height, 0])
+      .domain([0, locales.length]);
+  let c_scale = d3.scale.category10()
+      .domain([0, known_graphs.length])
+  let x_axis = d3.svg.axis().scale(x_scale).orient("bottom"),
+    y_axis = d3.svg.axis().scale(y_scale).orient("left");
+  var svg = d3.select('#percentile').html('').append("svg")
+      .attr("width", width + xmargin)
+      .attr("height", height + 2*ymargin)
+      .append("g")
+      .attr("transform", "translate(" + xmargin + "," + ymargin + ")");
+
+  // Add the x-axis.
+  svg.append("svg:g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(x_axis);
+  // Add the y-axis.
+  svg.append("svg:g")
+    .attr("class", "y axis")
+    .call(y_axis);
+  let line = d3.svg.line()
+    .interpolate("step-after")
+    .x(d => x_scale(d.x))
+    .y(d => y_scale(d.percentile));
+  svg.selectAll("path.perc_line").data(known_graphs)
+      .enter()
+      .append("path")
+      .attr("class", "perc_line")
+      .attr("fill", "none")
+      .attr("stroke", (d, i) => c_scale(i))
+      .attr("stroke-width", 1.5)
+      .attr("stroke-linejoin", "round")
+      .attr("stroke-linecap", "round")
+      .attr("d", line);
+}
+
+function paintHistogram(d, add) {
+  paintPercentile(d, add)
   var data, loc, i;
   function numerical(a, b) {return a-b;}
   data = Object.values(d).sort(numerical);
@@ -352,7 +420,7 @@ function paintHistogram(d) {
   hist_block.css('width', atitle.css('width'));
   hist_block.css('padding-left', '1px').css('padding-right', '1px');
   // create display of histogram
-  var barwidth = 10;
+  var barwidth = 7;
   var chart_height = Number(hist_block.css('height').replace('px',''));
   var display_f = function(_v) {
     return Math.pow(_v, 3 / 4);
@@ -402,7 +470,7 @@ function paintHistogram(d) {
       previous_j = j;
       _left += barwidth;
     }
-    hist_block.css("width", Number(_left).toFixed(1) + 'px');
+    td.css("width", Number(_left).toFixed(1) + 'px');
   }
 }
 

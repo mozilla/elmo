@@ -50,11 +50,11 @@ var DASHBOARD_HISTORY_URL = '{% url "locale-tree-history" %}?tree=' + tree;
 </div>
 
 <div id="my-timeplot"></div>
-<div class="legend" style="float:right">
+<div class="legend">
   <input type="checkbox" onchange="update({showBad:event.target.checked});" id="showBadField">red area: locales with missing strings<br>
   shaded area: locales with <input type="text" size="3" id="boundField" onchange="update({bound:Number(event.target.value)})"> missing strings<br>
   green area: good locales
 </div>
-<div id="histogram">
-</div>
+<div id="percentile"></div>
+<div id="histogram"></div>
 {% endblock %}
