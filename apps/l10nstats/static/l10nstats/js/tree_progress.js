@@ -3,47 +3,31 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 /* global d3 */
 
-function Data(stacked, nonstacked) {
-  this.stacked = stacked;
-  this.nonstacked = nonstacked;
-  this._data = {};
-  var _d = this._data;
-  if (this.stacked) {
-    this.stacked.forEach(function(n) {
-      _d[n] = 0;
-    });
+class Data {
+  constructor(labels) {
+    this.labels = labels;
+    this._data = {};
+    var _d = this._data;
+    this.labels.forEach(label => {this._data[label] = 0})
   }
-  if (this.nonstacked) {
-    this.nonstacked.forEach(function(n) {
-      _d[n] = 0;
-    });
-  }
-}
 
-Data.prototype = {
-   update: function(from, to) {
-     if (from) {
-       this._data[from] -= 1;
-     }
-     this._data[to] += 1;
-   },
-  value: function(prop, val) {
+  update(from, to) {
+    if (from) {
+      this._data[from] -= 1;
+    }
+    this._data[to] += 1;
+  }
+
+  value(prop, val) {
     this._data[prop] = val;
-  },
-  data: function(date) {
+  }
+
+  data(date) {
     var v = 0, rv = {}, _d = this._data;
     if (date) rv.date = date;
-    if (this.stacked) {
-      this.stacked.forEach(function(n) {
-        v += _d[n];
-        rv[n] = v;
-      });
-    }
-    if (this.nonstacked) {
-      this.nonstacked.forEach(function(n) {
-        rv[n] = _d[n];
-      });
-    }
+    this.labels.forEach(function(n) {
+      rv[n] = _d[n];
+    });
     return rv;
   }
 };
@@ -83,7 +67,7 @@ function renderPlot() {
   var i = 0, loc;
   var graphlabels = ['good', 'shady', 'bad'];
   if (_p.top_locales) graphlabels.unshift('top_locales');
-  state = new Data(null, graphlabels);
+  state = new Data(graphlabels);
   var latest = {};
   var _data = {};
   data = [];
