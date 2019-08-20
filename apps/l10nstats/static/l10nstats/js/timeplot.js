@@ -101,18 +101,11 @@ function timeplot(selector, fullrange, domain, params, options) {
 }
 
 function formatRoundedDate(d) {
-  var floor, ceil, round;
-  floor = new Date(d);
-  floor.setUTCHours(0);
-  floor.setUTCMinutes(0);
-  floor.setUTCSeconds(0);
-  floor.setUTCMilliseconds(0);
-  ceil = new Date(floor);
-  ceil.setUTCDate(ceil.getUTCDate() + 1);
-  round = ceil - d < d - floor ? ceil : floor;
-  return round.getUTCFullYear() +
-    '-' + (round.getUTCMonth() + 1) +
-    '-' + round.getUTCDate();
+  let round = new Date(
+    Math.round(Number(d) / 1000 / 60 / 60 / 24)
+    * 1000 * 60 * 60 * 24
+  );
+  return `${round.getUTCFullYear()}-${round.getUTCMonth() + 1}-${round.getUTCDate()}`;
 }
 
 function onBrushEnd(_brush, params) {
