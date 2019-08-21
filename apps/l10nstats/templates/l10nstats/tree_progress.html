@@ -16,7 +16,7 @@
 {% block timeplot_extra_js %}
 <script>
 var tree = "{{ tree }}";
-var SHOW_BAD = {{ showBad|yesno:"true,false" }};
+var HIDE_BAD = {{ hideBad|yesno:"true,false" }};
 var BOUND = {{ bound }};
 var top_locales = {{ top_locales }};
 
@@ -53,7 +53,7 @@ var DASHBOARD_HISTORY_URL = '{% url "locale-tree-history" %}?tree=' + tree;
 
 <div id="my-timeplot"></div>
 <div class="legend">
-  <input type="checkbox" onchange="update({showBad:event.target.checked});" id="showBadField">red area: locales with missing strings<br>
+  <input type="checkbox" onchange="update({hideBad:!event.target.checked});" id="showBadField">red area: locales with missing strings<br>
   shaded area: locales with <input type="text" size="3" id="boundField" onchange="update({bound:Number(event.target.value)})"> missing strings<br>
   line: missing strings of the <input style="width: 3em;" type="number" step="10" min="0" max="100" size="3" id="perctField" onchange="update({top_locales:Number(event.target.value)})"> most complete locales<br>
   green area: good locales

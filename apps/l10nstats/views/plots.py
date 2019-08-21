@@ -212,7 +212,7 @@ def tree_progress(request, tree):
     return render(request, 'l10nstats/tree_progress.html', {
                     'tree': tree.code,
                     'bound': bound,
-                    'showBad': 'hideBad' not in request.GET,
+                    'hideBad': request.GET.get('hideBad', False),
                     'top_locales': top_locales,
                     'startTime': starttime,
                     'endTime': endtime,

@@ -32,13 +32,16 @@ class Data {
   }
 };
 
-var showBad = SHOW_BAD;
-var bound = BOUND;
-var params = {
-  bound: bound,
-  showBad: showBad,
-  top_locales: top_locales
-};
+var params = {};
+if (HIDE_BAD) {
+  params.hideBad = true;
+}
+if (BOUND) {
+  params.bound = BOUND;
+}
+if (top_locales) {
+  params.top_locales = top_locales;
+}
 
 var data, state, data0, X;
 var loc_data = LOCALE_DATA;
@@ -47,14 +50,10 @@ var locales = [];
 var dashboardHistoryUrl = window.DASHBOARD_HISTORY_URL + "&starttime=" + formatRoundedDate(startdate) + "&endtime=" + formatRoundedDate(enddate) + "&locale="
 
 function renderPlot() {
-  var _p = {};
-  if (!params.showBad) _p.hideBad = true;
-  if (params.bound) _p.bound = params.bound;
-  if (params.top_locales) _p.top_locales = params.top_locales;
   var tp = new Timeplot("#my-timeplot",
                     fullrange,
                     [startdate, enddate],
-                    _p);
+                    params);
   var svg = tp.svg;
   X = tp.x;
 
@@ -66,7 +65,7 @@ function renderPlot() {
 
   var i = 0, loc;
   var graphlabels = ['good', 'shady', 'bad'];
-  if (_p.top_locales) graphlabels.unshift('top_locales');
+  if (params.top_locales) graphlabels.unshift('top_locales');
   state = new Data(graphlabels);
   var latest = {};
   var _data = {};
@@ -83,8 +82,8 @@ function renderPlot() {
     // no breaks on purpose, to stack data
     state.update(undefined, latest[loc]);
   }
-  if (_p.top_locales) {
-    state.value('top_locales', missing_after_top_locales(_data, _p.top_locales));
+  if (params.top_locales) {
+    state.value('top_locales', missing_after_top_locales(_data, params.top_locales));
   }
   data.push(state.data(loc_data[i].time));
   for (i = 1; i < loc_data.length; ++i) {
@@ -97,14 +96,14 @@ function renderPlot() {
         latest[loc] = isGood;
       }
     }
-    if (_p.top_locales) {
-      state.value('top_locales', missing_after_top_locales(_data, _p.top_locales))
+    if (params.top_locales) {
+      state.value('top_locales', missing_after_top_locales(_data, params.top_locales))
     }
     data.push(state.data(loc_data[i].time));
   }
   data.push(state.data(enddate));
   var layers = ['good', 'shady'];
-  if (params.showBad) {
+  if (!params.hideBad) {
     layers.push('bad');
   }
   data0 = d3.layout.stack()(layers.map(function(k){
@@ -122,7 +121,7 @@ function renderPlot() {
     })
     .y0(function(d) { return tp.y(d.y0); })
     .y1(function(d) { return tp.y(d.y + d.y0); });
-  tp.yDomain([0, d3.max(data.map(function(d) { return d.good + d.shady + (params.showBad ? d.bad : 0); })) + 10]);
+  tp.yDomain([0, d3.max(data.map(function(d) { return d.good + d.shady + (params.hideBad ? 0: d.bad); })) + 10]);
   svg.selectAll("path.progress")
      .data(data0)
      .enter()
@@ -133,7 +132,7 @@ function renderPlot() {
         return ['#339900', 'grey', '#990000'][i];
       })
      .attr("d", area);
-  if (_p.top_locales) {
+  if (params.top_locales) {
       tp.y2Domain([
         0,
         d3.max(data.map(function(d) { return d.top_locales.missing; })) * 1.1 + 10
@@ -265,7 +264,7 @@ function renderPlot() {
       tp.x.invert(mouseX - whiteBoxOffset),
       tp.x.invert(mouseX + whiteBoxOffset)
     );
-    if (_p.top_locales) {
+    if (params.top_locales) {
       var date = tp.x.invert(mouseX), i = 0;
       while (data[i] && data[i].date < date) ++i;
       var datum = data[i-1].top_locales;
@@ -318,12 +317,15 @@ function renderPlot() {
   paintHistogram(_data);
   document.getElementById('my-timeplot').addEventListener('click', onClickPlot);
   document.getElementById('boundField').value = params.bound;
-  document.getElementById('showBadField').checked = params.showBad;
+  document.getElementById('showBadField').checked = !params.hideBad;
   document.getElementById('perctField').value = params.top_locales;
 }
 
 function update(args) {
   Object.assign(params, args);
+  if (params.hasOwnProperty('hideBad') && !params.hideBad) {
+    delete params.hideBad;
+  }
   renderPlot();
 }
 
