@@ -45,9 +45,46 @@ if (top_locales) {
 
 var data, state, data0, X;
 var loc_data = LOCALE_DATA;
-var locales = [];
 
 var dashboardHistoryUrl = window.DASHBOARD_HISTORY_URL + "&starttime=" + formatRoundedDate(startdate) + "&endtime=" + formatRoundedDate(enddate) + "&locale="
+
+class ProgressPlot {
+  constructor() {
+    this.params = params;
+  }
+
+  compute_states() {
+    const graphlabels = ['good', 'shady', 'bad'];
+    if (this.params.top_locales) graphlabels.unshift('top_locales');
+    let state = new Data(graphlabels);
+    let current_states = {};
+    this.current_missing = {};
+    let _getState = this._getState.bind(this);
+    this.states_over_time = loc_data.map(
+      (at_time) => {
+        Object.assign(this.current_missing, at_time.locales);
+        Object.entries(at_time.locales).forEach(([loc, missing]) => {
+          let isGood = this._getState(missing);
+          if (isGood != current_states[loc]) {
+            state.update(current_states[loc], isGood);
+            current_states[loc] = isGood;
+          }
+        });
+        if (params.top_locales) {
+          state.value('top_locales', missing_after_top_locales(this.current_missing, params.top_locales));
+        }
+        return state.data(at_time.time);
+      }
+    );
+    this.states_over_time.push(state.data(enddate));
+  }
+
+  _getState(count) {
+    if (count == 0) return 'good';
+    if (count > this.params.bound) return 'bad';
+    return 'shady';
+  }
+}
 
 function renderPlot() {
   var tp = new Timeplot("#my-timeplot",
@@ -63,51 +100,15 @@ function renderPlot() {
   var badLocalesElt = tooltipElt.querySelector('.bad');
   var percElt = tooltipElt.querySelector('.top_locales')
 
-  var i = 0, loc;
-  var graphlabels = ['good', 'shady', 'bad'];
-  if (params.top_locales) graphlabels.unshift('top_locales');
-  state = new Data(graphlabels);
-  var latest = {};
-  var _data = {};
-  data = [];
-  function _getState(_count) {
-    if (_count === 0) return 'good';
-    if (_count > params.bound) return 'bad';
-    return 'shady';
-  }
-  Object.assign(_data, loc_data[i].locales);
-  for (loc in loc_data[i].locales) {
-    locales.push(loc);
-    latest[loc] = _getState(loc_data[i].locales[loc]);
-    // no breaks on purpose, to stack data
-    state.update(undefined, latest[loc]);
-  }
-  if (params.top_locales) {
-    state.value('top_locales', missing_after_top_locales(_data, params.top_locales));
-  }
-  data.push(state.data(loc_data[i].time));
-  for (i = 1; i < loc_data.length; ++i) {
-    Object.assign(_data, loc_data[i].locales);
-    for (loc in loc_data[i].locales) {
-      _data[loc] = loc_data[i].locales[loc];
-      let isGood = _getState(loc_data[i].locales[loc]);
-      if (isGood != latest[loc]) {
-        state.update(latest[loc], isGood);
-        latest[loc] = isGood;
-      }
-    }
-    if (params.top_locales) {
-      state.value('top_locales', missing_after_top_locales(_data, params.top_locales))
-    }
-    data.push(state.data(loc_data[i].time));
-  }
-  data.push(state.data(enddate));
+  const plot = new ProgressPlot();
+  data = plot;
+  plot.compute_states();
   var layers = ['good', 'shady'];
   if (!params.hideBad) {
     layers.push('bad');
   }
   data0 = d3.layout.stack()(layers.map(function(k){
-    return data.map(function(d){
+    return plot.states_over_time.map(function(d){
       return {
         x: d.date,
         y: d[k]
@@ -121,7 +122,7 @@ function renderPlot() {
     })
     .y0(function(d) { return tp.y(d.y0); })
     .y1(function(d) { return tp.y(d.y + d.y0); });
-  tp.yDomain([0, d3.max(data.map(function(d) { return d.good + d.shady + (params.hideBad ? 0: d.bad); })) + 10]);
+  tp.yDomain([0, d3.max(plot.states_over_time.map(function(d) { return d.good + d.shady + (params.hideBad ? 0: d.bad); })) + 10]);
   svg.selectAll("path.progress")
      .data(data0)
      .enter()
@@ -135,7 +136,7 @@ function renderPlot() {
   if (params.top_locales) {
       tp.y2Domain([
         0,
-        d3.max(data.map(function(d) { return d.top_locales.missing; })) * 1.1 + 10
+        d3.max(plot.states_over_time.map(function(d) { return d.top_locales.missing; })) * 1.1 + 10
         ]);
       var percLine = d3.svg.line()
       .interpolate('step-after')
@@ -143,7 +144,7 @@ function renderPlot() {
         .y(function(d) {return tp.y2(d.top_locales.missing)});
       svg.append("path")
         .attr("class", "top_locales")
-        .attr("d", percLine(data));
+        .attr("d", percLine(plot.states_over_time));
   }
 
   // --> Changing locales logic <-- //
@@ -218,7 +219,7 @@ function renderPlot() {
       }
 
       for (loc in ldata.locales) {
-        var locState = _getState(ldata.locales[loc]);
+        var locState = plot._getState(ldata.locales[loc]);
 
         if (ldata.time >= startTime) {
           if (lastKnownState[loc] != locState) {
@@ -266,8 +267,8 @@ function renderPlot() {
     );
     if (params.top_locales) {
       var date = tp.x.invert(mouseX), i = 0;
-      while (data[i] && data[i].date < date) ++i;
-      var datum = data[i-1].top_locales;
+      while (plot.states_over_time[i] && plot.states_over_time[i].date < date) ++i;
+      var datum = plot.states_over_time[i-1].top_locales;
       percElt.innerHTML = `${datum.missing} (<a href="${dashboardHistoryUrl + datum.locale}">${datum.locale}</a>)`;
       percElt.parentElement.style.display = '';
     }
@@ -314,9 +315,9 @@ function renderPlot() {
 
   // <-- Changing locales logic --> //
 
-  paintHistogram(_data);
+  paintHistogram(plot.current_missing);
   document.getElementById('my-timeplot').addEventListener('click', onClickPlot);
-  document.getElementById('boundField').value = params.bound;
+  document.getElementById('boundField').value = params.bound || 0;
   document.getElementById('showBadField').checked = !params.hideBad;
   document.getElementById('perctField').value = params.top_locales;
 }
