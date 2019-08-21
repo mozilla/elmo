@@ -25,9 +25,7 @@ class Data {
   data(date) {
     var v = 0, rv = {}, _d = this._data;
     if (date) rv.date = date;
-    this.labels.forEach(function(n) {
-      rv[n] = _d[n];
-    });
+    Object.assign(rv, _d);
     return rv;
   }
 };
@@ -57,25 +55,42 @@ class ProgressPlot {
     const graphlabels = ['good', 'shady', 'bad'];
     if (this.params.top_locales) graphlabels.unshift('top_locales');
     let state = new Data(graphlabels);
-    let current_states = {};
+    let current_states = {}, current_top_state = {};
     this.current_missing = {};
     let _getState = this._getState.bind(this);
     this.states_over_time = loc_data.map(
       (at_time) => {
         Object.assign(this.current_missing, at_time.locales);
+        let changed_locales = {}, skip = true;
         Object.entries(at_time.locales).forEach(([loc, missing]) => {
           let isGood = this._getState(missing);
           if (isGood != current_states[loc]) {
-            state.update(current_states[loc], isGood);
-            current_states[loc] = isGood;
+            changed_locales[loc] = isGood;
+            skip = false;
           }
         });
         if (params.top_locales) {
-          state.value('top_locales', missing_after_top_locales(this.current_missing, params.top_locales));
+          let this_top_state = missing_after_top_locales(this.current_missing, params.top_locales);
+          if (
+            this_top_state.locale !== current_top_state.locale
+            || this_top_state.missing !== current_top_state.missing
+          ) {
+            state.value('top_locales', this_top_state);
+            current_top_state = this_top_state;
+            skip = false;
+          }
         }
+        if (skip) {
+          return false;
+        }
+        Object.entries(changed_locales).forEach(([loc, isGood]) => {
+          state.update(current_states[loc], isGood);
+        });
+        Object.assign(current_states, changed_locales);
+        state.value('changed_locales', changed_locales);
         return state.data(at_time.time);
       }
-    );
+    ).filter(_state => _state);
     this.states_over_time.push(state.data(enddate));
   }
 
@@ -209,39 +224,19 @@ function renderPlot() {
 
   // Return the latest state of each locale that changed in a time window.
   function findChanges(startTime, endTime) {
-    var loc;
-    var results = {};
-    var lastKnownState = {};
-    for (var i = 0, ln = loc_data.length; i < ln; i++) {
-      var ldata = loc_data[i];
-      if (ldata.time > endTime) {
-        break;
-      }
-
-      for (loc in ldata.locales) {
-        var locState = plot._getState(ldata.locales[loc]);
-
-        if (ldata.time >= startTime) {
-          if (lastKnownState[loc] != locState) {
-            results[loc] = locState;
-          }
-          lastKnownState[loc] = locState;
-        }
-        else {
-          lastKnownState[loc] = locState;
-        }
-      }
-    }
-
-    var triagedLocales = {
+    let final_states = {}, triagedLocales = {
       good: [],
       bad: [],
       shady: []
     };
-    for (var l in results) {
-      triagedLocales[results[l]].push(l);
+    for (let _state of plot.states_over_time) {
+      if (_state.date < startTime) continue;
+      if (_state.date > endTime) break;
+      Object.assign(final_states, _state.changed_locales);
     }
-
+    Object.entries(final_states).forEach(
+      ([loc, endState]) => triagedLocales[endState].push(loc)
+    );
     return triagedLocales;
   }
 
@@ -498,13 +493,16 @@ function paintHistogram(d, add) {
   }
 }
 
-function missing_after_top_locales(current, perc) {
-  if (perc <= 0) {
+function missing_after_top_locales(current, cut_off) {
+  if (cut_off <= 0) {
     return 0;
   }
-  var vals = Object.keys(current).map(locale => ({"locale": locale, "missing": current[locale]}));
-  vals.sort((a, b) => a.missing - b.missing);
-  return vals[perc - 1];
+  const vals = Object.entries(current).sort((l, r) => l[1] - r[1]);
+  const rv = vals[cut_off - 1];
+  return {
+    locale: rv[0],
+    missing: rv[1],
+  };
 }
 
 renderPlot();
