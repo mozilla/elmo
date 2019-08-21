@@ -51,7 +51,7 @@ function renderPlot() {
   if (!params.showBad) _p.hideBad = true;
   if (params.bound) _p.bound = params.bound;
   if (params.top_locales) _p.top_locales = params.top_locales;
-  var tp = timeplot("#my-timeplot",
+  var tp = new Timeplot("#my-timeplot",
                     fullrange,
                     [startdate, enddate],
                     _p);
@@ -294,7 +294,7 @@ function renderPlot() {
 
     showTooltip();
   }
-  showMilestones(tp);
+  tp.showMilestones();
 
   // Define a new element that is the size of the graph, and that is used to
   // detect the mouse movements. As this element is on top in the DOM, this

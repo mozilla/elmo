@@ -4,7 +4,7 @@
 /* global d3, timeplot */
 
 function renderPlot() {
-  var tp = timeplot("#my-timeplot",
+  var tp = new Timeplot("#my-timeplot",
                     fullrange,
                     [startdate, enddate],
                     {tree: tree, locale: locale});
@@ -113,7 +113,7 @@ function renderPlot() {
             })
     .attr("d", d3.svg.symbol().type('circle'))
   markers.append('title').text(function(d) {return 'missing: ' + d.missing;});
-  showMilestones(tp);
+  tp.showMilestones();
 }
 
 renderPlot();
