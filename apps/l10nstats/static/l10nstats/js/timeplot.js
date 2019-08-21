@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 /* global d3, URLSearchParams */
+/* global MILESTONES */
 
 /*
  * Generic code to create a view that takes starttime, endtime,
@@ -86,14 +87,14 @@ class Timeplot {
   }
 
   yDomain(d) {
-      this.y.domain(d);
-      this.svg.select("g.y.axis").call(this.yAxis);
-    }
+    this.y.domain(d);
+    this.svg.select("g.y.axis").call(this.yAxis);
+  }
 
   y2Domain(d) {
-      this.y2.domain(d);
-      this.svg.select("g.y2.axis").call(this.yAxis2);
-    }
+    this.y2.domain(d);
+    this.svg.select("g.y2.axis").call(this.yAxis2);
+  }
 
   showMilestones() {
     var milestone, ms_label, ms_tick;

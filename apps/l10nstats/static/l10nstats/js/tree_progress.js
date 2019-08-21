@@ -1,14 +1,17 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* global d3 */
+/* global $, d3, HIDE_BAD, BOUND, top_locales, LOCALE_DATA */
+/* global startdate, enddate, fullrange */
+/* global Timeplot, formatRoundedDate, Clusterer */
 
 class Data {
   constructor(labels) {
     this.labels = labels;
     this._data = {};
-    var _d = this._data;
-    this.labels.forEach(label => {this._data[label] = 0})
+    this.labels.forEach((label) => {
+      this._data[label] = 0;
+    });
   }
 
   update(from, to) {
@@ -23,12 +26,12 @@ class Data {
   }
 
   data(date) {
-    var v = 0, rv = {}, _d = this._data;
+    var rv = {};
     if (date) rv.date = date;
-    Object.assign(rv, _d);
+    Object.assign(rv, this._data);
     return rv;
   }
-};
+}
 
 var params = {};
 if (HIDE_BAD) {
@@ -41,7 +44,7 @@ if (top_locales) {
   params.top_locales = top_locales;
 }
 
-var data, state, data0, X;
+var data, data0, X;
 var loc_data = LOCALE_DATA;
 
 var dashboardHistoryUrl = window.DASHBOARD_HISTORY_URL + "&starttime=" + formatRoundedDate(startdate) + "&endtime=" + formatRoundedDate(enddate) + "&locale="
@@ -57,14 +60,13 @@ class ProgressPlot {
     let state = new Data(graphlabels);
     let current_states = {}, current_top_state = {};
     this.current_missing = {};
-    let _getState = this._getState.bind(this);
     this.states_over_time = loc_data.map(
       (at_time) => {
         Object.assign(this.current_missing, at_time.locales);
         let changed_locales = {}, skip = true;
         Object.entries(at_time.locales).forEach(([loc, missing]) => {
           let isGood = this._getState(missing);
-          if (isGood != current_states[loc]) {
+          if (isGood !== current_states[loc]) {
             changed_locales[loc] = isGood;
             skip = false;
           }
@@ -90,12 +92,12 @@ class ProgressPlot {
         state.value('changed_locales', changed_locales);
         return state.data(at_time.time);
       }
-    ).filter(_state => _state);
+    ).filter((_state) => _state);
     this.states_over_time.push(state.data(enddate));
   }
 
   _getState(count) {
-    if (count == 0) return 'good';
+    if (count === 0) return 'good';
     if (count > this.params.bound) return 'bad';
     return 'shady';
   }
@@ -122,47 +124,36 @@ function renderPlot() {
   if (!params.hideBad) {
     layers.push('bad');
   }
-  data0 = d3.layout.stack()(layers.map(function(k){
-    return plot.states_over_time.map(function(d){
-      return {
-        x: d.date,
-        y: d[k]
-      };
-    });
-  }));
+  data0 = d3.layout.stack()(layers.map(
+    (k) => plot.states_over_time.map((d) => ({x: d.date, y: d[k]}))
+  ));
   var area = d3.svg.area()
     .interpolate("step-after")
-    .x(function(d) {
-      return tp.x(d.x);
-    })
-    .y0(function(d) { return tp.y(d.y0); })
-    .y1(function(d) { return tp.y(d.y + d.y0); });
-  tp.yDomain([0, d3.max(plot.states_over_time.map(function(d) { return d.good + d.shady + (params.hideBad ? 0: d.bad); })) + 10]);
+    .x((d) => tp.x(d.x))
+    .y0((d) => tp.y(d.y0))
+    .y1((d) => tp.y(d.y + d.y0));
+  tp.yDomain([0, d3.max(plot.states_over_time.map((d) => d.good + d.shady + (params.hideBad ? 0 : d.bad))) + 10]);
   svg.selectAll("path.progress")
      .data(data0)
      .enter()
      .append("path")
      .attr("class", "progress")
      .style("stroke", "black")
-     .style("fill", function (d, i) {
-        return ['#339900', 'grey', '#990000'][i];
-      })
+     .style("fill", (d, i) => ['#339900', 'grey', '#990000'][i])
      .attr("d", area);
   if (params.top_locales) {
       tp.y2Domain([
         0,
-        d3.max(plot.states_over_time.map(function(d) { return d.top_locales.missing; })) * 1.1 + 10
+        d3.max(plot.states_over_time.map((d) => d.top_locales.missing)) * 1.1 + 10
         ]);
       var percLine = d3.svg.line()
       .interpolate('step-after')
-        .x(function(d) {return tp.x(d.date)})
-        .y(function(d) {return tp.y2(d.top_locales.missing)});
+        .x((d) => tp.x(d.date))
+        .y((d) => tp.y2(d.top_locales.missing));
       svg.append("path")
         .attr("class", "top_locales")
         .attr("d", percLine(plot.states_over_time));
   }
-
-  // --> Changing locales logic <-- //
 
   // Utility function to add a list of locales to a DOM element.
   function showLocalesInElement(locales, element) {
@@ -182,7 +173,7 @@ function renderPlot() {
     clippedElt.className = "clipped";
     var addTo = element;
 
-    for (var i = 0; i < ln; i++) {
+    for (var i = 0; i < ln; ++i) {
       var locale = locales[i];
 
       var linkElt = document.createElement("a");
@@ -334,12 +325,11 @@ function onClickPlot(evt) {
   paintHistogram(d, evt.controlKey || evt.metaKey);
 }
 
-let kown_graphs = [];
+var kown_graphs = [];
 function paintPercentile(d, add) {
   let missing2locales = {};
   let locales = Object.keys(d);
-  locales.forEach(locale => {
-    let loc_list;
+  locales.forEach((locale) => {
     const missing = d[locale];
     if (!(missing in missing2locales)) {
       missing2locales[missing] = [];
@@ -351,10 +341,10 @@ function paintPercentile(d, add) {
   if (!add) {
     known_graphs = [];
   }
-  known_graphs.push(x.map(_x => ({
+  known_graphs.push(x.map((_x) => ({
     x: _x,
     locales: missing2locales[_x],
-    percentile: last += missing2locales[_x].length,
+    percentile: (last += missing2locales[_x].length),
   })));
   let xmargin = 40, ymargin = 40;
   let {width, height} = window.getComputedStyle(document.querySelector('#percentile'));
@@ -387,14 +377,14 @@ function paintPercentile(d, add) {
     .call(y_axis);
   let line = d3.svg.line()
     .interpolate("step-after")
-    .x(d => x_scale(d.x))
-    .y(d => y_scale(d.percentile));
+    .x((point) => x_scale(point.x))
+    .y((point) => y_scale(point.percentile));
   svg.selectAll("path.perc_line").data(known_graphs)
       .enter()
       .append("path")
       .attr("class", "perc_line")
       .attr("fill", "none")
-      .attr("stroke", (d, i) => c_scale(i))
+      .attr("stroke", (_, i) => c_scale(i))
       .attr("stroke-width", 1.5)
       .attr("stroke-linejoin", "round")
       .attr("stroke-linecap", "round")
@@ -403,12 +393,14 @@ function paintPercentile(d, add) {
 
 function paintHistogram(d, add) {
   paintPercentile(d, add)
-  var data, loc, i;
-  function numerical(a, b) {return a-b;}
-  data = Object.values(d).sort(numerical);
+  let missing_values, loc, i, j;
+  function numerical(a, b) {
+    return a - b;
+  }
+  missing_values = Object.values(d).sort(numerical);
   var smooth = Math.sqrt;
-  var clusterer = new Clusterer(data, smooth);
-  var ranges = clusterer.get_ranges(4); // TODO find something better
+  var clusterer = new Clusterer(missing_values, smooth);
+  var ranges = clusterer.get_ranges(4);
   var hists = new Array(ranges.length);
   for (i = 0; i < hists.length; ++i) hists[i] = [];
   var maxcount = 1;
@@ -421,7 +413,8 @@ function paintHistogram(d, add) {
       if (hists[i][val].length > maxcount) {
         maxcount = hists[i][val].length;
       }
-    } else {
+    }
+    else {
       hists[i][val] = [loc];
     }
   }
@@ -440,26 +433,27 @@ function paintHistogram(d, add) {
   hist_block.css('padding-left', '1px').css('padding-right', '1px');
   // create display of histogram
   var barwidth = 7;
-  var chart_height = Number(hist_block.css('height').replace('px',''));
-  var display_f = function(_v) {
+  var chart_height = Number(hist_block.css('height').replace('px', ''));
+  function display_f(_v) {
     return Math.pow(_v, 3 / 4);
-  };
-  var scale = chart_height * 1.0 / display_f(maxcount);
-  var hist, range, td, values, previous_j, _left, v, height;
-  function valuesForHist(h) {
-    function m(v, i) {
-      return v ? i : undefined;
-    }
-    function f(v) {return v!== undefined;}
-    return h.map(m).filter(f);
   }
-  for (i in hists) {
+  var scale = chart_height * 1.0 / display_f(maxcount);
+  var hist, range, td, values, previous_j, _left, height;
+  function valuesForHist(h) {
+    return h.map(
+      (v, i_) => (v ? i_ : undefined)
+    ).filter(
+      (v) => (v !== undefined)
+    );
+  }
+  for (i=0; i < hists.length; ++i) {
     hist = hists[i];
     range = ranges[i];
     td = $('<td>').appendTo(descs_row);
-    if (range.min == range.max) {
+    if (range.min === range.max) {
       td.append(range.min);
-    } else {
+    }
+    else {
       td.append(range.min + ' - ' + range.max);
     }
     td = $('<td>').attr('title', range.count).appendTo(graphs_row);
@@ -468,9 +462,8 @@ function paintHistogram(d, add) {
     values.sort(numerical);
     previous_j = null;
     _left = 0;
-    for (var k in values) {
-      j = values[k];
-      v = hist[j];
+    for (j of values) {
+      let v = hist[j];
       v.sort();
       height = display_f(v.length) * scale;
       if (previous_j !== null) {
