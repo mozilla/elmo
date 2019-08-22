@@ -75,13 +75,15 @@ td:nth-child(even) {
     display: table-cell;
     padding: 2px 10px;
 }
-.tooltip .clipped,
-.tooltip:hover .hellip {
+
+.tooltip a:not(:first-child):before {
+    content: ", ";
+}
+.tooltip:not(:hover) .clipping .clip {
     display: none;
 }
-.tooltip:hover .clipped,
-.tooltip .hellip {
-    display: inline;
+.tooltip:not(:hover) .clipping > span:after {
+    content: "…";
 }
 
 .top_locales {

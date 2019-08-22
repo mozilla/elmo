@@ -50,7 +50,8 @@ var loc_data = LOCALE_DATA;
 var dashboardHistoryUrl = window.DASHBOARD_HISTORY_URL + "&starttime=" + formatRoundedDate(startdate) + "&endtime=" + formatRoundedDate(enddate) + "&locale="
 
 class ProgressPlot {
-  constructor() {
+  constructor(timeplot) {
+    this.timeplot = timeplot;
     this.params = params;
   }
 
@@ -103,20 +104,157 @@ class ProgressPlot {
   }
 }
 
+class Tooltip {
+  constructor(parent) {
+    this.plot = parent;
+  }
+
+  render() {
+    this.tooltipElt = document.getElementById('locales-tooltip');
+    this.goodLocalesElt = this.tooltipElt.querySelector('.good');
+    this.shadyLocalesElt = this.tooltipElt.querySelector('.shady');
+    this.badLocalesElt = this.tooltipElt.querySelector('.bad');
+    this.percElt = this.tooltipElt.querySelector('.top_locales')
+    let tp = this.plot.timeplot;
+    let svg = tp.svg;
+
+    // Create the transparent white box that follows the mouse and shows the
+    // considered time range.
+    const whiteBoxWidth = 20; // pixels
+    this.whiteBoxOffset = whiteBoxWidth / 2;
+    this.whiteBox = svg.append("g").append("rect");
+    this.whiteBox.attr("x", -9999)
+      .attr("y", tp.y(0) - tp.height - 1)
+      .attr("width", whiteBoxWidth)
+      .attr("height", tp.height)
+      .style("fill", "white")
+      .style("stroke", "white")
+      .style("opacity", "0.2");
+
+    // Define a new element that is the size of the graph, and that is used to
+    // detect the mouse movements. As this element is on top in the DOM, this
+    // ensures all mouse events will be caught.
+    this.graphZone = svg.append("g").append("rect");
+    this.graphZone.attr("x", 0)
+      .attr("y", tp.y(0) - tp.height - 1)
+      .attr("width", tp.width)
+      .attr("height", tp.height)
+      .style("opacity", 0);
+
+    // Hide and show the tooltip and the white box.
+    this.graphZone
+      .on("mousemove", () => this.showLocalesTooltip())
+      .on("mouseout", () => this.hideTooltip());
+
+    this.tooltipElt.addEventListener("mouseover", () => this.showTooltip());
+    this.tooltipElt.addEventListener("mouseout", () => this.hideTooltip());
+  }
+
+  // Return the latest state of each locale that changed in a time window.
+  findChanges(startTime, endTime) {
+    let final_states = {}, triagedLocales = {
+      good: [],
+      bad: [],
+      shady: []
+    };
+    for (let _state of this.plot.states_over_time) {
+      if (_state.date < startTime) continue;
+      if (_state.date > endTime) break;
+      Object.assign(final_states, _state.changed_locales);
+    }
+    Object.entries(final_states).forEach(
+      ([loc, endState]) => triagedLocales[endState].push(loc)
+    );
+    return triagedLocales;
+  }
+
+  showTooltip() {
+    this.whiteBox.style("opacity", 0.2);
+    this.tooltipElt.style.display = 'block';
+  }
+
+  hideTooltip() {
+    this.whiteBox.style("opacity", 0);
+    this.tooltipElt.style.display = 'none';
+  }
+
+  showLocalesTooltip() {
+    const plot = this.plot;
+    const tp = plot.timeplot;
+    // First update the position of the white box.
+    let mouseX = d3.mouse(this.graphZone.flat()[0])[0];
+    this.whiteBox.attr("x", mouseX - this.whiteBoxOffset);
+
+    // Then compute the list of changing locales in this range.
+    var triagedLocales = this.findChanges(
+      tp.x.invert(mouseX - this.whiteBoxOffset),
+      tp.x.invert(mouseX + this.whiteBoxOffset)
+    );
+    if (plot.params.top_locales) {
+      var date = tp.x.invert(mouseX), i = 0;
+      while (plot.states_over_time[i] && plot.states_over_time[i].date < date) ++i;
+      var datum = plot.states_over_time[i-1].top_locales;
+      this.percElt.innerHTML = `${datum.missing} (<a href="${dashboardHistoryUrl + datum.locale}">${datum.locale}</a>)`;
+      this.percElt.parentElement.style.display = '';
+    }
+    else {
+      this.percElt.parentElement.style.display = 'none';
+    }
+
+    // Finaly show those locales in the tooltip box.
+    this.showLocalesInElement(triagedLocales.good, this.goodLocalesElt);
+    this.showLocalesInElement(triagedLocales.bad, this.badLocalesElt);
+    this.showLocalesInElement(triagedLocales.shady, this.shadyLocalesElt);
+
+    if (mouseX > tp.width / 2) {
+      this.tooltipElt.style.right = (tp.width - mouseX) + "px";
+      this.tooltipElt.style.left = "auto";
+    }
+    else {
+      this.tooltipElt.style.left = mouseX + "px";
+      this.tooltipElt.style.right = "auto";
+    }
+
+    this.showTooltip();
+  }
+
+  // Utility function to add a list of locales to a DOM element.
+  showLocalesInElement(locales, element) {
+    // Maximum number of elements that will be shown in the reduced tooltip.
+    const clipTreshold = 4;
+
+    if (locales.length === 0) {
+      element.textContent = "-";
+      return;
+    }
+
+    element.innerHTML = '';
+    locales.forEach((locale, i) => {
+      let linkElt = document.createElement("a");
+      linkElt.href= dashboardHistoryUrl + locale;
+      linkElt.textContent = locale;
+      if (i >= clipTreshold) {
+        linkElt.className = "clip";
+      }
+      element.appendChild(linkElt);
+    });
+    if (element.lastChild.classList.contains("clip")) {
+      element.classList.add("clipping");
+      element.appendChild(document.createElement("span"));
+    }
+    else {
+      element.classList.remove("clipping");
+    }
+  }
+}
+
 function renderPlot() {
   var tp = new Timeplot("#my-timeplot", params);
   var svg = tp.svg;
   X = tp.x;
 
-  var tooltipElt = document.getElementById('locales-tooltip');
-  var goodLocalesElt = tooltipElt.querySelector('.good');
-  var shadyLocalesElt = tooltipElt.querySelector('.shady');
-  var badLocalesElt = tooltipElt.querySelector('.bad');
-  var percElt = tooltipElt.querySelector('.top_locales')
-
-  const plot = new ProgressPlot();
+  const plot = new ProgressPlot(tp);
   data = plot;
-  data.tp = tp;
   plot.compute_states();
   var layers = ['good', 'shady'];
   if (!params.hideBad) {
@@ -160,149 +298,10 @@ function renderPlot() {
         .attr("d", percLine(plot.states_over_time));
   }
 
-  // Utility function to add a list of locales to a DOM element.
-  function showLocalesInElement(locales, element) {
-    var ln = locales.length;
-
-    // Maximum number of elements that will be shown in the reduced tooltip.
-    var clipTreshold = 4;
-
-    if (ln === 0) {
-      element.textContent = "-";
-      return;
-    }
-
-    element.innerHTML = '';
-
-    var clippedElt = document.createElement("span");
-    clippedElt.className = "clipped";
-    var addTo = element;
-
-    for (var i = 0; i < ln; ++i) {
-      var locale = locales[i];
-
-      var linkElt = document.createElement("a");
-      linkElt.href= dashboardHistoryUrl + locale;
-      linkElt.textContent = locale;
-
-      if (i >= clipTreshold) {
-        addTo = clippedElt;
-      }
-
-      if (i > 0) {
-        addTo.appendChild(document.createTextNode(', '));
-      }
-      addTo.appendChild(linkElt);
-    }
-
-    element.appendChild(clippedElt);
-
-    if (ln > clipTreshold) {
-      const hellip = document.createElement("span");
-      hellip.className = "hellip";
-      hellip.textContent = "…";
-      element.appendChild(hellip);
-    }
-  }
-
-  // Create the transparent white box that follows the mouse and shows the
-  // considered time range.
-  var whiteBoxWidth = 20; // pixels
-  var whiteBoxOffset = whiteBoxWidth / 2;
-  var whiteBox = svg.append("g").append("rect");
-  whiteBox.attr("x", -9999)
-    .attr("y", tp.y(0) - tp.height - 1)
-    .attr("width", whiteBoxWidth)
-    .attr("height", tp.height)
-    .style("fill", "white")
-    .style("stroke", "white")
-    .style("opacity", "0.2");
-
-  // Return the latest state of each locale that changed in a time window.
-  function findChanges(startTime, endTime) {
-    let final_states = {}, triagedLocales = {
-      good: [],
-      bad: [],
-      shady: []
-    };
-    for (let _state of plot.states_over_time) {
-      if (_state.date < startTime) continue;
-      if (_state.date > endTime) break;
-      Object.assign(final_states, _state.changed_locales);
-    }
-    Object.entries(final_states).forEach(
-      ([loc, endState]) => triagedLocales[endState].push(loc)
-    );
-    return triagedLocales;
-  }
-
-  function showTooltip() {
-    whiteBox.style("opacity", 0.2);
-    tooltipElt.style.display = 'block';
-  }
-
-  function hideTooltip() {
-    whiteBox.style("opacity", 0);
-    tooltipElt.style.display = 'none';
-  }
-
-  function showLocalesTooltip() {
-    // First update the position of the white box.
-    var mouseX = d3.mouse(this)[0];
-    whiteBox.attr("x", mouseX - whiteBoxOffset);
-
-    // Then compute the list of changing locales in this range.
-    var triagedLocales = findChanges(
-      tp.x.invert(mouseX - whiteBoxOffset),
-      tp.x.invert(mouseX + whiteBoxOffset)
-    );
-    if (params.top_locales) {
-      var date = tp.x.invert(mouseX), i = 0;
-      while (plot.states_over_time[i] && plot.states_over_time[i].date < date) ++i;
-      var datum = plot.states_over_time[i-1].top_locales;
-      percElt.innerHTML = `${datum.missing} (<a href="${dashboardHistoryUrl + datum.locale}">${datum.locale}</a>)`;
-      percElt.parentElement.style.display = '';
-    }
-    else {
-      percElt.parentElement.style.display = 'none';
-    }
-
-    // Finaly show those locales in the tooltip box.
-    if (triagedLocales) {
-      showLocalesInElement(triagedLocales.good, goodLocalesElt);
-      showLocalesInElement(triagedLocales.bad, badLocalesElt);
-      showLocalesInElement(triagedLocales.shady, shadyLocalesElt);
-    }
-
-    if (mouseX > tp.width / 2) {
-      tooltipElt.style.right = (tp.width - mouseX) + "px";
-      tooltipElt.style.left = "auto";
-    }
-    else {
-      tooltipElt.style.left = mouseX + "px";
-      tooltipElt.style.right = "auto";
-    }
-
-    showTooltip();
-  }
   tp.showMilestones();
 
-  // Define a new element that is the size of the graph, and that is used to
-  // detect the mouse movements. As this element is on top in the DOM, this
-  // ensures all mouse events will be caught.
-  var graphZone = svg.append("g").append("rect");
-  graphZone.attr("x", 0)
-    .attr("y", tp.y(0) - tp.height - 1)
-    .attr("width", tp.width)
-    .attr("height", tp.height)
-    .style("opacity", 0);
-
-  // Hide and show the tooltip and the white box.
-  graphZone.on("mousemove", showLocalesTooltip)
-           .on("mouseout", hideTooltip);
-
-  tooltipElt.addEventListener("mouseover", showTooltip);
-  tooltipElt.addEventListener("mouseout", hideTooltip);
+  const tooltip = new Tooltip(plot);
+  tooltip.render();
 
   // <-- Changing locales logic --> //
 
