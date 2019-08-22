@@ -104,10 +104,7 @@ class ProgressPlot {
 }
 
 function renderPlot() {
-  var tp = new Timeplot("#my-timeplot",
-                    fullrange,
-                    [startdate, enddate],
-                    params);
+  var tp = new Timeplot("#my-timeplot", params);
   var svg = tp.svg;
   X = tp.x;
 
@@ -119,6 +116,7 @@ function renderPlot() {
 
   const plot = new ProgressPlot();
   data = plot;
+  data.tp = tp;
   plot.compute_states();
   var layers = ['good', 'shady'];
   if (!params.hideBad) {
@@ -132,7 +130,18 @@ function renderPlot() {
     .x((d) => tp.x(d.x))
     .y0((d) => tp.y(d.y0))
     .y1((d) => tp.y(d.y + d.y0));
-  tp.yDomain([0, d3.max(plot.states_over_time.map((d) => d.good + d.shady + (params.hideBad ? 0 : d.bad))) + 10]);
+  let yDomain = [0, 0], y2Domain;
+  if (params.hideBad) {
+    yDomain[1] = d3.max(plot.states_over_time.map((d) => d.good + d.shady));
+  }
+  else {
+    yDomain[1] = d3.max(plot.states_over_time.map((d) => d.good + d.shady + d.bad));
+  }
+  yDomain[1] += 10;
+  if (params.top_locales) {
+    y2Domain = [0, d3.max(plot.states_over_time.map((d) => d.top_locales.missing)) * 1.1 + 10];
+  }
+  tp.drawAxes([startdate, enddate], fullrange, yDomain, y2Domain);
   svg.selectAll("path.progress")
      .data(data0)
      .enter()
@@ -142,10 +151,6 @@ function renderPlot() {
      .style("fill", (d, i) => ['#339900', 'grey', '#990000'][i])
      .attr("d", area);
   if (params.top_locales) {
-      tp.y2Domain([
-        0,
-        d3.max(plot.states_over_time.map((d) => d.top_locales.missing)) * 1.1 + 10
-        ]);
       var percLine = d3.svg.line()
       .interpolate('step-after')
         .x((d) => tp.x(d.date))

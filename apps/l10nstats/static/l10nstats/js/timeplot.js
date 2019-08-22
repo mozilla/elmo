@@ -10,7 +10,7 @@
  */
 
 class Timeplot {
-  constructor(selector, fullrange, domain, params, options) {
+  constructor(selector, params, options) {
     const defaultoptions = {xmargin: 40, ymargin: 40, yAxes: 2};
     options = Object.assign({}, defaultoptions, options);
     let {width, height} = window.getComputedStyle(
@@ -58,42 +58,47 @@ class Timeplot {
     this.svg.append("svg:g")
       .attr("class", "y2 axis")
       .attr("transform", `translate(${this.width},0)`);
-    var brush = d3.svg.brush()
+    this.brush = d3.svg.brush()
       .x(x);
-    brush.on("brushend", this._onBrushEnd(brush, params));
-    var brush2 = d3.svg.brush()
+    this.brush.on("brushend", this._onBrushEnd(this.brush, params));
+    this.brush2 = d3.svg.brush()
       .x(x2);
-    brush2.on("brushend", this._onBrushEnd(brush2, params));
-    x.domain(domain);
-    x2.domain(fullrange);
-    brush2.extent(domain);
-    this.svg.select("g.x.axis").call(xAxis);
-    this.svg.select("g.x2.axis").call(xAxis2);
-    this.svg.select("g.x.axis").append("g")
-      .attr("class", "x brush")
-      .call(brush)
-      .selectAll("rect")
-      .attr("height", options.ymargin);
-    this.svg.select("g.x2.axis").append("g")
-      .attr("class", "x brush")
-      .call(brush2)
-      .selectAll("rect")
-      .attr("height", options.ymargin);
+    this.brush2.on("brushend", this._onBrushEnd(this.brush2, params));
     this.x = x;
+    this.x2 = x2;
     this.y = y;
     this.y2 = y2;
+    this.xAxis = xAxis;
+    this.xAxis2 = xAxis2;
     this.yAxis = yAxis;
     this.yAxis2 = yAxis2;
+    this.options = options;
   }
 
-  yDomain(d) {
-    this.y.domain(d);
+  drawAxes(xDomain, fullXDomain, yDomain, y2Domain) {
+    this.x.domain(xDomain);
+    this.x2.domain(fullXDomain);
+    this.y.domain(yDomain);
+    if (y2Domain) {
+      this.y2.domain(y2Domain);
+    }
+    this.brush2.extent(xDomain);
+    this.svg.select("g.x.axis").call(this.xAxis);
+    this.svg.select("g.x2.axis").call(this.xAxis2);
     this.svg.select("g.y.axis").call(this.yAxis);
-  }
-
-  y2Domain(d) {
-    this.y2.domain(d);
-    this.svg.select("g.y2.axis").call(this.yAxis2);
+    if (y2Domain) {
+      this.svg.select("g.y2.axis").call(this.yAxis2);
+    }
+    this.svg.select("g.x.axis").append("g")
+      .attr("class", "x brush")
+      .call(this.brush)
+      .selectAll("rect")
+      .attr("height", this.options.ymargin);
+    this.svg.select("g.x2.axis").append("g")
+      .attr("class", "x2 brush")
+      .call(this.brush2)
+      .selectAll("rect")
+      .attr("height", this.options.ymargin);
   }
 
   showMilestones() {

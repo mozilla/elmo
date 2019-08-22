@@ -7,10 +7,7 @@
 var data;
 
 function renderPlot() {
-  var tp = new Timeplot("#my-timeplot",
-                    fullrange,
-                    [startdate, enddate],
-                    {tree, locale});
+  var tp = new Timeplot("#my-timeplot", {tree, locale});
   var svg = tp.svg;
   var defs = svg.append("defs");
 
@@ -66,8 +63,13 @@ function renderPlot() {
     };
   }
   data = d3.csv.parseRows(document.getElementById("txtData").textContent.trim(), processRow);
-  tp.yDomain([0, d3.max(data.map((d) => d3.max([d.missing, d.obsolete])))]);
-  tp.y2Domain([0, d3.max(data.map((d) => d.unchanged))]);
+  tp.drawAxes(
+    [startdate, enddate], fullrange,
+    [0, d3.max(data.map((d) => d3.max([d.missing, d.obsolete])))],
+    [0, d3.max(data.map((d) => d.unchanged))]
+  )
+  // tp.yDomain([0, d3.max(data.map((d) => d3.max([d.missing, d.obsolete])))]);
+  // tp.y2Domain([0, d3.max(data.map((d) => d.unchanged))]);
   svg.selectAll("rect.high")
     .data(Array.from(document.querySelectorAll('.highlight')))
     .enter()
