@@ -73,7 +73,7 @@ class ProgressPlot {
           }
         });
         if (params.top_locales) {
-          let this_top_state = missing_after_top_locales(this.current_missing, params.top_locales);
+          let this_top_state = this.missing_after_top_locales(this.current_missing, params.top_locales);
           if (
             this_top_state.locale !== current_top_state.locale
             || this_top_state.missing !== current_top_state.missing
@@ -102,6 +102,18 @@ class ProgressPlot {
     if (count > this.params.bound) return 'bad';
     return 'shady';
   }
+
+  missing_after_top_locales(current, cut_off) {
+  if (cut_off <= 0) {
+    return 0;
+  }
+  const vals = Object.entries(current).sort((l, r) => l[1] - r[1]);
+  const rv = vals[cut_off - 1];
+  return {
+    locale: rv[0],
+    missing: rv[1],
+  };
+}
 }
 
 class Tooltip {
@@ -329,74 +341,122 @@ function onClickPlot(evt) {
   paintHistogram(d, evt.controlKey || evt.metaKey);
 }
 
-var kown_graphs = [];
-function paintPercentile(d, add) {
-  let missing2locales = {};
-  let locales = Object.keys(d);
-  locales.forEach((locale) => {
-    const missing = d[locale];
-    if (!(missing in missing2locales)) {
-      missing2locales[missing] = [];
-    }
-    missing2locales[missing].push(locale);
-  });
-  let x = Object.keys(missing2locales), last=0;
-  x.sort((l, r) => l - r);
-  if (!add) {
-    known_graphs = [];
+class LocalesMissingPlot {
+  constructor() {
+    this.root = document.querySelector('#percentile');
+    this.kown_graphs = [];
+    let x_scale = d3.scale.sqrt();
+    let y_scale = d3.scale.linear();
+    this.x_axis = d3.svg.axis()
+      .scale(x_scale)
+      .orient("bottom");
+    this.y_axis = d3.svg.axis()
+      .scale(y_scale)
+      .orient("left");
+    this.c_scale = d3.scale.category10();
+    this.x_axis.scale().domain([0, 0]);
+    this.y_axis.scale().domain([0, 0]);
+    this.svg = d3.select('#percentile').html('').append("svg");
+    let render = this.svg.append("g")
+      .attr("class", "render");
+
+    // Add the x-axis.
+    render.append("svg:g")
+      .attr("class", "x axis");
+    // Add the y-axis.
+    render.append("svg:g")
+      .attr("class", "y axis");
+    this.line = d3.svg.line()
+      .interpolate("step-after")
+      .x((point) => x_scale(point.x))
+      .y((point) => y_scale(point.percentile));
   }
-  known_graphs.push(x.map((_x) => ({
-    x: _x,
-    locales: missing2locales[_x],
-    percentile: (last += missing2locales[_x].length),
-  })));
-  let xmargin = 40, ymargin = 40;
-  let {width, height} = window.getComputedStyle(document.querySelector('#percentile'));
-  width = +(width.replace('px', '')) - 2*xmargin;
-  height = +(height.replace('px', '')) - 2*ymargin;
-  let x_scale = d3.scale.sqrt()
-      .range([0, width])
-      .domain([0, x[x.length - 1] * 1.1]);
-  let y_scale = d3.scale.linear()
-      .range([height, 0])
-      .domain([0, locales.length]);
-  let c_scale = d3.scale.category10()
-      .domain([0, known_graphs.length])
-  let x_axis = d3.svg.axis().scale(x_scale).orient("bottom"),
-    y_axis = d3.svg.axis().scale(y_scale).orient("left");
-  var svg = d3.select('#percentile').html('').append("svg")
+
+  show(snapshot, add=false) {
+    if (!add) {
+      this.known_graphs = [];
+      this.x_axis.scale().domain([0, 0]);
+      this.y_axis.scale().domain([0, 0]);
+    }
+    this.known_graphs.push(this.process(snapshot));
+    this.render();
+  }
+
+  process(d) {
+    let missing2locales = {};
+    let locales = Object.keys(d);
+    locales.forEach((locale) => {
+      const missing = d[locale];
+      if (!(missing in missing2locales)) {
+        missing2locales[missing] = [];
+      }
+      missing2locales[missing].push(locale);
+    });
+    let x = Object.keys(missing2locales), last=0;
+    x.sort((l, r) => l - r);
+    this.x_axis.scale()
+      .domain([
+        0,
+        Math.max(this.x_axis.scale().domain()[1], x[x.length - 1] * 1.1)
+      ]);
+    this.y_axis.scale()
+      .domain([
+        0,
+        Math.max(this.y_axis.scale().domain()[1], locales.length)
+      ]);
+    return x.map((_x) => ({
+      x: _x,
+      locales: missing2locales[_x],
+      percentile: (last += missing2locales[_x].length),
+    }));
+  }
+
+  render () {
+    let xmargin = 40, ymargin = 40;
+    let {width, height} = window.getComputedStyle(this.root);
+    width = +(width.replace('px', '')) - 2*xmargin;
+    height = +(height.replace('px', '')) - 2*ymargin;
+    let x_scale = this.x_axis.scale();
+    let y_scale = this.y_axis.scale();
+    x_scale.range([0, width]);
+    y_scale.range([height, 0]);
+    this.c_scale.domain([0, this.known_graphs.length])
+    this.svg
       .attr("width", width + xmargin)
       .attr("height", height + 2*ymargin)
-      .append("g")
+    this.svg.select("g.render")
       .attr("transform", "translate(" + xmargin + "," + ymargin + ")");
 
-  // Add the x-axis.
-  svg.append("svg:g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + height + ")")
-    .call(x_axis);
-  // Add the y-axis.
-  svg.append("svg:g")
-    .attr("class", "y axis")
-    .call(y_axis);
-  let line = d3.svg.line()
-    .interpolate("step-after")
-    .x((point) => x_scale(point.x))
-    .y((point) => y_scale(point.percentile));
-  svg.selectAll("path.perc_line").data(known_graphs)
+    // Render the x-axis.
+    this.svg.select("g.x.axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(this.x_axis);
+    // Render the y-axis.
+    this.svg.select("g.y.axis")
+      .call(this.y_axis);
+    let bound = this.svg.select("g.render").selectAll("path.perc_line")
+      .data(this.known_graphs);
+    bound.exit().remove();
+    bound
+      .attr("stroke", (_, i) => this.c_scale(i))
+      .attr("d", this.line);
+    bound
       .enter()
       .append("path")
       .attr("class", "perc_line")
       .attr("fill", "none")
-      .attr("stroke", (_, i) => c_scale(i))
+      .attr("stroke", (_, i) => this.c_scale(i))
       .attr("stroke-width", 1.5)
       .attr("stroke-linejoin", "round")
       .attr("stroke-linecap", "round")
-      .attr("d", line);
+      .attr("d", this.line);
+  }
 }
 
+const missing_plot = new LocalesMissingPlot();
+
 function paintHistogram(d, add) {
-  paintPercentile(d, add)
+  missing_plot.show(d, add)
   let missing_values, loc, i, j;
   function numerical(a, b) {
     return a - b;
@@ -488,18 +548,6 @@ function paintHistogram(d, add) {
     }
     td.css("width", Number(_left).toFixed(1) + 'px');
   }
-}
-
-function missing_after_top_locales(current, cut_off) {
-  if (cut_off <= 0) {
-    return 0;
-  }
-  const vals = Object.entries(current).sort((l, r) => l[1] - r[1]);
-  const rv = vals[cut_off - 1];
-  return {
-    locale: rv[0],
-    missing: rv[1],
-  };
 }
 
 renderPlot();
