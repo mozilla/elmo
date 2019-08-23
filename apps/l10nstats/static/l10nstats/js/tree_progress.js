@@ -262,7 +262,7 @@ class Tooltip {
 
 function renderPlot() {
   var tp = new Timeplot("#my-timeplot", params);
-  var svg = tp.svg;
+  var svg = tp.graph_layer;
   X = tp.x;
 
   const plot = new ProgressPlot(tp);
@@ -314,8 +314,6 @@ function renderPlot() {
 
   const tooltip = new Tooltip(plot);
   tooltip.render();
-
-  // <-- Changing locales logic --> //
 
   paintHistogram(plot.current_missing);
   document.getElementById('my-timeplot').addEventListener('click', onClickPlot);

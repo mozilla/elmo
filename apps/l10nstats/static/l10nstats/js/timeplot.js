@@ -58,6 +58,10 @@ class Timeplot {
     this.svg.append("svg:g")
       .attr("class", "y2 axis")
       .attr("transform", `translate(${this.width},0)`);
+    this.graph_layer = this.svg.append("g")
+      .attr("class", "graph layer");
+    this.milestone_layer = this.svg.append("g")
+      .attr("class", "milestone layer");
     this.brush = d3.svg.brush()
       .x(x);
     this.brush.on("brushend", this._onBrushEnd(this.brush, params));
@@ -102,22 +106,28 @@ class Timeplot {
   }
 
   showMilestones() {
-    var milestone, ms_label, ms_tick;
-    for (milestone of MILESTONES) {
-      ms_label = this.svg.append("text");
-      ms_label
-        .attr("x", this.x(milestone.time))
-        .attr("y", this.y(0) - this.height - 1)
-        .style("text-anchor", "middle")
-      ms_label.text(milestone.version);
-      ms_tick = this.svg.append("rect");
-      ms_tick
-        .attr("x", this.x(milestone.time))
-        .attr("y", this.y(0) - this.height + 10)
-        .attr("width", 1)
-        .attr("height", this.height / 4)
-        .style("fill", "black");
-    }
+    let ticks = this.milestone_layer
+      .selectAll("g.milestone.tick")
+      .data(MILESTONES, (ms) => ms.version);
+    ticks.exit().remove();
+    ticks.select("text").attr("x", (ms) => this.x(ms.time));
+    ticks.select("rect").attr("x", (ms) => this.x(ms.time));
+    let inner = ticks.enter()
+      .append("g")
+      .attr("class", "milestone tick");
+    inner
+      .append("text")
+      .attr("x", (ms) => this.x(ms.time))
+      .attr("y", this.y(0) - this.height - 1)
+      .style("text-anchor", "middle")
+      .text((ms) => ms.version);
+    inner
+      .append("rect")
+      .attr("x", (ms) => this.x(ms.time))
+      .attr("y", this.y(0) - this.height + 10)
+      .attr("width", 1)
+      .attr("height", this.height / 4)
+      .style("fill", "black");
   }
 
   _onBrushEnd(_brush, params) {

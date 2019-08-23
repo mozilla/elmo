@@ -8,7 +8,7 @@ var data;
 
 function renderPlot() {
   var tp = new Timeplot("#my-timeplot", {tree, locale});
-  var svg = tp.svg;
+  var svg = tp.graph_layer;
   var defs = svg.append("defs");
 
   function genGradient(id, data_) {
