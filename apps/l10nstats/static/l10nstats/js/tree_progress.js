@@ -315,7 +315,7 @@ function renderPlot() {
   const tooltip = new Tooltip(plot);
   tooltip.render();
 
-  paintHistogram(plot.current_missing);
+  missing_plot.show(plot.current_missing);
   document.getElementById('my-timeplot').addEventListener('click', onClickPlot);
   document.getElementById('boundField').value = params.bound || 0;
   document.getElementById('showBadField').checked = !params.hideBad;
@@ -336,7 +336,7 @@ function onClickPlot(evt) {
   for (var i = 0; i < loc_data.length && loc_data[i].time < t; ++i) {
     Object.assign(d, loc_data[i].locales);
   }
-  paintHistogram(d, evt.controlKey || evt.metaKey);
+  missing_plot.show(d, evt.controlKey || evt.metaKey);
 }
 
 class LocalesMissingPlot {
@@ -376,36 +376,40 @@ class LocalesMissingPlot {
       this.x_axis.scale().domain([0, 0]);
       this.y_axis.scale().domain([0, 0]);
     }
-    this.known_graphs.push(this.process(snapshot));
+    snapshot = this.process(snapshot);
+    this.known_graphs.push(snapshot);
     this.render();
+    paintHistogram(snapshot);
   }
 
   process(d) {
-    let missing2locales = {};
+    let missing2locales = new Map();
     let locales = Object.keys(d);
     locales.forEach((locale) => {
       const missing = d[locale];
-      if (!(missing in missing2locales)) {
-        missing2locales[missing] = [];
+      if (missing2locales.has(missing)) {
+        missing2locales.get(missing).push(locale);
       }
-      missing2locales[missing].push(locale);
+      else {
+        missing2locales.set(missing, [locale]);
+      }
     });
-    let x = Object.keys(missing2locales), last=0;
-    x.sort((l, r) => l - r);
+    let list = Array.from(missing2locales).sort((l, r) => l[0] - r[0])
     this.x_axis.scale()
       .domain([
         0,
-        Math.max(this.x_axis.scale().domain()[1], x[x.length - 1] * 1.1)
+        Math.max(this.x_axis.scale().domain()[1], list[list.length - 1][0] * 1.1)
       ]);
     this.y_axis.scale()
       .domain([
         0,
         Math.max(this.y_axis.scale().domain()[1], locales.length)
       ]);
-    return x.map((_x) => ({
+    let last = 0;
+    return list.map(([_x, _missing]) => ({
       x: _x,
-      locales: missing2locales[_x],
-      percentile: (last += missing2locales[_x].length),
+      locales: _missing.sort(),
+      percentile: (last += _missing.length),
     }));
   }
 
@@ -453,39 +457,36 @@ class LocalesMissingPlot {
 
 const missing_plot = new LocalesMissingPlot();
 
-function paintHistogram(d, add) {
-  missing_plot.show(d, add)
-  let missing_values, loc, i, j;
-  function numerical(a, b) {
-    return a - b;
-  }
-  missing_values = Object.values(d).sort(numerical);
+function paintHistogram(current_missing) {
+  let missing_values = current_missing.map((cm) => cm.x);
   var smooth = Math.sqrt;
   var clusterer = new Clusterer(missing_values, smooth);
   var ranges = clusterer.get_ranges(4);
-  var hists = new Array(ranges.length);
-  for (i = 0; i < hists.length; ++i) hists[i] = [];
-  var maxcount = 1;
-  for (loc in d) {
-    var val = d[loc];
-    for (i = 0; i < ranges.length && val > ranges[i].max; ++i) {
-    }
-    if (hists[i][val]) {
-      hists[i][val].push(loc);
-      if (hists[i][val].length > maxcount) {
-        maxcount = hists[i][val].length;
+  let i = 0, j = 0;
+  let maxcount = 1;
+  let hists = ranges.map(
+    ({max}) => {
+      for (; j < current_missing.length && current_missing[j].x <= max; ++j) {
+        continue
       }
+      let rv = {
+        count: 0,
+        values: current_missing.slice(i, j)
+      };
+      rv.values.forEach(({locales}) => {
+        rv.count += locales.length;
+        maxcount = Math.max(maxcount, locales.length);
+      });
+      i=j;
+      return rv;
     }
-    else {
-      hists[i][val] = [loc];
-    }
-  }
+  );
 
   // histogram
   var hist_block = $('<div>').addClass('hist_block');
   var graphs_row = $('<tr>').addClass("hist graph")
-      .append($('<td>').addClass("axis")
-              .append(hist_block));
+    .append($('<td>').addClass("axis")
+      .append(hist_block));
   var descs_row = $('<tr>').addClass("hist desc").append('<td>');
   $('#histogram').empty().append($('<table>').append(graphs_row).append(descs_row));
   var atitle = $('<span>').text(maxcount);
@@ -500,14 +501,7 @@ function paintHistogram(d, add) {
     return Math.pow(_v, 3 / 4);
   }
   var scale = chart_height * 1.0 / display_f(maxcount);
-  var hist, range, td, values, previous_j, _left, height;
-  function valuesForHist(h) {
-    return h.map(
-      (v, i_) => (v ? i_ : undefined)
-    ).filter(
-      (v) => (v !== undefined)
-    );
-  }
+  var hist, range, td, previous_x, _left, height;
   for (i=0; i < hists.length; ++i) {
     hist = hists[i];
     range = ranges[i];
@@ -518,30 +512,26 @@ function paintHistogram(d, add) {
     else {
       td.append(range.min + ' - ' + range.max);
     }
-    td = $('<td>').attr('title', range.count).appendTo(graphs_row);
+    td = $('<td>').attr('title', hist.count).appendTo(graphs_row);
     hist_block = $("<div>").addClass("hist_block").appendTo(td);
-    values = valuesForHist(hist);
-    values.sort(numerical);
-    previous_j = null;
+    previous_x = null;
     _left = 0;
-    for (j of values) {
-      let v = hist[j];
-      v.sort();
-      height = display_f(v.length) * scale;
-      if (previous_j !== null) {
-        _left += (smooth(j - 1) - smooth(previous_j)) * barwidth;
+    for (let {x, locales} of hist.values) {
+      height = display_f(locales.length) * scale;
+      if (previous_x !== null) {
+        _left += (smooth(x - 1) - smooth(previous_x)) * barwidth;
       }
       $('<div>')
-          .addClass('bar')
-          .attr('title', j + ': ' + v.join(' ') + ' (' + v.length + ')')
-          .css({
-            top: chart_height - height + 'px',
-            width: barwidth - 2 + 'px',
-            height: height - 1 + 'px',
-            left: Number(_left).toFixed(1) + 'px'
-          })
-          .appendTo(hist_block);
-      previous_j = j;
+        .addClass('bar')
+        .attr('title', x + ': ' + locales.join(' ') + ' (' + locales.length + ')')
+        .css({
+          top: chart_height - height + 'px',
+          width: barwidth - 2 + 'px',
+          height: height - 1 + 'px',
+          left: Number(_left).toFixed(1) + 'px'
+        })
+        .appendTo(hist_block);
+      previous_x = x;
       _left += barwidth;
     }
     td.css("width", Number(_left).toFixed(1) + 'px');
