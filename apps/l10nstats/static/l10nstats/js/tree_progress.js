@@ -104,16 +104,16 @@ class ProgressPlot {
   }
 
   missing_after_top_locales(current, cut_off) {
-  if (cut_off <= 0) {
-    return 0;
+    if (cut_off <= 0) {
+      return 0;
+    }
+    const vals = Object.entries(current).sort((l, r) => l[1] - r[1]);
+    const rv = vals[cut_off - 1];
+    return {
+      locale: rv[0],
+      missing: rv[1],
+    };
   }
-  const vals = Object.entries(current).sort((l, r) => l[1] - r[1]);
-  const rv = vals[cut_off - 1];
-  return {
-    locale: rv[0],
-    missing: rv[1],
-  };
-}
 }
 
 class Tooltip {
@@ -293,21 +293,21 @@ function renderPlot() {
   }
   tp.drawAxes([startdate, enddate], fullrange, yDomain, y2Domain);
   svg.selectAll("path.progress")
-     .data(data0)
-     .enter()
-     .append("path")
-     .attr("class", "progress")
-     .style("stroke", "black")
-     .style("fill", (d, i) => ['#339900', 'grey', '#990000'][i])
-     .attr("d", area);
+    .data(data0)
+    .enter()
+    .append("path")
+    .attr("class", "progress")
+    .style("stroke", "black")
+    .style("fill", (d, i) => ['#339900', 'grey', '#990000'][i])
+    .attr("d", area);
   if (params.top_locales) {
-      var percLine = d3.svg.line()
+    var percLine = d3.svg.line()
       .interpolate('step-after')
-        .x((d) => tp.x(d.date))
-        .y((d) => tp.y2(d.top_locales.missing));
-      svg.append("path")
-        .attr("class", "top_locales")
-        .attr("d", percLine(plot.states_over_time));
+      .x((d) => tp.x(d.date))
+      .y((d) => tp.y2(d.top_locales.missing));
+    svg.append("path")
+      .attr("class", "top_locales")
+      .attr("d", percLine(plot.states_over_time));
   }
 
   tp.showMilestones();

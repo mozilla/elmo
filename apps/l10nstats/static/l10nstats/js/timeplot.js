@@ -19,19 +19,19 @@ class Timeplot {
     this.width = +(width.replace('px', '')) - options.yAxes*options.xmargin;
     this.height = +(height.replace('px', '')) - 3*options.ymargin;
     var x = d3.time.scale()
-        .range([0, this.width]);
+      .range([0, this.width]);
     var x2 = d3.time.scale()
-        .range([0, this.width]);
+      .range([0, this.width]);
 
     var y = d3.scale.linear()
-        .range([this.height, 0]);
+      .range([this.height, 0]);
     var y2 = d3.scale.linear()
-        .range([this.height, 0]);
+      .range([this.height, 0]);
 
     var xAxis = d3.svg.axis().scale(x).orient("bottom"),
-        xAxis2 = d3.svg.axis().scale(x2).orient("bottom"),
-        yAxis = d3.svg.axis().scale(y).orient("left"),
-        yAxis2 = d3.svg.axis().scale(y2).orient("right");
+      xAxis2 = d3.svg.axis().scale(x2).orient("bottom"),
+      yAxis = d3.svg.axis().scale(y).orient("left"),
+      yAxis2 = d3.svg.axis().scale(y2).orient("right");
 
     this.svg = d3.select(selector).html('').append("svg")
       .attr("width", this.width + options.yAxes*options.xmargin)

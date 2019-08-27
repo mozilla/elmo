@@ -13,30 +13,30 @@ function renderPlot() {
 
   function genGradient(id, data_) {
     return defs.append("linearGradient")
-    .attr("id", id)
-    .attr("x2", "0")
-    .attr("y2", "100%")
-    .selectAll("stop")
-    .data(data_)
-    .enter()
-    .append("stop")
-    .attr("offset", (d) => d.offset)
-    .attr("stop-color", (d) => d.color)
-    .attr("stop-opacity", (d) => d.opacity);
+      .attr("id", id)
+      .attr("x2", "0")
+      .attr("y2", "100%")
+      .selectAll("stop")
+      .data(data_)
+      .enter()
+      .append("stop")
+      .attr("offset", (d) => d.offset)
+      .attr("stop-color", (d) => d.color)
+      .attr("stop-opacity", (d) => d.opacity);
   }
 
   genGradient("missingGradient", [
-      {offset: "5%", color: "rgb(204, 128, 128)", opacity: ".8"},
-      {offset: "95%", color: "rgb(204, 128, 128)", opacity: ".2"}
-           ]);
+    {offset: "5%", color: "rgb(204, 128, 128)", opacity: ".8"},
+    {offset: "95%", color: "rgb(204, 128, 128)", opacity: ".2"}
+  ]);
   genGradient("obsoleteGradient", [
-      {offset: "5%", color: "#808080", opacity: ".8"},
-      {offset: "95%", color: "#808080", opacity: ".2"}
-           ]);
+    {offset: "5%", color: "#808080", opacity: ".8"},
+    {offset: "95%", color: "#808080", opacity: ".2"}
+  ]);
   genGradient("unchangedGradient", [
-      {offset: "5%", color: "#cccccc", opacity: ".8"},
-      {offset: "65%", color: "#cccccc", opacity: ".1"}
-           ]);
+    {offset: "5%", color: "#cccccc", opacity: ".8"},
+    {offset: "65%", color: "#cccccc", opacity: ".1"}
+  ]);
   var missingArea = d3.svg.area()
     .interpolate("step-after")
     .x((d) => tp.x(d.date))
