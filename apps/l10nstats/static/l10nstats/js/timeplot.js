@@ -10,7 +10,7 @@
  */
 
 class Timeplot {
-  constructor(selector, params, options) {
+  constructor(selector, options) {
     const defaultoptions = {xmargin: 40, ymargin: 40, yAxes: 2};
     options = Object.assign({}, defaultoptions, options);
     let {width, height} = window.getComputedStyle(
@@ -18,20 +18,20 @@ class Timeplot {
     );
     this.width = +(width.replace('px', '')) - options.yAxes*options.xmargin;
     this.height = +(height.replace('px', '')) - 3*options.ymargin;
-    var x = d3.time.scale()
+    var x = d3.scaleTime()
       .range([0, this.width]);
-    var x2 = d3.time.scale()
+    var x2 = d3.scaleTime()
       .range([0, this.width]);
 
-    var y = d3.scale.linear()
+    var y = d3.scaleLinear()
       .range([this.height, 0]);
-    var y2 = d3.scale.linear()
+    var y2 = d3.scaleLinear()
       .range([this.height, 0]);
 
-    var xAxis = d3.svg.axis().scale(x).orient("bottom"),
-      xAxis2 = d3.svg.axis().scale(x2).orient("bottom"),
-      yAxis = d3.svg.axis().scale(y).orient("left"),
-      yAxis2 = d3.svg.axis().scale(y2).orient("right");
+    var xAxis = d3.axisBottom(x),
+      xAxis2 = d3.axisBottom(x2),
+      yAxis = d3.axisLeft(y),
+      yAxis2 = d3.axisRight(y2);
 
     this.svg = d3.select(selector).html('').append("svg")
       .attr("width", this.width + options.yAxes*options.xmargin)
@@ -43,11 +43,10 @@ class Timeplot {
         `translate(${options.xmargin},${options.ymargin})`
       );
 
-    // Add the x-axis.
+    // Add the x-axes.
     this.svg.append("svg:g")
       .attr("class", "x axis")
       .attr("transform", `translate(0,${this.height})`);
-    // Add the x-axis.
     this.svg.append("svg:g")
       .attr("class", "x2 axis")
       .attr("transform", `translate(0,${this.height + options.ymargin})`);
@@ -62,12 +61,6 @@ class Timeplot {
       .attr("class", "graph layer");
     this.milestone_layer = this.svg.append("g")
       .attr("class", "milestone layer");
-    this.brush = d3.svg.brush()
-      .x(x);
-    this.brush.on("brushend", this._onBrushEnd(this.brush, params));
-    this.brush2 = d3.svg.brush()
-      .x(x2);
-    this.brush2.on("brushend", this._onBrushEnd(this.brush2, params));
     this.x = x;
     this.x2 = x2;
     this.y = y;
@@ -79,30 +72,31 @@ class Timeplot {
     this.options = options;
   }
 
-  drawAxes(xDomain, fullXDomain, yDomain, y2Domain) {
+  drawAxes(xDomain, fullXDomain, yDomain, y2Domain, params) {
     this.x.domain(xDomain);
     this.x2.domain(fullXDomain);
     this.y.domain(yDomain);
     if (y2Domain) {
       this.y2.domain(y2Domain);
     }
-    this.brush2.extent(xDomain);
     this.svg.select("g.x.axis").call(this.xAxis);
     this.svg.select("g.x2.axis").call(this.xAxis2);
     this.svg.select("g.y.axis").call(this.yAxis);
     if (y2Domain) {
       this.svg.select("g.y2.axis").call(this.yAxis2);
     }
+    this.brush = d3.brushX();
+    this.brush.extent([[0, 0], [this.x.range()[1], this.options.ymargin]]);
+    this.brush2 = d3.brushX();
     this.svg.select("g.x.axis").append("g")
-      .attr("class", "x brush")
-      .call(this.brush)
-      .selectAll("rect")
-      .attr("height", this.options.ymargin);
-    this.svg.select("g.x2.axis").append("g")
+        .attr("class", "x brush")
+        .call(this.brush);
+    let b2 = this.svg.select("g.x2.axis").append("g")
       .attr("class", "x2 brush")
-      .call(this.brush2)
-      .selectAll("rect")
-      .attr("height", this.options.ymargin);
+      .call(this.brush2);
+    this.brush2.move(b2, xDomain.map(this.x2));
+    this.brush.on("end", this._onBrushEnd(this.x, params));
+    this.brush2.on("end", this._onBrushEnd(this.x2, params));
   }
 
   showMilestones() {
@@ -130,19 +124,21 @@ class Timeplot {
       .style("fill", "black");
   }
 
-  _onBrushEnd(_brush, params) {
+  _onBrushEnd(axis, params) {
     return function() {
-      if (_brush.empty()) return;
-      var extent = _brush.extent();
-      var domain = _brush.x().domain();
+      if (!d3.event.sourceEvent) return;
+      let selection = d3.event.selection;
+      if (!selection) return;
+      selection = selection.map(axis.invert);
+      var domain = axis.domain();
       var _p = new URLSearchParams(), sd, ed;
-      if (extent[0] - domain[0]) {
+      if (selection[0] !== domain[0]) {
         // set start date only if it's not start of time
-        sd = extent[0];
+        sd = selection[0];
         _p.set('starttime', formatRoundedDate(sd));
       }
-      if (extent[1] - domain[1]) {
-        ed = _brush.extent()[1];
+      if (selection[1] !== domain[1]) {
+        ed = selection[1];
         _p.set('endtime', formatRoundedDate(ed));
       }
       if (params) {
@@ -164,4 +160,3 @@ function formatRoundedDate(d) {
   );
   return `${round.getUTCFullYear()}-${round.getUTCMonth() + 1}-${round.getUTCDate()}`;
 }
- 

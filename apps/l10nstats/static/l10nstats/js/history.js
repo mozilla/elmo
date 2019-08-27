@@ -7,7 +7,7 @@
 var data;
 
 function renderPlot() {
-  var tp = new Timeplot("#my-timeplot", {tree, locale});
+  var tp = new Timeplot("#my-timeplot");
   var svg = tp.graph_layer;
   var defs = svg.append("defs");
 
@@ -37,36 +37,37 @@ function renderPlot() {
     {offset: "5%", color: "#cccccc", opacity: ".8"},
     {offset: "65%", color: "#cccccc", opacity: ".1"}
   ]);
-  var missingArea = d3.svg.area()
-    .interpolate("step-after")
+  var missingArea = d3.area()
+    .curve(d3.curveStepAfter)
     .x((d) => tp.x(d.date))
     .y0(tp.height)
     .y1((d) => tp.y(d.missing));
-  var obsoleteArea = d3.svg.area()
-    .interpolate("step-after")
+  var obsoleteArea = d3.area()
+    .curve(d3.curveStepAfter)
     .x((d) => tp.x(d.date))
     .y0(tp.height)
     .y1((d) => tp.y(d.obsolete));
-  var unchangedArea = d3.svg.area()
-    .interpolate("step-after")
+  var unchangedArea = d3.area()
+    .curve(d3.curveStepAfter)
     .x((d) => tp.x(d.date))
     .y0(tp.height)
     .y1((d) => tp.y2(d.unchanged));
 
   function processRow(row) {
     return {
-      date: d3.time.format.iso.parse(row[0]),
+      date: d3.isoParse(row[0]),
       run: +row[1],
       missing: +row[2],
       obsolete: +row[3],
       unchanged: +row[4]
     };
   }
-  data = d3.csv.parseRows(document.getElementById("txtData").textContent.trim(), processRow);
+  data = d3.csvParseRows(document.getElementById("txtData").textContent.trim(), processRow);
   tp.drawAxes(
     [startdate, enddate], fullrange,
     [0, d3.max(data.map((d) => d3.max([d.missing, d.obsolete])))],
-    [0, d3.max(data.map((d) => d.unchanged))]
+    [0, d3.max(data.map((d) => d.unchanged))],
+    {tree, locale}
   )
   // tp.yDomain([0, d3.max(data.map((d) => d3.max([d.missing, d.obsolete])))]);
   // tp.y2Domain([0, d3.max(data.map((d) => d.unchanged))]);
@@ -75,12 +76,12 @@ function renderPlot() {
     .enter()
     .append('rect')
     .attr('class', 'high')
-    .attr("x", (e) => tp.x(d3.time.format.iso.parse(e.dataset.start)))
+    .attr("x", (e) => tp.x(d3.isoFormat.parse(e.dataset.start)))
     .attr("y", 0)
     .attr("height", tp.height)
     .attr(
       "width",
-      (e) => tp.x(d3.time.format.iso.parse(e.dataset.end)) - tp.x(d3.time.format.iso.parse(e.dataset.start))
+      (e) => tp.x(d3.isoParse(e.dataset.end)) - tp.x(d3.isoParse(e.dataset.start))
     )
     .attr("stroke", "none").attr("fill", (e) => '#' + e.dataset.color);
   svg.append("path")
@@ -110,7 +111,7 @@ function renderPlot() {
     .attr('xlink:show', 'new');
   markers.append('path')
     .attr('transform', (d) => `translate(${tp.x(d.date)},${tp.y(d.missing)})`)
-    .attr("d", d3.svg.symbol().type('circle'))
+    .attr("d", d3.symbol().type(d3.symbolCircle)())
   markers.append('title').text((d) => `missing: ${d.missing}`);
   tp.showMilestones();
 }

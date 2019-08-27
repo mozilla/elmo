@@ -194,7 +194,7 @@ class Tooltip {
     const plot = this.plot;
     const tp = plot.timeplot;
     // First update the position of the white box.
-    let mouseX = d3.mouse(this.graphZone.flat()[0])[0];
+    let mouseX = d3.mouse(this.graphZone.node())[0];
     this.whiteBox.attr("x", mouseX - this.whiteBoxOffset);
 
     // Then compute the list of changing locales in this range.
@@ -261,7 +261,7 @@ class Tooltip {
 }
 
 function renderPlot() {
-  var tp = new Timeplot("#my-timeplot", params);
+  var tp = new Timeplot("#my-timeplot");
   var svg = tp.graph_layer;
   X = tp.x;
 
@@ -272,14 +272,16 @@ function renderPlot() {
   if (!params.hideBad) {
     layers.push('bad');
   }
-  data0 = d3.layout.stack()(layers.map(
-    (k) => plot.states_over_time.map((d) => ({x: d.date, y: d[k]}))
-  ));
-  var area = d3.svg.area()
-    .interpolate("step-after")
-    .x((d) => tp.x(d.x))
-    .y0((d) => tp.y(d.y0))
-    .y1((d) => tp.y(d.y + d.y0));
+  data0 = d3.stack()
+    .keys(layers)
+    .order(d3.stackOrderNone)
+    .offset(d3.stackOffsetNone)
+    (plot.states_over_time);
+  var area = d3.area()
+    .curve(d3.curveStepAfter)
+    .x((d) => tp.x(d.data.date))
+    .y0((d) => tp.y(d[0]))
+    .y1((d) => tp.y(d[1]));
   let yDomain = [0, 0], y2Domain;
   if (params.hideBad) {
     yDomain[1] = d3.max(plot.states_over_time.map((d) => d.good + d.shady));
@@ -291,7 +293,7 @@ function renderPlot() {
   if (params.top_locales) {
     y2Domain = [0, d3.max(plot.states_over_time.map((d) => d.top_locales.missing)) * 1.1 + 10];
   }
-  tp.drawAxes([startdate, enddate], fullrange, yDomain, y2Domain);
+  tp.drawAxes([startdate, enddate], fullrange, yDomain, y2Domain, params);
   svg.selectAll("path.progress")
     .data(data0)
     .enter()
@@ -301,8 +303,8 @@ function renderPlot() {
     .style("fill", (d, i) => ['#339900', 'grey', '#990000'][i])
     .attr("d", area);
   if (params.top_locales) {
-    var percLine = d3.svg.line()
-      .interpolate('step-after')
+    var percLine = d3.line()
+      .curve(d3.curveStepAfter)
       .x((d) => tp.x(d.date))
       .y((d) => tp.y2(d.top_locales.missing));
     svg.append("path")
@@ -343,15 +345,11 @@ class LocalesMissingPlot {
   constructor() {
     this.root = document.querySelector('#percentile');
     this.kown_graphs = [];
-    let x_scale = d3.scale.sqrt();
-    let y_scale = d3.scale.linear();
-    this.x_axis = d3.svg.axis()
-      .scale(x_scale)
-      .orient("bottom");
-    this.y_axis = d3.svg.axis()
-      .scale(y_scale)
-      .orient("left");
-    this.c_scale = d3.scale.category10();
+    let x_scale = d3.scaleSqrt();
+    let y_scale = d3.scaleLinear();
+    this.x_axis = d3.axisBottom(x_scale);
+    this.y_axis = d3.axisLeft(y_scale);
+    this.c_scale = d3.scaleOrdinal(d3.schemeCategory10);
     this.x_axis.scale().domain([0, 0]);
     this.y_axis.scale().domain([0, 0]);
     this.svg = d3.select('#percentile').html('').append("svg");
@@ -364,8 +362,8 @@ class LocalesMissingPlot {
     // Add the y-axis.
     render.append("svg:g")
       .attr("class", "y axis");
-    this.line = d3.svg.line()
-      .interpolate("step-after")
+    this.line = d3.line()
+      .curve(d3.curveStepAfter)
       .x((point) => x_scale(point.x))
       .y((point) => y_scale(point.percentile));
   }
@@ -524,7 +522,7 @@ function paintHistogram(current_missing) {
   graph_cells
     .selectAll("div.spark")
     .data((d) => d.values)
-    .style({
+    .styles({
       height: (d) => display_f(d.locales.length) * scale - 1 + 'px',
       width: barwidth - 2 + 'px',
       "margin-left": (d) => d.left

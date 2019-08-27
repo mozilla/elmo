@@ -28,6 +28,7 @@ var MILESTONES = [{% for ms in milestones %}
 {% block timeplot_extra_js %}{% endblock %}
 
 <script src="{% static "js/d3/d3.min.js" %}"></script>
+<script src="{% static "js/d3/d3-selection-multi.min.js" %}"></script>
 {% compress js %}
 <script src="{% static "l10nstats/js/timeplot.js" %}"></script>
 {% block timeplot_scripts %}
