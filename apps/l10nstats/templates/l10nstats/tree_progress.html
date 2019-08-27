@@ -59,5 +59,12 @@ var DASHBOARD_HISTORY_URL = '{% url "locale-tree-history" %}?tree=' + tree;
   green area: good locales
 </div>
 <div id="percentile"></div>
-<div id="histogram"></div>
+<div id="histogram">
+  <table>
+    <tbody>
+      <tr class="hist graph"></tr>
+      <tr class="hist desc"></tr>
+    </tbody>
+  </table>
+</div>
 {% endblock %}

@@ -2,16 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-.hist_block {
-    width: 100%;
-    height: 100px;
-    font-size: small;
-    position: relative;
+.hist.graph {
+    vertical-align: bottom;
+    white-space: nowrap;
 }
 
-.bar {
-    position: absolute;
-    border-bottom-width: 0;
+.spark {
+    display: inline-block;
     border: 1px solid rgb(170, 170, 170);
     background: rgb(204, 204, 204);
 }
@@ -25,7 +22,7 @@
     padding: 1px 5px 1px;
 }
 
-td:nth-child(even) {
+td:nth-child(odd) {
     background-color: #E6E6E6;
 }
 
@@ -39,16 +36,6 @@ td:nth-child(even) {
 
 .legend {
     margin-top: 10px;
-}
-
-#histogram {
-    margin-bottom: 20px;
-    height: auto;
-    clear: right;
-}
-
-#histogram table {
-    width: auto;
 }
 
 .tooltip {

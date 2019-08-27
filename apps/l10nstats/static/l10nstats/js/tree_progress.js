@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* global $, d3, HIDE_BAD, BOUND, top_locales, LOCALE_DATA */
+/* global d3, HIDE_BAD, BOUND, top_locales, LOCALE_DATA */
 /* global startdate, enddate, fullrange */
 /* global Timeplot, formatRoundedDate, Clusterer */
 
@@ -458,6 +458,7 @@ class LocalesMissingPlot {
 const missing_plot = new LocalesMissingPlot();
 
 function paintHistogram(current_missing) {
+  const barwidth = 7;
   let missing_values = current_missing.map((cm) => cm.x);
   var smooth = Math.sqrt;
   var clusterer = new Clusterer(missing_values, smooth);
@@ -465,17 +466,31 @@ function paintHistogram(current_missing) {
   let i = 0, j = 0;
   let maxcount = 1;
   let hists = ranges.map(
-    ({max}) => {
+    ({min, max}) => {
       for (; j < current_missing.length && current_missing[j].x <= max; ++j) {
         continue
       }
       let rv = {
         count: 0,
-        values: current_missing.slice(i, j)
+        values: current_missing.slice(i, j),
+        width: 0,
+        min,
+        max
       };
-      rv.values.forEach(({locales}) => {
-        rv.count += locales.length;
+      let _left, previous_x = null;
+      rv.values.forEach((val) => {
+        let {x, locales} = val;
         maxcount = Math.max(maxcount, locales.length);
+        if (previous_x === null) {
+          _left = 0;
+        }
+        else {
+          _left = (smooth(x - 1) - smooth(previous_x)) * barwidth;
+        }
+        val.left = Number(_left).toFixed(1) + 'px';
+        rv.count += locales.length;
+        rv.width += _left + barwidth;
+        previous_x = x;
       });
       i=j;
       return rv;
@@ -483,59 +498,47 @@ function paintHistogram(current_missing) {
   );
 
   // histogram
-  var hist_block = $('<div>').addClass('hist_block');
-  var graphs_row = $('<tr>').addClass("hist graph")
-    .append($('<td>').addClass("axis")
-      .append(hist_block));
-  var descs_row = $('<tr>').addClass("hist desc").append('<td>');
-  $('#histogram').empty().append($('<table>').append(graphs_row).append(descs_row));
-  var atitle = $('<span>').text(maxcount);
-  atitle.css('position', 'absolute').css('top', '0px');
-  hist_block.append(atitle);
-  hist_block.css('width', atitle.css('width'));
-  hist_block.css('padding-left', '1px').css('padding-right', '1px');
-  // create display of histogram
-  var barwidth = 7;
-  var chart_height = Number(hist_block.css('height').replace('px', ''));
+  var chart_height = 100;
   function display_f(_v) {
     return Math.pow(_v, 3 / 4);
   }
   var scale = chart_height * 1.0 / display_f(maxcount);
-  var hist, range, td, previous_x, _left, height;
-  for (i=0; i < hists.length; ++i) {
-    hist = hists[i];
-    range = ranges[i];
-    td = $('<td>').appendTo(descs_row);
-    if (range.min === range.max) {
-      td.append(range.min);
-    }
-    else {
-      td.append(range.min + ' - ' + range.max);
-    }
-    td = $('<td>').attr('title', hist.count).appendTo(graphs_row);
-    hist_block = $("<div>").addClass("hist_block").appendTo(td);
-    previous_x = null;
-    _left = 0;
-    for (let {x, locales} of hist.values) {
-      height = display_f(locales.length) * scale;
-      if (previous_x !== null) {
-        _left += (smooth(x - 1) - smooth(previous_x)) * barwidth;
-      }
-      $('<div>')
-        .addClass('bar')
-        .attr('title', x + ': ' + locales.join(' ') + ' (' + locales.length + ')')
-        .css({
-          top: chart_height - height + 'px',
-          width: barwidth - 2 + 'px',
-          height: height - 1 + 'px',
-          left: Number(_left).toFixed(1) + 'px'
-        })
-        .appendTo(hist_block);
-      previous_x = x;
-      _left += barwidth;
-    }
-    td.css("width", Number(_left).toFixed(1) + 'px');
-  }
+  let graph_cells = d3.select("#histogram tr.hist.graph")
+    .selectAll("td.jazz")
+    .data(hists);
+  graph_cells.exit().remove();
+  graph_cells.enter()
+    .append("td")
+    .attr("class", "jazz");
+  graph_cells = d3.select("#histogram tr.hist.graph")
+    .selectAll("td.jazz")
+    .data(hists);
+  let bars = graph_cells
+    .attr("title", (d) => d.count)
+    .style("width", (d) => d.width + "px")
+    .selectAll("div.spark")
+    .data((d) => d.values);
+  bars.exit().remove();
+  bars.enter().append("div")
+    .attr("class", "spark");
+  graph_cells
+    .selectAll("div.spark")
+    .data((d) => d.values)
+    .style({
+      height: (d) => display_f(d.locales.length) * scale - 1 + 'px',
+      width: barwidth - 2 + 'px',
+      "margin-left": (d) => d.left
+    })
+    .attr("title", (d) => `${d.x}: ${d.locales.join(" ")} (${d.locales.length})`);
+  let descs = d3.select("#histogram tr.hist.desc")
+    .selectAll("td.desc")
+    .data(hists);
+  descs.exit().remove();
+  descs.enter()
+    .append("td")
+    .attr("class", "desc")
+    .text((d) => (d.min === d.max ? d.min : `${d.min} - ${d.max}`));
+  descs.text((d) => (d.min === d.max ? d.min : `${d.min} - ${d.max}`));
 }
 
 renderPlot();
