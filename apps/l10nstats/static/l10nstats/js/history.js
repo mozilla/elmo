@@ -63,21 +63,6 @@ function renderPlot() {
     [0, d3.max(data.map((d) => d.unchanged))],
     params
   )
-  // tp.yDomain([0, d3.max(data.map((d) => d3.max([d.missing, d.obsolete])))]);
-  // tp.y2Domain([0, d3.max(data.map((d) => d.unchanged))]);
-  svg.selectAll("rect.high")
-    .data(Array.from(document.querySelectorAll('.highlight')))
-    .enter()
-    .append('rect')
-    .attr('class', 'high')
-    .attr("x", (e) => tp.x(d3.isoFormat.parse(e.dataset.start)))
-    .attr("y", 0)
-    .attr("height", tp.height)
-    .attr(
-      "width",
-      (e) => tp.x(d3.isoParse(e.dataset.end)) - tp.x(d3.isoParse(e.dataset.start))
-    )
-    .attr("stroke", "none").attr("fill", (e) => '#' + e.dataset.color);
   svg.append("path")
     .data([data])
     .attr("d", unchangedArea)
