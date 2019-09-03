@@ -5,8 +5,8 @@
 /* global Timeplot, initial_load */
 /* global fullrange, startdate, enddate, time_data */
 /* global params */
-/* global compare_link */
 
+let compare_link = document.head.querySelector('link[rel=compare-locales]').href;
 var data;
 
 function renderPlot() {

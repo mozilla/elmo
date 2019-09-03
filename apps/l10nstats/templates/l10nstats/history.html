@@ -13,14 +13,8 @@
 <link rel="stylesheet" href="{% static "l10nstats/css/history.css" %}" type="text/css">
 {% endblock %}
 {% block links %}
-<link data-tree="{{ tree }}" rel="compare-locales" href="{% url "compare-locales" %}" type="application/json">
+<link rel="compare-locales" href="{% url "compare-locales" %}" type="application/json">
 <link rel="api" href="{% url "api-history" %}" type="application/json">
-{% endblock %}
-
-{% block timeplot_extra_js %}
-<script>
-var compare_link = "{% url 'compare-locales' %}";
-</script>
 {% endblock %}
 
 {% block timeplot_scripts %}
