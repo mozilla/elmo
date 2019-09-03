@@ -95,6 +95,8 @@ def history_api(request):
         starttime = datetime.strptime(request.GET['starttime'], '%Y-%m-%d')
     except (KeyError, ValueError):
         starttime = endtime - timedelta(days=21)
+    if starttime < startrange:
+        starttime = startrange
     try:
         run = q2.filter(srctime__lt=starttime).order_by('-srctime')[0]
         runs = [{
@@ -177,6 +179,8 @@ def tree_api(request, tree):
         starttime = datetime.strptime(request.GET['starttime'], '%Y-%m-%d')
     except (KeyError, ValueError):
         starttime = endtime - timedelta(days=21)
+    if starttime < startrange:
+        starttime = startrange
 
     q = q.filter(locale__in=locales)
     q2 = q.filter(srctime__lte=endtime,

@@ -4,7 +4,8 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import datetime
+import calendar
+from datetime import datetime
 from django.core.urlresolvers import reverse
 from shipping.tests.test_views import ShippingTestCaseBase
 from life.models import Tree, Locale
@@ -23,7 +24,7 @@ class L10nstatsTestCase(ShippingTestCaseBase):
           locale=locale,
           tree=tree,
           build=None,
-          srctime=datetime.datetime.utcnow(),
+          srctime=datetime.utcnow(),
         )
         Active.objects.create(run=run)
         return run
@@ -53,6 +54,39 @@ class L10nstatsTestCase(ShippingTestCaseBase):
         self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response.content)
 
+    def test_history_api(self):
+        appver, tree = self._create_appver_tree()
+        locale, __ = Locale.objects.get_or_create(
+          code='en-US',
+          name='English',
+        )
+        url = reverse('api-history')
+        run = self._create_active_run()
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+        response = self.client.get(
+            url, {'tree': tree.code, 'locale': locale.code}
+        )
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+        self.assertListEqual(data['milestones'], [])
+        self.assertEqual(
+            datetime.utcnow().date(),
+            datetime.utcfromtimestamp(data['stamps']['startrange']).date()
+        )
+        self.assertEqual(len(data['data']), 2)
+        self.assertDictEqual(
+            data['data'][0],
+            {
+                'missing': 0,
+                'obsolete': 0,
+                'unchanged': 0,
+                'run': run.id,
+                'srctime': int(calendar.timegm(run.srctime.timetuple())),
+            }
+        )
+
     def test_tree_status_static_files(self):
         """render the tree_status view and check that all static files are
         accessible"""
@@ -70,3 +104,24 @@ class L10nstatsTestCase(ShippingTestCaseBase):
         self.assertEqual(response.status_code, 200)
 
         self.assert_all_embeds(response.content)
+
+    def test_tree_api(self):
+        appver, tree = self._create_appver_tree()
+        url = reverse('api-tree-status', args=[tree.code])
+        run = self._create_active_run()
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertListEqual(data['milestones'], [])
+        self.assertEqual(
+            datetime.utcnow().date(),
+            datetime.utcfromtimestamp(data['stamps']['startrange']).date()
+        )
+        self.assertEqual(len(data['data']), 1)
+        self.assertDictEqual(
+            data['data'][0],
+            {
+                'locales': {'en-US': 0},
+                'srctime': int(calendar.timegm(run.srctime.timetuple())),
+            }
+        )
