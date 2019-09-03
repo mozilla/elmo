@@ -6,7 +6,6 @@ from __future__ import unicode_literals
 
 import datetime
 from django.core.urlresolvers import reverse
-from django.utils.encoding import force_text
 from shipping.tests.test_views import ShippingTestCaseBase
 from life.models import Tree, Locale
 from ..models import Run, Active
@@ -40,12 +39,16 @@ class L10nstatsTestCase(ShippingTestCaseBase):
           code='en-US',
           name='English',
         )
-        data = {'tree': tree.code, 'locale': locale.code}
-        # good locale, good tree, but not building
+        # bad locale or tree
+        data = {'tree': 'bad', 'locale': locale.code}
         response = self.client.get(url, data)
         self.assertEqual(response.status_code, 404)
-        # good locale, good tree, and building, 200
+        data = {'tree': tree.code, 'locale': 'bad'}
+        response = self.client.get(url, data)
+        self.assertEqual(response.status_code, 404)
+        # good locale, good tree, 200
         self._create_active_run()
+        data = {'tree': tree.code, 'locale': locale.code}
         response = self.client.get(url, data)
         self.assertEqual(response.status_code, 200)
         self.assert_all_embeds(response.content)
@@ -61,10 +64,6 @@ class L10nstatsTestCase(ShippingTestCaseBase):
 
         # _create_appver_tree() creates a mock tree
         url = reverse('tree-history', args=[tree.code])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        content = force_text(response.content)
-        self.assertIn('no statistics for %s' % tree.code, content)
 
         self._create_active_run()
         response = self.client.get(url)

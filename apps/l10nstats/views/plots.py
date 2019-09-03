@@ -15,7 +15,6 @@ import calendar
 from django.shortcuts import render, get_object_or_404
 from django.http import (HttpResponse, Http404, JsonResponse)
 from django.db.models import Min, Max
-import json
 import six
 
 from l10nstats.models import Run
@@ -200,14 +199,6 @@ def tree_api(request, tree):
     data = [{'srctime': t, 'locales': datadict[t]}
             for t in sorted(datadict.keys())]
 
-    try:
-        bound = int(request.GET.get('bound', 0))
-    except ValueError:
-        bound = 0
-    try:
-        top_locales = int(request.GET.get('top_locales', 0))
-    except ValueError:
-        top_locales = 0
     stamps = {}
     stamps['start'] = int(calendar.timegm(starttime.timetuple()))
     stamps['end'] = int(calendar.timegm(endtime.timetuple()))
