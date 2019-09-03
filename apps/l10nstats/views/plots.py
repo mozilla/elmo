@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 import calendar
 
 from django.shortcuts import render, get_object_or_404
-from django.http import (HttpResponse, Http404)
+from django.http import (HttpResponse, Http404, JsonResponse)
 from django.db.models import Min, Max
 import json
 import six
@@ -64,21 +64,18 @@ def history_plot(request):
     tree = locale = None
     tree = get_object_or_404(Tree, code=request.GET.get('tree'))
     locale = get_object_or_404(Locale, code=request.GET.get('locale'))
-    highlights = defaultdict(dict)
-    for param in sorted(
-            (p for p in six.iterkeys(request.GET) if p.startswith('hl-'))):
-        try:
-            _, i, kind = param.split('-')
-            i = int(i)
-        except ValueError:
-            continue
-        highlights[i][kind] = request.GET.get(param)
-    for i, highlight in highlights.items():
-        for k in ('s', 'e', 'c'):
-            if k not in highlight:
-                highlights.pop(i)
-                break
-    highlights = [v for i, v in sorted(six.iteritems(highlights))]
+    return render(request, 'l10nstats/history.html', {
+                    'locale': locale.code,
+                    'tree': tree.code,
+                  })
+
+
+def history_api(request):
+    """Progress of a single locale and tree.
+    """
+    tree = locale = None
+    tree = get_object_or_404(Tree, code=request.GET.get('tree'))
+    locale = get_object_or_404(Locale, code=request.GET.get('locale'))
     q = q2 = Run.objects.filter(tree=tree, locale=locale)
     try:
         startrange = (q.order_by('srctime')
@@ -102,7 +99,7 @@ def history_plot(request):
     try:
         run = q2.filter(srctime__lt=starttime).order_by('-srctime')[0]
         runs = [{
-            'srctime': starttime,
+            'srctime': int(calendar.timegm(starttime.timetuple())),
             'missing': run.allmissing + run.report,
             'obsolete': run.obsolete,
             'unchanged': run.unchanged,
@@ -114,7 +111,7 @@ def history_plot(request):
                    srctime__lte=endtime).order_by('srctime')
     runs += [
         {
-            'srctime': r.srctime,
+            'srctime': int(calendar.timegm(r.srctime.timetuple())),
             'missing': r.allmissing + r.report,
             'obsolete': r.obsolete,
             'unchanged': r.unchanged,
@@ -124,22 +121,21 @@ def history_plot(request):
     ]
     if runs:
         r = runs[-1].copy()
-        r['srctime'] = endtime
+        r['srctime'] = int(calendar.timegm(endtime.timetuple()))
         runs.append(r)
     stamps = {}
     stamps['start'] = int(calendar.timegm(starttime.timetuple()))
     stamps['end'] = int(calendar.timegm(endtime.timetuple()))
     stamps['startrange'] = int(calendar.timegm(startrange.timetuple()))
     stamps['endrange'] = int(calendar.timegm(endrange.timetuple()))
-    return render(request, 'l10nstats/history.html', {
+    return JsonResponse({
                     'locale': locale.code,
                     'tree': tree.code,
                     'starttime': starttime,
                     'endtime': endtime,
                     'stamps': stamps,
-                    'runs': runs,
+                    'data': runs,
                     'milestones': milestones(tree, starttime, endtime),
-                    'highlights': highlights
                   })
 
 
@@ -149,6 +145,15 @@ def tree_progress(request, tree):
     Display the number of successful vs not locales.
 
     Implemented as d3.js plot.
+    """
+    tree = get_object_or_404(Tree, code=tree)
+    return render(request, 'l10nstats/tree_progress.html', {
+                    'tree': tree.code,
+                  })
+
+
+def tree_api(request, tree):
+    """Progress of all locales on a tree.
     """
     tree = get_object_or_404(Tree, code=tree)
 
@@ -192,7 +197,7 @@ def tree_progress(request, tree):
         datadict[stamp][r.locale.code] = (r.missing +
                                           r.missingInFiles +
                                           r.report)
-    data = [{'srctime': t, 'locales': json.dumps(datadict[t])}
+    data = [{'srctime': t, 'locales': datadict[t]}
             for t in sorted(datadict.keys())]
 
     try:
@@ -209,14 +214,8 @@ def tree_progress(request, tree):
     stamps['startrange'] = int(calendar.timegm(startrange.timetuple()))
     stamps['endrange'] = int(calendar.timegm(endrange.timetuple()))
 
-    return render(request, 'l10nstats/tree_progress.html', {
-                    'tree': tree.code,
-                    'bound': bound,
-                    'hideBad': request.GET.get('hideBad', False),
-                    'top_locales': top_locales,
-                    'startTime': starttime,
-                    'endTime': endtime,
-                    'stamps': stamps,
-                    'milestones': milestones(tree, starttime, endtime),
-                    'data': data
-                  })
+    return JsonResponse({
+        'stamps': stamps,
+        'milestones': milestones(tree, starttime, endtime),
+        'data': data
+      })

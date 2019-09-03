@@ -12,10 +12,13 @@
 {% block timeplot_styles %}
 <link rel="stylesheet" href="{% static "l10nstats/css/history.css" %}" type="text/css">
 {% endblock %}
+{% block links %}
+<link data-tree="{{ tree }}" rel="compare-locales" href="{% url "compare-locales" %}" type="application/json">
+<link rel="api" href="{% url "api-history" %}" type="application/json">
+{% endblock %}
 
 {% block timeplot_extra_js %}
 <script>
-var tree = "{{ tree }}", locale = "{{ locale }}";
 var compare_link = "{% url 'compare-locales' %}";
 </script>
 {% endblock %}
@@ -25,18 +28,9 @@ var compare_link = "{% url 'compare-locales' %}";
 {% endblock %}
 
 {% block content %}
-<h2>Statistics for {{ locale }}, {{ tree }}, {{starttime.date}}-{{endtime.date}}</h2>
+<h2>Statistics for {{ locale }} on {{ tree }}</h2>
 <div id="my-timeplot" style="height: 400px;"></div>
 
-<div id="txtData" style="display:none;">{% for run in runs %}
-{{ run.srctime.isoformat }}Z,{{ run.run }},{{ run.missing }},{{ run.obsolete }},{{ run.unchanged }}{% endfor %}
-</div>
-{% for highlight in highlights %}
-<div style="display:none" class="highlight"
-     data-start="{{ highlight.s }}" data-end="{{ highlight.e }}"
-     data-color="{{ highlight.c }}"
-></div>
-{% endfor %}
 <p class="divider"></p>
 <h5>Legend</h5>
 <p>Missing strings are depicted as red area, the circle markers are

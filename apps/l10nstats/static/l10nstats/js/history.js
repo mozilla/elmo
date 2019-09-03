@@ -1,8 +1,11 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* global d3, Timeplot */
-/* global fullrange, startdate, enddate, compare_link, tree, locale */
+/* global d3 */
+/* global Timeplot, initial_load */
+/* global fullrange, startdate, enddate, time_data */
+/* global params */
+/* global compare_link */
 
 var data;
 
@@ -39,35 +42,26 @@ function renderPlot() {
   ]);
   var missingArea = d3.area()
     .curve(d3.curveStepAfter)
-    .x((d) => tp.x(d.date))
+    .x((d) => tp.x(d.srctime))
     .y0(tp.height)
     .y1((d) => tp.y(d.missing));
   var obsoleteArea = d3.area()
     .curve(d3.curveStepAfter)
-    .x((d) => tp.x(d.date))
+    .x((d) => tp.x(d.srctime))
     .y0(tp.height)
     .y1((d) => tp.y(d.obsolete));
   var unchangedArea = d3.area()
     .curve(d3.curveStepAfter)
-    .x((d) => tp.x(d.date))
+    .x((d) => tp.x(d.srctime))
     .y0(tp.height)
     .y1((d) => tp.y2(d.unchanged));
 
-  function processRow(row) {
-    return {
-      date: d3.isoParse(row[0]),
-      run: +row[1],
-      missing: +row[2],
-      obsolete: +row[3],
-      unchanged: +row[4]
-    };
-  }
-  data = d3.csvParseRows(document.getElementById("txtData").textContent.trim(), processRow);
+  data = time_data;
   tp.drawAxes(
     [startdate, enddate], fullrange,
     [0, d3.max(data.map((d) => d3.max([d.missing, d.obsolete])))],
     [0, d3.max(data.map((d) => d.unchanged))],
-    {tree, locale}
+    params
   )
   // tp.yDomain([0, d3.max(data.map((d) => d3.max([d.missing, d.obsolete])))]);
   // tp.y2Domain([0, d3.max(data.map((d) => d.unchanged))]);
@@ -110,10 +104,10 @@ function renderPlot() {
     .attr('xlink:href', (d) => compare_link + '?run=' + d.run)
     .attr('xlink:show', 'new');
   markers.append('path')
-    .attr('transform', (d) => `translate(${tp.x(d.date)},${tp.y(d.missing)})`)
+    .attr('transform', (d) => `translate(${tp.x(d.srctime)},${tp.y(d.missing)})`)
     .attr("d", d3.symbol().type(d3.symbolCircle)())
   markers.append('title').text((d) => `missing: ${d.missing}`);
   tp.showMilestones();
 }
 
-renderPlot();
+initial_load();

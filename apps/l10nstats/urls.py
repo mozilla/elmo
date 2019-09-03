@@ -17,6 +17,8 @@ urlpatterns = [
     url(r'^history$', plots.history_plot, name='locale-tree-history'),
     url(r'^compare$', compare.CompareView.as_view(), name='compare-locales'),
     url(r'^tree-status/([^/]+)$', plots.tree_progress, name='tree-history'),
+    url(r'^api/history$', plots.history_api, name='api-history'),
+    url(r'^api/tree-status/([^/]+)$', plots.tree_api, name='api-tree-status'),
     url(r'^progress.css$', ProgressView.as_view(), name='progress-css'),
     url(
         r'^progress-layout.css$',

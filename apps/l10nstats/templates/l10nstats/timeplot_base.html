@@ -13,18 +13,11 @@
 {% block timeplot_styles %}
 {% endblock %}
 {% endcompress %}
+{% block links %}
+{% endblock %}
 {% endblock %}
 
 {% block javascript_matter %}
-<script>
-var startdate = new Date({{stamps.start}}*1000),
-    enddate = new Date({{stamps.end}}*1000),
-    fullrange = [new Date({{stamps.startrange}}*1000), new Date({{stamps.endrange}}*1000)];
-
-var MILESTONES = [{% for ms in milestones %}
-    {time: new Date({{ms.timestamp}} * 1000), version: "{{ms.version}}"},{% endfor %}
-];
-</script>
 {% block timeplot_extra_js %}{% endblock %}
 
 <script src="{% static "js/d3/d3.min.js" %}"></script>

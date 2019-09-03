@@ -12,20 +12,9 @@
 {% block timeplot_styles %}
 <link rel="stylesheet" href="{% static "l10nstats/css/tree_progress.css" %}" type="text/css">
 {% endblock %}
-
-{% block timeplot_extra_js %}
-<script>
-var tree = "{{ tree }}";
-var HIDE_BAD = {{ hideBad|yesno:"true,false" }};
-var BOUND = {{ bound }};
-var top_locales = {{ top_locales }};
-
-var LOCALE_DATA = [{% for item in data %}
-    {time: new Date({{item.srctime}} * 1000), locales: {{ item.locales|safe }}}{% if not forloop.last %},{% endif %}{% endfor %}
-];
-
-var DASHBOARD_HISTORY_URL = '{% url "locale-tree-history" %}?tree=' + tree;
-</script>
+{% block links %}
+<link data-tree="{{ tree }}" rel="locale-tree-history" href="{% url "locale-tree-history" %}" type="application/json">
+<link rel="api" href="{% url "api-tree-status" tree %}" type="application/json">
 {% endblock %}
 
 {% block timeplot_scripts %}

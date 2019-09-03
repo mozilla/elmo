@@ -2,12 +2,43 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 /* global d3, URLSearchParams */
-/* global MILESTONES */
 
 /*
  * Generic code to create a view that takes starttime, endtime,
  * and uses two x-axes to select that
  */
+
+
+var params = new URL(document.location).searchParams;
+var time_data, startdate, enddate, fullrange, MILESTONES;
+
+async function initial_load() {
+  const link = document.head.querySelector("link[rel=api]");
+  const api_url = new URL(link.href);
+  for (const [k, v] of params.entries()) {
+    api_url.searchParams.set(k, v);
+  }
+  let response = await d3.json(api_url);
+  time_data = response.data.map(
+    (row) => {
+      row.srctime = new Date(row.srctime * 1000);
+      return row;
+    }
+  );
+  MILESTONES = response.milestones.map(
+    (ms) => {
+      ms.time = new Date(ms.timestamp * 1000);
+      return ms;
+    }
+  );
+  startdate = new Date(response.stamps.start * 1000);
+  enddate = new Date(response.stamps.end * 1000);
+  fullrange = [
+    new Date(response.stamps.startrange * 1000),
+    new Date(response.stamps.endrange * 1000)
+  ]
+  renderPlot();
+}
 
 class Timeplot {
   constructor(selector, options) {
@@ -89,8 +120,8 @@ class Timeplot {
     this.brush.extent([[0, 0], [this.x.range()[1], this.options.ymargin]]);
     this.brush2 = d3.brushX();
     this.svg.select("g.x.axis").append("g")
-        .attr("class", "x brush")
-        .call(this.brush);
+      .attr("class", "x brush")
+      .call(this.brush);
     let b2 = this.svg.select("g.x2.axis").append("g")
       .attr("class", "x2 brush")
       .call(this.brush2);
@@ -142,9 +173,9 @@ class Timeplot {
         _p.set('endtime', formatRoundedDate(ed));
       }
       if (params) {
-        for (var k in params) {
-          if (params.hasOwnProperty(k) && ! _p.hasOwnProperty(k)) {
-            _p.set(k, params[k]);
+        for (let [k, v] of params.entries()) {
+          if (! _p.has(k)) {
+            _p.set(k, v);
           }
         }
       }

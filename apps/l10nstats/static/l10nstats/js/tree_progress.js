@@ -1,9 +1,9 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* global d3, HIDE_BAD, BOUND, top_locales, LOCALE_DATA */
-/* global startdate, enddate, fullrange */
-/* global Timeplot, formatRoundedDate, Clusterer */
+/* global d3, params */
+/* global Timeplot, Clusterer, initial_load */
+/* global fullrange, startdate, enddate, time_data */
 
 class Data {
   constructor(labels) {
@@ -33,21 +33,16 @@ class Data {
   }
 }
 
-var params = {};
-if (HIDE_BAD) {
-  params.hideBad = true;
-}
-if (BOUND) {
-  params.bound = BOUND;
-}
-if (top_locales) {
-  params.top_locales = top_locales;
-}
-
 var data, data0, X;
-var loc_data = LOCALE_DATA;
 
-var dashboardHistoryUrl = window.DASHBOARD_HISTORY_URL + "&starttime=" + formatRoundedDate(startdate) + "&endtime=" + formatRoundedDate(enddate) + "&locale="
+const dashboardHistoryUrl = (function() {
+  const link = document.head.querySelector("link[rel=locale-tree-history]");
+  const history_url = new URL(link.href);
+  history_url.searchParams.set("tree", link.dataset.tree);
+  history_url.searchParams.set("starttime", params.get("starttime"));
+  history_url.searchParams.set("endtime", params.get("endtime"));
+  return history_url;
+}());
 
 class ProgressPlot {
   constructor(timeplot) {
@@ -57,11 +52,11 @@ class ProgressPlot {
 
   compute_states() {
     const graphlabels = ['good', 'shady', 'bad'];
-    if (this.params.top_locales) graphlabels.unshift('top_locales');
+    if (this.params.has("top_locales")) graphlabels.unshift('top_locales');
     let state = new Data(graphlabels);
     let current_states = {}, current_top_state = {};
     this.current_missing = {};
-    this.states_over_time = loc_data.map(
+    this.states_over_time = time_data.map(
       (at_time) => {
         Object.assign(this.current_missing, at_time.locales);
         let changed_locales = {}, skip = true;
@@ -72,8 +67,8 @@ class ProgressPlot {
             skip = false;
           }
         });
-        if (params.top_locales) {
-          let this_top_state = this.missing_after_top_locales(this.current_missing, params.top_locales);
+        if (params.has("top_locales")) {
+          let this_top_state = this.missing_after_top_locales(this.current_missing, params.get("top_locales"));
           if (
             this_top_state.locale !== current_top_state.locale
             || this_top_state.missing !== current_top_state.missing
@@ -91,7 +86,7 @@ class ProgressPlot {
         });
         Object.assign(current_states, changed_locales);
         state.value('changed_locales', changed_locales);
-        return state.data(at_time.time);
+        return state.data(at_time.srctime);
       }
     ).filter((_state) => _state);
     this.states_over_time.push(state.data(enddate));
@@ -99,7 +94,7 @@ class ProgressPlot {
 
   _getState(count) {
     if (count === 0) return 'good';
-    if (count > this.params.bound) return 'bad';
+    if (count > this.params.get("bound")) return 'bad';
     return 'shady';
   }
 
@@ -202,11 +197,13 @@ class Tooltip {
       tp.x.invert(mouseX - this.whiteBoxOffset),
       tp.x.invert(mouseX + this.whiteBoxOffset)
     );
-    if (plot.params.top_locales) {
+    if (plot.params.has("top_locales")) {
       var date = tp.x.invert(mouseX), i = 0;
       while (plot.states_over_time[i] && plot.states_over_time[i].date < date) ++i;
       var datum = plot.states_over_time[i-1].top_locales;
-      this.percElt.innerHTML = `${datum.missing} (<a href="${dashboardHistoryUrl + datum.locale}">${datum.locale}</a>)`;
+      dashboardHistoryUrl.searchParams.set("locale", datum.locale);
+      this.percElt.innerHTML = `${datum.missing} (<a href="${dashboardHistoryUrl}">${datum.locale}</a>)`;
+      dashboardHistoryUrl.searchParams.delete('locale');
       this.percElt.parentElement.style.display = '';
     }
     else {
@@ -243,13 +240,15 @@ class Tooltip {
     element.innerHTML = '';
     locales.forEach((locale, i) => {
       let linkElt = document.createElement("a");
-      linkElt.href= dashboardHistoryUrl + locale;
+      dashboardHistoryUrl.searchParams.set("locale", locale);
+      linkElt.href= dashboardHistoryUrl;
       linkElt.textContent = locale;
       if (i >= clipTreshold) {
         linkElt.className = "clip";
       }
       element.appendChild(linkElt);
     });
+    dashboardHistoryUrl.searchParams.delete("locale");
     if (element.lastChild.classList.contains("clip")) {
       element.classList.add("clipping");
       element.appendChild(document.createElement("span"));
@@ -269,28 +268,29 @@ function renderPlot() {
   data = plot;
   plot.compute_states();
   var layers = ['good', 'shady'];
-  if (!params.hideBad) {
+  if (!params.has("hideBad")) {
     layers.push('bad');
   }
   data0 = d3.stack()
     .keys(layers)
     .order(d3.stackOrderNone)
-    .offset(d3.stackOffsetNone)
-    (plot.states_over_time);
+    .offset(d3.stackOffsetNone)(
+      plot.states_over_time
+    );
   var area = d3.area()
     .curve(d3.curveStepAfter)
     .x((d) => tp.x(d.data.date))
     .y0((d) => tp.y(d[0]))
     .y1((d) => tp.y(d[1]));
   let yDomain = [0, 0], y2Domain;
-  if (params.hideBad) {
+  if (params.has("hideBad")) {
     yDomain[1] = d3.max(plot.states_over_time.map((d) => d.good + d.shady));
   }
   else {
     yDomain[1] = d3.max(plot.states_over_time.map((d) => d.good + d.shady + d.bad));
   }
   yDomain[1] += 10;
-  if (params.top_locales) {
+  if (params.has("top_locales")) {
     y2Domain = [0, d3.max(plot.states_over_time.map((d) => d.top_locales.missing)) * 1.1 + 10];
   }
   tp.drawAxes([startdate, enddate], fullrange, yDomain, y2Domain, params);
@@ -302,7 +302,7 @@ function renderPlot() {
     .style("stroke", "black")
     .style("fill", (d, i) => ['#339900', 'grey', '#990000'][i])
     .attr("d", area);
-  if (params.top_locales) {
+  if (params.has("top_locales")) {
     var percLine = d3.line()
       .curve(d3.curveStepAfter)
       .x((d) => tp.x(d.date))
@@ -319,15 +319,24 @@ function renderPlot() {
 
   missing_plot.show(plot.current_missing);
   document.getElementById('my-timeplot').addEventListener('click', onClickPlot);
-  document.getElementById('boundField').value = params.bound || 0;
-  document.getElementById('showBadField').checked = !params.hideBad;
-  document.getElementById('perctField').value = params.top_locales;
+  document.getElementById('boundField').value = params.get("bound") || 0;
+  document.getElementById('showBadField').checked = !params.has("hideBad");
+  document.getElementById('perctField').value = params.get("top_locales");
 }
 
 function update(args) {
-  Object.assign(params, args);
-  if (params.hasOwnProperty('hideBad') && !params.hideBad) {
-    delete params.hideBad;
+  for (const k of Object.keys(args)) {
+    if (k === 'hideBad') {
+      if (args[k]) {
+        params.set('hideBad', true);
+      }
+      else {
+        params.delete('hideBad');
+      }
+    }
+    else {
+      params.set(k, args[k]);
+    }
   }
   renderPlot();
 }
@@ -335,8 +344,8 @@ function update(args) {
 function onClickPlot(evt) {
   var t = X.invert(evt.offsetX);
   var d = {};
-  for (var i = 0; i < loc_data.length && loc_data[i].time < t; ++i) {
-    Object.assign(d, loc_data[i].locales);
+  for (var i = 0; i < time_data.length && time_data[i].srctime < t; ++i) {
+    Object.assign(d, time_data[i].locales);
   }
   missing_plot.show(d, evt.controlKey || evt.metaKey);
 }
@@ -539,4 +548,4 @@ function paintHistogram(current_missing) {
   descs.text((d) => (d.min === d.max ? d.min : `${d.min} - ${d.max}`));
 }
 
-renderPlot();
+initial_load();
