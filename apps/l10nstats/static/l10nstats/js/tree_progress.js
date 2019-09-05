@@ -33,7 +33,7 @@ class Data {
   }
 }
 
-var data, data0, X;
+var data, data0;
 
 const dashboardHistoryUrl = (function() {
   const link = document.head.querySelector("link[rel=locale-tree-history]");
@@ -44,9 +44,9 @@ const dashboardHistoryUrl = (function() {
   return history_url;
 }());
 
-class ProgressPlot {
-  constructor(timeplot) {
-    this.timeplot = timeplot;
+class ProgressPlot extends Timeplot {
+  constructor(selector) {
+    super(selector);
     this.params = params;
   }
 
@@ -109,6 +109,15 @@ class ProgressPlot {
       missing: rv[1],
     };
   }
+
+  onClickPlot(evt) {
+    var t = this.x.invert(evt.offsetX);
+    var d = {};
+    for (var i = 0; i < time_data.length && time_data[i].srctime < t; ++i) {
+      Object.assign(d, time_data[i].locales);
+    }
+    missing_plot.show(d, evt.controlKey || evt.metaKey);
+  }
 }
 
 class Tooltip {
@@ -122,7 +131,7 @@ class Tooltip {
     this.shadyLocalesElt = this.tooltipElt.querySelector('.shady');
     this.badLocalesElt = this.tooltipElt.querySelector('.bad');
     this.percElt = this.tooltipElt.querySelector('.top_locales')
-    let tp = this.plot.timeplot;
+    let tp = this.plot;
     let layer = tp.svg.append("g").attr("class", "layer");
 
     // Create the transparent white box that follows the mouse and shows the
@@ -187,7 +196,7 @@ class Tooltip {
 
   showLocalesTooltip() {
     const plot = this.plot;
-    const tp = plot.timeplot;
+    const tp = plot;
     // First update the position of the white box.
     let mouseX = d3.mouse(this.graphZone.node())[0];
     this.whiteBox.attr("x", mouseX - this.whiteBoxOffset);
@@ -260,11 +269,9 @@ class Tooltip {
 }
 
 function renderPlot() {
-  var tp = new Timeplot("#my-timeplot");
-  var svg = tp.graph_layer;
-  X = tp.x;
+  const plot = new ProgressPlot("#my-timeplot");
+  var svg = plot.graph_layer;
 
-  const plot = new ProgressPlot(tp);
   data = plot;
   plot.compute_states();
   var layers = ['good', 'shady'];
@@ -279,9 +286,9 @@ function renderPlot() {
     );
   var area = d3.area()
     .curve(d3.curveStepAfter)
-    .x((d) => tp.x(d.data.date))
-    .y0((d) => tp.y(d[0]))
-    .y1((d) => tp.y(d[1]));
+    .x((d) => plot.x(d.data.date))
+    .y0((d) => plot.y(d[0]))
+    .y1((d) => plot.y(d[1]));
   let yDomain = [0, 0], y2Domain;
   if (params.has("hideBad")) {
     yDomain[1] = d3.max(plot.states_over_time.map((d) => d.good + d.shady));
@@ -293,7 +300,7 @@ function renderPlot() {
   if (params.has("top_locales")) {
     y2Domain = [0, d3.max(plot.states_over_time.map((d) => d.top_locales.missing)) * 1.1 + 10];
   }
-  tp.drawAxes([startdate, enddate], fullrange, yDomain, y2Domain, params);
+  plot.drawAxes([startdate, enddate], fullrange, yDomain, y2Domain, params);
   svg.selectAll("path.progress")
     .data(data0)
     .enter()
@@ -305,20 +312,20 @@ function renderPlot() {
   if (params.has("top_locales")) {
     var percLine = d3.line()
       .curve(d3.curveStepAfter)
-      .x((d) => tp.x(d.date))
-      .y((d) => tp.y2(d.top_locales.missing));
+      .x((d) => plot.x(d.date))
+      .y((d) => plot.y2(d.top_locales.missing));
     svg.append("path")
       .attr("class", "top_locales")
       .attr("d", percLine(plot.states_over_time));
   }
 
-  tp.showMilestones();
+  plot.showMilestones();
 
   const tooltip = new Tooltip(plot);
   tooltip.render();
 
   missing_plot.show(plot.current_missing);
-  document.getElementById('my-timeplot').addEventListener('click', onClickPlot);
+  document.getElementById('my-timeplot').addEventListener('click', plot.onClickPlot.bind(plot));
   document.getElementById('boundField').value = params.get("bound") || 0;
   document.getElementById('showBadField').checked = !params.has("hideBad");
   document.getElementById('perctField').value = params.get("top_locales");
@@ -339,15 +346,6 @@ function update(args) {
     }
   }
   renderPlot();
-}
-
-function onClickPlot(evt) {
-  var t = X.invert(evt.offsetX);
-  var d = {};
-  for (var i = 0; i < time_data.length && time_data[i].srctime < t; ++i) {
-    Object.assign(d, time_data[i].locales);
-  }
-  missing_plot.show(d, evt.controlKey || evt.metaKey);
 }
 
 class LocalesMissingPlot {
