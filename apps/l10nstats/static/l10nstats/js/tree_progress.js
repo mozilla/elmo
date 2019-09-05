@@ -123,13 +123,13 @@ class Tooltip {
     this.badLocalesElt = this.tooltipElt.querySelector('.bad');
     this.percElt = this.tooltipElt.querySelector('.top_locales')
     let tp = this.plot.timeplot;
-    let svg = tp.svg;
+    let layer = tp.svg.append("g").attr("class", "layer");
 
     // Create the transparent white box that follows the mouse and shows the
     // considered time range.
     const whiteBoxWidth = 20; // pixels
     this.whiteBoxOffset = whiteBoxWidth / 2;
-    this.whiteBox = svg.append("g").append("rect");
+    this.whiteBox = layer.append("rect");
     this.whiteBox.attr("x", -9999)
       .attr("y", tp.y(0) - tp.height - 1)
       .attr("width", whiteBoxWidth)
@@ -141,7 +141,7 @@ class Tooltip {
     // Define a new element that is the size of the graph, and that is used to
     // detect the mouse movements. As this element is on top in the DOM, this
     // ensures all mouse events will be caught.
-    this.graphZone = svg.append("g").append("rect");
+    this.graphZone = layer.append("rect");
     this.graphZone.attr("x", 0)
       .attr("y", tp.y(0) - tp.height - 1)
       .attr("width", tp.width)
