@@ -78,7 +78,6 @@ def history_api(request):
     q = q2 = Run.objects.filter(tree=tree, locale=locale)
     try:
         startrange = (q.order_by('srctime')
-                      .exclude(srctime=None)
                       .values_list('srctime', flat=True)[0])
     except IndexError:
         # oops, we're obviously not building this, 404
