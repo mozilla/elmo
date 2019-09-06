@@ -16,3 +16,19 @@ svg.timeline {
   stroke: transparent;
   fill-opacity: .125;
 }
+
+#my-timeplot {
+    height: 400px;
+    text-align: center;
+}
+
+x-spinner > svg {
+    height: 100%
+}
+
+.spinner > circle {
+    fill: grey;
+    r: 3px;
+    cx: 10px;
+    cy: 0;
+}

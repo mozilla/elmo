@@ -26,10 +26,6 @@ td:nth-child(odd) {
     background-color: #E6E6E6;
 }
 
-#my-timeplot {
-    height: 400px;
-}
-
 #percentile {
     height: 400px;
 }

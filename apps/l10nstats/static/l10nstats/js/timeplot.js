@@ -191,3 +191,35 @@ function formatRoundedDate(d) {
   );
   return `${round.getUTCFullYear()}-${round.getUTCMonth() + 1}-${round.getUTCDate()}`;
 }
+
+class Spinner extends HTMLElement {
+  constructor() {
+    super();
+  }
+  connectedCallback() {
+    this.innerHTML = `
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(60, 60)">
+    <g class="spinner">
+      <circle transform="rotate(0)"/>
+      <animateTransform attributeName="transform"
+                        attributeType="XML"
+                        type="rotate"
+                        from="0 0 0 "
+                        to="60 0 0 "
+                        dur="1.5s"
+                        repeatCount="indefinite"/>
+    </g>
+  </g>
+</svg>
+`;
+    let master = this.querySelector('circle');
+    for (let i=1, ii=6; i < ii; ++i) {
+      let clone = master.cloneNode(true);
+      clone.transform.baseVal[0].setRotate(i * 60, 0, 0);
+      master.parentElement.appendChild(clone);
+    }
+  }
+}
+
+customElements.define("x-spinner", Spinner);

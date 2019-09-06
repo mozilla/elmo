@@ -40,7 +40,9 @@
   </div>
 </div>
 
-<div id="my-timeplot"></div>
+<div id="my-timeplot">
+<x-spinner />
+</div>
 <div class="legend">
   <input type="checkbox" onchange="update({hideBad:!event.target.checked});" id="showBadField">red area: locales with missing strings<br>
   shaded area: locales with <input type="text" size="3" id="boundField" onchange="update({bound:Number(event.target.value)})"> missing strings<br>
