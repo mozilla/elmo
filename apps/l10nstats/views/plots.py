@@ -33,12 +33,12 @@ def getRunsBefore(tree, stamp, locales):
                                srctime__lt=stamp)
         q = q.order_by('-srctime')[:len(locales) * 2]
         q = q.select_related('locale')
-        if q.count() == 0:
+        if not q.exists():
             return runs
         for r in q:
             if r.locale.code not in runs:
                 runs[r.locale.code] = r
-                locales.remove(r.locale)
+                locales.remove(r.locale.id)
 
 
 def milestones(tree, starttime, endtime):
@@ -157,10 +157,6 @@ def tree_api(request, tree):
     """
     tree = get_object_or_404(Tree, code=tree)
 
-    locales = Locale.objects.filter(run__tree=tree, run__active__isnull=False)
-    locales = list(locales)
-    if not locales:
-        return HttpResponse("no statistics for %s" % str(tree))
     q = Run.objects.filter(tree=tree)
     _d = q.aggregate(allStart=Min('srctime'), allEnd=Max('srctime'))
     allStart, allEnd = (_d[k] for k in ('allStart', 'allEnd'))
@@ -181,11 +177,10 @@ def tree_api(request, tree):
     if starttime < startrange:
         starttime = startrange
 
-    q = q.filter(locale__in=locales)
     q2 = q.filter(srctime__lte=endtime,
-                  srctime__gte=starttime).order_by('srctime')
-    q2 = q2.select_related('locale')
+                  srctime__gte=starttime)
 
+    locales = q2.values_list('locale', flat=True).distinct()
     initial_runs = getRunsBefore(tree, starttime,
                                  locales)
     datadict = defaultdict(dict)
@@ -194,6 +189,7 @@ def tree_api(request, tree):
         datadict[stamp][loc] = (r.missing +
                                 r.missingInFiles +
                                 r.report)
+    q2 = q2.select_related('locale').order_by('srctime')
     for r in q2:
         stamp = int(calendar.timegm(r.srctime.timetuple()))
         datadict[stamp][r.locale.code] = (r.missing +
