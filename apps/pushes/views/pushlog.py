@@ -89,7 +89,9 @@ def pushlog(request, repo_name):
         # we're only interested in the changesets that actually contain
         # our paths, reduce our query, and store how many changesets
         # there are per push without the filter
-        push_changesets = push_changesets.filter(changeset__files__in=files)
+        push_changesets = (
+            push_changesets.filter(changeset__files__in=files).distinct()
+        )
         pushcounts.update(Push.objects
                           .filter(id__in=push_ids)
                           .annotate(changecount=Count('changesets'))
