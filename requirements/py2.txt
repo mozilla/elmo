@@ -1,2 +1,2 @@
 # python 2 only:
-mercurial==4.6.2
+mercurial==5.1.2
