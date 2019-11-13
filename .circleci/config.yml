@@ -8,7 +8,7 @@ jobs:
     docker:
       # specify the version you desire here
       # use `-browsers` prefix for selenium tests, e.g. `3.6.1-browsers`
-      - image: circleci/python:3.6.1
+      - image: circleci/python:3.7.5
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -28,11 +28,11 @@ jobs:
       - run:
           name: Install Docker Compose
           command: |
-            curl -L https://github.com/docker/compose/releases/download/1.20.1/docker-compose-`uname -s`-`uname -m` -o ~/docker-compose
+            curl -L https://github.com/docker/compose/releases/download/1.24.1/docker-compose-`uname -s`-`uname -m` -o ~/docker-compose
             chmod +x ~/docker-compose
             sudo mv ~/docker-compose /usr/local/bin/docker-compose
       - setup_remote_docker:
-          version: 17.11.0-ce
+          version: 18.06.0-ce
 
       - run:
           name: Create version.json
