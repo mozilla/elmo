@@ -39,12 +39,13 @@ class Command(BaseCommand):
     params = re.compile(r'%\((.*?)\)s')
 
     def handle(self, **options):
-        for alias, pn in (('fx', 'L10n:Bugogram'),
-                          ('fennec', 'L10n:Mobile/Bugogram')):
+        for alias, pn in (
+            ('fx', 'L10n:Bugogram'),
+        ):
 
             page = urlopen(
               'http://wiki.mozilla.org/index.php?title=%s&action=raw' % pn
-              ).read()
+              ).read().decode('utf-8')
 
             allbugs = []
 
@@ -71,4 +72,7 @@ class Command(BaseCommand):
                                     'bugsy',
                                     'new-%s-locales.json' % alias]))
             open(fname, 'w').write(
-              json_license + json.dumps(allbugs, indent=2) + "\n")
+                json_license +
+                json.dumps(allbugs, indent=2, sort_keys=True) +
+                "\n"
+            )
