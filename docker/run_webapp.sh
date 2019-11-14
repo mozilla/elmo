@@ -23,11 +23,11 @@ if [ "$1" == "--dev" ]; then
     echo "Running webapp in local dev environment."
     echo "Connect with your browser using: http://localhost:8000/ "
     echo "******************************************************************"
-    cd /app/ && ${CMDPREFIX} /app/env/bin/python manage.py runserver 0.0.0.0:8000
+    cd /app/ && ${CMDPREFIX} python manage.py runserver 0.0.0.0:8000
 
 else
     # Run uwsgi
-    ${CMDPREFIX} uwsgi --venv /app/env/ \
+    ${CMDPREFIX} uwsgi \
                  --pythonpath /app/:/app/apps/ \
                  --master \
                  --need-app \

@@ -71,7 +71,7 @@ jobs:
             docker-compose run --rm \
             -e ELMO_TEST_COMPRESS_ENABLED=0 -e ELMO_TEST_COMPRESS_OFFLINE=0 \
             elmo_webapp \
-            /app/env/bin/python manage.py test -k --noinput
+            python manage.py test -k --noinput
 
       - run:
           name: stop dockers
