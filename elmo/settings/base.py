@@ -66,7 +66,7 @@ STATIC_ROOT = COMPRESS_ROOT = os.path.normpath(
 
 # Middlewares, apps, URL configs.
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -75,8 +75,8 @@ MIDDLEWARE_CLASSES = (
     'session_csrf.CsrfMiddleware',
     'mozilla_django_oidc.middleware.SessionRefresh',
     'csp.middleware.CSPMiddleware',
-    'commonware.middleware.FrameOptionsHeader',
-    'commonware.middleware.ScrubRequestOnException',
+    'elmo.middleware.FrameOptionsHeader',
+    'elmo.middleware.ScrubRequestOnException',
 )
 
 INSTALLED_APPS = (

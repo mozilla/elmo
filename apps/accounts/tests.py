@@ -80,9 +80,9 @@ class AccountsTestCase(TestCase):
 
         self.assertIn(
             'session_csrf.CsrfMiddleware',
-            settings.MIDDLEWARE_CLASSES)
+            settings.MIDDLEWARE)
         self.assertNotIn(
             'django.middleware.csrf.CsrfViewMiddleware',
-            settings.MIDDLEWARE_CLASSES)
+            settings.MIDDLEWARE)
 
         self.assertIn('session_csrf', settings.INSTALLED_APPS)
