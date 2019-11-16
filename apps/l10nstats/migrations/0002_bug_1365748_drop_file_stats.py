@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
             model_name='run',
             name='unchangedmodules',
         ),
-        migrations.RunPython(cleanUpContentTypes),
+        migrations.RunPython(cleanUpContentTypes, elidable=True),
         migrations.DeleteModel(
             name='ModuleCount',
         ),
