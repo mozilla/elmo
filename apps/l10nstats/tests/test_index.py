@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 from elmo.test import TestCase
 from six.moves.urllib.parse import urlparse
 from django.http import QueryDict
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 import l10nstats.views
 import shipping.views
 

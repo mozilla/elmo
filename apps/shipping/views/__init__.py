@@ -20,7 +20,7 @@ from l10nstats.models import Run
 from shipping.models import AppVersion, Action
 from shipping.api import flags4appversions
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db.models import Max
 from django.utils.http import urlencode
 from django.utils.safestring import mark_safe

@@ -10,7 +10,7 @@ from __future__ import unicode_literals
 from django import template
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from mbdb.models import Change, Build
 import tinder.views
