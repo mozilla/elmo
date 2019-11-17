@@ -52,8 +52,8 @@ def heartbeat(request):
             data['mercurial'] = 'ok'
         except Exception as e:
             data['mercurial'] = str(e)
-    if hasattr(settings, 'ES_COMPARE_HOST'):
-        es = elasticsearch.Elasticsearch(hosts=[settings.ES_COMPARE_HOST])
+    if hasattr(settings, 'ES_KWARGS'):
+        es = elasticsearch.Elasticsearch(**settings.ES_KWARGS)
         try:
             es.search(
                 index=settings.ES_COMPARE_INDEX,

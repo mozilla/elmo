@@ -111,6 +111,15 @@ if (
         }
     }])
 
+# create ES_KWARGS, if needed
+if 'ES_COMPARE_HOST' in globals():
+    import certifi
+    ES_KWARGS = {
+        'hosts': [globals()['ES_COMPARE_HOST']],
+        'verify_certs': True,
+        'ca_certs': certifi.where(),
+    }
+
 # generic django settings, good for DEBUG etc
 boolmapper = {
     'true': True,

@@ -156,9 +156,9 @@ class CompareView(TemplateView):
         return context
 
     def get_doc(self, run):
-        if not hasattr(settings, 'ES_COMPARE_HOST'):
+        if not hasattr(settings, 'ES_KWARGS'):
             return None
-        es = elasticsearch.Elasticsearch(hosts=[settings.ES_COMPARE_HOST])
+        es = elasticsearch.Elasticsearch(**settings.ES_KWARGS)
         try:
             rv = es.get(index=settings.ES_COMPARE_INDEX,
                         doc_type='comparison',

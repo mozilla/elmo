@@ -35,9 +35,9 @@ class Command(LoggingCommand):
                             help='Go back in time')
 
     def handleWithLogging(self, **options):
-        if not (hasattr(settings, 'ES_COMPARE_INDEX') and
+        if not (hasattr(settings, 'ES_KWARGS') and
                 hasattr(settings, 'ES_COMPARE_HOST')):
-            raise CommandError('ES_COMPARE_INDEX or ES_COMPARE_HOST'
+            raise CommandError('ES_COMPARE_INDEX or ES_KWARGS'
                                ' not defined in settings')
         if (
                 not hasattr(settings, 'LOG_MOUNTS')
@@ -51,7 +51,7 @@ class Command(LoggingCommand):
                 raise CommandError('settings.LOG_MOUNTS not defined for %s' %
                                    master)
         self.chunksize = options['chunksize']
-        self.es = elasticsearch.Elasticsearch(hosts=[settings.ES_COMPARE_HOST])
+        self.es = elasticsearch.Elasticsearch(**settings.ES_KWARGS)
         self.index = settings.ES_COMPARE_INDEX
         # get the latest comparison, in the right direction
         direction = "asc" if options['backwards'] else "desc"
