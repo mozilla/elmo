@@ -10,12 +10,14 @@ from __future__ import unicode_literals
 from datetime import datetime
 import os
 
+from django.db.models import Count
 from django.conf import settings
 from django.http import JsonResponse
 
 import elasticsearch
 
-from life.models import Repository, Forest
+from life.models import Repository
+
 
 def heartbeat(request):
     data = {
@@ -23,7 +25,11 @@ def heartbeat(request):
     }
     status_code = 200
     # check db, and repository access
-    repos = Repository.objects.filter(archived=False)
+    repos = (
+        Repository.objects
+        .annotate(cs_count=Count('changesets'))
+        .filter(archived=False, cs_count__gt=1)
+    )
     try:
         has_repos = repos.count()
         data['db'] = 'ok'
@@ -34,10 +40,18 @@ def heartbeat(request):
     if has_repos:
         try:
             os.stat(repos[0].local_path())
-            data['mouns'] = 'ok'
+            data['mounts'] = 'ok'
         except Exception as e:
             data['mounts'] = str(e)
             status_code = 500
+    if data['mounts'] == 'ok':
+        try:
+            import hglib
+            client = hglib.open(repos[0].local_path())
+            client.tip()
+            data['mercurial'] = 'ok'
+        except Exception as e:
+            data['mercurial'] = str(e)
     if hasattr(settings, 'ES_COMPARE_HOST'):
         es = elasticsearch.Elasticsearch(hosts=[settings.ES_COMPARE_HOST])
         try:
@@ -60,5 +74,5 @@ def heartbeat(request):
     if 'log_mounts' not in data:
         data['log_mounts'] = 'not found'
         status_code = 500
-    
+
     return JsonResponse(data, status=status_code)
