@@ -10,7 +10,7 @@ from __future__ import unicode_literals
 
 from datetime import datetime, timedelta
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.template.loader import render_to_string
 from django.http import HttpResponsePermanentRedirect
 

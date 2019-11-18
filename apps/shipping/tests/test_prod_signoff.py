@@ -4,7 +4,7 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from elmo.test import TestCase
 from django.contrib.auth.models import User, Permission
 from django.test import override_settings

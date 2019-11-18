@@ -11,6 +11,7 @@ from django.http import HttpResponse
 from django.views.generic import TemplateView
 from session_csrf import anonymous_csrf
 from elmo.admin_site import admin_site
+from elmo.heartbeat import heartbeat
 
 
 def simple_x_frame_view(request):
@@ -32,9 +33,14 @@ urlpatterns = [
     url(r'^contribute.json$',
         TemplateView.as_view(template_name='contribute.json',
                              content_type='application/json')),
+    # dockerflow end points
+    # https://github.com/mozilla-services/Dockerflow/blob/master/README.md#containerized-app-requirements
     url(r'^__version__$',
         TemplateView.as_view(template_name='version.json',
                              content_type='application/json')),
+    url(r'^__lbheartbeat__$', lambda request: HttpResponse()),
+    url(r'^__heartbeat__$', heartbeat),
+    # end of dockerflow end points
     url(
         r'^login/$',
         anonymous_csrf(auth_views.LoginView.as_view()),

@@ -5,7 +5,7 @@ services:
             context: .
             dockerfile: ./docker/Dockerfile
             args:
-                - pythonversion=2.7.15
+                - pythonversion=3.7.5
         image: elmo_webapp
         env_file:
             - ./.circleci/test.env

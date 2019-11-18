@@ -9,7 +9,7 @@ from importlib import import_module
 import re
 import os
 from elmo.test import TestCase
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.cache import cache
 from django.conf import settings
 from django.utils.encoding import force_text

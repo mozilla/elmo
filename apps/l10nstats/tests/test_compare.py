@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 
 from elmo.test import TestCase
 from django.test.client import RequestFactory
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from life.models import Tree, Locale, Forest
 from ..models import Run
 from l10nstats.views import compare

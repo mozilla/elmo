@@ -7,7 +7,7 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db.models import Count
 from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404

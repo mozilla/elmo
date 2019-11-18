@@ -8,7 +8,7 @@ import json
 import re
 from elmo.test import TestCase
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth.models import User
 from django.template import engines
 from django.utils.encoding import force_text
@@ -80,9 +80,9 @@ class AccountsTestCase(TestCase):
 
         self.assertIn(
             'session_csrf.CsrfMiddleware',
-            settings.MIDDLEWARE_CLASSES)
+            settings.MIDDLEWARE)
         self.assertNotIn(
             'django.middleware.csrf.CsrfViewMiddleware',
-            settings.MIDDLEWARE_CLASSES)
+            settings.MIDDLEWARE)
 
         self.assertIn('session_csrf', settings.INSTALLED_APPS)

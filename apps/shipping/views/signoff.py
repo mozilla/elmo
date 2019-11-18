@@ -16,7 +16,7 @@ from django.http import Http404, HttpResponseBadRequest, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 # TODO: from django.views.decorators.cache import cache_control
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView
 

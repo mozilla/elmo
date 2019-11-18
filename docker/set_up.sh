@@ -13,16 +13,11 @@ set -v -e -x
 apt-get update
 apt-get upgrade -y
 
-# Install packages for building python packages, mysql, lxml, sasl, and cffi
-apt-get install -y gcc apt-transport-https build-essential \
-        python-dev python-pip \
-        libpq-dev \
-        libxml2-dev libxslt1-dev \
-        libsasl2-dev \
-        libffi-dev \
-        libssl-dev \
-        libmariadbclient-dev \
-        git
+# Install packages for building python packages, mysql, mercurial
+apt-get install -y \
+        gcc \
+        apt-transport-https \
+        libmariadbclient-dev
 
 # Stomp on the bash prompt with something more useful for development.
 cat > /etc/bash.bashrc <<EOF

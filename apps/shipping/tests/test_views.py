@@ -8,7 +8,7 @@ import datetime
 import json
 import re
 from elmo.test import TestCase
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.encoding import force_text
 from l10nstats.models import Run
 from elmo_commons.tests.mixins import EmbedsTestCaseMixin

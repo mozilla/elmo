@@ -5,7 +5,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import codecs
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 import hglib
 import six
 
