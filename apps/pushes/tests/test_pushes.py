@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 import datetime
 import time
 from elmo.test import TestCase
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 import hglib
 
 from elmo_commons.tests.mixins import EmbedsTestCaseMixin

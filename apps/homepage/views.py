@@ -9,7 +9,7 @@ from __future__ import unicode_literals
 
 import datetime
 import feedparser  # vendor-local
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import (HttpResponsePermanentRedirect,
                          HttpResponseServerError)
 from django.shortcuts import render, redirect

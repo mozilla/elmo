@@ -12,7 +12,7 @@ import datetime
 from tempfile import gettempdir
 from elmo.test import TestCase
 from elmo_commons.tests.mixins import EmbedsTestCaseMixin
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.test import override_settings
 from django.test.client import Client
 from django.utils.encoding import force_text
