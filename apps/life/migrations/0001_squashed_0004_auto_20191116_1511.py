@@ -7,6 +7,27 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
+def initial_data(apps, schema_editor):
+    Branch = apps.get_model('life', 'branch')
+    Changeset = apps.get_model('life', 'changeset')
+
+    default_branch, _ = Branch.objects.get_or_create(
+        id=1,
+        name='default'
+    )
+    zero_changeset, _ = Changeset.objects.get_or_create(
+        id=1,
+        revision="0"*40,
+        user="",
+        description="",
+        branch=default_branch
+    )
+    Changeset.parents.through.objects.get_or_create(
+        from_changeset=zero_changeset,
+        to_changeset=zero_changeset
+    )
+
+
 class Migration(migrations.Migration):
 
     replaces = [('life', '0001_initial'), ('life', '0002_bug_1138550_unified_clones'), ('life', '0003_bug_1353850_on_delete'), ('life', '0004_auto_20191116_1511')]
@@ -22,7 +43,7 @@ class Migration(migrations.Migration):
             name='Branch',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.TextField(help_text=b'name of the branch')),
+                ('name', models.TextField(help_text='name of the branch')),
             ],
         ),
         migrations.CreateModel(
@@ -30,8 +51,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('revision', models.CharField(db_index=True, max_length=40, unique=True)),
-                ('user', models.CharField(db_index=True, default=b'', max_length=200)),
-                ('description', models.TextField(default=b'', null=True)),
+                ('user', models.CharField(db_index=True, default='', max_length=200)),
+                ('description', models.TextField(default='', null=True)),
                 ('branch', models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, related_name='changesets', to='life.Branch')),
                 ('files', models.ManyToManyField(to='mbdb.File')),
                 ('parents', models.ManyToManyField(related_name='_children', to='life.Changeset')),
@@ -60,7 +81,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('user', models.CharField(db_index=True, max_length=200)),
-                ('push_date', models.DateTimeField(db_index=True, verbose_name=b'date of push')),
+                ('push_date', models.DateTimeField(db_index=True, verbose_name='date of push')),
                 ('push_id', models.PositiveIntegerField(default=0)),
                 ('changesets', models.ManyToManyField(related_name='pushes', to='life.Changeset')),
             ],
@@ -73,8 +94,8 @@ class Migration(migrations.Migration):
                 ('url', models.URLField()),
                 ('archived', models.BooleanField(default=False)),
                 ('changesets', models.ManyToManyField(related_name='repositories', to='life.Changeset')),
-                ('forest', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='repositories', to='life.Forest')),
-                ('locale', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='life.Locale')),
+                ('forest', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='repositories', to='life.Forest')),
+                ('locale', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='life.Locale')),
             ],
         ),
         migrations.CreateModel(
@@ -119,34 +140,5 @@ class Migration(migrations.Migration):
             name='fork_of',
             field=models.ForeignKey(blank=True, default=None, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='forks', to='life.Repository'),
         ),
-        migrations.AlterField(
-            model_name='repository',
-            name='forest',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='repositories', to='life.Forest'),
-        ),
-        migrations.AlterField(
-            model_name='repository',
-            name='locale',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='life.Locale'),
-        ),
-        migrations.AlterField(
-            model_name='branch',
-            name='name',
-            field=models.TextField(help_text='name of the branch'),
-        ),
-        migrations.AlterField(
-            model_name='changeset',
-            name='description',
-            field=models.TextField(default='', null=True),
-        ),
-        migrations.AlterField(
-            model_name='changeset',
-            name='user',
-            field=models.CharField(db_index=True, default='', max_length=200),
-        ),
-        migrations.AlterField(
-            model_name='push',
-            name='push_date',
-            field=models.DateTimeField(db_index=True, verbose_name='date of push'),
-        ),
+        migrations.RunPython(initial_data, elidable=True),
     ]

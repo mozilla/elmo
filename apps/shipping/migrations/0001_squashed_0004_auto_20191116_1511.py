@@ -25,8 +25,8 @@ class Migration(migrations.Migration):
             name='Action',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('flag', models.IntegerField(choices=[(0, b'pending'), (1, b'accepted'), (2, b'rejected'), (3, b'canceled'), (4, b'obsoleted')])),
-                ('when', models.DateTimeField(default=datetime.datetime.utcnow, verbose_name=b'signoff action timestamp')),
+                ('flag', models.IntegerField(choices=[(0, 'pending'), (1, 'accepted'), (2, 'rejected'), (3, 'canceled'), (4, 'obsoleted')])),
+                ('when', models.DateTimeField(default=datetime.datetime.utcnow, verbose_name='signoff action timestamp')),
                 ('comment', models.TextField(blank=True, null=True)),
                 ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
@@ -69,7 +69,7 @@ class Migration(migrations.Migration):
             name='Signoff',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('when', models.DateTimeField(default=datetime.datetime.utcnow, verbose_name=b'signoff timestamp')),
+                ('when', models.DateTimeField(default=datetime.datetime.utcnow, verbose_name='signoff timestamp')),
                 ('appversion', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='signoffs', to='shipping.AppVersion')),
                 ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
                 ('locale', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='life.Locale')),
@@ -101,20 +101,5 @@ class Migration(migrations.Migration):
             model_name='action',
             name='signoff',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='shipping.Signoff'),
-        ),
-        migrations.AlterField(
-            model_name='action',
-            name='flag',
-            field=models.IntegerField(choices=[(0, 'pending'), (1, 'accepted'), (2, 'rejected'), (3, 'canceled'), (4, 'obsoleted')]),
-        ),
-        migrations.AlterField(
-            model_name='action',
-            name='when',
-            field=models.DateTimeField(default=datetime.datetime.utcnow, verbose_name='signoff action timestamp'),
-        ),
-        migrations.AlterField(
-            model_name='signoff',
-            name='when',
-            field=models.DateTimeField(default=datetime.datetime.utcnow, verbose_name='signoff timestamp'),
         ),
     ]
