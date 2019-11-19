@@ -148,5 +148,5 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(to='life.Repository'),
             preserve_default=True,
         ),
-        migrations.RunPython(initial_data),
+        migrations.RunPython(initial_data, elidable=True),
     ]
