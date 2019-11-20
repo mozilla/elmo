@@ -47,8 +47,8 @@ def heartbeat(request):
     if data['mounts'] == 'ok':
         try:
             import hglib
-            client = hglib.open(repos[0].local_path())
-            client.tip()
+            with hglib.open(repos[0].local_path()) as client:
+                client.tip()
             data['mercurial'] = 'ok'
         except Exception as e:
             data['mercurial'] = str(e)
