@@ -60,7 +60,7 @@ class ModelsTest(TestCase):
                                            value=value)
             # get back out to ensure it doesn't cache the python object only
             prop = Property.objects.get(value__exact=value)
-            self.assertEquals(value, prop.value)
+            self.assertEqual(value, prop.value)
             prop.delete()
 
     def testPropertyDataDump(self):
