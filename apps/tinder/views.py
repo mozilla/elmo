@@ -763,6 +763,7 @@ def generateLog(master, filename, channels):
                     yield {'channel': channel, 'data': chunk}
             buf = buf[offset:] + f.read(buflen)
             offset = 0
+        f.close()
     return _iter(f)
 
 

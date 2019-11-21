@@ -110,8 +110,18 @@ def handlePushes(repo_id, submits, do_update=False, close_connection=False):
         # maybe we lost the connection, close it to make sure we get a new one
         connection.close()
     repo = Repository.objects.get(id=repo_id)
-    hgrepo = _hg_repository_sync(repo.local_path(), repo.url,
-                                 do_update=do_update)
+    with _hg_repository_sync(
+        repo.local_path(), repo.url, do_update=do_update
+    ) as hgrepo:
+        return _handlePushes(
+            repo, hgrepo, repo_id, submits,
+            do_update=do_update, close_connection=close_connection
+        )
+
+
+def _handlePushes(
+    repo, hgrepo, repo_id, submits, do_update=False, close_connection=False
+):
     revs = reduce(
         lambda r, l: r+l,
         (data.changesets for data in submits),
