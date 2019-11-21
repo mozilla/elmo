@@ -735,14 +735,14 @@ def generateLog(master, filename, channels):
         f = BZ2File(filename + ".bz2", "r")
     except IOError:
         try:
-            f = open(filename, "r")
+            f = open(filename, "rb")
         except IOError:
             raise NoLogFile("Log `%s` on master `%s` not found" %
                             (filename, master))
 
     def _iter(f):
         buflen = 64 * 1024
-        buf = f.read(buflen)
+        buf = f.read(buflen).decode('utf-8')
         offset = 0
         while buf:
             m = head.match(buf, offset)
@@ -761,7 +761,7 @@ def generateLog(master, filename, channels):
                     offset += cnt
                 if channels is None or channel in channels:
                     yield {'channel': channel, 'data': chunk}
-            buf = buf[offset:] + f.read(buflen)
+            buf = buf[offset:] + f.read(buflen).decode('utf-8')
             offset = 0
     return _iter(f)
 
