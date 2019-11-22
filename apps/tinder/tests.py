@@ -7,6 +7,7 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import bz2
 import os
 import datetime
 from tempfile import gettempdir
@@ -309,6 +310,42 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
                       args=[step.id, log.name])
         with open(os.path.join(self.temp_directory, log.filename), 'w') as f:
             f.write(SAMPLE_BUILD_LOG_PAYLOAD)
+
+        with override_settings(LOG_MOUNTS={master.name: self.temp_directory}):
+            response = self.client.get(url)
+        content = force_text(response.content)
+        content = content.split('</header>')[1].split('</footer')[0]
+
+        self.assertIn(
+            '<span class="pre header">header content\n</span>',
+            content)
+        self.assertIn(
+            '<span class="pre stdout">stdout content\n</span>',
+            content)
+        self.assertIn(
+            '<span class="pre stderr">stderr content\n</span>',
+            content)
+        self.assertNotIn('json', content)
+
+    def test_showlog_compressed(self):
+        """Test that showlog shows headers, stdout, stderr,
+        with the right CSS classes, but not data from other channels like json.
+        """
+        master = Master.objects.all()[0]
+
+        build = Build.objects.all()[0]
+        step = build.steps.all()[0]
+        log = Log.objects.create(
+          name='foo',
+          filename='foo.log',
+          step=step,
+        )
+        url = reverse('tinder-showlog',
+                      args=[step.id, log.name])
+        with open(
+            os.path.join(self.temp_directory, log.filename + '.bz2'), 'wb'
+        ) as f:
+            f.write(bz2.compress(SAMPLE_BUILD_LOG_PAYLOAD.encode('utf-8')))
 
         with override_settings(LOG_MOUNTS={master.name: self.temp_directory}):
             response = self.client.get(url)
