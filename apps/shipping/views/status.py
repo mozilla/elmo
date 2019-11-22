@@ -138,8 +138,8 @@ class JSONChangesets(SignoffDataView):
                            .filter(branch=1)  # default branch
                            .order_by('-pk')
                            .values_list('revision', flat=True)[0])
-                locales = repo.cat(files=['path:'+str(props['path'])],
-                                   rev=rev).split()
+                locales = repo.cat([repo.pathto(props['path'])],
+                                   rev=rev).decode('utf-8').split()
             finally:
                 repo.close()
             for loc in locales:
