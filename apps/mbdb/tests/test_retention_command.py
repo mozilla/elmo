@@ -58,7 +58,8 @@ class CommandTest(TestCase):
             self.buildsdir, self.builder.name, str(buildnumber)
         )
         logs = []
-        open(builder_pickle_mock, 'w')
+        with open(builder_pickle_mock, 'w'):
+            pass
         self.assertTrue(os.path.isfile(builder_pickle_mock))
         step = build.steps.create(
           name='step_1',
@@ -76,7 +77,8 @@ class CommandTest(TestCase):
             isFinished=True
         )
         logs.append(os.path.join(self.buildsdir, log.filename))
-        open(logs[-1], 'w')
+        with open(logs[-1], 'w'):
+            pass
         self.assertTrue(os.path.isfile(logs[-1]))
         step = build.steps.create(
           name='step_2',
@@ -94,7 +96,8 @@ class CommandTest(TestCase):
             isFinished=True
         )
         logs.append(os.path.join(self.buildsdir, log.filename + '.bz2'))
-        open(logs[-1], 'w')
+        with open(logs[-1], 'w'):
+            pass
         self.assertTrue(os.path.isfile(logs[-1]))
         step.logs.create(
             name='err.html',

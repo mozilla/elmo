@@ -45,7 +45,7 @@ class DiffView(View):
     # empty class default for tests
     # overwrite with mutable instance members if you need non-empty values
     moved = copied = constdict()
-    rev1 = rev2 = None
+    client = rev1 = rev2 = None
 
     def _universal_newlines(self, content):
         "CompareLocales reads files with universal newlines, fake that"
@@ -64,12 +64,12 @@ class DiffView(View):
             self.getrepo(reponame)
         except Repository.DoesNotExist:
             raise http.Http404("Repository not found")
-        if not request.GET.get('from'):
-            return http.HttpResponseBadRequest("Missing 'from' parameter")
-        if not request.GET.get('to'):
-            return http.HttpResponseBadRequest("Missing 'to' parameter")
         # make sure we have the client open, and close it when done.
         with self.client:
+            if not request.GET.get('from'):
+                return http.HttpResponseBadRequest("Missing 'from' parameter")
+            if not request.GET.get('to'):
+                return http.HttpResponseBadRequest("Missing 'to' parameter")
             try:
                 paths = self.paths4revs(request.GET['from'],
                                         request.GET['to'])
@@ -109,6 +109,8 @@ class DiffView(View):
     def getrepo(self, reponame):
         '''Set elmo db object and hglib client for given repo name'''
         self.repo = Repository.objects.get(name=reponame)
+        if self.client:
+            self.client.close()
         self.client = hglib.open(self.repo.local_path())
 
     @metrics.timer_decorator('diff.status')
