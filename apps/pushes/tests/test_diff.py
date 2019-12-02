@@ -25,7 +25,6 @@ class DiffTestCase(RepoTestBase):
     def test_error_handling(self):
         """Test various bad request parameters to the diff_app
         and assure that it responds with the right error codes."""
-        hgrepo = hglib.init(self.repo).open()
 
         url = reverse('pushes:diff')
         response = self.client.get(url, {})
@@ -33,17 +32,17 @@ class DiffTestCase(RepoTestBase):
         response = self.client.get(url, {'repo': 'junk'})
         self.assertEqual(response.status_code, 404)
 
-        (open(hgrepo.pathto('file.dtd'), 'w')
-            .write('''
-            <!ENTITY key1 "Hello">
-            <!ENTITY key2 "Cruel">
-            '''))
+        with hglib.init(self.repo).open() as hgrepo:
+            with open(hgrepo.pathto('file.dtd'), 'w') as fh:
+                fh.write('''
+                <!ENTITY key1 "Hello">
+                <!ENTITY key2 "Cruel">
+                ''')
 
-        hgrepo.addremove()
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="initial commit")
-        rev0 = hgrepo[0].node()
-        hgrepo.close()
+            hgrepo.addremove()
+            hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                          message="initial commit")
+            rev0 = hgrepo[0].node()
 
         Repository.objects.create(
             name=self.repo_name,
@@ -67,24 +66,24 @@ class DiffTestCase(RepoTestBase):
         which says that passing unrecognized repo hashes
         should yield a 400 Bad Request error.
         """
-        hgrepo = hglib.init(self.repo).open()
+        with hglib.init(self.repo).open() as hgrepo:
 
-        (open(hgrepo.pathto('file.dtd'), 'w')
-            .write('<!ENTITY key1 "Hello">\n'))
+            with open(hgrepo.pathto('file.dtd'), 'w') as fh:
+                fh.write('<!ENTITY key1 "Hello">\n')
 
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="initial commit",
-                      addremove=True)
-        rev0 = hgrepo[0].node()
+            hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                          message="initial commit",
+                          addremove=True)
+            rev0 = hgrepo[0].node()
 
-        # do this to trigger an exception on Mozilla.Parser.readContents
-        _content = '<!ENTITY key1 "Hell\xe3">\n'
-        (codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1')
-            .write(_content))
+            # do this to trigger an exception on Mozilla.Parser.readContents
+            _content = '<!ENTITY key1 "Hell\xe3">\n'
+            with codecs.open(hgrepo.pathto('file.dtd'), 'w', 'latin1') as fh:
+                fh.write(_content)
 
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="Second commit")
-        rev1 = hgrepo[1].node()
+            hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                          message="Second commit")
+            rev1 = hgrepo[1].node()
 
         repo_url = 'http://localhost:8001/' + self.repo_name + '/'
         Repository.objects.create(
@@ -153,12 +152,14 @@ class TestPaths4Revs(RepoTestBase):
         hgrepo.remove([hgrepo.pathto('copied.ftl')])
         hgrepo.commit(user='Jane Doe <jdoe@foo.tld>',
                       message='Removing file', addremove=True)
+        hgrepo.close()
 
     def test_repo_interactions(self):
         '''Let's just use a single test method for all our hg interactions,
         to reuse the hg repo fixture.
         '''
-        dbrepo = self.dbrepo(changesets_from=hglib.open(self.repo))
+        with hglib.open(self.repo) as hgrepo:
+            dbrepo = self.dbrepo(changesets_from=hgrepo)
         view = DiffView()
         view.getrepo(dbrepo.name)
         # add
@@ -236,6 +237,7 @@ class TestPaths4Revs(RepoTestBase):
         self.assertEqual(
             view.content('f.ftl', '2'),
             b'message = othertext\n')
+        view.client.close()
 
 
 class ValuedDiffView(DiffView):

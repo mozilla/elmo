@@ -39,7 +39,7 @@ class RepoTestBase(TestCase):
         if changesets_from is None:
             return repo
         if revrange is None:
-            revrange = 'head()'
+            revrange = '::head()'
         for rev in changesets_from.log(revrange=revrange):
             ctx = changesets_from[rev]
             get_or_create_changeset(repo, changesets_from, ctx)

@@ -37,17 +37,17 @@ class TestHandlePushes(RepoTestBase):
           url='file:///' + self.repo
         )
 
-        hgrepo = hglib.init(self.repo).open()
-        (open(hgrepo.pathto('file.dtd'), 'w')
-            .write('''
-            <!ENTITY key1 "Hello">
-            <!ENTITY key2 "Cruel">
-            '''))
+        with hglib.init(self.repo).open() as hgrepo:
+            with open(hgrepo.pathto('file.dtd'), 'w') as fh:
+                fh.write('''
+                <!ENTITY key1 "Hello">
+                <!ENTITY key2 "Cruel">
+                ''')
 
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="initial commit",
-                      addremove=True)
-        rev0 = hgrepo[0].node()
+            hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                          message="initial commit",
+                          addremove=True)
+            rev0 = hgrepo[0].node()
 
         timestamp = int(time.time())
         push_id = 100
@@ -86,17 +86,17 @@ class TestHandlePushes(RepoTestBase):
             url='file:///' + self.repo
         )
 
-        hgrepo = hglib.init(self.repo).open()
-        (open(hgrepo.pathto('file.dtd'), 'w')
-            .write('''
-            <!ENTITY key1 "Hello">
-            <!ENTITY key2 "Cruel">
-            '''))
+        with hglib.init(self.repo).open() as hgrepo:
+            with open(hgrepo.pathto('file.dtd'), 'w') as fh:
+                fh.write('''
+                <!ENTITY key1 "Hello">
+                <!ENTITY key2 "Cruel">
+                ''')
 
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="initial commit",
-                      addremove=True)
-        rev0 = hgrepo[0].node()
+            hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                          message="initial commit",
+                          addremove=True)
+            rev0 = hgrepo[0].node()
 
         timestamp = int(time.time())
         pushjs0 = PushJS(100, {
@@ -113,17 +113,18 @@ class TestHandlePushes(RepoTestBase):
             url='file:///' + self.repo
         )
 
-        hgrepo = hglib.init(self.repo).open()
-        (open(hgrepo.pathto('file.dtd '), 'w')  # deliberate trailing space
-            .write('''
-            <!ENTITY key1 "Hello">
-            <!ENTITY key2 "Cruel">
-            '''))
+        with hglib.init(self.repo).open() as hgrepo:
+            # deliberate trailing space in file name
+            with open(hgrepo.pathto('file.dtd '), 'w') as fh:
+                fh.write('''
+                <!ENTITY key1 "Hello">
+                <!ENTITY key2 "Cruel">
+                ''')
 
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="initial commit",
-                      addremove=True)
-        rev0 = hgrepo[0].node()
+            hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                          message="initial commit",
+                          addremove=True)
+            rev0 = hgrepo[0].node()
 
         timestamp = int(time.time())
         pushjs0 = PushJS(100, {
@@ -142,17 +143,17 @@ class TestHandlePushes(RepoTestBase):
             url='file:///' + self.repo
         )
 
-        hgrepo = hglib.init(self.repo).open()
-        (open(hgrepo.pathto('file.dtd'), 'w')
-            .write('''
-            <!ENTITY key1 "Hello">
-            <!ENTITY key2 "Cruel">
-            '''))
+        with hglib.init(self.repo).open() as hgrepo:
+            with open(hgrepo.pathto('file.dtd'), 'w') as fh:
+                fh.write('''
+                <!ENTITY key1 "Hello">
+                <!ENTITY key2 "Cruel">
+                ''')
 
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="initial commit",
-                      addremove=True)
-        rev0 = hgrepo[0].node()
+            hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                          message="initial commit",
+                          addremove=True)
+            rev0 = hgrepo[0].node()
 
         timestamp = int(time.time())
         pushjs0 = PushJS(100, {
@@ -179,17 +180,17 @@ class TestHandlePushes(RepoTestBase):
             url='file:///does/not/exist'
         )
 
-        hgrepo = hglib.init(self.repo).open()
-        (open(hgrepo.pathto('file.dtd'), 'w')
-            .write('''
-            <!ENTITY key1 "Hello">
-            <!ENTITY key2 "Cruel">
-            '''))
+        with hglib.init(self.repo).open() as hgrepo:
+            with open(hgrepo.pathto('file.dtd'), 'w') as fh:
+                fh.write('''
+                <!ENTITY key1 "Hello">
+                <!ENTITY key2 "Cruel">
+                ''')
 
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="initial commit",
-                      addremove=True)
-        rev0 = hgrepo[0].node()
+            hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                          message="initial commit",
+                          addremove=True)
+            rev0 = hgrepo[0].node()
 
         timestamp = int(time.time())
         pushjs0 = PushJS(100, {
@@ -206,35 +207,35 @@ class TestHandlePushes(RepoTestBase):
             url='file://' + self.repo
         )
 
-        hgrepo = hglib.init(self.repo).open()
-        (open(hgrepo.pathto('file.dtd'), 'w')
-            .write('''
-            <!ENTITY key1 "Hello">
-            <!ENTITY key2 "Cruel">
-            '''))
+        with hglib.init(self.repo).open() as hgrepo:
+            with open(hgrepo.pathto('file.dtd'), 'w') as fh:
+                fh.write('''
+                <!ENTITY key1 "Hello">
+                <!ENTITY key2 "Cruel">
+                ''')
 
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="initial commit",
-                      addremove=True)
-        rev0 = hgrepo[0].node()
+            hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                          message="initial commit",
+                          addremove=True)
+            rev0 = hgrepo[0].node()
 
-        timestamp = int(time.time())
-        pushjs0 = PushJS(100, {
-            'date': timestamp,
-            'changesets': [rev0],
-            'user': 'jdoe',
-        })
-        result = handlePushes(repo.pk, [pushjs0])
+            timestamp = int(time.time())
+            pushjs0 = PushJS(100, {
+                'date': timestamp,
+                'changesets': [rev0],
+                'user': 'jdoe',
+            })
+            result = handlePushes(repo.pk, [pushjs0])
 
-        (open(hgrepo.pathto('file.dtd'), 'w')
-            .write('''
-            <!ENTITY key1 "Hello">
-            <!ENTITY key2 "Cruel">
-            <!ENTITY key3 "World">
-            '''))
-        hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
-                      message="Second commit")
-        rev1 = hgrepo[1].node()
+            with open(hgrepo.pathto('file.dtd'), 'w') as fh:
+                fh.write('''
+                <!ENTITY key1 "Hello">
+                <!ENTITY key2 "Cruel">
+                <!ENTITY key3 "World">
+                ''')
+            hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
+                          message="Second commit")
+            rev1 = hgrepo[1].node()
 
         # a second time
         timestamp = int(time.time())
