@@ -47,7 +47,7 @@ class TestHandlePushes(RepoTestBase):
             hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                           message="initial commit",
                           addremove=True)
-            rev0 = hgrepo[0].node()
+            rev0 = hgrepo[0].node().decode('ascii')
 
         timestamp = int(time.time())
         push_id = 100
@@ -75,7 +75,7 @@ class TestHandlePushes(RepoTestBase):
 
         self.assertEqual(changeset.description, 'initial commit')
         self.assertEqual(changeset.user, 'Jane Doe <jdoe@foo.tld>')
-        self.assertEqual(hglib.util.b(changeset.revision), rev0)
+        self.assertEqual(changeset.revision, rev0)
         self.assertEqual(changeset.branch, branch)
 
         self.assertEqual(branch.name, 'default')
@@ -96,7 +96,7 @@ class TestHandlePushes(RepoTestBase):
             hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                           message="initial commit",
                           addremove=True)
-            rev0 = hgrepo[0].node()
+            rev0 = hgrepo[0].node().decode('ascii')
 
         timestamp = int(time.time())
         pushjs0 = PushJS(100, {
@@ -124,7 +124,7 @@ class TestHandlePushes(RepoTestBase):
             hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                           message="initial commit",
                           addremove=True)
-            rev0 = hgrepo[0].node()
+            rev0 = hgrepo[0].node().decode('ascii')
 
         timestamp = int(time.time())
         pushjs0 = PushJS(100, {
@@ -153,7 +153,7 @@ class TestHandlePushes(RepoTestBase):
             hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                           message="initial commit",
                           addremove=True)
-            rev0 = hgrepo[0].node()
+            rev0 = hgrepo[0].node().decode('ascii')
 
         timestamp = int(time.time())
         pushjs0 = PushJS(100, {
@@ -190,7 +190,7 @@ class TestHandlePushes(RepoTestBase):
             hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                           message="initial commit",
                           addremove=True)
-            rev0 = hgrepo[0].node()
+            rev0 = hgrepo[0].node().decode('ascii')
 
         timestamp = int(time.time())
         pushjs0 = PushJS(100, {
@@ -217,7 +217,7 @@ class TestHandlePushes(RepoTestBase):
             hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                           message="initial commit",
                           addremove=True)
-            rev0 = hgrepo[0].node()
+            rev0 = hgrepo[0].node().decode('ascii')
 
             timestamp = int(time.time())
             pushjs0 = PushJS(100, {
@@ -235,7 +235,7 @@ class TestHandlePushes(RepoTestBase):
                 ''')
             hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                           message="Second commit")
-            rev1 = hgrepo[1].node()
+            rev1 = hgrepo[1].node().decode('ascii')
 
         # a second time
         timestamp = int(time.time())
