@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -42,7 +43,7 @@ class DiffTestCase(RepoTestBase):
             hgrepo.addremove()
             hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                           message="initial commit")
-            rev0 = hgrepo[0].node()
+            rev0 = hgrepo[0].node().decode('ascii')
 
         Repository.objects.create(
             name=self.repo_name,
@@ -74,7 +75,7 @@ class DiffTestCase(RepoTestBase):
             hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                           message="initial commit",
                           addremove=True)
-            rev0 = hgrepo[0].node()
+            rev0 = hgrepo[0].node().decode('ascii')
 
             # do this to trigger an exception on Mozilla.Parser.readContents
             _content = '<!ENTITY key1 "Hell\xe3">\n'
@@ -83,7 +84,7 @@ class DiffTestCase(RepoTestBase):
 
             hgrepo.commit(user="Jane Doe <jdoe@foo.tld>",
                           message="Second commit")
-            rev1 = hgrepo[1].node()
+            rev1 = hgrepo[1].node().decode('ascii')
 
         repo_url = 'http://localhost:8001/' + self.repo_name + '/'
         Repository.objects.create(
@@ -110,6 +111,20 @@ class DiffTestCase(RepoTestBase):
             'repo': self.repo_name,
             'from': rev0,
             'to': 'xxx'
+        })
+        self.assertEqual(response.status_code, 400)
+
+        response = self.client.get(url, {
+            'repo': self.repo_name,
+            'from': 'ßüper',
+            'to': rev1
+        })
+        self.assertEqual(response.status_code, 400)
+
+        response = self.client.get(url, {
+            'repo': self.repo_name,
+            'from': rev0,
+            'to': 'ßüper'
         })
         self.assertEqual(response.status_code, 400)
 

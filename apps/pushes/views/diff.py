@@ -120,11 +120,11 @@ class DiffView(View):
         '''
         try:
             self.rev1 = self.real_rev(_from)
-        except KeyError:
+        except (KeyError, UnicodeEncodeError):
             raise BadRevision("Unrecognized 'from' parameter")
         try:
             self.rev2 = self.real_rev(_to)
-        except KeyError:
+        except (KeyError, UnicodeEncodeError):
             raise BadRevision("Unrecognized 'to' parameter")
         changed = []
         added = []
@@ -179,10 +179,9 @@ class DiffView(View):
                    .filter(branch=1)  # default branch
                    .order_by('-pk')
                    .values_list('revision', flat=True)[0])
-        # Convert the 'from' and 'to' to strings (instead of unicode)
-        # in case mercurial needs to look for the key in binary data.
-        # This prevents UnicodeWarning messages.
-        ctx = self.client[str(rev)]
+        # Convert the 'from' and 'to' to bytestrings
+        # which is what hglib expexts.
+        ctx = self.client[rev.encode('ascii')]
         return ctx.node()
 
     @metrics.timer_decorator('diff.file')

@@ -40,24 +40,24 @@ class PushJS(object):
 
 def get_or_create_changeset(repo, hgrepo, ctx):
     try:
-        cs = Changeset.objects.get(revision=ctx.node())
+        cs = Changeset.objects.get(revision=ctx.node().decode('ascii'))
         repo.changesets.add(cs)
         return cs
     except Changeset.DoesNotExist:
         pass
     # create the changeset, but first, let's see if we need the parents
-    parent_revs = [parent.node() for parent in ctx.parents()]
+    parent_revs = [parent.node().decode('ascii') for parent in ctx.parents()]
     p_dict = dict(Changeset.objects
                   .filter(revision__in=parent_revs)
                   .values_list('revision', 'id'))
     for p in ctx.parents():
-        if p.node() not in p_dict:
+        if p.node().decode('ascii') not in p_dict:
             p_cs = get_or_create_changeset(repo, hgrepo, p)
             p_dict[p_cs.revision] = p_cs.id
-    cs = Changeset(revision=ctx.node())
+    cs = Changeset(revision=ctx.node().decode('ascii'))
     cs.user = ctx.user().decode('utf-8', 'replace')
     cs.description = ctx.description().decode('utf-8', 'replace')
-    branch = ctx.branch()
+    branch = ctx.branch().decode('utf-8', 'replace')
     if branch != 'default':
         # 'default' is already set in the db, only change if needed
         dbb, __ = Branch.objects.get_or_create(name=branch)
@@ -69,8 +69,9 @@ def get_or_create_changeset(repo, hgrepo, ctx):
 
     cs.parents.set(list(p_dict.values()))
     repo.changesets.add(cs, *(list(p_dict.values())))
-    spacefiles = [p for p in ctx.files() if p.endswith(b' ')]
-    goodfiles = [p for p in ctx.files() if not p.endswith(b' ')]
+    files = [p.decode('utf-8', 'replace') for p in ctx.files()]
+    spacefiles = [p for p in files if p.endswith(' ')]
+    goodfiles = [p for p in files if not p.endswith(' ')]
     if goodfiles:
         # chunk up the work on files,
         # mysql doesn't like them all at once
