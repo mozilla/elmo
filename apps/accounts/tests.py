@@ -20,19 +20,6 @@ from django.test import override_settings
 )
 class AccountsTestCase(TestCase):
 
-    def test_login_form_allows_long_username(self):
-        url = reverse('login')
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        content = force_text(response.content)
-        input_regex = re.compile('<input ([^>]+)>', re.M)
-        for input_ in input_regex.findall(content):
-            for name in re.findall('name="(.*?)"', input_):
-                if name == 'username':
-                    maxlength = re.findall(r'maxlength="(\d+)"', input_)[0]
-                    self.assertTrue(maxlength.isdigit())
-                    self.assertTrue(int(maxlength) > 30)
-
     def test_user_json(self):
         url = reverse('user-json')
 
