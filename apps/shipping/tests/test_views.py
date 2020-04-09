@@ -461,10 +461,3 @@ class DriversTest(ShippingTestCaseBase):
         self.assertEqual(response.status_code, 200)
         apps_and_versions = response.context['apps_and_versions']
         self.assertListEqual(list(apps_and_versions.keys()), [appver.app])
-        avts = list(apps_and_versions.values())[0]
-        # Fennec first
-        self.assertTrue(hasattr(avts[0], 'json_changesets'))
-        self.assertEqual(avts[0].tree, beta)
-        # Firefox next
-        self.assertFalse(hasattr(avts[1], 'json_changesets'))
-        self.assertEqual(avts[1].tree, tree)

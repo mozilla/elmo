@@ -21,8 +21,6 @@ urlpatterns = [
 urlpatterns += [
     url(r'^l10n-changesets$', status.Changesets.as_view(),
         name='shipping-l10n_changesets'),
-    url(r'^json-changesets$', status.JSONChangesets.as_view(),
-        name='shipping-json_changesets'),
     url(r'^shipped-locales$', status.ShippedLocales.as_view(),
         name='shipping-shipped_locales'),
     url(r'^api/status$', status.StatusJSON.as_view(),

@@ -20,7 +20,6 @@ from l10nstats.models import Run
 from shipping.models import AppVersion, Action
 from shipping.api import flags4appversions
 from django.conf import settings
-from django.urls import reverse
 from django.db.models import Max
 from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
@@ -71,13 +70,6 @@ def index(request):
 
 class Drivers(TemplateView):
     template_name = 'shipping/drivers.html'
-    android_params = [
-        '',
-        'platforms=android',
-        'multi_android-multilocale_repo=releases/mozilla-beta',
-        'multi_android-multilocale_rev=default',
-        'multi_android-multilocale_path=mobile/android/locales/maemo-locales'
-    ]
 
     def get_context_data(self, **kwargs):
         context = super(Drivers, self).get_context_data(**kwargs)
@@ -94,12 +86,6 @@ class Drivers(TemplateView):
             if avt.appversion.app not in apps_and_versions:
                 apps_and_versions[avt.appversion.app] = []
             apps_and_versions[avt.appversion.app].append(avt)
-            if avt.tree.code == 'fennec_beta':
-                # ok, let's create the beta json url
-                url = reverse('shipping-json_changesets')
-                url += '?av=' + avt.appversion.code
-                url += '&'.join(self.android_params)
-                setattr(avt, 'json_changesets', url)
         context['apps_and_versions'] = apps_and_versions
         return context
 
