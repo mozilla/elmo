@@ -6,16 +6,11 @@
 '''
 from __future__ import absolute_import
 from __future__ import unicode_literals
-from collections import defaultdict
-import os
-import re
 import six
 
 from django.http import HttpResponse, HttpResponseBadRequest
-from django.conf import settings
-from django.core.exceptions import SuspiciousOperation
 from django.views.generic import View
-from life.models import Repository, Changeset, Locale, Push
+from life.models import Changeset, Locale, Push
 from l10nstats.models import Run
 from shipping.api import accepted_signoffs, flags4appversions
 from shipping.models import Action, Signoff, AppVersion
@@ -90,77 +85,6 @@ class Changesets(SignoffDataView):
         revmap = dict(revs.values_list('id', 'revision'))
         return ['%s %s\n' % (l, revmap[tips[l]][:12])
                 for l in sorted(tips.keys())]
-
-
-@class_decorator(cache_control(max_age=60))
-class JSONChangesets(SignoffDataView):
-    """Create a json l10n-changesets.
-    This takes optional arguments of triples to link to files in repos
-    specifying a special platform build. Used for multi-locale builds
-    for fennec so far.
-      multi_PLATFORM_repo: repository to load maemo-locales from
-      multi_PLATFORM_rev: revision of file to load (default is usually fine)
-      multi_PLATFORM_path: path inside the repo, say locales/maemo-locales
-    """
-    filename = 'l10n-changesets.json'
-
-    def content(self, request, signoffs):
-        sos = signoffs.annotate(tip=Max('push__changesets__id'))
-        tips = dict(sos.values_list('locale__code', 'tip'))
-        revmap = dict(Changeset.objects
-                      .filter(id__in=tips.values())
-                      .values_list('id', 'revision'))
-        platforms = re.split('[ ,]+', request.GET.get('platforms', ''))
-        multis = defaultdict(dict)
-        for k, v in six.iteritems(request.GET):
-            if not k.startswith('multi_'):
-                continue
-            plat, prop = k.split('_')[1:3]
-            multis[plat][prop] = v
-        extra_plats = defaultdict(list)
-        import hglib
-        for plat in sorted(multis.keys()):
-            props = multis[plat]
-            dbrepo = Repository.objects.get(name=props['repo'])
-            path = os.path.join(settings.REPOSITORY_BASE,
-                                dbrepo.local_path())
-            try:
-                repo = hglib.open(path)
-            except hglib.error.ServerError:
-                raise SuspiciousOperation("Repo %s doesn't exist" %
-                                          str(props['repo']))
-            try:
-                rev = str(props['rev'])
-                if rev in ('default', 'tip'):
-                    # let's not rely on the repo to have this right
-                    rev = (Changeset.objects
-                           .filter(repositories=dbrepo)
-                           .filter(branch=1)  # default branch
-                           .order_by('-pk')
-                           .values_list('revision', flat=True)[0])
-                locales = repo.cat([repo.pathto(props['path'])],
-                                   rev=rev).decode('utf-8').split()
-            finally:
-                repo.close()
-            for loc in locales:
-                extra_plats[loc].append(plat)
-
-        tmpl = '''  "%(loc)s": {
-    "revision": "%(rev)s",
-    "platforms": ["%(plats)s"]
-  }'''
-        content = [
-          '{\n',
-          ',\n'.join(
-              tmpl % {'loc': l,
-                      'rev': revmap[tips[l]][:12],
-                      'plats': '", "'.join(platforms + extra_plats[l])}
-              for l in sorted(tips.keys())
-          ),
-          '\n}\n'
-        ]
-        content = ''.join(content)
-        return content
 
 
 @class_decorator(cache_control(max_age=60))
