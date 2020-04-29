@@ -33,7 +33,7 @@ codes, so when in doubt which to use, be generous.
 <p class="dashboard-header">There are also more detailed views for <a href="{% url 'shipping-drivers' %}">l10n project managers</a>.</p>
 <p>See <span class="loccount">all</span> localizations and
 <span class="avcount">all</span> application versions or trees on this
-<a data-base="{% url 'dashboard' %}" id="trigger" href="?">dashboard</a>&hellip;</p>
+<a id="trigger" href="{% url 'dashboard' %}">dashboard</a>&hellip;</p>
 <table class="dashboard-container">
 <tr>
   <td class="dashboard-block av-tree">
@@ -47,8 +47,8 @@ codes, so when in doubt which to use, be generous.
         {% if forloop.first %}
         <th rowspan="{{ app.avts|length }}">{{app.name}}</th>
         {% endif %}
-        <td><input {% if avt.appversion.code in selected_avs %}checked{% endif %} {% if avt.tree.code in selected_trees %}disabled{% endif %} type="checkbox" data-key="av" value="{{avt.appversion.code}}">{{avt.appversion}}</td>
-        <td><input {% if avt.tree.code in selected_trees %}checked{% endif %} type="checkbox" data-key="tree" value="{{avt.tree.code}}">{{avt.tree.code}}</td>
+        <td><input {% if avt.appversion.code in selected_avs %}checked{% endif %} {% if avt.tree.code in selected_trees %}disabled{% endif %} type="checkbox" data-key="av" value="{{avt.appversion.code}}" id="av-{{avt.appversion.code}}"><label for="av-{{avt.appversion.code}}">{{avt.appversion}}</label></td>
+        <td><input {% if avt.tree.code in selected_trees %}checked{% endif %} type="checkbox" data-key="tree" value="{{avt.tree.code}}" id="tree-{{avt.tree.code}}"><label for="tree-{{avt.tree.code}}">{{avt.tree.code}}</label></td>
       </tr>
       {% endfor %}
       {% endfor %}
@@ -60,7 +60,7 @@ codes, so when in doubt which to use, be generous.
         <th rowspan="{{ trees|length }}"></th>
         <td rowspan="{{ trees|length }}"></td>
         {% endif %}
-        <td><input {% if avt.tree.code in selected_trees %}checked{% endif %} type="checkbox" data-key="tree" value="{{tree.code}}">{{tree.code}}</td>
+        <td><input {% if avt.tree.code in selected_trees %}checked{% endif %} type="checkbox" data-key="tree" value="{{tree.code}}" id="tree-{{tree.code}}"><label for="tree-{{tree.code}}">{{tree.code}}</label></td>
       </tr>
       {% endfor %}
       {% endif %}
@@ -72,7 +72,7 @@ codes, so when in doubt which to use, be generous.
   <div class="header">Localizations:</div>
   <div class="scroll">
     {% for loc in locales %}
-    <input {% if loc.code in selected_locales %}checked{% endif %} type="checkbox" data-key="locale" value="{{loc.code}}">{{loc.code}} - {{loc.name}}<br>
+    <input {% if loc.code in selected_locales %}checked{% endif %} type="checkbox" data-key="locale" value="{{loc.code}}" id="locale-{{loc.code}}"><label for="locale-{{loc.code}}">{{loc.code}} - {{loc.name}}</label><br>
     {% endfor %}
   </div>
   <div><button class="clear-selection">Clear</button></div>
