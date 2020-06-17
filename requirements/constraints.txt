@@ -3,24 +3,24 @@
 ## production
 
 # >=0.13 josepy
-PyOpenSSL==19.0.0
+PyOpenSSL==19.1.0
 # >=2017.4.17 requests
-certifi==2019.9.11
+certifi==2020.4.5.2
 # >=1.8,!=1.11.3 cryptography
-cffi==1.13.1
-# <3.1.0,>=3.0.2 requests
+cffi==1.14.0
+# <4,>=3.0.2 requests
 chardet==3.0.4
 # raven
 contextlib2==0.6.0.post1
 # mozilla-django-oidc
 # >=0.8 josepy
 # >=2.3 PyOpenSSL
-cryptography==2.8
+cryptography==2.9.2
 # markus
-datadog==0.30.0
+datadog==0.36.0
 # >=3.3.2 datadog
-decorator==4.4.0
-# >=1.0 django-compressor
+decorator==4.4.2
+# >=1.0.3 django-compressor
 django-appconf==1.0.3
 # >=0.3 stastistics
 docutils==0.15.2
@@ -30,14 +30,18 @@ enum34==1.1.6
 fluent.syntax==0.17.0
 # >=1 mock
 funcsigs==1.0.2
-# <2.9,>=2.5 requests
+# <3,>=2.5 requests
 idna==2.8
 # cryptography
 ipaddress==1.0.23
 # mozilla-django-oidc
-josepy==1.2.0
+josepy==1.3.0
+# bleach
+packaging==20.4
 # cffi
-pycparser==2.19
+pycparser==2.20
+# >=2.0.2 packaging
+pyparsing==2.4.7
 # compare-locales
 pytoml==0.1.20
 # Django
@@ -46,17 +50,18 @@ pytz==2019.3
 rcssmin==1.0.6
 # mozilla-django-oidc
 # >=2.6.0 datadog
-requests==2.22.0
+requests==2.23.0
 # ==1.1.0 django-compressor
 rjsmin==1.1.0
 # bleach, compare-locales, markus
 # >=1.4.0 python-memcached
 # >=1.4.1 cryptography
 # >=1.9 bleach, html5lib, mock
-six==1.12.0
+# >= 1.12.0 django-compressor
+six==1.15.0
 # markus
 statistics==1.0.3.5
-# >=1.21.1,<1.26 requests
+# 1.21.1,<1.26,!=1.25.0,!=1.25.1 requests
 # <2.0,>=1.8 elasticsearch
 # Downgrade for https://github.com/elastic/elasticsearch-py/issues/943
 # Only fixed in elasticsearch 7.0.5

@@ -3,7 +3,7 @@
 # Include production requirements
 -r env.txt
 
-coverage==4.5.4
+coverage==5.1
 
 django-debug-toolbar==1.11
 
