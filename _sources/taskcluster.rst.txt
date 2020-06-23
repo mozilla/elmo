@@ -29,7 +29,7 @@ contain data for more than one Tree.
      "version": "1.0",
      "compare-locales": "8.0.0",
      "repository": "https://hg.mozilla.org/l10n/gecko-strings/",
-     "data": []
+     "comparisons": []
    }
 
 If the repository with the configurations is also the repository that
@@ -37,7 +37,7 @@ controls the Taskcluster automation, the information for that repository
 is deduced from the ``task_definition["metadata"]["source"]`` metadata
 from the task.
 
-Each entry in ``data`` is an object like
+Each entry in ``comparisons`` is an object like
 
 .. code-block:: json
 

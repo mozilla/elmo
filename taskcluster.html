@@ -60,7 +60,7 @@ contain data for more than one Tree.</p>
   <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;1.0&quot;</span><span class="p">,</span>
   <span class="nt">&quot;compare-locales&quot;</span><span class="p">:</span> <span class="s2">&quot;8.0.0&quot;</span><span class="p">,</span>
   <span class="nt">&quot;repository&quot;</span><span class="p">:</span> <span class="s2">&quot;https://hg.mozilla.org/l10n/gecko-strings/&quot;</span><span class="p">,</span>
-  <span class="nt">&quot;data&quot;</span><span class="p">:</span> <span class="p">[]</span>
+  <span class="nt">&quot;comparisons&quot;</span><span class="p">:</span> <span class="p">[]</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -68,7 +68,7 @@ contain data for more than one Tree.</p>
 controls the Taskcluster automation, the information for that repository
 is deduced from the <code class="docutils literal notranslate"><span class="pre">task_definition[&quot;metadata&quot;][&quot;source&quot;]</span></code> metadata
 from the task.</p>
-<p>Each entry in <code class="docutils literal notranslate"><span class="pre">data</span></code> is an object like</p>
+<p>Each entry in <code class="docutils literal notranslate"><span class="pre">comparisons</span></code> is an object like</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
   <span class="nt">&quot;locale&quot;</span><span class="p">:</span> <span class="s2">&quot;ab-CD&quot;</span><span class="p">,</span>
   <span class="nt">&quot;config&quot;</span><span class="p">:</span> <span class="s2">&quot;_configs/browser.toml&quot;</span><span class="p">,</span>
