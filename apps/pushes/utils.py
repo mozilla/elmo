@@ -9,16 +9,25 @@ from __future__ import unicode_literals
 
 from datetime import datetime
 import json
+import logging
 import os.path
 import six.moves.urllib.request
 import six.moves.urllib.error
 import six.moves.urllib.parse
 from six.moves import range
 from functools import reduce
+import shutil
 import hglib
 
 from life.models import Repository, Push, Changeset, Branch, File
 from django.db import transaction, connection
+import markus
+from markus.utils import generate_tag
+
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
+logger = logging.getLogger()
+metrics = markus.get_metrics('elmo-hg-worker')
 
 
 def getURL(repo, limit):
@@ -111,7 +120,7 @@ def handlePushes(repo_id, submits, do_update=False, close_connection=False):
         # maybe we lost the connection, close it to make sure we get a new one
         connection.close()
     repo = Repository.objects.get(id=repo_id)
-    with _hg_repository_sync(
+    with _ensure_hg_repository_sync(
         repo.local_path(), repo.url, do_update=do_update
     ) as hgrepo:
         return _handlePushes(
@@ -152,6 +161,64 @@ def _handlePushes(
         repo.save()
     hgrepo.close()
     return len(submits)
+
+
+def _ensure_hg_repository_sync(repo, do_update=False):
+    logging.info('hg clone/update start for {}'.format(repo.name))
+    now = datetime.utcnow().replace(microsecond=0)
+    tags = [generate_tag(repo.name)]
+    if repo.forest:
+        tags.append(generate_tag(repo.forest.name))
+    repopath = repo.local_path()
+    try:
+        with metrics.timer('hg-pull', tags=tags):
+            return _hg_repository_sync(repopath, repo.url,
+                                       do_update=do_update)
+    except Exception as e:
+        logging.error('Clone/update failed, {}'.format(e))
+    # something went wrong, let's just try again
+    # nuke what we had
+    if os.path.exists(repopath):
+        shutil.rmtree(repopath, ignore_errors=True)
+        logging.error('Removed {}'.format(repopath))
+    # now we need to create a clone and then pull all other origins
+    other_repos = repo.forks.all()
+    if repo.forest and repo.forest.fork_of:
+        forests = [repo.forest.fork_of]
+        forests.extend(
+            repo.forest.fork_of
+            .forks
+            .exclude(archived=True)
+            .exclude(repo.forest)
+        )
+        other_repos = (
+            Repository.objects
+            .filter(forest__in=forests)
+            .filter(locale=repo.locale)
+            .exclude(archived=True)
+        )
+    elif repo.fork_of:
+        other_repos = [repo.fork_of]
+        other_repos.extend(
+            repo.fork_of
+            .forks
+            .exclude(archived=True)
+            .exclude(id=repo.id)
+        )
+    tags.append('full-clone')
+    logging.info('Cloning from {}'.format(str(repo.url)))
+    with metrics.timer('hg-pull', tags=tags):
+        hgrepo = _hg_repository_sync(repopath, repo.url,
+                                     do_update=do_update)
+    for other in other_repos:
+        tags[0] = generate_tag(other.name)
+        logging.info('Pulling from {}'.format(str(other.url)))
+        with metrics.timer('hg-pull', tags=tags):
+            hgrepo.pull(source=str(other.url))
+    logging.info('hg clone/update took {}'.format(
+        datetime.utcnow().replace(microsecond=0) - now
+    ))
+    return hgrepo
 
 
 def _hg_repository_sync(repopath, url, do_update=False):
