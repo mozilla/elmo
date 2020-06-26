@@ -25,8 +25,6 @@ import markus
 from markus.utils import generate_tag
 
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
-logger = logging.getLogger()
 metrics = markus.get_metrics('hg.worker')
 
 
@@ -121,7 +119,7 @@ def handlePushes(repo_id, submits, do_update=False, close_connection=False):
         connection.close()
     repo = Repository.objects.get(id=repo_id)
     with _ensure_hg_repository_sync(
-        repo.local_path(), repo.url, do_update=do_update
+        repo, do_update=do_update
     ) as hgrepo:
         return _handlePushes(
             repo, hgrepo, repo_id, submits,
