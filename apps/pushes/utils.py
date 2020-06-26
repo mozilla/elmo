@@ -160,6 +160,9 @@ def _handlePushes(
             p.save()
         repo.save()
     hgrepo.close()
+    logging.info('handlePushes took {}'.format(
+        datetime.utcnow().replace(microsecond=0) - now
+    ))
     return len(submits)
 
 
