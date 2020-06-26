@@ -27,7 +27,7 @@ from markus.utils import generate_tag
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 logger = logging.getLogger()
-metrics = markus.get_metrics('elmo-hg-worker')
+metrics = markus.get_metrics('hg.worker')
 
 
 def getURL(repo, limit):
