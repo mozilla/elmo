@@ -132,6 +132,7 @@ def handlePushes(repo_id, submits, do_update=False, close_connection=False):
 def _handlePushes(
     repo, hgrepo, repo_id, submits, do_update=False, close_connection=False
 ):
+    now = datetime.utcnow().replace(microsecond=0)
     revs = reduce(
         lambda r, l: r+l,
         (data.changesets for data in submits),
