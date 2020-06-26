@@ -118,9 +118,15 @@ def handlePushes(repo_id, submits, do_update=False, close_connection=False):
         # maybe we lost the connection, close it to make sure we get a new one
         connection.close()
     repo = Repository.objects.get(id=repo_id)
-    with _ensure_hg_repository_sync(
+    logging.info('hg clone/update start for {}'.format(repo.name))
+    now = datetime.utcnow().replace(microsecond=0)
+    hgrepo = _ensure_hg_repository_sync(
         repo, do_update=do_update
-    ) as hgrepo:
+    )
+    logging.info('hg clone/update took {}'.format(
+        datetime.utcnow().replace(microsecond=0) - now
+    ))
+    with hgrepo:
         return _handlePushes(
             repo, hgrepo, repo_id, submits,
             do_update=do_update, close_connection=close_connection
@@ -166,8 +172,6 @@ def _handlePushes(
 
 
 def _ensure_hg_repository_sync(repo, do_update=False):
-    logging.info('hg clone/update start for {}'.format(repo.name))
-    now = datetime.utcnow().replace(microsecond=0)
     tags = [generate_tag('repo', repo.name)]
     if repo.forest:
         tags.append(generate_tag('forest', repo.forest.name))
@@ -217,9 +221,6 @@ def _ensure_hg_repository_sync(repo, do_update=False):
         logging.info('Pulling from {}'.format(str(other.url)))
         with metrics.timer('hg-pull', tags=tags):
             hgrepo.pull(source=str(other.url))
-    logging.info('hg clone/update took {}'.format(
-        datetime.utcnow().replace(microsecond=0) - now
-    ))
     return hgrepo
 
 
