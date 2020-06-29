@@ -11,13 +11,11 @@ import l10nstats.models
 
 class Migration(migrations.Migration):
 
-    replaces = [('shipping', '0001_initial'), ('shipping', '0002_auto_20160711_2035'), ('shipping', '0003_auto_20160729_1128'), ('shipping', '0004_auto_20191116_1511')]
-
     initial = True
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('life', '0001_initial'),
+        ('life', '0001_squashed_0004_auto_20191116_1511'),
     ]
 
     operations = [

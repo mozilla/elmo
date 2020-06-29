@@ -10,8 +10,6 @@ import privacy.models
 
 class Migration(migrations.Migration):
 
-    replaces = [('privacy', '0001_initial'), ('privacy', '0002_auto_20191116_1511')]
-
     initial = True
 
     dependencies = [
