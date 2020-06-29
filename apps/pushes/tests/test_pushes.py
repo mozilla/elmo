@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import datetime
+import mock
 import time
 from elmo.test import TestCase
 from django.urls import reverse
@@ -27,6 +28,7 @@ class PushesTestCase(TestCase, EmbedsTestCaseMixin):
         # like I said, a very basic test
 
 
+@mock.patch('pushes.utils.logging', mock.MagicMock())
 class TestHandlePushes(RepoTestBase):
 
     repo_name = 'mozilla-central-original'
