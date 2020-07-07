@@ -3,6 +3,9 @@ Elmo
 
 Elmo is the software behind https://l10n.mozilla.org/. This documentation
 describes the architecture that powers the functionality on the site.
+Elmo primarily tracks the translation of Firefox and other Gecko-based
+products. Expanding coverage to other projects, also ones hosted on
+Github, is planned.
 
 Key features are:
 

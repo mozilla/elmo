@@ -35,48 +35,65 @@
   <div class="section" id="worker">
 <h1>Worker<a class="headerlink" href="#worker" title="Permalink to this headline">¶</a></h1>
 <p>The worker is implemented as a Django management command, and runs
-out of the same Docker contains as the webserver. It’s not the same instance,
-though.</p>
+out of the same Docker contains as the webserver. The instance is separate
+from the webhead instances, though <a class="footnote-reference brackets" href="#parallel-worker" id="id1">1</a>.</p>
 <p>There are two functionalities the worker fulfills.</p>
 <ol class="arabic simple">
 <li><p>Update local clones in the shared storage and reflect it in the database.</p></li>
 <li><p>Retrieve data from Taskcluster about finished compare-locales results
 and reflect it in the database.</p></li>
 </ol>
+<div class="section" id="running">
+<h2>Running<a class="headerlink" href="#running" title="Permalink to this headline">¶</a></h2>
+<p>The worker is run via</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./manage.py consume-pulse
+</pre></div>
+</div>
+<p>The required configuration setting is <code class="docutils literal notranslate"><span class="pre">PULSE_USER</span></code>, which is also
+used to create the queue names on pulse, <code class="docutils literal notranslate"><span class="pre">f&quot;queue/{settings.PULSE_USER}/*&quot;</span></code>.</p>
+</div>
 <div class="section" id="taskcluster">
 <h2>Taskcluster<a class="headerlink" href="#taskcluster" title="Permalink to this headline">¶</a></h2>
 <p>To get results from Taskcluster, the worker will consume the
 <code class="docutils literal notranslate"><span class="pre">exchange/taskcluster-queue/v1/task-completed</span></code> exchange with the routing
 key chose for elmo, for example <code class="docutils literal notranslate"><span class="pre">project.l10n.elmo.v1</span></code>.</p>
 <p>It will acknowledge the message once the meta data for all comparisons
-has been created, and all the revisions are entered in the database.</p>
+has been created and are entered in the database.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>The Taskcluster artifacts API returns a redirect. Proposal:
 do not try to resolve the redirect immediately, but possibly do so
 on the first request through the webserver.</p>
 </div>
-<p>To be able to hook up the revisions, the worker needs to</p>
-<ul class="simple">
-<li><p>either update the local clone and the repository metadata as part of this job,</p></li>
-<li><p>or (softly) rely on updating the clones in different jobs.</p></li>
-</ul>
-<p>With ‘softly’ we mean that we could create lightweight placeholder objects
+<p>To be able to hook up the revisions, the worker needs to (softly) rely on
+updating the clones in the jobs below.</p>
+<p>With ‘softly’ we mean that we create lightweight placeholder objects
 for revisions, with just the hash. The metadata and parents etc would
 be set up independently.</p>
 </div>
 <div class="section" id="hg-m-o">
 <h2>hg.m.o<a class="headerlink" href="#hg-m-o" title="Permalink to this headline">¶</a></h2>
-<p>Taskcluster automation kicks off based on <a class="reference external" href="https://mozilla-version-control-tools.readthedocs.io/en/latest/hgmo/notifications.html#pulse-notifications">hg push messages</a> in Pulse.
-Thus the worker could consume an exchange of those notifications as well.</p>
+<p>Elmo also consumes <a class="reference external" href="https://mozilla-version-control-tools.readthedocs.io/en/latest/hgmo/notifications.html#pulse-notifications">hg push messages</a> from Pulse. The worker updates the
+local clone and the repository metadata. This is done in parallel
+to the builds triggered in Taskcluster by the pushes.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>How likely would we see race conditions?</p>
+<p>Ensure to handle race conditions between push messages and build
+results.</p>
 </div>
 </div>
 <div class="section" id="github">
 <h2>Github<a class="headerlink" href="#github" title="Permalink to this headline">¶</a></h2>
 <p>Similar infrastructure exists for <a class="reference external" href="https://mozilla-version-control-tools.readthedocs.io/en/latest/githubwebhooks.html#pulse-notifications">Github</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The details here will be filled out once we track projects on Github.</p>
+</div>
+<dl class="footnote brackets">
+<dt class="label" id="parallel-worker"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
+<dd><p>It needs investigation if it’s safe to run the worker in parallel.</p>
+</dd>
+</dl>
 </div>
 </div>
 
