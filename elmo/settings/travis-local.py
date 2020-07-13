@@ -25,3 +25,5 @@ CACHES = {
         'LOCATION': 'elmo'
     }
 }
+PULSE_USER = '_test_'
+PULSE_TTL = 0
