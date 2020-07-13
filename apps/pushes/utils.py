@@ -17,9 +17,11 @@ import six.moves.urllib.parse
 from six.moves import range
 from functools import reduce
 import shutil
+
+import requests
 import hglib
 
-from life.models import Repository, Push, Changeset, Branch, File
+from life.models import Repository, Push, Changeset, Branch, File, Locale
 from django.db import transaction, connection
 import markus
 from markus.utils import generate_tag
@@ -28,13 +30,21 @@ from markus.utils import generate_tag
 metrics = markus.get_metrics('hg.worker')
 
 
-def getURL(repo, limit):
-    lkp = repo.last_known_push()
-    return '%sjson-pushes?startID=%d&endID=%d' % \
-        (repo.url, lkp, lkp + limit)
-
-
 class PushJS(object):
+
+    @classmethod
+    def pushes_for(cls, repo, last_new_push):
+        lkp = repo.last_known_push()
+        if lkp >= last_new_push:
+            return []
+        url = '%sjson-pushes?version=2&startID=%d&endID=%d' % \
+            (repo.url, lkp, last_new_push)
+        r = requests.get(url).json()
+        return sorted(
+            (cls(k, v) for k, v in r['pushes'].items()),
+            key=lambda push: push.id
+        )
+
     def __init__(self, id, jsfrag):
         self.id = int(id)
         self.date = jsfrag['date']
@@ -169,6 +179,34 @@ def _handlePushes(
         datetime.utcnow().replace(microsecond=0) - now
     ))
     return len(submits)
+
+
+def handleRepo(repo_name, repo_url, forest, locale_code):
+    """New repository created upstream in one of our forests.
+    """
+    if not repo_url.endswith('/'):
+        repo_url += '/'
+    db_repo, created = Repository.objects.get_or_create(
+        name=repo_name,
+        url=repo_url,
+    )
+    logging.error(f"newrepo:unexpected New repo {repo_name} already exists")
+    locale, _ = Locale.objects.get_or_create(code=locale_code)
+    db_repo.forest = forest
+    db_repo.locale = locale
+    db_repo.save()
+    now = datetime.utcnow().replace(microsecond=0)
+    hgrepo = _ensure_hg_repository_sync(db_repo)
+    logging.info('hg clone/update took {}'.format(
+        datetime.utcnow().replace(microsecond=0) - now
+    ))
+    with hgrepo:
+        heads = hgrepo.heads()
+        if not len(heads):
+            # No commits
+            return
+        for head_rev in heads:
+            get_or_create_changeset(db_repo, hgrepo, hgrepo[head_rev])
 
 
 def _ensure_hg_repository_sync(repo, do_update=False):

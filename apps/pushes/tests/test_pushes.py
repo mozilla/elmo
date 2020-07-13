@@ -28,6 +28,43 @@ class PushesTestCase(TestCase, EmbedsTestCaseMixin):
         # like I said, a very basic test
 
 
+class TestPushJS(TestCase):
+    @mock.patch('requests.get')
+    def test_push_known(self, requests_mock):
+        repo = Repository.objects.create(
+          name='mozilla-central',
+          url='file:///mozilla-central/'
+        )
+        pushjs_objects = PushJS.pushes_for(repo, 0)
+        self.assertListEqual(pushjs_objects, [])
+        self.assertFalse(requests_mock.called)
+        response = mock.MagicMock()
+        response.json = mock.MagicMock(return_value={"pushes": {
+            "2": {
+                "changesets": [
+                    "e37d6de26da76cfaea5c348019598759051a0576"
+                ],
+                "date": 1593558780,
+                "user": "thunderbird@calypsoblue.org"
+            },
+            "1": {
+                "changesets": [
+                    "d875063bd55a38f4f9ddf6216f7007afff07db28",
+                    "530026e48a9edcf5fd55ff0b79765e5807752289"
+                ],
+                "date": 1593532760,
+                "user": "clokep@gmail.com"
+            },
+        }})
+        requests_mock.configure_mock(return_value=response)
+        pushjs_objects = PushJS.pushes_for(repo, 28)
+        self.assertListEqual([1, 2], [p.id for p in pushjs_objects])
+        self.assertListEqual(
+            [2, 1],
+            [len(p.changesets) for p in pushjs_objects]
+        )
+
+
 @mock.patch('pushes.utils.logging', mock.MagicMock())
 class TestHandlePushes(RepoTestBase):
 
