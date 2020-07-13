@@ -14,6 +14,7 @@ from elmo_queues import consumers
 from life.models import Changeset, File, Forest, Repository
 
 
+@mock.patch('elmo_queues.consumers.logging', mock.MagicMock())
 @mock.patch('pushes.utils.logging', mock.MagicMock())
 class TestHandleRepo(RepoTestBase):
 
@@ -71,8 +72,11 @@ class TestHandleRepo(RepoTestBase):
                 fname = os.path.join(upstream, f)
                 with open(fname, 'w', encoding='utf-8') as fh:
                     fh.write(f)
-                repo.addremove()
-                repo.commit(message=f'Adding {f}')
+                repo.commit(
+                    message=f'Adding {f}',
+                    user="Jane Doe <jdoe@foo.tld>",
+                    addremove=True,
+                )
         self._forest()
         ec = consumers.ElmoConsumer(None)
         ec.on_hg_newrepo('releases/l10n/de', {

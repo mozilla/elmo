@@ -190,7 +190,8 @@ def handleRepo(repo_name, repo_url, forest, locale_code):
         name=repo_name,
         url=repo_url,
     )
-    logging.error(f"newrepo:unexpected New repo {repo_name} already exists")
+    if created:
+        logging.error(f"newrepo:unexpected New repo {repo_name} already exists")
     locale, _ = Locale.objects.get_or_create(code=locale_code)
     db_repo.forest = forest
     db_repo.locale = locale
