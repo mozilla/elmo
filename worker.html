@@ -76,6 +76,21 @@ be set up independently.</p>
 <p>Elmo also consumes <a class="reference external" href="https://mozilla-version-control-tools.readthedocs.io/en/latest/hgmo/notifications.html#pulse-notifications">hg push messages</a> from Pulse. The worker updates the
 local clone and the repository metadata. This is done in parallel
 to the builds triggered in Taskcluster by the pushes.</p>
+<p>The generated data is modeled by the <code class="xref py py-mod docutils literal notranslate"><span class="pre">life.models</span></code> package. The models
+are <code class="xref py py-class docutils literal notranslate"><span class="pre">Changeset</span></code> and <code class="xref py py-class docutils literal notranslate"><span class="pre">File</span></code>, as well as
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Repository</span></code> and <code class="xref py py-class docutils literal notranslate"><span class="pre">Push</span></code>.</p>
+<p>The Pulse exchange we use is <code class="docutils literal notranslate"><span class="pre">exchange/hgpushes/v2</span></code>, which sends three types,
+<code class="docutils literal notranslate"><span class="pre">changegroup.1</span></code> for new pushes to existing repositories, and <code class="docutils literal notranslate"><span class="pre">newrepo.1</span></code>
+for new repositories. <code class="docutils literal notranslate"><span class="pre">obsolete.1</span></code> is the third, which elmo can’t deal
+with at the moment. The data models don’t have support for flags or
+obsolescense.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">newrepo.1</span></code> notification is of interest to elmo when new repositories
+are added to <a class="reference external" href="https://hg.mozilla.org/l10n-central/">l10n-central</a>. That’s modeled as a <code class="xref py py-class docutils literal notranslate"><span class="pre">Forest</span></code>. New
+repositories can be created with existing content but no pushes. Thus
+the worker clones the upstream repo and processes all heads.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">changegroup.1</span></code> notification is of interest for repositories known
+to elmo, modeled by <code class="xref py py-class docutils literal notranslate"><span class="pre">Repository</span></code>. The data is processed into
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Push</span></code> objects.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Ensure to handle race conditions between push messages and build

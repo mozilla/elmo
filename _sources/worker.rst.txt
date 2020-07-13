@@ -51,6 +51,25 @@ Elmo also consumes `hg push messages`_ from Pulse. The worker updates the
 local clone and the repository metadata. This is done in parallel
 to the builds triggered in Taskcluster by the pushes.
 
+The generated data is modeled by the :py:mod:`life.models` package. The models
+are :py:class:`Changeset` and :py:class:`File`, as well as
+:py:class:`Repository` and :py:class:`Push`.
+
+The Pulse exchange we use is ``exchange/hgpushes/v2``, which sends three types,
+``changegroup.1`` for new pushes to existing repositories, and ``newrepo.1``
+for new repositories. ``obsolete.1`` is the third, which elmo can't deal
+with at the moment. The data models don't have support for flags or
+obsolescense.
+
+The ``newrepo.1`` notification is of interest to elmo when new repositories
+are added to `l10n-central`_. That's modeled as a :py:class:`Forest`. New
+repositories can be created with existing content but no pushes. Thus
+the worker clones the upstream repo and processes all heads.
+
+The ``changegroup.1`` notification is of interest for repositories known
+to elmo, modeled by :py:class:`Repository`. The data is processed into
+:py:class:`Push` objects.
+
 .. note:: Ensure to handle race conditions between push messages and build
    results.
 
@@ -69,3 +88,4 @@ Similar infrastructure exists for `Github`_.
 
 .. _`hg push messages`: https://mozilla-version-control-tools.readthedocs.io/en/latest/hgmo/notifications.html#pulse-notifications
 .. _`github`: https://mozilla-version-control-tools.readthedocs.io/en/latest/githubwebhooks.html#pulse-notifications
+.. _`l10n-central`: https://hg.mozilla.org/l10n-central/
