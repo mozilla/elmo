@@ -24,7 +24,7 @@ HGMO = Queue(
     routing_key="#", expires=settings.PULSE_TTL,
     exchange=Exchange(
         "exchange/hgpushes/v2",
-        durable=True, auto_delete=False, type="topic", no_declare=True,
+        durable=True, auto_delete=False, type="topic", passive=True,
     )
 )
 
