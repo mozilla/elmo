@@ -67,7 +67,9 @@ class ElmoConsumer(ConsumerMixin):
         new_pushid = max(
             p['pushid'] for p in payload['data']['pushlog_pushes']
         )
-        logging.info(f"push:handle {repo.url} {repo.last_known_push()}-{new_pushid}")
+        logging.info(
+            f"push:handle {repo.url} {repo.last_known_push()}-{new_pushid}"
+        )
         pushes = utils.PushJS.pushes_for(repo, new_pushid)
         logging.info(f"push: found {len(pushes)} pushes for {repo_name}")
         utils.handlePushes(repo.id, pushes)
@@ -87,4 +89,4 @@ class ElmoConsumer(ConsumerMixin):
 
     def on_hg_obsolete(self, repo_name, payload):
         markers = payload['data']['markers']
-        logging.info(f"obsolete:skipping {repo_name} {len(markers)} markers"
+        logging.info(f"obsolete:skipping {repo_name} {len(markers)} markers")
