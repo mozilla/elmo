@@ -138,7 +138,7 @@ for key in (
     'PULSE_SSL',  # default set in base.py
     'PULSE_USER',
     'PULSE_PASSWORD',
-    'PULSE_TTL',
+    'PULSE_TTL',  # default set in base.py
 ):
     if key in os.environ:
         val = os.environ[key]

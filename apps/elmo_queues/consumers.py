@@ -42,13 +42,13 @@ class ElmoConsumer(ConsumerMixin):
         if body['_meta']['exchange'] == HGMO.exchange.name:
             self.on_hgpushes(body['_meta'], body['payload'])
         else:
-            print("UNHANDLED MESSAGE: {0!r}".format(body))
+            logging.info("UNHANDLED MESSAGE: {0!r}".format(body))
         message.ack()
 
     def on_hgpushes(self, meta, payload):
         repo_name = meta['routing_key']
         type_ = payload['type'].split('.', 1)[0]
-        handler = getattr(self, f'on_hg_{type_}')
+        handler = getattr(self, f'on_hg_{type_}', None)
         if handler is None:
             logging.error(
                 f"Bad message type \"{payload['type']}\" for {repo_name}"
@@ -67,7 +67,7 @@ class ElmoConsumer(ConsumerMixin):
         new_pushid = max(
             p['pushid'] for p in payload['data']['pushlog_pushes']
         )
-        print(f"push:handle {repo.url} {repo.last_known_push()}-{new_pushid}")
+        logging.info(f"push:handle {repo.url} {repo.last_known_push()}-{new_pushid}")
         pushes = utils.PushJS.pushes_for(repo, new_pushid)
         logging.info(f"push: found {len(pushes)} pushes for {repo_name}")
         utils.handlePushes(repo.id, pushes)
@@ -84,3 +84,7 @@ class ElmoConsumer(ConsumerMixin):
         utils.handleRepo(
             repo_name, payload['data']['repo_url'], forest, locale_code
         )
+
+    def on_hg_obsolete(self, repo_name, payload):
+        markers = payload['data']['markers']
+        logging.info(f"obsolete:skipping {repo_name} {len(markers)} markers"

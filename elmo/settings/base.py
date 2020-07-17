@@ -200,6 +200,8 @@ PROGRESS_IMG_SIZE = {'x': 100, 'y': 20}
 # settings for consumers of pulse.mozilla.org
 PULSE_HOST = 'amqp://pulse.mozilla.org:5671'
 PULSE_SSL = True
+PULSE_USER='_test_'
+PULSE_TTL=None
 
 
 __all__ = [
