@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-'''Models representing statuses of buildbot builds on multiple masters.
+'''Models representing statuses of buildbot builds on multiple mains.
 '''
 from __future__ import absolute_import
 from __future__ import unicode_literals
@@ -15,8 +15,8 @@ import six
 
 
 @python_2_unicode_compatible
-class Master(models.Model):
-    """Model for a buildbot master"""
+class Main(models.Model):
+    """Model for a buildbot main"""
     name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
@@ -24,8 +24,8 @@ class Master(models.Model):
 
 
 @python_2_unicode_compatible
-class Slave(models.Model):
-    """Model for a build slave"""
+class Subordinate(models.Model):
+    """Model for a build subordinate"""
     name = models.CharField(max_length=150, unique=True)
 
     def __str__(self):
@@ -55,7 +55,7 @@ class Tag(models.Model):
 class Change(models.Model):
     """Model for buildbot.changes.changes.Change"""
     number = models.PositiveIntegerField()
-    master = models.ForeignKey(Master, on_delete=models.CASCADE)
+    main = models.ForeignKey(Main, on_delete=models.CASCADE)
     branch = models.CharField(max_length=100, null=True, blank=True)
     revision = models.CharField(max_length=50, null=True, blank=True)
     who = models.CharField(max_length=100, null=True, blank=True,
@@ -66,7 +66,7 @@ class Change(models.Model):
     tags = models.ManyToManyField(Tag)
 
     class Meta:
-        unique_together = (('number', 'master'),)
+        unique_together = (('number', 'main'),)
 
     def __str__(self):
         rv = 'Change %d' % self.number
@@ -127,7 +127,7 @@ class Property(models.Model):
 class Builder(models.Model):
     """Model for buildbot.status.builder.BuilderStatus"""
     name = models.CharField(max_length=50, unique=True, db_index=True)
-    master = models.ForeignKey(Master, related_name='builders',
+    main = models.ForeignKey(Main, related_name='builders',
                                on_delete=models.CASCADE)
     category = models.CharField(max_length=30, null=True, blank=True,
                                 db_index=True)
@@ -145,7 +145,7 @@ class Build(models.Model):
     properties = models.ManyToManyField(Property, related_name='builds')
     builder = models.ForeignKey(Builder, related_name='builds',
                                 on_delete=models.CASCADE)
-    slave = models.ForeignKey(Slave, null=True, blank=True,
+    subordinate = models.ForeignKey(Subordinate, null=True, blank=True,
                               on_delete=models.SET_NULL)
     starttime = models.DateTimeField(null=True, blank=True)
     endtime = models.DateTimeField(null=True, blank=True)

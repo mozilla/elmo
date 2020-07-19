@@ -62,11 +62,11 @@ class Repl(cmd.Cmd):
         self.stdout.write('Deleting log files and objects\n')
         # WARNING(assumption):
         # Let's rule out that Runs could be associated with multiple
-        # Builders, and thus Masters.
-        master = (builds
-                  .values_list('builder__master__name', flat=True)
+        # Builders, and thus Mains.
+        main = (builds
+                  .values_list('builder__main__name', flat=True)
                   .distinct())[0]
-        base = settings.LOG_MOUNTS[master]
+        base = settings.LOG_MOUNTS[main]
         for f in (logs
                   .exclude(filename=None)
                   .values_list('filename', flat=True)):

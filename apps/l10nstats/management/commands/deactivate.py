@@ -22,7 +22,7 @@ class Command(BaseCommand):
     def handleApps(self, **kwargs):
         l10nbuilds = urlopen(
             'https://raw.githubusercontent.com/Pike/master-ball/'
-            'master/l10n-master/l10nbuilds.ini')
+            'main/l10n-main/l10nbuilds.ini')
         cp = ConfigParser()
         cp.readfp(l10nbuilds)
         for section in cp.sections():

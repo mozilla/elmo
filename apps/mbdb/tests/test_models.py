@@ -14,7 +14,7 @@ import six
 from six.moves import StringIO
 from elmo.test import TestCase
 from django.core import management
-from mbdb.models import Property, Step, Build, Builder, Master, Slave
+from mbdb.models import Property, Step, Build, Builder, Main, Subordinate
 
 
 class TestCustomDataType(str):
@@ -78,23 +78,23 @@ class ModelsTest(TestCase):
 
     def testStepModel(self):
         # pre-requisites
-        master = Master.objects.create(
+        main = Main.objects.create(
          name='head',
         )
 
         builder = Builder.objects.create(
           name='builder1',
-          master=master,
+          main=main,
         )
 
-        slave = Slave.objects.create(
-          name='slave 1',
+        subordinate = Subordinate.objects.create(
+          name='subordinate 1',
         )
 
         build = Build.objects.create(
           buildnumber=1,
           builder=builder,
-          slave=slave,
+          subordinate=subordinate,
           starttime=datetime.datetime.utcnow(),
           endtime=datetime.datetime.utcnow(),
           result=1,

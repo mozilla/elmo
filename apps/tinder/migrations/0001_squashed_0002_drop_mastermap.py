@@ -7,7 +7,7 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    replaces = [('tinder', '0001_initial'), ('tinder', '0002_drop_mastermap')]
+    replaces = [('tinder', '0001_initial'), ('tinder', '0002_drop_mainmap')]
 
     initial = True
 

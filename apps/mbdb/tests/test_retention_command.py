@@ -16,7 +16,7 @@ from six.moves import StringIO
 from elmo.test import TestCase
 from django.core import management
 from django.test import override_settings
-from mbdb.models import Log, Step, Build, Builder, Master, Slave
+from mbdb.models import Log, Step, Build, Builder, Main, Subordinate
 
 
 class CommandTest(TestCase):
@@ -25,15 +25,15 @@ class CommandTest(TestCase):
         super(CommandTest, self).setUp()
         self.now = datetime.datetime.utcnow()
         self.buildsdir = tempfile.mkdtemp()
-        self.master = Master.objects.create(
+        self.main = Main.objects.create(
          name='head',
         )
         self.builder = Builder.objects.create(
           name='builder1',
-          master=self.master,
+          main=self.main,
         )
-        self.slave = Slave.objects.create(
-          name='slave 1',
+        self.subordinate = Subordinate.objects.create(
+          name='subordinate 1',
         )
 
     def tearDown(self):
@@ -49,7 +49,7 @@ class CommandTest(TestCase):
             buildnumber = 1
         build = self.builder.builds.create(
           buildnumber=buildnumber,
-          slave=self.slave,
+          subordinate=self.subordinate,
           starttime=timestamp - datetime.timedelta(seconds=1),
           endtime=timestamp,
           result=1,
@@ -109,7 +109,7 @@ class CommandTest(TestCase):
 
     def test_empty_command(self):
         out = StringIO()
-        with override_settings(LOG_MOUNTS={self.master.name: self.buildsdir}):
+        with override_settings(LOG_MOUNTS={self.main.name: self.buildsdir}):
             management.call_command('build-retention', stdout=out)
         self.assertEqual(Build.objects.count(), 0)
         self.assertEqual(Step.objects.count(), 0)
@@ -125,7 +125,7 @@ class CommandTest(TestCase):
         b1, logs1 = self.build_for(self.now - datetime.timedelta(days=2))
         # new build
         b2, logs2 = self.build_for(self.now - datetime.timedelta(days=.5))
-        with override_settings(LOG_MOUNTS={self.master.name: self.buildsdir}):
+        with override_settings(LOG_MOUNTS={self.main.name: self.buildsdir}):
             management.call_command(
                 'build-retention', '-W',
                 '--builds-before=3', '--logs-before=3',
@@ -137,7 +137,7 @@ class CommandTest(TestCase):
         self.assertTrue(all(os.path.isfile(l) for l in logs2))
 
         # dry run, first
-        with override_settings(LOG_MOUNTS={self.master.name: self.buildsdir}):
+        with override_settings(LOG_MOUNTS={self.main.name: self.buildsdir}):
             management.call_command(
                 'build-retention', '-W',
                 '--dry-run',
@@ -149,7 +149,7 @@ class CommandTest(TestCase):
         self.assertTrue(all(os.path.isfile(l) for l in logs2))
 
         # Now wet run, actually delete files for b2.
-        with override_settings(LOG_MOUNTS={self.master.name: self.buildsdir}):
+        with override_settings(LOG_MOUNTS={self.main.name: self.buildsdir}):
             management.call_command('build-retention', '-W', stdout=out)
         self.assertFalse(os.path.isfile(b1))
         self.assertTrue(all(not os.path.isfile(l) for l in logs1))
@@ -160,7 +160,7 @@ class CommandTest(TestCase):
         self.assertEqual(Step.objects.count(), 2)
         self.assertEqual(Log.objects.count(), 3)
         # Run it again, so we validate that we're idempotent
-        with override_settings(LOG_MOUNTS={self.master.name: self.buildsdir}):
+        with override_settings(LOG_MOUNTS={self.main.name: self.buildsdir}):
             management.call_command('build-retention', '-W', stdout=out)
         self.assertTrue(os.path.isfile(b2))
         self.assertTrue(all(os.path.isfile(l) for l in logs2))
@@ -184,14 +184,14 @@ class CommandTest(TestCase):
         os.remove(b1)
 
         # dry run, first
-        with override_settings(LOG_MOUNTS={self.master.name: self.buildsdir}):
+        with override_settings(LOG_MOUNTS={self.main.name: self.buildsdir}):
             with self.assertRaises(management.CommandError):
                 management.call_command(
                     'build-retention', '-W',
                     '--dry-run',
                     stdout=out
                 )
-        with override_settings(LOG_MOUNTS={self.master.name: self.buildsdir}):
+        with override_settings(LOG_MOUNTS={self.main.name: self.buildsdir}):
             management.call_command(
                 'build-retention',
                 '--dry-run',
@@ -204,10 +204,10 @@ class CommandTest(TestCase):
 
         # Now wet run, actually delete files for b2.
         # With warnings first, fail, and then w/out warnings
-        with override_settings(LOG_MOUNTS={self.master.name: self.buildsdir}):
+        with override_settings(LOG_MOUNTS={self.main.name: self.buildsdir}):
             with self.assertRaises(management.CommandError):
                 management.call_command('build-retention', '-W', stdout=out)
-        with override_settings(LOG_MOUNTS={self.master.name: self.buildsdir}):
+        with override_settings(LOG_MOUNTS={self.main.name: self.buildsdir}):
             management.call_command('build-retention', stdout=out)
         self.assertFalse(os.path.isfile(b1))
         self.assertTrue(all(not os.path.isfile(l) for l in logs1))
@@ -234,14 +234,14 @@ class CommandTest(TestCase):
         os.remove(logs1.pop(1))
 
         # dry run, first
-        with override_settings(LOG_MOUNTS={self.master.name: self.buildsdir}):
+        with override_settings(LOG_MOUNTS={self.main.name: self.buildsdir}):
             with self.assertRaises(management.CommandError):
                 management.call_command(
                     'build-retention', '-W',
                     '--dry-run',
                     stdout=out
                 )
-        with override_settings(LOG_MOUNTS={self.master.name: self.buildsdir}):
+        with override_settings(LOG_MOUNTS={self.main.name: self.buildsdir}):
             management.call_command(
                 'build-retention',
                 '--dry-run',
@@ -254,10 +254,10 @@ class CommandTest(TestCase):
 
         # Now wet run, actually delete files for b2.
         # With warnings first, fail, and then w/out warnings
-        with override_settings(LOG_MOUNTS={self.master.name: self.buildsdir}):
+        with override_settings(LOG_MOUNTS={self.main.name: self.buildsdir}):
             with self.assertRaises(management.CommandError):
                 management.call_command('build-retention', '-W', stdout=out)
-        with override_settings(LOG_MOUNTS={self.master.name: self.buildsdir}):
+        with override_settings(LOG_MOUNTS={self.main.name: self.buildsdir}):
             management.call_command('build-retention', stdout=out)
         self.assertFalse(os.path.isfile(b1))
         self.assertTrue(all(not os.path.isfile(l) for l in logs1))

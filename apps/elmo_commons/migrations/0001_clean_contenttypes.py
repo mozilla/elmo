@@ -35,7 +35,7 @@ class Migration(migrations.Migration):
         ('mbdb', '0003_bug_1353850_on_delete'),
         ('privacy', '0001_initial'),
         ('shipping', '0003_auto_20160729_1128'),
-        ('tinder', '0002_drop_mastermap')
+        ('tinder', '0002_drop_mainmap')
     ]
 
     operations = [

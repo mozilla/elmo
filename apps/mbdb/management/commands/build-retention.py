@@ -25,7 +25,7 @@ from mbdb.models import Builder, Build, Log, BuildRequest
 
 def return_if_running(cmd):
     # Pick a lock file path on the shared disc.
-    # The LOG_MOUNTS end in either test-master or l10n-master, use their
+    # The LOG_MOUNTS end in either test-main or l10n-main, use their
     # parent dir.
     lock_path = os.path.dirname(list(settings.LOG_MOUNTS.values())[0])
     lock_path = os.path.join(lock_path, 'build-retention.lck')
@@ -100,8 +100,8 @@ class Command(BaseCommand):
         else:
             # os.stat raises the same errors as os.remove, let's build on that.
             unlink = os.stat
-        master_for_builder = dict(
-            Builder.objects.values_list('name', 'master__name')
+        main_for_builder = dict(
+            Builder.objects.values_list('name', 'main__name')
         )
         last_builds = [
             last_build
@@ -143,7 +143,7 @@ class Command(BaseCommand):
                 'filename',
                 'step__build__builder__name',
             ):
-                mount = settings.LOG_MOUNTS[master_for_builder[buildername]]
+                mount = settings.LOG_MOUNTS[main_for_builder[buildername]]
                 filename = os.path.join(mount, filename)
                 try:
                     unlink(filename)
@@ -187,7 +187,7 @@ class Command(BaseCommand):
                     'buildnumber',
                 ):
                     builderpath = os.path.join(
-                        settings.LOG_MOUNTS[master_for_builder[buildername]],
+                        settings.LOG_MOUNTS[main_for_builder[buildername]],
                         buildername,
                         str(buildnumber))
                     try:
@@ -226,7 +226,7 @@ class Command(BaseCommand):
             # skip clean_builds
             return
         # Let's try to run clean_builds.
-        # This might error if our master isn't idle, but that's OK, we'll
+        # This might error if our main isn't idle, but that's OK, we'll
         # clean up the rest next time.
         # Only the BuildRequests were really important.
         try:

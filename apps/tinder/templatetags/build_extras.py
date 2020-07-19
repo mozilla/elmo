@@ -42,7 +42,7 @@ def showbuild(build_or_step, autoescape=None):
                         args=[build.builder.name, build.buildnumber])
         rv = fmt % (b_url, build.starttime.isoformat(), build.buildnumber,
                     build.getProperty('tree'), build.getProperty('locale'))
-        rv += '<br/>%s' % build.slave.name
+        rv += '<br/>%s' % build.subordinate.name
         if build.sourcestamp.changes.count():
             fmt = ('<a href="' +
                    reverse(tinder.views.builds_for_change) +

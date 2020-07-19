@@ -72,8 +72,8 @@ for local_var, env_var in (
 if 'ELMO_BUILD_BASE' in os.environ:
     _log_base = os.environ['ELMO_BUILD_BASE']
     LOG_MOUNTS = {
-      'l10n-master': _log_base + '/l10n-master',
-      'test-master': _log_base + '/test-master',
+      'l10n-main': _log_base + '/l10n-main',
+      'test-main': _log_base + '/test-main',
     }
 
 if 'ELMO_SENTRY_DSN' in os.environ:

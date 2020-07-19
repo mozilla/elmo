@@ -18,7 +18,7 @@ import six
 from six.moves import range
 
 from l10nstats.models import Run
-from mbdb.models import Master, Log, Step
+from mbdb.models import Main, Log, Step
 from tinder.views import generateLog, NoLogFile
 from .. import LoggingCommand
 
@@ -45,11 +45,11 @@ class Command(LoggingCommand):
         ):
             raise CommandError('LOG_MOUNTS is not a dict in settings')
 
-        for master in Master.objects.order_by('-pk').values_list('name',
+        for main in Main.objects.order_by('-pk').values_list('name',
                                                                  flat=True):
-            if master not in settings.LOG_MOUNTS:
+            if main not in settings.LOG_MOUNTS:
                 raise CommandError('settings.LOG_MOUNTS not defined for %s' %
-                                   master)
+                                   main)
         self.chunksize = options['chunksize']
         self.es = elasticsearch.Elasticsearch(**settings.ES_KWARGS)
         self.index = settings.ES_COMPARE_INDEX
@@ -111,9 +111,9 @@ class Command(LoggingCommand):
                 raise CommandError('failed %d docs' % len(errors))
 
     def generateDocs(self, runs):
-        run_master = dict(runs
+        run_main = dict(runs
                           .values_list('id',
-                                       'build__builder__master__name'))
+                                       'build__builder__main__name'))
         for run in runs:
             self.offset = run.id
             data = ''
@@ -122,7 +122,7 @@ class Command(LoggingCommand):
                                  build__run=run)):
                 for log in step.logs.all():
                     try:
-                        for chunk in generateLog(run_master[run.id],
+                        for chunk in generateLog(run_main[run.id],
                                                  log.filename,
                                                  channels=(Log.JSON,)):
                             data += chunk['data']

@@ -76,7 +76,7 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name='Master',
+            name='Main',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=100, unique=True)),
@@ -100,7 +100,7 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name='Slave',
+            name='Subordinate',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=150, unique=True)),
@@ -161,8 +161,8 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='change',
-            name='master',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='mbdb.Master'),
+            name='main',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='mbdb.Main'),
         ),
         migrations.AddField(
             model_name='change',
@@ -171,7 +171,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterUniqueTogether(
             name='change',
-            unique_together=set([('number', 'master')]),
+            unique_together=set([('number', 'main')]),
         ),
         migrations.AddField(
             model_name='buildrequest',
@@ -180,8 +180,8 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='builder',
-            name='master',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='builders', to='mbdb.Master'),
+            name='main',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='builders', to='mbdb.Main'),
         ),
         migrations.AddField(
             model_name='build',
@@ -195,8 +195,8 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='build',
-            name='slave',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='mbdb.Slave'),
+            name='subordinate',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='mbdb.Subordinate'),
         ),
         migrations.AddField(
             model_name='build',

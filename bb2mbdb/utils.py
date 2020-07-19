@@ -21,12 +21,12 @@ def timeHelper(t):
 
 
 @transaction.atomic
-def modelForChange(master, change):
+def modelForChange(main, change):
     try:
-        dbchange = Change.objects.get(master=master, number=change.number)
+        dbchange = Change.objects.get(main=main, number=change.number)
         return dbchange
     except Change.DoesNotExist:
-        dbchange = Change.objects.create(master=master, number=change.number,
+        dbchange = Change.objects.create(main=main, number=change.number,
                                          when=timeHelper(change.when))
         for prop in ('branch', 'revision', 'who', 'comments'):
             val = getattr(change, prop)
@@ -47,10 +47,10 @@ def modelForChange(master, change):
 
 
 @transaction.atomic
-def modelForSource(master, source, maxChanges=4):
+def modelForSource(main, source, maxChanges=4):
     '''Get a db model for a buildbot SourceStamp.
 
-    master is the db model for the buildbot master, source is the
+    main is the db model for the buildbot main, source is the
     buildbot SourceStamp object.
     Optional argument maxChanges limits how many changes are part
     of the db query. All changes will be checked, this is just
@@ -61,7 +61,7 @@ def modelForSource(master, source, maxChanges=4):
     q = SourceStamp.objects.filter(branch=source.branch,
                                    revision=source.revision)
     if len(source.changes):
-        q = q.filter(numbered_changes__change__master=master)
+        q = q.filter(numbered_changes__change__main=main)
     for i, change in enumerate(source.changes[:maxChanges]):
         q = q.filter(numbered_changes__number=i,
                      numbered_changes__change__number=change.number)
@@ -85,7 +85,7 @@ def modelForSource(master, source, maxChanges=4):
     ss = SourceStamp.objects.create(branch=source.branch,
                                     revision=source.revision)
     for i, change in enumerate(source.changes):
-        cm = modelForChange(master, change)
+        cm = modelForChange(main, change)
         ss.numbered_changes.create(change=cm, number=i)
     ss.save()
     return ss

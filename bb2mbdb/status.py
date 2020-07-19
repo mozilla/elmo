@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-'''Status plugin to be used in buildbot masters serving the l10n dashboard.
+'''Status plugin to be used in buildbot mains serving the l10n dashboard.
 '''
 from __future__ import absolute_import
 from __future__ import unicode_literals
@@ -27,16 +27,16 @@ The main entry point for buildbot status notifications are a
 - StatusReceiver to get all builder.
 
 Also add a fake ChangeSource, so that we can ensure the nextNumber
-on ChangeMaster is set if we're resetting the master. That way, we don't
+on ChangeMain is set if we're resetting the main. That way, we don't
 introduce conflicts with existing mbdb data.
 
 Both are set up by calling into
  setupBridge()
-so that you can pass in a single settings.py, and a BuildMasterConfig.
+so that you can pass in a single settings.py, and a BuildMainConfig.
 '''
 
 
-def setupBridge(master, settings, config):
+def setupBridge(main, settings, config):
     '''Setup the bridget between buildbot and the database.
 
     This is also the closure in which all things happen that depend
@@ -45,9 +45,9 @@ def setupBridge(master, settings, config):
 
     from bb2mbdb.utils import modelForSource, modelForChange, modelForLog, \
         timeHelper
-    from mbdb.models import Master, Slave, Builder, BuildRequest, Build, Change
+    from mbdb.models import Main, Subordinate, Builder, BuildRequest, Build, Change
 
-    dbm, new_master = Master.objects.get_or_create(name=master)
+    dbm, new_main = Main.objects.get_or_create(name=main)
 
     class Scheduler(BaseScheduler):
         def addChange(self, change):
@@ -64,11 +64,11 @@ def setupBridge(master, settings, config):
     config['schedulers'].insert(0, Scheduler('bb2mbdb'))
 
     class ChangeSource(base.ChangeSource):
-        '''Fake ChangeSource to sync ChangeMaster's nextNumber
+        '''Fake ChangeSource to sync ChangeMain's nextNumber
         with mbdb.
-        If mbdb is higher, set nextNumber and clear changes, ChangeMaster
+        If mbdb is higher, set nextNumber and clear changes, ChangeMain
         likely restarted from an unclean old state.
-        Otherwise, we're fine, just let ChangeMaster do its thing. Also,
+        Otherwise, we're fine, just let ChangeMain do its thing. Also,
         mbdb might have gotten the last recent changes pruned by
         the clean_builds cron job.
         '''
@@ -82,11 +82,11 @@ def setupBridge(master, settings, config):
                 if latest_changenumber >= self.parent.nextNumber:
                     self.parent.nextNumber = latest_changenumber + 1
                     del self.parent.changes[:]
-                    log.msg('Resetting ChangeMaster.nextNumber')
+                    log.msg('Resetting ChangeMain.nextNumber')
                 else:
-                    log.msg('ChangeMaster.nextNumber is OK')
+                    log.msg('ChangeMain.nextNumber is OK')
             except IndexError:
-                log.msg('No changes in mbdb, leaving ChangeMaster alone')
+                log.msg('No changes in mbdb, leaving ChangeMain alone')
                 pass
     if 'change_source' not in config:
         config['change_source'] = []
@@ -183,9 +183,9 @@ def setupBridge(master, settings, config):
         def builderAdded(self, builderName, builder):
             log.msg("adding %s to mbdb" % builderName)
             try:
-                dbbuilder = Builder.objects.get(master=dbm, name=builderName)
+                dbbuilder = Builder.objects.get(main=dbm, name=builderName)
             except Builder.DoesNotExist:
-                dbbuilder = Builder.objects.create(master=dbm,
+                dbbuilder = Builder.objects.create(main=dbm,
                                                    name=builderName)
             dbbuilder.bigState = builder.getState()[0]
             if builder.category:
@@ -220,19 +220,19 @@ def setupBridge(master, settings, config):
 
         def builderChangedState(self, builderName, state):
             log.msg("%s changed state to %s" % (builderName, state))
-            dbbuilder = Builder.objects.get(master=dbm, name=builderName)
+            dbbuilder = Builder.objects.get(main=dbm, name=builderName)
             dbbuilder.bigState = state
             dbbuilder.save()
 
         def buildStarted(self, builderName, build):
             log.msg("build started on  %s" % builderName)
-            builder = Builder.objects.get(master=dbm, name=builderName)
-            slave, _ = Slave.objects.get_or_create(name=build.getSlavename())
+            builder = Builder.objects.get(main=dbm, name=builderName)
+            subordinate, _ = Subordinate.objects.get_or_create(name=build.getSubordinatename())
             ss = modelForSource(dbm, build.getSourceStamp())
             starttime = timeHelper(build.getTimes()[0])
             dbbuild, created = \
                 builder.builds.get_or_create(buildnumber=build.getNumber(),
-                                             slave=slave,
+                                             subordinate=subordinate,
                                              starttime=starttime,
                                              reason=build.getReason(),
                                              sourcestamp=ss)

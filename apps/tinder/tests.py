@@ -17,8 +17,8 @@ from django.urls import reverse
 from django.test import override_settings
 from django.test.client import Client
 from django.utils.encoding import force_text
-from mbdb.models import (Build, Change, Master, Log, Property, SourceStamp,
-                         Builder, Slave)
+from mbdb.models import (Build, Change, Main, Log, Property, SourceStamp,
+                         Builder, Subordinate)
 import tinder.views
 from tinder.views import _waterfall, LogMountKeyError
 from tinder.templatetags import build_extras
@@ -241,11 +241,11 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
 
         ss = SourceStamp.objects.all()[0]
         builder = Builder.objects.all()[0]
-        slave = Slave.objects.all()[0]
+        subordinate = Subordinate.objects.all()[0]
         build1 = Build.objects.create(
           buildnumber=1,
           builder=builder,
-          slave=slave,
+          subordinate=subordinate,
           sourcestamp=ss,
         )
         build1.properties.add(prop1)
@@ -253,7 +253,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         build2 = Build.objects.create(
           buildnumber=2,
           builder=builder,
-          slave=slave,
+          subordinate=subordinate,
           sourcestamp=ss,
         )
         build2.properties.add(prop2)
@@ -262,7 +262,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         build3 = Build.objects.create(
           buildnumber=3,
           builder=builder,
-          slave=slave,
+          subordinate=subordinate,
           sourcestamp=ss,
         )
         build3.properties.add(prop1)
@@ -297,7 +297,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         """Test that showlog shows headers, stdout, stderr,
         with the right CSS classes, but not data from other channels like json.
         """
-        master = Master.objects.all()[0]
+        main = Main.objects.all()[0]
 
         build = Build.objects.all()[0]
         step = build.steps.all()[0]
@@ -311,7 +311,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         with open(os.path.join(self.temp_directory, log.filename), 'w') as f:
             f.write(SAMPLE_BUILD_LOG_PAYLOAD)
 
-        with override_settings(LOG_MOUNTS={master.name: self.temp_directory}):
+        with override_settings(LOG_MOUNTS={main.name: self.temp_directory}):
             response = self.client.get(url)
         content = force_text(response.content)
         content = content.split('</header>')[1].split('</footer')[0]
@@ -331,7 +331,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         """Test that showlog shows headers, stdout, stderr,
         with the right CSS classes, but not data from other channels like json.
         """
-        master = Master.objects.all()[0]
+        main = Main.objects.all()[0]
 
         build = Build.objects.all()[0]
         step = build.steps.all()[0]
@@ -347,7 +347,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
         ) as f:
             f.write(bz2.compress(SAMPLE_BUILD_LOG_PAYLOAD.encode('utf-8')))
 
-        with override_settings(LOG_MOUNTS={master.name: self.temp_directory}):
+        with override_settings(LOG_MOUNTS={main.name: self.temp_directory}):
             response = self.client.get(url)
         content = force_text(response.content)
         content = content.split('</header>')[1].split('</footer')[0]
@@ -363,7 +363,7 @@ class ViewsTestCase(TestCase, EmbedsTestCaseMixin):
             content)
         self.assertNotIn('json', content)
 
-    def test_showlog_invalid_master(self):
+    def test_showlog_invalid_main(self):
         build = Build.objects.all()[0]
         step = build.steps.all()[0]
         log = Log.objects.create(

@@ -28,7 +28,7 @@ import six
 from six.moves import range
 from six.moves import zip
 from mbdb.models import (Build, Builder, BuildRequest,
-                         Change, Log, Master, NumberedChange,
+                         Change, Log, Main, NumberedChange,
                          SourceStamp, Step, Property)
 from life.models import Push, Repository
 
@@ -161,7 +161,7 @@ def tbpl_inner(request):
     for _cs in changes_for_source.values():
         _cs.sort(key=lambda c: c.id, reverse=True)
     bld_ids = list(blds.values_list('id', flat=True))
-    bprops = pmap(('locale', 'tree', 'slavename'), bld_ids)
+    bprops = pmap(('locale', 'tree', 'subordinatename'), bld_ids)
 
     builds_for_source = defaultdict(list)
     for b in blds.filter(sourcestamp__in=ss).select_related('builder'):
@@ -403,7 +403,7 @@ def _waterfall(request):
             if opt in filters:
                 filters.pop(opt)
         builderopts = ['name', 'category']
-        buildopts = ['slavename']
+        buildopts = ['subordinatename']
         for k, v in filters.items():
             if k in builderopts:
                 buildf[str('builder__' + k)] = v
@@ -438,7 +438,7 @@ def _waterfall(request):
     def ievents(builds, changes, max_builds=None):
         starts = []
         c_iter = changes.order_by('-when', '-pk').iterator()
-        builds = builds.select_related('builder', 'slave', 'sourcestamp')
+        builds = builds.select_related('builder', 'subordinate', 'sourcestamp')
         try:
             c = next(c_iter)
         except StopIteration:
@@ -715,18 +715,18 @@ class NoLogFile(Exception):
     pass
 
 
-def generateLog(master, filename, channels):
+def generateLog(main, filename, channels):
     """Generic generator to read buildbot step logs.
     """
     if filename is None:
         # this sadly happens in some error conditions, we don't have a file
         raise NoLogFile("No filename given")
     try:
-        base = settings.LOG_MOUNTS[master]
+        base = settings.LOG_MOUNTS[main]
     except KeyError:
         raise LogMountKeyError(
             'The log mount %r is not in settings.LOG_MOUNTS'
-            % master
+            % main
         )
     head = re.compile(r'(\d+):(\d)')
     f = None
@@ -737,8 +737,8 @@ def generateLog(master, filename, channels):
         try:
             f = open(filename, "rb")
         except IOError:
-            raise NoLogFile("Log `%s` on master `%s` not found" %
-                            (filename, master))
+            raise NoLogFile("Log `%s` on main `%s` not found" %
+                            (filename, main))
 
     def _iter(f):
         buflen = 64 * 1024
@@ -780,10 +780,10 @@ def showlog(request, step_id, name):
                        'data': chunk['data']}
     step = get_object_or_404(Step, pk=step_id)
     log = get_object_or_404(step.logs, name=name)
-    master = Master.objects.get(builders__builds__steps=step).name
+    main = Main.objects.get(builders__builds__steps=step).name
     if log.filename is not None:
         try:
-            chunks = generateLog(master, log.filename,
+            chunks = generateLog(main, log.filename,
                                  channels=(Log.STDOUT, Log.STDERR, Log.HEADER))
         except NoLogFile as e:
             raise Http404(*e.args)
