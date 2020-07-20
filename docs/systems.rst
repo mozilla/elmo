@@ -4,6 +4,12 @@ Systems
 The systems involved in running elmo and feeding it with data are
 as follows.
 
+Pulse
+-----
+
+Pulse is Mozilla's RabbitMQ instance used to communicate between different
+build and release automation workflows.
+
 Taskcluster
 -----------
 
@@ -13,12 +19,6 @@ is announced to the rest of the system via Pulse.
 
 It should be possible to use both the firefox-ci-tc and the
 community-tc cluster to generate data.
-
-Pulse
------
-
-Pulse is Mozilla's RabbitMQ instance used to communicate between different
-build and release automation workflows.
 
 Worker
 ------

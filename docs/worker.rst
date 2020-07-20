@@ -24,27 +24,6 @@ The required configuration setting is ``PULSE_USER``, which is also
 used to create the queue names on pulse, ``f"queue/{settings.PULSE_USER}/*"``,
 and ``PULSE_PASSWORD``.
 
-Taskcluster
------------
-
-To get results from Taskcluster, the worker will consume the
-``exchange/taskcluster-queue/v1/task-completed`` exchange with the routing
-key chose for elmo, for example ``project.l10n.elmo.v1``.
-
-It will acknowledge the message once the meta data for all comparisons
-has been created and are entered in the database.
-
-.. note:: The Taskcluster artifacts API returns a redirect. Proposal:
-   do not try to resolve the redirect immediately, but possibly do so
-   on the first request through the webserver.
-
-To be able to hook up the revisions, the worker needs to (softly) rely on
-updating the clones in the jobs below.
-
-With 'softly' we mean that we create lightweight placeholder objects
-for revisions, with just the hash. The metadata and parents etc would
-be set up independently.
-
 hg.m.o
 ------
 
@@ -73,6 +52,27 @@ to elmo, modeled by :py:class:`Repository`. The data is processed into
 
 .. note:: Ensure to handle race conditions between push messages and build
    results.
+
+Taskcluster
+-----------
+
+To get results from Taskcluster, the worker will consume the
+``exchange/taskcluster-queue/v1/task-completed`` exchange with the routing
+key chose for elmo, for example ``project.l10n.elmo.v1``.
+
+It will acknowledge the message once the meta data for all comparisons
+has been created and are entered in the database.
+
+.. note:: The Taskcluster artifacts API returns a redirect. Proposal:
+   do not try to resolve the redirect immediately, but possibly do so
+   on the first request through the webserver.
+
+To be able to hook up the revisions, the worker needs to (softly) rely on
+updating the clones in the jobs below.
+
+With 'softly' we mean that we create lightweight placeholder objects
+for revisions, with just the hash. The metadata and parents etc would
+be set up independently.
 
 Github
 ------

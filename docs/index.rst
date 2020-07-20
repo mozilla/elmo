@@ -26,8 +26,8 @@ results and what actually got compared.
    :caption: Contents:
 
    systems
-   taskcluster
    worker
+   taskcluster
 
 
 Indices and tables
