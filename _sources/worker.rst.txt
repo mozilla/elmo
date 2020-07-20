@@ -2,8 +2,8 @@ Worker
 ======
 
 The worker is implemented as a Django management command, and runs
-out of the same Docker contains as the webserver. The instance is separate
-from the webhead instances, though [#parallel_worker]_.
+out of the same Docker contains as the webserver. The instance [#parallel_worker]_
+is separate from the webhead instances, though.
 
 There are two functionalities the worker fulfills.
 
@@ -21,7 +21,37 @@ The worker is run via
    ./manage.py consume-pulse
 
 The required configuration setting is ``PULSE_USER``, which is also
-used to create the queue names on pulse, ``f"queue/{settings.PULSE_USER}/*"``.
+used to create the queue names on pulse, ``f"queue/{settings.PULSE_USER}/*"``,
+and ``PULSE_PASSWORD``.
+
+hg.m.o
+------
+
+Elmo also consumes `hg push messages`_ from Pulse. The worker updates the
+local clone and the repository metadata. This is done in parallel
+to the builds triggered in Taskcluster by the pushes.
+
+The generated data is modeled by the :py:mod:`life.models` package. The models
+are :py:class:`Changeset` and :py:class:`File`, as well as
+:py:class:`Repository` and :py:class:`Push`.
+
+The Pulse exchange we use is ``exchange/hgpushes/v2``, which sends three types,
+``changegroup.1`` for new pushes to existing repositories, and ``newrepo.1``
+for new repositories. ``obsolete.1`` is the third, which elmo ignores
+at the moment. The data models don't have support for flags or
+obsolescense.
+
+The ``newrepo.1`` notification is of interest to elmo when new repositories
+are added to `l10n-central`_. That's modeled as a :py:class:`Forest`. New
+repositories can be created with existing content but no pushes. Thus
+the worker clones the upstream repo and processes all heads.
+
+The ``changegroup.1`` notification is of interest for repositories known
+to elmo, modeled by :py:class:`Repository`. The data is processed into
+:py:class:`Push` objects.
+
+.. note:: Ensure to handle race conditions between push messages and build
+   results.
 
 Taskcluster
 -----------
@@ -43,35 +73,6 @@ updating the clones in the jobs below.
 With 'softly' we mean that we create lightweight placeholder objects
 for revisions, with just the hash. The metadata and parents etc would
 be set up independently.
-
-hg.m.o
-------
-
-Elmo also consumes `hg push messages`_ from Pulse. The worker updates the
-local clone and the repository metadata. This is done in parallel
-to the builds triggered in Taskcluster by the pushes.
-
-The generated data is modeled by the :py:mod:`life.models` package. The models
-are :py:class:`Changeset` and :py:class:`File`, as well as
-:py:class:`Repository` and :py:class:`Push`.
-
-The Pulse exchange we use is ``exchange/hgpushes/v2``, which sends three types,
-``changegroup.1`` for new pushes to existing repositories, and ``newrepo.1``
-for new repositories. ``obsolete.1`` is the third, which elmo can't deal
-with at the moment. The data models don't have support for flags or
-obsolescense.
-
-The ``newrepo.1`` notification is of interest to elmo when new repositories
-are added to `l10n-central`_. That's modeled as a :py:class:`Forest`. New
-repositories can be created with existing content but no pushes. Thus
-the worker clones the upstream repo and processes all heads.
-
-The ``changegroup.1`` notification is of interest for repositories known
-to elmo, modeled by :py:class:`Repository`. The data is processed into
-:py:class:`Push` objects.
-
-.. note:: Ensure to handle race conditions between push messages and build
-   results.
 
 Github
 ------

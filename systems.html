@@ -15,7 +15,7 @@
     <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Taskcluster" href="taskcluster.html" />
+    <link rel="next" title="Worker" href="worker.html" />
     <link rel="prev" title="Elmo" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -37,6 +37,11 @@
 <h1>Systems<a class="headerlink" href="#systems" title="Permalink to this headline">¶</a></h1>
 <p>The systems involved in running elmo and feeding it with data are
 as follows.</p>
+<div class="section" id="pulse">
+<h2>Pulse<a class="headerlink" href="#pulse" title="Permalink to this headline">¶</a></h2>
+<p>Pulse is Mozilla’s RabbitMQ instance used to communicate between different
+build and release automation workflows.</p>
+</div>
 <div class="section" id="taskcluster">
 <h2>Taskcluster<a class="headerlink" href="#taskcluster" title="Permalink to this headline">¶</a></h2>
 <p>This automation framework is used to run compare-locales and publish
@@ -44,11 +49,6 @@ the results as artifacts on tasks. The completion of such a task
 is announced to the rest of the system via Pulse.</p>
 <p>It should be possible to use both the firefox-ci-tc and the
 community-tc cluster to generate data.</p>
-</div>
-<div class="section" id="pulse">
-<h2>Pulse<a class="headerlink" href="#pulse" title="Permalink to this headline">¶</a></h2>
-<p>Pulse is Mozilla’s RabbitMQ instance used to communicate between different
-build and release automation workflows.</p>
 </div>
 <div class="section" id="worker">
 <h2>Worker<a class="headerlink" href="#worker" title="Permalink to this headline">¶</a></h2>
@@ -108,8 +108,8 @@ Revisions.</p>
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Systems</a></li>
-<li class="toctree-l1"><a class="reference internal" href="taskcluster.html">Taskcluster</a></li>
 <li class="toctree-l1"><a class="reference internal" href="worker.html">Worker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="taskcluster.html">Taskcluster</a></li>
 </ul>
 
 <div class="relations">
@@ -117,7 +117,7 @@ Revisions.</p>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
       <li>Previous: <a href="index.html" title="previous chapter">Elmo</a></li>
-      <li>Next: <a href="taskcluster.html" title="next chapter">Taskcluster</a></li>
+      <li>Next: <a href="worker.html" title="next chapter">Worker</a></li>
   </ul></li>
 </ul>
 </div>

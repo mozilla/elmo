@@ -15,7 +15,8 @@
     <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Taskcluster" href="taskcluster.html" />
+    <link rel="next" title="Taskcluster" href="taskcluster.html" />
+    <link rel="prev" title="Systems" href="systems.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -35,8 +36,8 @@
   <div class="section" id="worker">
 <h1>Worker<a class="headerlink" href="#worker" title="Permalink to this headline">¶</a></h1>
 <p>The worker is implemented as a Django management command, and runs
-out of the same Docker contains as the webserver. The instance is separate
-from the webhead instances, though <a class="footnote-reference brackets" href="#parallel-worker" id="id1">1</a>.</p>
+out of the same Docker contains as the webserver. The instance <a class="footnote-reference brackets" href="#parallel-worker" id="id1">1</a>
+is separate from the webhead instances, though.</p>
 <p>There are two functionalities the worker fulfills.</p>
 <ol class="arabic simple">
 <li><p>Update local clones in the shared storage and reflect it in the database.</p></li>
@@ -50,7 +51,34 @@ and reflect it in the database.</p></li>
 </pre></div>
 </div>
 <p>The required configuration setting is <code class="docutils literal notranslate"><span class="pre">PULSE_USER</span></code>, which is also
-used to create the queue names on pulse, <code class="docutils literal notranslate"><span class="pre">f&quot;queue/{settings.PULSE_USER}/*&quot;</span></code>.</p>
+used to create the queue names on pulse, <code class="docutils literal notranslate"><span class="pre">f&quot;queue/{settings.PULSE_USER}/*&quot;</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">PULSE_PASSWORD</span></code>.</p>
+</div>
+<div class="section" id="hg-m-o">
+<h2>hg.m.o<a class="headerlink" href="#hg-m-o" title="Permalink to this headline">¶</a></h2>
+<p>Elmo also consumes <a class="reference external" href="https://mozilla-version-control-tools.readthedocs.io/en/latest/hgmo/notifications.html#pulse-notifications">hg push messages</a> from Pulse. The worker updates the
+local clone and the repository metadata. This is done in parallel
+to the builds triggered in Taskcluster by the pushes.</p>
+<p>The generated data is modeled by the <code class="xref py py-mod docutils literal notranslate"><span class="pre">life.models</span></code> package. The models
+are <code class="xref py py-class docutils literal notranslate"><span class="pre">Changeset</span></code> and <code class="xref py py-class docutils literal notranslate"><span class="pre">File</span></code>, as well as
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Repository</span></code> and <code class="xref py py-class docutils literal notranslate"><span class="pre">Push</span></code>.</p>
+<p>The Pulse exchange we use is <code class="docutils literal notranslate"><span class="pre">exchange/hgpushes/v2</span></code>, which sends three types,
+<code class="docutils literal notranslate"><span class="pre">changegroup.1</span></code> for new pushes to existing repositories, and <code class="docutils literal notranslate"><span class="pre">newrepo.1</span></code>
+for new repositories. <code class="docutils literal notranslate"><span class="pre">obsolete.1</span></code> is the third, which elmo ignores
+at the moment. The data models don’t have support for flags or
+obsolescense.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">newrepo.1</span></code> notification is of interest to elmo when new repositories
+are added to <a class="reference external" href="https://hg.mozilla.org/l10n-central/">l10n-central</a>. That’s modeled as a <code class="xref py py-class docutils literal notranslate"><span class="pre">Forest</span></code>. New
+repositories can be created with existing content but no pushes. Thus
+the worker clones the upstream repo and processes all heads.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">changegroup.1</span></code> notification is of interest for repositories known
+to elmo, modeled by <code class="xref py py-class docutils literal notranslate"><span class="pre">Repository</span></code>. The data is processed into
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Push</span></code> objects.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Ensure to handle race conditions between push messages and build
+results.</p>
+</div>
 </div>
 <div class="section" id="taskcluster">
 <h2>Taskcluster<a class="headerlink" href="#taskcluster" title="Permalink to this headline">¶</a></h2>
@@ -70,32 +98,6 @@ updating the clones in the jobs below.</p>
 <p>With ‘softly’ we mean that we create lightweight placeholder objects
 for revisions, with just the hash. The metadata and parents etc would
 be set up independently.</p>
-</div>
-<div class="section" id="hg-m-o">
-<h2>hg.m.o<a class="headerlink" href="#hg-m-o" title="Permalink to this headline">¶</a></h2>
-<p>Elmo also consumes <a class="reference external" href="https://mozilla-version-control-tools.readthedocs.io/en/latest/hgmo/notifications.html#pulse-notifications">hg push messages</a> from Pulse. The worker updates the
-local clone and the repository metadata. This is done in parallel
-to the builds triggered in Taskcluster by the pushes.</p>
-<p>The generated data is modeled by the <code class="xref py py-mod docutils literal notranslate"><span class="pre">life.models</span></code> package. The models
-are <code class="xref py py-class docutils literal notranslate"><span class="pre">Changeset</span></code> and <code class="xref py py-class docutils literal notranslate"><span class="pre">File</span></code>, as well as
-<code class="xref py py-class docutils literal notranslate"><span class="pre">Repository</span></code> and <code class="xref py py-class docutils literal notranslate"><span class="pre">Push</span></code>.</p>
-<p>The Pulse exchange we use is <code class="docutils literal notranslate"><span class="pre">exchange/hgpushes/v2</span></code>, which sends three types,
-<code class="docutils literal notranslate"><span class="pre">changegroup.1</span></code> for new pushes to existing repositories, and <code class="docutils literal notranslate"><span class="pre">newrepo.1</span></code>
-for new repositories. <code class="docutils literal notranslate"><span class="pre">obsolete.1</span></code> is the third, which elmo can’t deal
-with at the moment. The data models don’t have support for flags or
-obsolescense.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">newrepo.1</span></code> notification is of interest to elmo when new repositories
-are added to <a class="reference external" href="https://hg.mozilla.org/l10n-central/">l10n-central</a>. That’s modeled as a <code class="xref py py-class docutils literal notranslate"><span class="pre">Forest</span></code>. New
-repositories can be created with existing content but no pushes. Thus
-the worker clones the upstream repo and processes all heads.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">changegroup.1</span></code> notification is of interest for repositories known
-to elmo, modeled by <code class="xref py py-class docutils literal notranslate"><span class="pre">Repository</span></code>. The data is processed into
-<code class="xref py py-class docutils literal notranslate"><span class="pre">Push</span></code> objects.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Ensure to handle race conditions between push messages and build
-results.</p>
-</div>
 </div>
 <div class="section" id="github">
 <h2>Github<a class="headerlink" href="#github" title="Permalink to this headline">¶</a></h2>
@@ -132,15 +134,16 @@ results.</p>
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="systems.html">Systems</a></li>
-<li class="toctree-l1"><a class="reference internal" href="taskcluster.html">Taskcluster</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Worker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="taskcluster.html">Taskcluster</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="taskcluster.html" title="previous chapter">Taskcluster</a></li>
+      <li>Previous: <a href="systems.html" title="previous chapter">Systems</a></li>
+      <li>Next: <a href="taskcluster.html" title="next chapter">Taskcluster</a></li>
   </ul></li>
 </ul>
 </div>
