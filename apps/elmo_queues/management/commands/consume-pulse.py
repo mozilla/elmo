@@ -33,10 +33,8 @@ class Command(BaseCommand):
             password=settings.PULSE_PASSWORD,
             ssl=settings.PULSE_SSL
         ) as pulse:
-            pulse.connect()
             c = ElmoConsumer(pulse)
             try:
-                # import pdb; pdb.set_trace()
                 c.run()
             except KeyboardInterrupt:
                 pass
