@@ -2,8 +2,8 @@ Worker
 ======
 
 The worker is implemented as a Django management command, and runs
-out of the same Docker contains as the webserver. The instance is separate
-from the webhead instances, though [#parallel_worker]_.
+out of the same Docker contains as the webserver. The instance [#parallel_worker]_
+is separate from the webhead instances, though.
 
 There are two functionalities the worker fulfills.
 
@@ -21,7 +21,8 @@ The worker is run via
    ./manage.py consume-pulse
 
 The required configuration setting is ``PULSE_USER``, which is also
-used to create the queue names on pulse, ``f"queue/{settings.PULSE_USER}/*"``.
+used to create the queue names on pulse, ``f"queue/{settings.PULSE_USER}/*"``,
+and ``PULSE_PASSWORD``.
 
 Taskcluster
 -----------
@@ -57,8 +58,8 @@ are :py:class:`Changeset` and :py:class:`File`, as well as
 
 The Pulse exchange we use is ``exchange/hgpushes/v2``, which sends three types,
 ``changegroup.1`` for new pushes to existing repositories, and ``newrepo.1``
-for new repositories. ``obsolete.1`` is the third, which elmo can't deal
-with at the moment. The data models don't have support for flags or
+for new repositories. ``obsolete.1`` is the third, which elmo ignores
+at the moment. The data models don't have support for flags or
 obsolescense.
 
 The ``newrepo.1`` notification is of interest to elmo when new repositories
