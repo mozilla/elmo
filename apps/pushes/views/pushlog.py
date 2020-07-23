@@ -83,7 +83,7 @@ def pushlog(request, repo_name):
     push_ids = list(pushes.values_list('id', flat=True))
     push_changesets = (Push.changesets.through.objects
                        .filter(push__in=push_ids)
-                       .order_by('-push__id', '-changeset__id'))
+                       .order_by('-push__push_date', '-changeset__id'))
     pushcounts = {}
     if files:
         # we're only interested in the changesets that actually contain

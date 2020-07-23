@@ -8,14 +8,11 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    replaces = [('l10nstats', '0001_initial'), ('l10nstats', '0002_bug_1365748_drop_file_stats'), ('l10nstats', '0003_drop_progress_position')]
-
     initial = True
 
     dependencies = [
-        ('contenttypes', '0002_remove_content_type_name'),
-        ('mbdb', '0001_initial'),
-        ('life', '0001_initial'),
+        ('mbdb', '0001_squashed_0003_bug_1353850_on_delete'),
+        ('life', '0001_squashed_0004_auto_20191116_1511'),
     ]
 
     operations = [

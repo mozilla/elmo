@@ -9,8 +9,6 @@ import mbdb.fields
 
 class Migration(migrations.Migration):
 
-    replaces = [('mbdb', '0001_initial'), ('mbdb', '0002_bug_1333398_property_length'), ('mbdb', '0003_bug_1353850_on_delete')]
-
     initial = True
 
     dependencies = [

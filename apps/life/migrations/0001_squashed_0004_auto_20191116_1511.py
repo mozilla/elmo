@@ -30,12 +30,10 @@ def initial_data(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
-    replaces = [('life', '0001_initial'), ('life', '0002_bug_1138550_unified_clones'), ('life', '0003_bug_1353850_on_delete'), ('life', '0004_auto_20191116_1511')]
-
     initial = True
 
     dependencies = [
-        ('mbdb', '0001_initial'),
+        ('mbdb', '0001_squashed_0003_bug_1353850_on_delete'),
     ]
 
     operations = [
