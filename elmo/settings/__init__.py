@@ -132,6 +132,28 @@ for key, value in os.environ.items():
         continue
     globals()[key[len('DJANGO_'):]] = boolmapper.get(value.lower(), value)
 
+# Retrieve pulse.m.o parameters
+for key in (
+    'PULSE_HOST',  # default set in base.py
+    'PULSE_SSL',  # default set in base.py
+    'PULSE_USER',
+    'PULSE_PASSWORD',
+    'PULSE_TTL',  # default set in base.py
+):
+    if key in os.environ:
+        val = os.environ[key]
+        if key == 'PULSE_TTL':
+            try:
+                val = int(val)
+            except ValueError:
+                continue
+        if key == 'PULSE_SSL':
+            try:
+                val = boolmapper[val]
+            except KeyError:
+                continue
+        globals()[key] = val
+
 # remove secrets and passwords from environment
 for key in os.environ.keys():
     if 'SECRET' in key or 'PASSWORD' in key:

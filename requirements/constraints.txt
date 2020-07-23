@@ -4,6 +4,8 @@
 
 # >=0.13 josepy
 PyOpenSSL==19.1.0
+# amqp>=2.6.0,<2.7 kombu
+amqp==2.6.0
 # >=2017.4.17 requests
 certifi==2020.4.5.2
 # >=1.8,!=1.11.3 cryptography
@@ -32,6 +34,8 @@ fluent.syntax==0.17.0
 funcsigs==1.0.2
 # <3,>=2.5 requests
 idna==2.8
+# >=0.18 kombu
+importlib-metadata==1.6.1
 # cryptography
 ipaddress==1.0.23
 # mozilla-django-oidc
@@ -66,8 +70,12 @@ statistics==1.0.3.5
 # Downgrade for https://github.com/elastic/elasticsearch-py/issues/943
 # Only fixed in elasticsearch 7.0.5
 urllib3==1.24.3
+# >=1.1.3, <5.0.0a1 amqp
+vine==1.3.0
 # bleach, html5lib
 webencodings==0.5.1
+# zipp>=0.5 importlib-metadata
+zipp==3.1.0
 
 
 ## dev

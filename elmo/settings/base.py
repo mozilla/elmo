@@ -115,6 +115,7 @@ INSTALLED_APPS = (
     'shipping',
     'bugsy',
     'elmo_commons',
+    'elmo_queues',
 )
 
 SESSION_COOKIE_SECURE = True
@@ -195,6 +196,13 @@ INCLUDE_ANALYTICS = False
 # settings for the compare-locales progress preview images
 PROGRESS_DAYS = 50
 PROGRESS_IMG_SIZE = {'x': 100, 'y': 20}
+
+# settings for consumers of pulse.mozilla.org
+PULSE_HOST = 'amqp://pulse.mozilla.org:5671'
+PULSE_SSL = True
+PULSE_USER='_test_'
+PULSE_TTL=None
+
 
 __all__ = [
     setting for setting in globals().keys() if setting.isupper()
