@@ -39,3 +39,4 @@ This software is licensed under the [Mozilla Public License Version 2.0][MPL]. F
 information, read the file ``LICENSE``.
 
 [MPL]: http://www.mozilla.org/MPL/
+
