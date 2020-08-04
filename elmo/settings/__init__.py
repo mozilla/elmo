@@ -6,6 +6,8 @@ from __future__ import unicode_literals
 
 import os
 import markus
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 from .base import *  # noqa
 # we modify that later, explicitly import
@@ -77,9 +79,10 @@ if 'ELMO_BUILD_BASE' in os.environ:
     }
 
 if 'ELMO_SENTRY_DSN' in os.environ:
-    RAVEN_CONFIG = {
-        'dsn': os.environ['ELMO_SENTRY_DSN']
-    }
+    sentry_sdk.init(
+        dsn=os.environ['ELMO_SENTRY_DSN'],
+        integrations=[DjangoIntegration()],
+    )
 
 if 'ELMO_INCLUDE_ANALYTICS' in os.environ:
     INCLUDE_ANALYTICS = True

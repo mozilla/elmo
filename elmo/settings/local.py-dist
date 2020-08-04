@@ -52,11 +52,6 @@ SESSION_COOKIE_SECURE = False
 # Uncomment to use local auth backend.
 # OIDC_DISABLE = True
 
-# if you want to test the Sentry (https://sentry.prod.mozaws.net/operations)
-#RAVEN_CONFIG = {
-#    'dsn': ''  # see https://sentry.prod.mozaws.net/operations
-#}
-
 # Feed for example, to avoid having to do a HTTP call for the feed use:
 #L10N_FEED_URL = 'file://' + os.path.abspath('apps/homepage/test_rss20.xml')
 
