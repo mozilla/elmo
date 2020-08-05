@@ -86,9 +86,6 @@ INSTALLED_APPS = (
 
     'elmo',
 
-    # Local apps
-    'raven.contrib.django.raven_compat',
-
     # Third-party apps
     'whitenoise.runserver_nostatic',
 
