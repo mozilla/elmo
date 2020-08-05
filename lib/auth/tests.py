@@ -5,7 +5,7 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from mock import patch
+from unittest.mock import patch
 
 from elmo.test import TestCase
 from django.contrib.auth.models import Group

@@ -5,38 +5,32 @@
 # >=0.13 josepy
 PyOpenSSL==19.1.0
 # amqp>=2.6.0,<2.7 kombu
-amqp==2.6.0
+amqp==2.6.1
 # >=2017.4.17 requests
 # sentry-sdk
-certifi==2020.4.5.2
+certifi==2020.6.20
 # >=1.8,!=1.11.3 cryptography
-cffi==1.14.0
+cffi==1.14.1
 # <4,>=3.0.2 requests
 chardet==3.0.4
 # mozilla-django-oidc
 # >=0.8 josepy
 # >=2.3 PyOpenSSL
-cryptography==2.9.2
+cryptography==3.0
 # markus
-datadog==0.36.0
+datadog==0.38.0
 # >=3.3.2 datadog
 decorator==4.4.2
 # >=1.0.3 django-compressor
-django-appconf==1.0.3
+django-appconf==1.0.4
 # >=0.3 stastistics
 docutils==0.15.2
-# cryptography
-enum34==1.1.6
 # >=0.17.0, <0.18 compare-locales
 fluent.syntax==0.17.0
-# >=1 mock
-funcsigs==1.0.2
 # <3,>=2.5 requests
-idna==2.8
+idna==2.10
 # >=0.18 kombu
-importlib-metadata==1.6.1
-# cryptography
-ipaddress==1.0.23
+importlib-metadata==1.7.0
 # mozilla-django-oidc
 josepy==1.3.0
 # bleach
@@ -46,22 +40,25 @@ pycparser==2.20
 # >=2.0.2 packaging
 pyparsing==2.4.7
 # compare-locales
-pytoml==0.1.20
+pytoml==0.1.21
 # Django
-pytz==2019.3
+pytz==2020.1
 # ==1.0.6 django-compressor
 rcssmin==1.0.6
 # mozilla-django-oidc
 # >=2.6.0 datadog
-requests==2.23.0
+requests==2.24.0
 # ==1.1.0 django-compressor
 rjsmin==1.1.0
 # bleach, compare-locales, markus
 # >=1.4.0 python-memcached
 # >=1.4.1 cryptography
-# >=1.9 bleach, html5lib, mock
+# >=1.9 bleach, html5lib
 # >= 1.12.0 django-compressor
 six==1.15.0
+# >= 0.2.2 Django
+# >=0.2.0 django-debug-toolbar
+sqlparse==0.3.1
 # markus
 statistics==1.0.3.5
 # 1.21.1,<1.26,!=1.25.0,!=1.25.1 requests
@@ -79,9 +76,3 @@ zipp==3.1.0
 
 
 ## dev
-
-# >=0.2.0 django-debug-toolbar
-sqlparse==0.3.0
-
-# django-extensions
-typing==3.7.4.1
