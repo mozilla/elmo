@@ -5,8 +5,8 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import datetime
-import mock
 import time
+from unittest import mock
 from elmo.test import TestCase
 from django.urls import reverse
 import hglib

@@ -27,8 +27,6 @@ django-appconf==1.0.4
 docutils==0.15.2
 # >=0.17.0, <0.18 compare-locales
 fluent.syntax==0.17.0
-# >=1 mock
-funcsigs==1.0.2
 # <3,>=2.5 requests
 idna==2.10
 # >=0.18 kombu
@@ -55,7 +53,7 @@ rjsmin==1.1.0
 # bleach, compare-locales, markus
 # >=1.4.0 python-memcached
 # >=1.4.1 cryptography
-# >=1.9 bleach, html5lib, mock
+# >=1.9 bleach, html5lib
 # >= 1.12.0 django-compressor
 six==1.15.0
 # >= 0.2.2 Django
