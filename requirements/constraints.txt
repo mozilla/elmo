@@ -78,6 +78,3 @@ zipp==3.1.0
 
 
 ## dev
-
-# django-extensions
-typing==3.7.4.1
